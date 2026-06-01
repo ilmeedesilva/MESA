@@ -1,0 +1,62 @@
+# MESA
+
+MESA is a cross-service static analysis tool for detecting microservices architectural anti-patterns.
+
+Current vertical slice:
+
+- Python/FastAPI backend.
+- CLI workflow for reproducible research evaluation.
+- Static extraction for Python services, environment/config files, and simple HTTP call evidence.
+- NetworkX graph model plus Neo4j architecture graph persistence for persistent scans.
+- Initial detectors for Chatty Services, Cyclic Dependencies, and Shared Database.
+- React + TypeScript frontend scaffold with Cytoscape.js.
+
+## Quick Start
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+mesa analyze tests/fixtures/chatty/order-service tests/fixtures/chatty/user-service
+uvicorn mesa.api.main:app --reload
+```
+
+## Run Tests
+
+```bash
+pytest
+```
+
+
+
+## Persistent API Workflow
+
+Phase 1 adds PostgreSQL-backed project and scan persistence. Start the full stack with:
+
+```bash
+docker compose up --build
+```
+
+Then use `http://localhost:8000/docs` to create projects, run persistent scans, view scan history, and retrieve findings after restart. See `docs/architecture/PHASE_1_PERSISTENCE_FOUNDATION.md` for the full guide.
+
+
+## Neo4j Architecture Graph
+
+Phase 2 adds a Neo4j-backed architectural digital twin for persistent scans. Start the full stack with:
+
+```bash
+docker compose up --build
+```
+
+Then create a project and run `POST /projects/{project_id}/scans` from `http://localhost:8000/docs`. Use the returned scan id with:
+
+```text
+GET /scans/{scan_id}/graph
+GET /scans/{scan_id}/graph/paths?source=order-service&target=user-service
+GET /scans/{scan_id}/graph/cycles
+GET /scans/{scan_id}/graph/centrality
+GET /scans/{scan_id}/graph/shared-databases
+GET /scans/{scan_id}/graph/high-risk-clusters
+```
+
+Neo4j Browser is available at `http://localhost:7474` with `neo4j` / `mesa-password` in the development stack. See `docs/architecture/PHASE_2_NEO4J_ARCHITECTURE_GRAPH.md` for the full Phase 2 guide.
