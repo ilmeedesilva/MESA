@@ -80,3 +80,36 @@ def test_neo4j_dependency_projection_includes_api_and_shared_database_edges() ->
         dependency for dependency in dependencies if dependency["kind"] == "shared_database"
     )
     assert shared_dependency["database"] == "postgres://db/orders"
+
+
+
+def test_detects_hard_coded_service_dependencies() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "hardcoded" / "order-service"),
+            str(ROOT / "hardcoded" / "billing-service"),
+        ]
+    )
+
+    findings = [
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert findings
+    evidence = [item for finding in findings for item in finding.evidence]
+    values = {item["value"] for item in evidence}
+    assert "http://user-service:8080/users" in values
+    assert "http://inventory-service:3001/items" in values
+    assert "http://10.0.0.5:8080/payments" in values
+    assert any(item["line_number"] for item in evidence)
+    assert all(item["file_path"] for item in evidence)
+
+
+def test_hard_coded_dependency_detector_avoids_external_urls() -> None:
+    result = analyze_services([str(ROOT / "hardcoded" / "clean-service")])
+
+    assert not any(
+        finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+        for finding in result.findings
+    )

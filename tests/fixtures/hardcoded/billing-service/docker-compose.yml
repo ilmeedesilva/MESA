@@ -1,0 +1,4 @@
+services:
+  billing-service:
+    environment:
+      PAYMENT_URL: http://payment-service:8082/api

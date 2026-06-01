@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import ipaddress
 import re
 from pathlib import Path
 from urllib.parse import urlparse
@@ -9,6 +10,7 @@ from mesa.models import (
     DatabaseConnection,
     Endpoint,
     EnvironmentVariable,
+    HardCodedDependency,
     LibraryUsage,
     MessageBrokerConnection,
     ServiceCall,
@@ -18,6 +20,23 @@ from mesa.models import (
 
 HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}
 URL_PATTERN = re.compile(r"https?://[^'\"\s)]+")
+HOST_PORT_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_./:-])"
+    r"(?P<host>localhost|(?:\d{1,3}\.){3}\d{1,3}|[A-Za-z][A-Za-z0-9-]*(?:\.[A-Za-z0-9-]+)*)"
+    r":(?P<port>\d{2,5})"
+    r"(?![A-Za-z0-9_.-])"
+)
+SERVICE_HOST_PATTERN = re.compile(
+    r"^[a-z0-9][a-z0-9-]*(?:-service|-svc|service)(?:\..*)?$", re.IGNORECASE
+)
+ANALYZED_TEXT_SUFFIXES = {
+    ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".yml", ".yaml",
+    ".properties", ".json", ".xml",
+}
+ANALYZED_TEXT_FILENAMES = {
+    ".env", "docker-compose.yml", "docker-compose.yaml", "application.yml",
+    "application.yaml", "package.json", "pom.xml",
+}
 ENV_PATTERN = re.compile(
     r"^\s*(?:export\s+)?(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<value>[^#\n]+)",
     re.MULTILINE,
@@ -53,6 +72,8 @@ def extract_service_facts(service_path: str | Path) -> ServiceFacts:
             _extract_python_file(file_path, facts)
         if file_path.name == "requirements.txt":
             _extract_requirements(file_path, facts)
+        if _is_analyzed_text_file(file_path):
+            _extract_hard_coded_dependencies(file_path, facts)
         if file_path.name.startswith(".env") or file_path.suffix in {".yml", ".yaml", ".properties"}:
             _extract_text_config(file_path, facts, include_urls=True)
 
@@ -95,6 +116,14 @@ def _extract_requirements(file_path: Path, facts: ServiceFacts) -> None:
 def _is_ignored(file_path: Path) -> bool:
     ignored = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build"}
     return any(part in ignored for part in file_path.parts)
+
+
+def _is_analyzed_text_file(file_path: Path) -> bool:
+    if file_path.name.startswith(".env"):
+        return True
+    if file_path.name in ANALYZED_TEXT_FILENAMES:
+        return True
+    return file_path.suffix in ANALYZED_TEXT_SUFFIXES
 
 
 def _extract_python_file(file_path: Path, facts: ServiceFacts) -> None:
@@ -255,6 +284,124 @@ def _extract_text_config(
                 ),
             )
         )
+
+
+def _extract_hard_coded_dependencies(file_path: Path, facts: ServiceFacts) -> None:
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return
+
+    file_type = _file_type(file_path)
+    seen: set[tuple[str, int]] = set()
+    for match in URL_PATTERN.finditer(content):
+        url = match.group(0).rstrip("'\"),]}")
+        parsed = urlparse(url)
+        host = parsed.hostname
+        if not host:
+            continue
+        classification = _classify_hard_coded_host(host)
+        if classification is None:
+            continue
+        line_number = _line_for(content, match.start())
+        seen.add((url, line_number))
+        facts.hard_coded_dependencies.append(
+            HardCodedDependency(
+                service_name=facts.name,
+                value=url,
+                host=host,
+                port=parsed.port,
+                scheme=parsed.scheme,
+                file_type=file_type,
+                context=_context_for(content, match.start()),
+                reason=classification,
+                source=SourceLocation(file_path=str(file_path), line_number=line_number),
+            )
+        )
+
+    for match in HOST_PORT_PATTERN.finditer(content):
+        if _inside_url(content, match.start()):
+            continue
+        host = match.group("host")
+        port = int(match.group("port"))
+        if port > 65535:
+            continue
+        classification = _classify_hard_coded_host(host)
+        if classification is None:
+            continue
+        value = match.group(0)
+        line_number = _line_for(content, match.start())
+        if (value, line_number) in seen:
+            continue
+        facts.hard_coded_dependencies.append(
+            HardCodedDependency(
+                service_name=facts.name,
+                value=value,
+                host=host,
+                port=port,
+                file_type=file_type,
+                context=_context_for(content, match.start()),
+                reason=classification,
+                source=SourceLocation(file_path=str(file_path), line_number=line_number),
+            )
+        )
+
+
+def _classify_hard_coded_host(host: str) -> str | None:
+    normalized = host.lower().strip("[]")
+    if normalized in {"localhost", "127.0.0.1", "0.0.0.0"}:
+        return "local development endpoint"
+    try:
+        address = ipaddress.ip_address(normalized)
+    except ValueError:
+        address = None
+    if address and (address.is_private or address.is_loopback):
+        return "private IP endpoint"
+    if SERVICE_HOST_PATTERN.match(normalized):
+        return "service hostname"
+    if "." not in normalized and "-" in normalized:
+        return "single-label service-like hostname"
+    return None
+
+
+def _inside_url(content: str, start: int) -> bool:
+    prefix = content[max(0, start - 10):start]
+    return "://" in prefix
+
+
+def _context_for(content: str, start: int) -> str:
+    line_start = content.rfind("\n", 0, start) + 1
+    line_end = content.find("\n", start)
+    if line_end == -1:
+        line_end = len(content)
+    return content[line_start:line_end].strip()[:240]
+
+
+def _file_type(file_path: Path) -> str:
+    if file_path.name.startswith(".env"):
+        return "env"
+    if file_path.name in {"docker-compose.yml", "docker-compose.yaml"}:
+        return "docker_compose"
+    if file_path.name in {"application.yml", "application.yaml"}:
+        return "application_config"
+    if file_path.name == "package.json":
+        return "package_json"
+    if file_path.name == "pom.xml":
+        return "pom_xml"
+    suffix_map = {
+        ".py": "python",
+        ".js": "javascript",
+        ".jsx": "javascript",
+        ".ts": "typescript",
+        ".tsx": "typescript",
+        ".java": "java",
+        ".yml": "yaml",
+        ".yaml": "yaml",
+        ".properties": "properties",
+        ".json": "json",
+        ".xml": "xml",
+    }
+    return suffix_map.get(file_path.suffix, "text")
 
 
 def target_hint_from_url(url: str) -> str:

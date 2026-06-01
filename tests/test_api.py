@@ -57,11 +57,13 @@ def test_project_scan_persistence_endpoints() -> None:
 
     result_response = client.get(f"/scans/{scan_id}")
     assert result_response.status_code == 200
-    assert result_response.json()["result"]["summary"]["finding_count"] == 1
+    assert result_response.json()["result"]["summary"]["finding_count"] >= 1
 
     findings_response = client.get(f"/scans/{scan_id}/findings")
     assert findings_response.status_code == 200
-    assert findings_response.json()[0]["type"] == "CHATTY_SERVICE"
+    finding_types = {finding["type"] for finding in findings_response.json()}
+    assert "CHATTY_SERVICE" in finding_types
+    assert "HARD_CODED_SERVICE_DEPENDENCY" in finding_types
 
     del app.state.persistence_repository
 
@@ -152,3 +154,23 @@ def test_project_scan_writes_architecture_graph_and_exposes_queries() -> None:
     del app.state.persistence_repository
     del app.state.architecture_store
 
+
+
+
+def test_hard_coded_dependency_findings_appear_in_api_response() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/analyze",
+        json={"service_paths": [str(ROOT / "hardcoded" / "order-service")]},
+    )
+
+    assert response.status_code == 200
+    findings = response.json()["findings"]
+    hard_coded = [
+        finding for finding in findings if finding["type"] == "HARD_CODED_SERVICE_DEPENDENCY"
+    ]
+    assert hard_coded
+    evidence = hard_coded[0]["evidence"][0]
+    assert evidence["file_path"]
+    assert evidence["line_number"]
+    assert hard_coded[0]["recommendation"]

@@ -3,7 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from mesa.analysis.extractor import extract_service_facts
-from mesa.detectors import ChattyServiceDetector, CyclicDependencyDetector, SharedDatabaseDetector
+from mesa.detectors import (
+    ChattyServiceDetector,
+    CyclicDependencyDetector,
+    HardCodedServiceDependencyDetector,
+    SharedDatabaseDetector,
+)
 from mesa.graph.builder import build_graph, graph_to_dict
 from mesa.models import AnalysisResult
 
@@ -16,6 +21,7 @@ def analyze_services(service_paths: list[str], chatty_threshold: int = 3) -> Ana
         ChattyServiceDetector(threshold=chatty_threshold),
         CyclicDependencyDetector(),
         SharedDatabaseDetector(),
+        HardCodedServiceDependencyDetector(),
     ]
     findings = []
     for detector in detectors:

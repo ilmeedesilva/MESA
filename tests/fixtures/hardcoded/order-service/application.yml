@@ -1,0 +1,2 @@
+payment:
+  baseUrl: http://10.0.0.5:8080/payments
