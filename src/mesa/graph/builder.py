@@ -13,7 +13,16 @@ def build_graph(services: Iterable[ServiceFacts]) -> nx.MultiDiGraph:
     graph = nx.MultiDiGraph()
 
     for service in service_list:
-        graph.add_node(service.name, type="service", language=service.language, root_path=service.root_path)
+        graph.add_node(
+            service.name,
+            type="service",
+            language=service.language,
+            root_path=service.root_path,
+            hard_coded_dependencies=[
+                dependency.model_dump(mode="json")
+                for dependency in service.hard_coded_dependencies
+            ],
+        )
 
     for service in service_list:
         for call in service.calls:

@@ -19,6 +19,7 @@ class FindingType(str, Enum):
     CHATTY_SERVICE = "CHATTY_SERVICE"
     CYCLIC_DEPENDENCY = "CYCLIC_DEPENDENCY"
     SHARED_DATABASE = "SHARED_DATABASE"
+    HARD_CODED_SERVICE_DEPENDENCY = "HARD_CODED_SERVICE_DEPENDENCY"
 
 
 class SourceLocation(BaseModel):
@@ -56,6 +57,18 @@ class DatabaseConnection(BaseModel):
         return f"{self.db_type.lower()}://{host}/{database}"
 
 
+class HardCodedDependency(BaseModel):
+    service_name: str
+    value: str
+    host: str
+    port: int | None = None
+    scheme: str | None = None
+    file_type: str
+    context: str
+    reason: str
+    source: SourceLocation
+
+
 class LibraryUsage(BaseModel):
     service_name: str
     name: str
@@ -88,6 +101,7 @@ class ServiceFacts(BaseModel):
     libraries: list[LibraryUsage] = Field(default_factory=list)
     environment_variables: list[EnvironmentVariable] = Field(default_factory=list)
     message_brokers: list[MessageBrokerConnection] = Field(default_factory=list)
+    hard_coded_dependencies: list[HardCodedDependency] = Field(default_factory=list)
 
 
 class Finding(BaseModel):
