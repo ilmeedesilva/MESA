@@ -65,3 +65,13 @@ Neo4j Browser is available at `http://localhost:7474` with `neo4j` / `mesa-passw
 ## Hard-Coded Service Dependencies
 
 Phase 3 detects service URLs, private IP endpoints, local ports, and service-like hostnames embedded in source or configuration files. Findings use the type `HARD_CODED_SERVICE_DEPENDENCY` and are returned by both `/analyze` and persistent scan endpoints. See `docs/architecture/PHASE_3_HARD_CODED_SERVICE_DEPENDENCIES.md` for detection heuristics and test fixtures.
+
+
+## God Service Scores
+
+Phase 4 adds a weighted God Service score for every analyzed service. Scores are returned in `summary.god_service_scores`; high-risk services also produce `GOD_SERVICE` findings with decomposition recommendations. See `docs/architecture/PHASE_4_GOD_SERVICE_DETECTOR.md` for the scoring model, thresholds, and test workflow.
+
+
+## Architectural Health Scores
+
+Phase 5 adds service-level, domain-level, and system-level architectural health scores. Scores are returned in `summary.health_scores`, persisted in the `scores` table, and exposed through `GET /scans/{scan_id}/scores`. See `docs/architecture/PHASE_5_ARCHITECTURAL_HEALTH_SCORE.md` for dimensions, weights, grades, and test workflow.

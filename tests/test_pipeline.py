@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from mesa.analysis import analyze_services
-from mesa.models import FindingType
+from mesa.detectors.god_service import score_god_services
+from mesa.graph.builder import build_graph
+from mesa.models import FindingType, ServiceFacts
 from mesa.storage.neo4j_store import _service_dependencies
 
 ROOT = Path(__file__).parent / "fixtures"
@@ -113,3 +115,109 @@ def test_hard_coded_dependency_detector_avoids_external_urls() -> None:
         finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
         for finding in result.findings
     )
+
+
+
+def test_god_service_scoring_thresholds() -> None:
+    graph = build_graph(
+        [
+            ServiceFacts(
+                name="platform-service",
+                root_path="/tmp/platform-service",
+                file_count=22,
+                domain_keywords=[
+                    "orders", "payments", "users", "inventory", "shipments",
+                    "invoices", "catalog", "returns", "analytics",
+                ],
+            ),
+            ServiceFacts(name="small-service", root_path="/tmp/small-service", file_count=1),
+        ]
+    )
+    graph.nodes["platform-service"].update(
+        endpoint_count=10, database_count=3, linked_findings=5
+    )
+    graph.add_edge("small-service", "platform-service", type="api_call")
+    graph.add_edge("platform-service", "small-service", type="api_call")
+
+    scores = {score.service: score for score in score_god_services(graph)}
+
+    assert scores["platform-service"].score >= 70
+    assert scores["platform-service"].severity.value in {"HIGH", "CRITICAL"}
+    assert scores["small-service"].score < 50
+
+
+def test_detects_god_service_risk() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "god" / "platform-service"),
+            str(ROOT / "god" / "order-service"),
+            str(ROOT / "god" / "billing-service"),
+            str(ROOT / "god" / "inventory-service"),
+            str(ROOT / "god" / "user-service"),
+            str(ROOT / "god" / "payment-service"),
+            str(ROOT / "god" / "notification-service"),
+        ]
+    )
+
+    scores = {score["service"]: score for score in result.summary["god_service_scores"]}
+    assert scores["platform-service"]["score"] >= 70
+    assert scores["order-service"]["score"] < scores["platform-service"]["score"]
+    god_findings = [finding for finding in result.findings if finding.type == FindingType.GOD_SERVICE]
+    assert god_findings
+    assert god_findings[0].services == ["platform-service"]
+    assert "decreases" in god_findings[0].recommendation
+
+
+
+def test_health_scores_are_generated_and_explainable() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "god" / "platform-service"),
+            str(ROOT / "god" / "order-service"),
+            str(ROOT / "god" / "billing-service"),
+            str(ROOT / "god" / "inventory-service"),
+            str(ROOT / "god" / "user-service"),
+            str(ROOT / "god" / "payment-service"),
+            str(ROOT / "god" / "notification-service"),
+        ]
+    )
+
+    health = result.summary["health_scores"]
+    assert health["system"]["scope"] == "system"
+    assert 0 <= health["system"]["score"] <= 100
+    assert health["system"]["grade"] in {"Excellent", "Good", "Moderate", "Poor", "Critical"}
+    assert health["service"]
+    assert health["domain"]
+
+    platform_score = next(
+        score for score in health["service"] if score["target"] == "platform-service"
+    )
+    small_result = analyze_services([str(ROOT / "god" / "small-service")])
+    small_score = small_result.summary["health_scores"]["service"][0]
+
+    assert platform_score["score"] < small_score["score"]
+    assert set(platform_score["breakdown"]) == {
+        "coupling",
+        "cohesion",
+        "cyclic_dependencies",
+        "shared_database_usage",
+        "hard_coded_dependency_risk",
+        "god_service_risk",
+        "api_complexity",
+        "deployment_independence",
+        "ownership_clarity",
+    }
+    assert platform_score["explanation"]
+    assert platform_score["recommendations"]
+
+
+def test_health_score_calculation_is_deterministic() -> None:
+    service_paths = [
+        str(ROOT / "hardcoded" / "order-service"),
+        str(ROOT / "hardcoded" / "billing-service"),
+    ]
+
+    first = analyze_services(service_paths).summary["health_scores"]
+    second = analyze_services(service_paths).summary["health_scores"]
+
+    assert first == second

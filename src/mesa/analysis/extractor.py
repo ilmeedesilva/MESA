@@ -37,6 +37,12 @@ ANALYZED_TEXT_FILENAMES = {
     ".env", "docker-compose.yml", "docker-compose.yaml", "application.yml",
     "application.yaml", "package.json", "pom.xml",
 }
+DOMAIN_STOPWORDS = {
+    "api", "app", "application", "base", "client", "config", "controller", "data",
+    "database", "db", "docker", "env", "error", "handler", "http", "internal", "main",
+    "model", "module", "payload", "request", "response", "route", "service", "src",
+    "test", "tests", "url", "utils", "view",
+}
 ENV_PATTERN = re.compile(
     r"^\s*(?:export\s+)?(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<value>[^#\n]+)",
     re.MULTILINE,
@@ -68,6 +74,8 @@ def extract_service_facts(service_path: str | Path) -> ServiceFacts:
     for file_path in sorted(root.rglob("*")):
         if not file_path.is_file() or _is_ignored(file_path):
             continue
+        if _is_analyzed_text_file(file_path):
+            facts.file_count += 1
         if file_path.suffix == ".py":
             _extract_python_file(file_path, facts)
         if file_path.name == "requirements.txt":
@@ -77,7 +85,40 @@ def extract_service_facts(service_path: str | Path) -> ServiceFacts:
         if file_path.name.startswith(".env") or file_path.suffix in {".yml", ".yaml", ".properties"}:
             _extract_text_config(file_path, facts, include_urls=True)
 
+    facts.domain_keywords = _domain_keywords_for(root, facts)
     return facts
+
+
+def _domain_keywords_for(root: Path, facts: ServiceFacts) -> list[str]:
+    keywords: set[str] = set()
+    service_tokens = set(_tokens_from(root.name))
+
+    for file_path in sorted(root.rglob("*")):
+        if not file_path.is_file() or _is_ignored(file_path):
+            continue
+        relative = file_path.relative_to(root)
+        for part in relative.with_suffix("").parts:
+            keywords.update(_tokens_from(part))
+
+    for endpoint in facts.endpoints:
+        keywords.update(_tokens_from(endpoint.path))
+    for call in facts.calls:
+        parsed = urlparse(call.url)
+        keywords.update(_tokens_from(parsed.path))
+        keywords.update(_tokens_from(call.target_hint))
+    for database in facts.databases:
+        if database.database:
+            keywords.update(_tokens_from(database.database))
+
+    return sorted(keyword for keyword in keywords - service_tokens if keyword not in DOMAIN_STOPWORDS)
+
+
+def _tokens_from(value: str) -> set[str]:
+    return {
+        token.lower()
+        for token in re.split(r"[^A-Za-z0-9]+", value)
+        if len(token) >= 3 and not token.isdigit()
+    }
 
 
 def detect_language(root: Path) -> str:
