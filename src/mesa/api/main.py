@@ -11,6 +11,7 @@ from mesa.models import (
     AnalysisRequest,
     AnalysisResult,
     Finding,
+    HealthScore,
     PersistedScanResult,
     ProjectCreate,
     ProjectRecord,
@@ -133,6 +134,14 @@ def get_scan_findings(scan_id: str, request: Request) -> list[Finding]:
     if repository.get_scan(scan_id) is None:
         raise HTTPException(status_code=404, detail="Scan not found")
     return repository.list_findings(scan_id)
+
+
+@app.get("/scans/{scan_id}/scores", response_model=list[HealthScore])
+def get_scan_scores(scan_id: str, request: Request) -> list[HealthScore]:
+    repository = get_repository(request)
+    if repository.get_scan(scan_id) is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return repository.list_scores(scan_id)
 
 
 @app.get("/scans/{scan_id}/graph")
