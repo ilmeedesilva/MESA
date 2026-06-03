@@ -18,6 +18,10 @@ def build_graph(services: Iterable[ServiceFacts]) -> nx.MultiDiGraph:
             type="service",
             language=service.language,
             root_path=service.root_path,
+            endpoint_count=len(service.endpoints),
+            database_count=len(service.databases),
+            file_count=service.file_count,
+            domain_keywords=service.domain_keywords,
             hard_coded_dependencies=[
                 dependency.model_dump(mode="json")
                 for dependency in service.hard_coded_dependencies

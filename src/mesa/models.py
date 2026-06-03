@@ -20,6 +20,7 @@ class FindingType(str, Enum):
     CYCLIC_DEPENDENCY = "CYCLIC_DEPENDENCY"
     SHARED_DATABASE = "SHARED_DATABASE"
     HARD_CODED_SERVICE_DEPENDENCY = "HARD_CODED_SERVICE_DEPENDENCY"
+    GOD_SERVICE = "GOD_SERVICE"
 
 
 class SourceLocation(BaseModel):
@@ -102,6 +103,18 @@ class ServiceFacts(BaseModel):
     environment_variables: list[EnvironmentVariable] = Field(default_factory=list)
     message_brokers: list[MessageBrokerConnection] = Field(default_factory=list)
     hard_coded_dependencies: list[HardCodedDependency] = Field(default_factory=list)
+    file_count: int = 0
+    domain_keywords: list[str] = Field(default_factory=list)
+
+
+class HealthScore(BaseModel):
+    scope: str
+    target: str
+    score: float = Field(ge=0.0, le=100.0)
+    grade: str
+    breakdown: dict[str, float]
+    explanation: str
+    recommendations: list[str] = Field(default_factory=list)
 
 
 class Finding(BaseModel):
