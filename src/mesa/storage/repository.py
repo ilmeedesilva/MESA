@@ -10,7 +10,8 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from mesa.models import AnalysisResult, Finding, ProjectCreate, ProjectRecord, ScanRecord
+from mesa.analysis.health import flatten_health_scores
+from mesa.models import AnalysisResult, Finding, HealthScore, ProjectCreate, ProjectRecord, ScanRecord
 
 
 class PersistenceRepository(Protocol):
@@ -48,6 +49,9 @@ class PersistenceRepository(Protocol):
         ...
 
     def list_findings(self, scan_id: str) -> list[Finding]:
+        ...
+
+    def list_scores(self, scan_id: str) -> list[HealthScore]:
         ...
 
 
@@ -111,6 +115,12 @@ class InMemoryPersistenceRepository:
     def list_findings(self, scan_id: str) -> list[Finding]:
         result = self.results.get(scan_id)
         return result.findings if result else []
+
+    def list_scores(self, scan_id: str) -> list[HealthScore]:
+        result = self.results.get(scan_id)
+        if not result:
+            return []
+        return flatten_health_scores(result.summary.get("health_scores", {}))
 
 
 class PostgresPersistenceRepository:
@@ -217,6 +227,18 @@ class PostgresPersistenceRepository:
                     ),
                 )
 
+            for score in flatten_health_scores(result.summary.get("health_scores", {})):
+                connection.execute(
+                    """
+                    INSERT INTO scores (scan_id, scope, target, score, breakdown)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (
+                        scan_id, score.scope, score.target, score.score,
+                        Jsonb(score.model_dump(mode="json")),
+                    ),
+                )
+
             connection.execute(
                 "INSERT INTO reports (scan_id, content) VALUES (%s, %s)",
                 (scan_id, Jsonb(result.model_dump(mode="json"))),
@@ -268,6 +290,29 @@ class PostgresPersistenceRepository:
     def list_findings(self, scan_id: str) -> list[Finding]:
         result = self.get_scan_result(scan_id)
         return result.findings if result else []
+
+    def list_scores(self, scan_id: str) -> list[HealthScore]:
+        with self._connect(row_factory=dict_row) as connection:
+            rows = connection.execute(
+                """
+                SELECT breakdown
+                FROM scores
+                WHERE scan_id = %s
+                ORDER BY CASE scope
+                    WHEN 'system' THEN 0
+                    WHEN 'domain' THEN 1
+                    WHEN 'service' THEN 2
+                    ELSE 3
+                END, target ASC
+                """,
+                (scan_id,),
+            ).fetchall()
+        if rows:
+            return [HealthScore.model_validate(row["breakdown"]) for row in rows]
+        result = self.get_scan_result(scan_id)
+        if not result:
+            return []
+        return flatten_health_scores(result.summary.get("health_scores", {}))
 
 
 def _now_iso() -> str:

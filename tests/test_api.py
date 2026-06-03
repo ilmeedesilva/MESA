@@ -65,6 +65,13 @@ def test_project_scan_persistence_endpoints() -> None:
     assert "CHATTY_SERVICE" in finding_types
     assert "HARD_CODED_SERVICE_DEPENDENCY" in finding_types
 
+    scores_response = client.get(f"/scans/{scan_id}/scores")
+    assert scores_response.status_code == 200
+    scores = scores_response.json()
+    assert any(score["scope"] == "system" for score in scores)
+    assert any(score["scope"] == "service" for score in scores)
+    assert all(0 <= score["score"] <= 100 for score in scores)
+
     del app.state.persistence_repository
 
 
@@ -174,3 +181,29 @@ def test_hard_coded_dependency_findings_appear_in_api_response() -> None:
     assert evidence["file_path"]
     assert evidence["line_number"]
     assert hard_coded[0]["recommendation"]
+
+
+
+def test_health_scores_appear_in_api_response() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/analyze",
+        json={
+            "service_paths": [
+                str(ROOT / "god" / "platform-service"),
+                str(ROOT / "god" / "order-service"),
+                str(ROOT / "god" / "billing-service"),
+                str(ROOT / "god" / "inventory-service"),
+                str(ROOT / "god" / "user-service"),
+                str(ROOT / "god" / "payment-service"),
+                str(ROOT / "god" / "notification-service"),
+            ]
+        },
+    )
+
+    assert response.status_code == 200
+    health = response.json()["summary"]["health_scores"]
+    assert health["system"]["scope"] == "system"
+    assert health["service"]
+    assert health["domain"]
+    assert any(score["target"] == "platform-service" for score in health["service"])
