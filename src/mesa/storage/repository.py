@@ -11,7 +11,15 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from mesa.analysis.health import flatten_health_scores
-from mesa.models import AnalysisResult, Finding, HealthScore, ProjectCreate, ProjectRecord, ScanRecord
+from mesa.models import (
+    AnalysisResult,
+    Finding,
+    HealthScore,
+    ProjectCreate,
+    ProjectRecord,
+    ScanRecord,
+    SnapshotRecord,
+)
 
 
 class PersistenceRepository(Protocol):
@@ -54,12 +62,16 @@ class PersistenceRepository(Protocol):
     def list_scores(self, scan_id: str) -> list[HealthScore]:
         ...
 
+    def list_snapshots(self, project_id: str) -> list[SnapshotRecord]:
+        ...
+
 
 class InMemoryPersistenceRepository:
     def __init__(self) -> None:
         self.projects: dict[str, ProjectRecord] = {}
         self.scans: dict[str, ScanRecord] = {}
         self.results: dict[str, AnalysisResult] = {}
+        self.snapshots: dict[str, SnapshotRecord] = {}
 
     def _connect(self, **kwargs):
         last_error: Exception | None = None
@@ -101,6 +113,14 @@ class InMemoryPersistenceRepository:
         )
         self.scans[scan.id] = scan
         self.results[scan.id] = result
+        snapshot = SnapshotRecord(
+            id=str(uuid4()),
+            project_id=project_id,
+            scan_id=scan.id,
+            graph=result.graph,
+            created_at=scan.completed_at,
+        )
+        self.snapshots[snapshot.id] = snapshot
         return scan
 
     def get_scan(self, scan_id: str) -> ScanRecord | None:
@@ -110,7 +130,8 @@ class InMemoryPersistenceRepository:
         return self.results.get(scan_id)
 
     def list_scans(self, project_id: str) -> list[ScanRecord]:
-        return [scan for scan in self.scans.values() if scan.project_id == project_id]
+        scans = [scan for scan in self.scans.values() if scan.project_id == project_id]
+        return sorted(scans, key=lambda scan: scan.created_at or "", reverse=True)
 
     def list_findings(self, scan_id: str) -> list[Finding]:
         result = self.results.get(scan_id)
@@ -121,6 +142,10 @@ class InMemoryPersistenceRepository:
         if not result:
             return []
         return flatten_health_scores(result.summary.get("health_scores", {}))
+
+    def list_snapshots(self, project_id: str) -> list[SnapshotRecord]:
+        snapshots = [snapshot for snapshot in self.snapshots.values() if snapshot.project_id == project_id]
+        return sorted(snapshots, key=lambda snapshot: snapshot.created_at or "", reverse=True)
 
 
 class PostgresPersistenceRepository:
@@ -313,6 +338,19 @@ class PostgresPersistenceRepository:
         if not result:
             return []
         return flatten_health_scores(result.summary.get("health_scores", {}))
+
+    def list_snapshots(self, project_id: str) -> list[SnapshotRecord]:
+        with self._connect(row_factory=dict_row) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, project_id, scan_id, graph, created_at::text
+                FROM snapshots
+                WHERE project_id = %s
+                ORDER BY created_at DESC
+                """,
+                (project_id,),
+            ).fetchall()
+        return [SnapshotRecord(**row) for row in rows]
 
 
 def _now_iso() -> str:

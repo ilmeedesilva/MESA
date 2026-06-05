@@ -119,6 +119,37 @@ type PersistedScanResult = {
   result: AnalysisResult;
 };
 
+type EvolutionReport = {
+  project_id: string;
+  base_scan_id: string;
+  target_scan_id: string;
+  architecture_change_summary: Record<string, unknown>;
+  risk_trend: {
+    previous_total?: number;
+    current_total?: number;
+    delta?: number;
+    new_risk_count?: number;
+    resolved_risk_count?: number;
+    worsened_risk_count?: number;
+    new_risks?: Array<Record<string, unknown>>;
+    resolved_risks?: Array<Record<string, unknown>>;
+    worsened_risks?: Array<Record<string, unknown>>;
+  };
+  score_trend: {
+    system_previous?: number | null;
+    system_current?: number | null;
+    system_delta?: number | null;
+    improved_services?: Array<Record<string, unknown>>;
+    worsened_services?: Array<Record<string, unknown>>;
+  };
+  service_level_changes: Array<Record<string, unknown>>;
+  new_dependencies: Array<Record<string, unknown>>;
+  removed_dependencies: Array<Record<string, unknown>>;
+  new_cycles: Array<Record<string, unknown>>;
+  removed_cycles: Array<Record<string, unknown>>;
+  recommendations: string[];
+};
+
 type AggregatedEdge = GraphEdge & {
   id: string;
   count: number;
@@ -158,6 +189,7 @@ function App() {
   const [projectDescription, setProjectDescription] = React.useState("Static architecture analysis demo");
   const [paths, setPaths] = React.useState(defaultPaths);
   const [history, setHistory] = React.useState<ScanRecord[]>([]);
+  const [evolution, setEvolution] = React.useState<EvolutionReport[]>([]);
   const [activeScan, setActiveScan] = React.useState<ScanRecord | null>(null);
   const [result, setResult] = React.useState<AnalysisResult | null>(null);
   const [displayGraph, setDisplayGraph] = React.useState<DisplayGraph | null>(null);
@@ -185,6 +217,7 @@ function App() {
   React.useEffect(() => {
     if (!selectedProjectId) {
       setHistory([]);
+      setEvolution([]);
       setActiveScan(null);
       setResult(null);
       setDisplayGraph(null);
@@ -286,13 +319,23 @@ function App() {
     try {
       const scans = await api<ScanRecord[]>(`/api/projects/${projectId}/scans`);
       setHistory(scans);
+      await loadEvolution(projectId);
       if (preferredScanId) return;
       if (!activeScan && scans.length > 0) {
         await loadScan(scans[0].id);
       }
     } catch (caught) {
       setHistory([]);
+      setEvolution([]);
       setError(messageFor(caught, "Could not load scan history"));
+    }
+  }
+
+  async function loadEvolution(projectId: string) {
+    try {
+      setEvolution(await api<EvolutionReport[]>(`/api/projects/${projectId}/evolution`));
+    } catch {
+      setEvolution([]);
     }
   }
 
@@ -415,6 +458,8 @@ function App() {
               ))}
             </div>
           </section>
+
+          <EvolutionPanel reports={evolution} />
 
           <section className="contentGrid">
             <section className="graphPanel dashboardGraph">
@@ -560,6 +605,60 @@ function FindingsDashboard({
         </article>
       ))}
     </aside>
+  );
+}
+
+function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
+  const latest = reports[reports.length - 1];
+  return (
+    <section className="evolutionPanel">
+      <div className="panelHeader compact">
+        <div>
+          <h2>Architecture Evolution</h2>
+          <p>Snapshot-to-snapshot architecture change tracking</p>
+        </div>
+        <span>{reports.length} comparisons</span>
+      </div>
+      {!latest ? <div className="emptyInline">Run at least two scans to see architecture evolution.</div> : null}
+      {latest ? (
+        <div className="evolutionSummary">
+          <div>
+            <strong>{formatSigned(latest.score_trend.system_delta)}</strong>
+            <span>System score delta</span>
+          </div>
+          <div>
+            <strong>{formatSigned(latest.risk_trend.delta)}</strong>
+            <span>Risk delta</span>
+          </div>
+          <div>
+            <strong>{latest.new_dependencies.length}</strong>
+            <span>New dependencies</span>
+          </div>
+          <div>
+            <strong>{latest.new_cycles.length}</strong>
+            <span>New cycles</span>
+          </div>
+        </div>
+      ) : null}
+      {latest ? <p className="evolutionSentence">{String(latest.architecture_change_summary.summary ?? "No summary available.")}</p> : null}
+      {latest?.recommendations.length ? (
+        <div className="evolutionRecommendations">
+          <strong>Recommendation</strong>
+          <span>{latest.recommendations[0]}</span>
+        </div>
+      ) : null}
+      {reports.length > 0 ? (
+        <div className="evolutionTimeline">
+          {reports.slice().reverse().map((report) => (
+            <article key={`${report.base_scan_id}-${report.target_scan_id}`}>
+              <strong>{`${shortId(report.base_scan_id)} -> ${shortId(report.target_scan_id)}`}</strong>
+              <span>{report.risk_trend.new_risk_count ?? 0} new risks, {report.risk_trend.resolved_risk_count ?? 0} resolved</span>
+              <small>{formatSigned(report.score_trend.system_delta)} health</small>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -1166,6 +1265,12 @@ function gradeTone(grade: string) {
   if (grade === "Excellent" || grade === "Good") return "low";
   if (grade === "Moderate") return "medium";
   return "high";
+}
+
+function formatSigned(value?: number | null) {
+  if (value === null || value === undefined) return "--";
+  if (value === 0) return "0";
+  return `${value > 0 ? "+" : ""}${Number(value).toFixed(1)}`;
 }
 
 function formatDate(value?: string | null) {

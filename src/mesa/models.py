@@ -174,6 +174,29 @@ class PersistedScanResult(BaseModel):
     result: AnalysisResult
 
 
+class SnapshotRecord(BaseModel):
+    id: str
+    project_id: str
+    scan_id: str
+    graph: dict[str, Any]
+    created_at: str | None = None
+
+
+class EvolutionReport(BaseModel):
+    project_id: str
+    base_scan_id: str
+    target_scan_id: str
+    architecture_change_summary: dict[str, Any]
+    risk_trend: dict[str, Any]
+    score_trend: dict[str, Any]
+    service_level_changes: list[dict[str, Any]]
+    new_dependencies: list[dict[str, Any]]
+    removed_dependencies: list[dict[str, Any]]
+    new_cycles: list[dict[str, Any]]
+    removed_cycles: list[dict[str, Any]]
+    recommendations: list[str] = Field(default_factory=list)
+
+
 def service_name_from_path(path: str | Path) -> str:
     return Path(path).resolve().name
 
