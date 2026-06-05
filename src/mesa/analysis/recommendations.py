@@ -18,6 +18,7 @@ _DIFFICULTY_BY_TYPE = {
     FindingType.SHARED_DATABASE: "High",
     FindingType.HARD_CODED_SERVICE_DEPENDENCY: "Low",
     FindingType.GOD_SERVICE: "High",
+    FindingType.GOVERNANCE_POLICY_VIOLATION: "Medium",
 }
 
 
@@ -136,6 +137,32 @@ def rule_based_recommendations(finding: Finding) -> list[FindingRecommendation]:
                     "Add a regression test or configuration check to prevent the endpoint returning to source code.",
                 ],
                 expected_impact="Improves portability across environments and lowers operational coupling.",
+                priority=priority,
+                estimated_difficulty=difficulty,
+                evidence=evidence,
+            )
+        ]
+
+    if finding.type == FindingType.GOVERNANCE_POLICY_VIOLATION:
+        policy_name = finding.evidence[0].get("policy_name", "architecture policy") if finding.evidence else "architecture policy"
+        return [
+            FindingRecommendation(
+                root_cause=(
+                    f"The current architecture violates the configured governance policy '{policy_name}'."
+                ),
+                architectural_consequence=(
+                    "The system is drifting away from an explicitly agreed architecture constraint, "
+                    "which can weaken deployment independence, maintainability, or ownership clarity."
+                ),
+                affected_services=finding.services,
+                affected_files=affected_files,
+                refactoring_steps=[
+                    "Inspect the policy evidence and confirm whether the configured threshold is still valid.",
+                    "Identify the services or system metric that caused the violation.",
+                    "Refactor dependencies, APIs, configuration, or ownership boundaries until the metric satisfies the rule.",
+                    "Re-run MESA and verify the governance finding is removed.",
+                ],
+                expected_impact="Keeps the architecture aligned with project-specific governance constraints.",
                 priority=priority,
                 estimated_difficulty=difficulty,
                 evidence=evidence,

@@ -8,12 +8,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from mesa import __version__
 from mesa.analysis import analyze_services
 from mesa.analysis.evolution import compare_scan_results
+from mesa.analysis.governance import evaluate_policies, parse_policy_document
+from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.models import (
     AnalysisRequest,
     AnalysisResult,
     EvolutionReport,
     Finding,
     HealthScore,
+    PolicyCreate,
+    PolicyDocument,
+    PolicyRecord,
     PersistedScanResult,
     ProjectCreate,
     ProjectRecord,
@@ -100,12 +105,63 @@ def get_project(project_id: str, request: Request) -> ProjectRecord:
     return project
 
 
+
+
+@app.get("/projects/{project_id}/policies", response_model=list[PolicyRecord])
+def list_project_policies(project_id: str, request: Request) -> list[PolicyRecord]:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return repository.list_policies(project_id)
+
+
+@app.post("/projects/{project_id}/policies", response_model=PolicyRecord, status_code=201)
+def create_project_policy(project_id: str, payload: PolicyCreate, request: Request) -> PolicyRecord:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return repository.create_policy(project_id, payload)
+
+
+@app.put("/projects/{project_id}/policies/{policy_id}", response_model=PolicyRecord)
+def update_project_policy(
+    project_id: str, policy_id: str, payload: PolicyCreate, request: Request
+) -> PolicyRecord:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    policy = repository.update_policy(project_id, policy_id, payload)
+    if policy is None:
+        raise HTTPException(status_code=404, detail="Policy not found")
+    return policy
+
+
+@app.post("/projects/{project_id}/policies/import", response_model=list[PolicyRecord])
+def import_project_policies(
+    project_id: str, payload: PolicyDocument, request: Request
+) -> list[PolicyRecord]:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    try:
+        policies = parse_policy_document(payload.content)
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return repository.upsert_policies(project_id, policies)
+
+
 @app.post("/projects/{project_id}/scans", response_model=PersistedScanResult, status_code=201)
 def run_project_scan(project_id: str, payload: RunScanRequest, request: Request) -> PersistedScanResult:
     repository = get_repository(request)
     if repository.get_project(project_id) is None:
         raise HTTPException(status_code=404, detail="Project not found")
     result = analyze_services(payload.service_paths, payload.chatty_threshold)
+    policies = repository.list_policies(project_id)
+    policy_findings = evaluate_policies(result, policies)
+    if policy_findings:
+        result.findings.extend(policy_findings)
+        result.findings = enrich_findings_with_recommendations(result.findings)
+        _refresh_finding_summary(result)
     scan = repository.save_scan_result(project_id, result)
     architecture_store = get_architecture_store(request)
     if architecture_store is not None:
@@ -253,3 +309,18 @@ def get_scan_high_risk_clusters(
     return require_architecture_store(request).find_high_risk_dependency_clusters(
         scan_id, degree_threshold
     )
+
+
+def _refresh_finding_summary(result: AnalysisResult) -> None:
+    result.summary["finding_count"] = len(result.findings)
+    result.summary["findings_by_type"] = _count_by(result.findings, "type")
+    result.summary["findings_by_severity"] = _count_by(result.findings, "severity")
+
+
+def _count_by(items: list, attr: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        value = getattr(item, attr)
+        key = value.value if hasattr(value, "value") else str(value)
+        counts[key] = counts.get(key, 0) + 1
+    return counts

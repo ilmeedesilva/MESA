@@ -21,6 +21,7 @@ class FindingType(str, Enum):
     SHARED_DATABASE = "SHARED_DATABASE"
     HARD_CODED_SERVICE_DEPENDENCY = "HARD_CODED_SERVICE_DEPENDENCY"
     GOD_SERVICE = "GOD_SERVICE"
+    GOVERNANCE_POLICY_VIOLATION = "GOVERNANCE_POLICY_VIOLATION"
 
 
 class SourceLocation(BaseModel):
@@ -166,6 +167,31 @@ class ProjectRecord(BaseModel):
     description: str | None = None
     root_path: str | None = None
     created_at: str | None = None
+
+
+class PolicyCreate(BaseModel):
+    id: str | None = None
+    name: str
+    rule: str
+    severity: Severity = Severity.HIGH
+    description: str | None = None
+    enabled: bool = True
+
+
+class PolicyDocument(BaseModel):
+    content: str
+
+
+class PolicyRecord(BaseModel):
+    id: str
+    project_id: str
+    name: str
+    rule: str
+    severity: Severity
+    description: str | None = None
+    enabled: bool = True
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class RunScanRequest(BaseModel):
