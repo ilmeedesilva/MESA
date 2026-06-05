@@ -290,8 +290,9 @@ aside {
 
 .contentGrid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
   gap: 16px;
+  align-items: start;
   min-height: 0;
 }
 
@@ -324,6 +325,7 @@ aside {
 }
 
 .serviceDot,
+.apiDot,
 .databaseDot {
   width: 9px;
   height: 9px;
@@ -331,23 +333,104 @@ aside {
   background: #2563eb;
 }
 
+.apiDot {
+  border-radius: 3px;
+  background: #059669;
+  transform: rotate(45deg);
+}
+
 .databaseDot {
   border-radius: 3px;
   background: #7c3aed;
 }
 
-.edgeLine {
+.riskLine {
   width: 18px;
-  height: 2px;
+  height: 3px;
   border-radius: 999px;
-  background: #64748b;
+  background: #dc2626;
 }
 
 .graph {
   width: 100%;
   flex: 1;
-  min-height: 640px;
+  min-height: 560px;
   cursor: grab;
+}
+
+.graphInspector {
+  margin: 0 18px 18px;
+  padding: 12px;
+  max-height: 230px;
+  overflow: auto;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.96);
+}
+
+.graphInspector h3 {
+  margin: 8px 0 4px;
+  font-size: 15px;
+}
+
+.graphInspector p {
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.graphInspector details {
+  margin-top: 10px;
+}
+
+.graphInspector summary {
+  cursor: pointer;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.graphInspector pre {
+  max-height: 120px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: 8px;
+  color: #334155;
+  background: #ffffff;
+  font-size: 11px;
+}
+
+.emptyInspector {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.miniHealth {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+}
+
+.miniHealth strong {
+  color: #2563eb;
+  font-size: 18px;
+}
+
+.miniHealth span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.linkedFindings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .emptyState,
@@ -370,11 +453,13 @@ aside {
 }
 
 .healthPanel {
-  overflow: visible;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .systemScore {
   padding: 14px;
+  overflow: hidden;
   border-radius: 8px;
   background: #eff6ff;
 }
@@ -389,6 +474,11 @@ aside {
   display: block;
   margin-top: 3px;
   font-weight: 900;
+}
+
+.systemScore p {
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .systemScore.low strong {
@@ -419,7 +509,7 @@ aside {
 
 .dimensionRow {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(180px, 260px) 42px;
+  grid-template-columns: minmax(120px, 1fr) minmax(80px, 160px) 34px;
   align-items: center;
   gap: 8px;
   font-size: 12px;
@@ -454,7 +544,7 @@ aside {
 
 .scoreRow {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(160px, 260px) 52px;
+  grid-template-columns: minmax(120px, 1fr) minmax(80px, 150px) 44px;
   align-items: center;
   gap: 8px;
   margin-top: 8px;
@@ -637,30 +727,20 @@ meter {
 }
 
 .healthPanel {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.8fr) minmax(360px, 1.2fr);
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.healthPanel > .panelHeader {
-  grid-column: 1 / -1;
-}
-
-.systemScore {
-  min-width: 0;
-}
-
+.systemScore,
 .dimensionBars,
 .serviceScores {
   min-width: 0;
 }
 
-.dimensionBars {
-  margin-top: 0;
-}
-
+.dimensionBars,
 .serviceScores {
-  grid-column: 1 / -1;
+  margin-top: 0;
 }
 
 @media (max-width: 1320px) {
