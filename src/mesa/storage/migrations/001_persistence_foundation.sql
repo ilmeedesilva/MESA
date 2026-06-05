@@ -78,3 +78,5 @@ CREATE INDEX IF NOT EXISTS idx_scans_project_id ON scans(project_id);
 CREATE INDEX IF NOT EXISTS idx_findings_scan_id ON findings(scan_id);
 CREATE INDEX IF NOT EXISTS idx_services_scan_id ON services(scan_id);
 CREATE INDEX IF NOT EXISTS idx_dependencies_scan_id ON dependencies(scan_id);
+CREATE INDEX IF NOT EXISTS idx_snapshots_project_id ON snapshots(project_id);
+CREATE INDEX IF NOT EXISTS idx_snapshots_scan_id ON snapshots(scan_id);

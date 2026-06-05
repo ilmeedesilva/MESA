@@ -7,9 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from mesa import __version__
 from mesa.analysis import analyze_services
+from mesa.analysis.evolution import compare_scan_results
 from mesa.models import (
     AnalysisRequest,
     AnalysisResult,
+    EvolutionReport,
     Finding,
     HealthScore,
     PersistedScanResult,
@@ -17,6 +19,7 @@ from mesa.models import (
     ProjectRecord,
     RunScanRequest,
     ScanRecord,
+    SnapshotRecord,
 )
 from mesa.storage import (
     InMemoryPersistenceRepository,
@@ -116,6 +119,60 @@ def get_scan_history(project_id: str, request: Request) -> list[ScanRecord]:
     if repository.get_project(project_id) is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return repository.list_scans(project_id)
+
+
+
+
+@app.get("/projects/{project_id}/snapshots", response_model=list[SnapshotRecord])
+def get_project_snapshots(project_id: str, request: Request) -> list[SnapshotRecord]:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return repository.list_snapshots(project_id)
+
+
+@app.get("/projects/{project_id}/evolution", response_model=list[EvolutionReport])
+def get_project_evolution_timeline(project_id: str, request: Request) -> list[EvolutionReport]:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    scans = list(reversed(repository.list_scans(project_id)))
+    reports: list[EvolutionReport] = []
+    for previous, current in zip(scans, scans[1:]):
+        previous_result = repository.get_scan_result(previous.id)
+        current_result = repository.get_scan_result(current.id)
+        if previous_result is None or current_result is None:
+            continue
+        reports.append(
+            compare_scan_results(project_id, previous.id, previous_result, current.id, current_result)
+        )
+    return reports
+
+
+@app.get("/projects/{project_id}/evolution/compare", response_model=EvolutionReport)
+def compare_project_snapshots(
+    project_id: str,
+    base_scan_id: str,
+    target_scan_id: str,
+    request: Request,
+) -> EvolutionReport:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    base_scan = repository.get_scan(base_scan_id)
+    target_scan = repository.get_scan(target_scan_id)
+    if base_scan is None or target_scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    if base_scan.project_id != project_id or target_scan.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Scan not found for project")
+
+    base_result = repository.get_scan_result(base_scan_id)
+    target_result = repository.get_scan_result(target_scan_id)
+    if base_result is None or target_result is None:
+        raise HTTPException(status_code=404, detail="Scan report not found")
+    return compare_scan_results(project_id, base_scan_id, base_result, target_scan_id, target_result)
 
 
 @app.get("/scans/{scan_id}", response_model=PersistedScanResult)

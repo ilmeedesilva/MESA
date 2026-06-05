@@ -288,6 +288,90 @@ aside {
   font-size: 12px;
 }
 
+
+.evolutionPanel {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.evolutionSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.evolutionSummary div {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.evolutionSummary strong {
+  display: block;
+  color: #2563eb;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.evolutionSummary span,
+.evolutionTimeline span,
+.evolutionTimeline small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.evolutionSentence {
+  margin-top: 12px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.evolutionRecommendations {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid #2563eb;
+  border-radius: 0 8px 8px 0;
+  background: #eff6ff;
+}
+
+.evolutionRecommendations strong,
+.evolutionRecommendations span {
+  display: block;
+}
+
+.evolutionRecommendations span {
+  margin-top: 4px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.evolutionTimeline {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  overflow-x: auto;
+}
+
+.evolutionTimeline article {
+  min-width: 180px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.evolutionTimeline strong {
+  display: block;
+  font-size: 13px;
+}
+
 .contentGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
@@ -762,7 +846,8 @@ meter {
 
   .dashboardShell,
   .contentGrid,
-  .summaryStrip {
+  .summaryStrip,
+  .evolutionSummary {
     grid-template-columns: 1fr;
   }
 

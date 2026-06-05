@@ -75,6 +75,64 @@ def test_project_scan_persistence_endpoints() -> None:
     del app.state.persistence_repository
 
 
+def test_project_evolution_timeline_compares_consecutive_snapshots() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Evolution Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    first_scan = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert first_scan.status_code == 201
+    first_scan_id = first_scan.json()["scan"]["id"]
+
+    second_scan = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+            ]
+        },
+    )
+    assert second_scan.status_code == 201
+    second_scan_id = second_scan.json()["scan"]["id"]
+
+    snapshots_response = client.get(f"/projects/{project_id}/snapshots")
+    assert snapshots_response.status_code == 200
+    assert len(snapshots_response.json()) == 2
+
+    timeline_response = client.get(f"/projects/{project_id}/evolution")
+    assert timeline_response.status_code == 200
+    timeline = timeline_response.json()
+    assert len(timeline) == 1
+    assert timeline[0]["base_scan_id"] == first_scan_id
+    assert timeline[0]["target_scan_id"] == second_scan_id
+    assert timeline[0]["risk_trend"]["new_risk_count"] >= 1
+    assert timeline[0]["new_dependencies"] or timeline[0]["removed_dependencies"]
+    assert timeline[0]["recommendations"]
+
+    compare_response = client.get(
+        f"/projects/{project_id}/evolution/compare",
+        params={"base_scan_id": first_scan_id, "target_scan_id": second_scan_id},
+    )
+    assert compare_response.status_code == 200
+    comparison = compare_response.json()
+    assert comparison["architecture_change_summary"]["summary"]
+    assert comparison["score_trend"]["system_delta"] is not None
+
+    del app.state.persistence_repository
+
+
 class FakeArchitectureStore:
     def __init__(self) -> None:
         self.saved: list[tuple[str, str, object]] = []
