@@ -74,6 +74,21 @@ CREATE TABLE IF NOT EXISTS snapshots (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+
+CREATE TABLE IF NOT EXISTS policies (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    rule TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    description TEXT,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_policies_project_id ON policies(project_id);
+
 CREATE INDEX IF NOT EXISTS idx_scans_project_id ON scans(project_id);
 CREATE INDEX IF NOT EXISTS idx_findings_scan_id ON findings(scan_id);
 CREATE INDEX IF NOT EXISTS idx_services_scan_id ON services(scan_id);

@@ -118,6 +118,16 @@ type ProjectRecord = {
   created_at?: string | null;
 };
 
+type PolicyRecord = {
+  id: string;
+  project_id: string;
+  name: string;
+  rule: string;
+  severity: string;
+  description?: string | null;
+  enabled: boolean;
+};
+
 type ScanRecord = {
   id: string;
   project_id: string;
@@ -189,6 +199,21 @@ const defaultPaths = [
 
 const projectStorageKey = "mesa.projects";
 
+const defaultPolicyDocument = `policies:
+  - id: no-cycles
+    name: No cyclic dependencies
+    rule: dependency_cycle_count == 0
+    severity: critical
+  - id: no-hardcoded-service-urls
+    name: No hard-coded service URLs
+    rule: hard_coded_service_url_count == 0
+    severity: high
+  - id: max-outbound-dependencies
+    name: Maximum outbound dependencies
+    rule: outbound_dependencies <= 5
+    severity: high
+`;
+
 const severityRank: Record<string, number> = {
   CRITICAL: 4,
   HIGH: 3,
@@ -204,6 +229,8 @@ function App() {
   const [paths, setPaths] = React.useState(defaultPaths);
   const [history, setHistory] = React.useState<ScanRecord[]>([]);
   const [evolution, setEvolution] = React.useState<EvolutionReport[]>([]);
+  const [policyText, setPolicyText] = React.useState(defaultPolicyDocument);
+  const [policyCount, setPolicyCount] = React.useState(0);
   const [activeScan, setActiveScan] = React.useState<ScanRecord | null>(null);
   const [result, setResult] = React.useState<AnalysisResult | null>(null);
   const [displayGraph, setDisplayGraph] = React.useState<DisplayGraph | null>(null);
@@ -212,6 +239,7 @@ function App() {
   const [isCreating, setIsCreating] = React.useState(false);
   const [isScanning, setIsScanning] = React.useState(false);
   const [isLoadingScan, setIsLoadingScan] = React.useState(false);
+  const [isSavingPolicies, setIsSavingPolicies] = React.useState(false);
   const [selectedFinding, setSelectedFinding] = React.useState<Finding | null>(null);
   const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
   const [filters, setFilters] = React.useState<Filters>({
@@ -232,6 +260,8 @@ function App() {
     if (!selectedProjectId) {
       setHistory([]);
       setEvolution([]);
+      setPolicyCount(0);
+      setPolicyText(defaultPolicyDocument);
       setActiveScan(null);
       setResult(null);
       setDisplayGraph(null);
@@ -239,6 +269,7 @@ function App() {
       return;
     }
     void loadHistory(selectedProjectId);
+    void loadPolicies(selectedProjectId);
   }, [selectedProjectId]);
 
   const aggregatedEdges = React.useMemo(
@@ -353,6 +384,38 @@ function App() {
     }
   }
 
+  async function loadPolicies(projectId: string) {
+    try {
+      const policies = await api<PolicyRecord[]>(`/api/projects/${projectId}/policies`);
+      setPolicyCount(policies.length);
+      if (policies.length > 0) setPolicyText(policyDocumentFromRecords(policies));
+    } catch {
+      setPolicyCount(0);
+    }
+  }
+
+  async function savePolicies() {
+    if (!selectedProjectId) {
+      setError("Create or select a project before saving policies.");
+      return;
+    }
+    setError(null);
+    setIsSavingPolicies(true);
+    try {
+      const policies = await api<PolicyRecord[]>(`/api/projects/${selectedProjectId}/policies/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: policyText })
+      });
+      setPolicyCount(policies.length);
+      setPolicyText(policyDocumentFromRecords(policies));
+    } catch (caught) {
+      setError(messageFor(caught, "Could not save policies"));
+    } finally {
+      setIsSavingPolicies(false);
+    }
+  }
+
   async function loadScan(scanId: string) {
     setError(null);
     setIsLoadingScan(true);
@@ -440,6 +503,19 @@ function App() {
             <textarea id="paths" value={paths} onChange={(event) => setPaths(event.target.value)} />
             <p className="hint">Use Docker paths. Add one service directory per line.</p>
             {error ? <div className="error">{error}</div> : null}
+          </section>
+
+          <section className="panelBlock policyEditor">
+            <div className="panelHeader compact">
+              <h2>Governance Policies</h2>
+              <span>{policyCount} active</span>
+            </div>
+            <label htmlFor="policyText">Policy YAML</label>
+            <textarea id="policyText" value={policyText} onChange={(event) => setPolicyText(event.target.value)} />
+            <p className="hint">Policies run during project scans and violations appear as findings.</p>
+            <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProjectId}>
+              {isSavingPolicies ? "Saving..." : "Save Policies"}
+            </button>
           </section>
         </aside>
 
@@ -1253,6 +1329,19 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 function servicePathsFromText(value: string) {
   return value.split("\n").map((item) => item.trim()).filter(Boolean);
+}
+
+function policyDocumentFromRecords(policies: PolicyRecord[]) {
+  const lines = ["policies:"];
+  for (const policy of policies) {
+    lines.push(`  - id: ${policy.id}`);
+    lines.push(`    name: ${policy.name}`);
+    lines.push(`    rule: ${policy.rule}`);
+    lines.push(`    severity: ${policy.severity.toLowerCase()}`);
+    lines.push(`    enabled: ${policy.enabled ? "true" : "false"}`);
+    if (policy.description) lines.push(`    description: ${policy.description}`);
+  }
+  return lines.join("\n") + "\n";
 }
 
 function loadStoredProjects(): ProjectRecord[] {

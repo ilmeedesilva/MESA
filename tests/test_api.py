@@ -166,6 +166,80 @@ class FakeArchitectureStore:
         return [{"service": "order-service", "risk_reason": "dependency_hotspot"}]
 
 
+def test_governance_policies_run_during_scan_and_store_findings() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Governance Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    policy_document = """
+policies:
+  - id: no-cycles
+    name: No cyclic dependencies
+    rule: dependency_cycle_count == 0
+    severity: critical
+  - id: max-outbound
+    name: Maximum outbound dependencies
+    rule: outbound_dependencies <= 0
+    severity: high
+"""
+    import_response = client.post(
+        f"/projects/{project_id}/policies/import",
+        json={"content": policy_document},
+    )
+    assert import_response.status_code == 200
+    policies = import_response.json()
+    assert {policy["id"] for policy in policies} == {"no-cycles", "max-outbound"}
+
+    update_response = client.put(
+        f"/projects/{project_id}/policies/max-outbound",
+        json={
+            "id": "max-outbound",
+            "name": "Maximum outbound dependencies",
+            "rule": "outbound_dependencies <= 5",
+            "severity": "HIGH",
+            "enabled": True,
+        },
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["rule"] == "outbound_dependencies <= 5"
+
+    list_response = client.get(f"/projects/{project_id}/policies")
+    assert list_response.status_code == 200
+    assert len(list_response.json()) == 2
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+    findings = scan_response.json()["result"]["findings"]
+    governance = [
+        finding for finding in findings
+        if finding["type"] == "GOVERNANCE_POLICY_VIOLATION"
+    ]
+    assert governance
+    assert governance[0]["evidence"][0]["policy_id"] == "no-cycles"
+    assert governance[0]["recommendations"]
+
+    persisted_findings = client.get(f"/scans/{scan_id}/findings")
+    assert persisted_findings.status_code == 200
+    assert any(
+        finding["type"] == "GOVERNANCE_POLICY_VIOLATION"
+        for finding in persisted_findings.json()
+    )
+
+    del app.state.persistence_repository
+
+
 def test_project_scan_writes_architecture_graph_and_exposes_queries() -> None:
     app.state.persistence_repository = InMemoryPersistenceRepository()
     fake_store = FakeArchitectureStore()

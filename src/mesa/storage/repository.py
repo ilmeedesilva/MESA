@@ -15,6 +15,8 @@ from mesa.models import (
     AnalysisResult,
     Finding,
     HealthScore,
+    PolicyCreate,
+    PolicyRecord,
     ProjectCreate,
     ProjectRecord,
     ScanRecord,
@@ -65,6 +67,18 @@ class PersistenceRepository(Protocol):
     def list_snapshots(self, project_id: str) -> list[SnapshotRecord]:
         ...
 
+    def create_policy(self, project_id: str, data: PolicyCreate) -> PolicyRecord:
+        ...
+
+    def update_policy(self, project_id: str, policy_id: str, data: PolicyCreate) -> PolicyRecord | None:
+        ...
+
+    def list_policies(self, project_id: str) -> list[PolicyRecord]:
+        ...
+
+    def upsert_policies(self, project_id: str, policies: list[PolicyCreate]) -> list[PolicyRecord]:
+        ...
+
 
 class InMemoryPersistenceRepository:
     def __init__(self) -> None:
@@ -72,6 +86,7 @@ class InMemoryPersistenceRepository:
         self.scans: dict[str, ScanRecord] = {}
         self.results: dict[str, AnalysisResult] = {}
         self.snapshots: dict[str, SnapshotRecord] = {}
+        self.policies: dict[str, PolicyRecord] = {}
 
     def _connect(self, **kwargs):
         last_error: Exception | None = None
@@ -146,6 +161,53 @@ class InMemoryPersistenceRepository:
     def list_snapshots(self, project_id: str) -> list[SnapshotRecord]:
         snapshots = [snapshot for snapshot in self.snapshots.values() if snapshot.project_id == project_id]
         return sorted(snapshots, key=lambda snapshot: snapshot.created_at or "", reverse=True)
+
+    def create_policy(self, project_id: str, data: PolicyCreate) -> PolicyRecord:
+        policy_id = data.id or str(uuid4())
+        policy = PolicyRecord(
+            id=policy_id,
+            project_id=project_id,
+            name=data.name,
+            rule=data.rule,
+            severity=data.severity,
+            description=data.description,
+            enabled=data.enabled,
+            created_at=_now_iso(),
+            updated_at=_now_iso(),
+        )
+        self.policies[policy.id] = policy
+        return policy
+
+    def update_policy(self, project_id: str, policy_id: str, data: PolicyCreate) -> PolicyRecord | None:
+        existing = self.policies.get(policy_id)
+        if existing is None or existing.project_id != project_id:
+            return None
+        updated = existing.model_copy(
+            update={
+                "name": data.name,
+                "rule": data.rule,
+                "severity": data.severity,
+                "description": data.description,
+                "enabled": data.enabled,
+                "updated_at": _now_iso(),
+            }
+        )
+        self.policies[policy_id] = updated
+        return updated
+
+    def list_policies(self, project_id: str) -> list[PolicyRecord]:
+        return sorted(
+            [policy for policy in self.policies.values() if policy.project_id == project_id],
+            key=lambda policy: policy.id,
+        )
+
+    def upsert_policies(self, project_id: str, policies: list[PolicyCreate]) -> list[PolicyRecord]:
+        records = []
+        for policy in policies:
+            policy_id = policy.id or str(uuid4())
+            updated = self.update_policy(project_id, policy_id, policy)
+            records.append(updated if updated else self.create_policy(project_id, policy.model_copy(update={"id": policy_id})))
+        return records
 
 
 class PostgresPersistenceRepository:
@@ -351,6 +413,63 @@ class PostgresPersistenceRepository:
                 (project_id,),
             ).fetchall()
         return [SnapshotRecord(**row) for row in rows]
+
+    def create_policy(self, project_id: str, data: PolicyCreate) -> PolicyRecord:
+        policy_id = data.id or str(uuid4())
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                INSERT INTO policies (id, project_id, name, rule, severity, description, enabled)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, project_id, name, rule, severity, description, enabled,
+                          created_at::text, updated_at::text
+                """,
+                (
+                    policy_id, project_id, data.name, data.rule, data.severity.value,
+                    data.description, data.enabled,
+                ),
+            ).fetchone()
+        return PolicyRecord(**row)
+
+    def update_policy(self, project_id: str, policy_id: str, data: PolicyCreate) -> PolicyRecord | None:
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                UPDATE policies
+                SET name = %s, rule = %s, severity = %s, description = %s,
+                    enabled = %s, updated_at = now()
+                WHERE project_id = %s AND id = %s
+                RETURNING id, project_id, name, rule, severity, description, enabled,
+                          created_at::text, updated_at::text
+                """,
+                (
+                    data.name, data.rule, data.severity.value, data.description,
+                    data.enabled, project_id, policy_id,
+                ),
+            ).fetchone()
+        return PolicyRecord(**row) if row else None
+
+    def list_policies(self, project_id: str) -> list[PolicyRecord]:
+        with self._connect(row_factory=dict_row) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, project_id, name, rule, severity, description, enabled,
+                       created_at::text, updated_at::text
+                FROM policies
+                WHERE project_id = %s
+                ORDER BY id ASC
+                """,
+                (project_id,),
+            ).fetchall()
+        return [PolicyRecord(**row) for row in rows]
+
+    def upsert_policies(self, project_id: str, policies: list[PolicyCreate]) -> list[PolicyRecord]:
+        records = []
+        for policy in policies:
+            policy_id = policy.id or str(uuid4())
+            updated = self.update_policy(project_id, policy_id, policy)
+            records.append(updated if updated else self.create_policy(project_id, policy.model_copy(update={"id": policy_id})))
+        return records
 
 
 def _now_iso() -> str:
