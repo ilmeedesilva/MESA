@@ -211,6 +211,50 @@ def test_health_scores_are_generated_and_explainable() -> None:
     assert platform_score["recommendations"]
 
 
+def test_findings_include_evidence_grounded_structured_recommendations() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "god" / "platform-service"),
+            str(ROOT / "god" / "order-service"),
+            str(ROOT / "god" / "billing-service"),
+            str(ROOT / "god" / "inventory-service"),
+            str(ROOT / "god" / "user-service"),
+            str(ROOT / "god" / "payment-service"),
+            str(ROOT / "god" / "notification-service"),
+        ]
+    )
+
+    assert result.findings
+    for finding in result.findings:
+        assert finding.recommendation
+        assert finding.recommendations
+        recommendation = finding.recommendations[0]
+        assert recommendation.root_cause
+        assert recommendation.architectural_consequence
+        assert recommendation.affected_services == finding.services
+        assert recommendation.refactoring_steps
+        assert recommendation.expected_impact
+        assert recommendation.priority in {"Immediate", "High", "Medium", "Low"}
+        assert recommendation.estimated_difficulty in {"Low", "Medium", "High"}
+        assert recommendation.evidence
+        assert recommendation.source.startswith("rule-based")
+
+
+def test_recommendations_work_without_llm_configuration(monkeypatch) -> None:
+    monkeypatch.delenv("MESA_LLM_RECOMMENDATIONS", raising=False)
+    result = analyze_services([str(ROOT / "hardcoded" / "order-service")])
+
+    hardcoded = next(
+        finding for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    )
+    recommendation = hardcoded.recommendations[0]
+
+    assert recommendation.source == "rule-based"
+    assert recommendation.affected_files
+    assert "service discovery" in " ".join(recommendation.refactoring_steps).lower()
+
+
 def test_health_score_calculation_is_deterministic() -> None:
     service_paths = [
         str(ROOT / "hardcoded" / "order-service"),

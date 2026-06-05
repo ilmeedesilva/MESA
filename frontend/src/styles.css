@@ -756,6 +756,69 @@ meter {
   font-size: 13px;
 }
 
+.structuredRecommendation {
+  display: grid;
+  gap: 12px;
+}
+
+.recommendationHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.recommendationHeader span {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.structuredRecommendation dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.structuredRecommendation dt {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.structuredRecommendation dd {
+  margin: 0;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.structuredRecommendation ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #475569;
+}
+
+.structuredRecommendation li {
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.affectedFiles {
+  display: grid;
+  gap: 6px;
+}
+
+.affectedFiles code {
+  display: block;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #1e293b;
+  background: #ffffff;
+  font-size: 11px;
+}
+
 .recommendation small {
   display: block;
   color: #475569;
