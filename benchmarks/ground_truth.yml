@@ -1,0 +1,170 @@
+benchmark: mesa-phase-11-synthetic-benchmarks
+version: 1
+matching: type_and_service_set
+systems:
+  - id: clean-architecture
+    name: Clean architecture
+    category: clean architecture
+    service_paths:
+      - ../tests/fixtures/clean/order-service
+      - ../tests/fixtures/clean/user-service
+    ground_truth: []
+
+  - id: chatty-services
+    name: Chatty services
+    category: chatty services
+    service_paths:
+      - ../tests/fixtures/chatty/order-service
+      - ../tests/fixtures/chatty/user-service
+    ground_truth:
+      - type: CHATTY_SERVICE
+        services: [order-service, user-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+
+  - id: cyclic-dependencies
+    name: Cyclic dependencies
+    category: cyclic dependencies
+    service_paths:
+      - ../tests/fixtures/cycle/order-service
+      - ../tests/fixtures/cycle/payment-service
+    ground_truth:
+      - type: CYCLIC_DEPENDENCY
+        services: [order-service, payment-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [payment-service]
+
+  - id: shared-database
+    name: Shared database
+    category: shared database
+    service_paths:
+      - ../tests/fixtures/shared-db/order-service
+      - ../tests/fixtures/shared-db/payment-service
+    ground_truth:
+      - type: SHARED_DATABASE
+        services: [order-service, payment-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [payment-service]
+
+  - id: hard-coded-dependencies
+    name: Hard-coded dependencies
+    category: hard-coded dependencies
+    service_paths:
+      - ../tests/fixtures/hardcoded/order-service
+      - ../tests/fixtures/hardcoded/billing-service
+    ground_truth:
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [billing-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [billing-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [billing-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+
+  - id: god-service
+    name: God Service
+    category: God Service
+    service_paths:
+      - ../tests/fixtures/god/platform-service
+      - ../tests/fixtures/god/order-service
+      - ../tests/fixtures/god/billing-service
+      - ../tests/fixtures/god/inventory-service
+      - ../tests/fixtures/god/user-service
+      - ../tests/fixtures/god/payment-service
+      - ../tests/fixtures/god/notification-service
+    ground_truth:
+      - type: CYCLIC_DEPENDENCY
+        services: [billing-service, platform-service]
+      - type: CYCLIC_DEPENDENCY
+        services: [order-service, platform-service]
+      - type: CYCLIC_DEPENDENCY
+        services: [inventory-service, platform-service]
+      - type: GOD_SERVICE
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [billing-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [inventory-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+
+  - id: distributed-monolith
+    name: Distributed monolith composite
+    category: distributed monolith
+    notes: Composite benchmark where cyclic dependencies, central platform ownership, and hard-coded service coupling indicate distributed monolith risk.
+    service_paths:
+      - ../tests/fixtures/god/platform-service
+      - ../tests/fixtures/god/order-service
+      - ../tests/fixtures/god/billing-service
+      - ../tests/fixtures/god/inventory-service
+      - ../tests/fixtures/god/user-service
+      - ../tests/fixtures/god/payment-service
+      - ../tests/fixtures/god/notification-service
+    ground_truth:
+      - type: CYCLIC_DEPENDENCY
+        services: [billing-service, platform-service]
+      - type: CYCLIC_DEPENDENCY
+        services: [order-service, platform-service]
+      - type: CYCLIC_DEPENDENCY
+        services: [inventory-service, platform-service]
+      - type: GOD_SERVICE
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [billing-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [inventory-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [order-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-service]

@@ -9,6 +9,7 @@ from rich.table import Table
 
 from mesa import __version__
 from mesa.analysis import analyze_services
+from mesa.evaluation import evaluate_benchmark, export_evaluation
 
 app = typer.Typer(help="MESA cross-service static architecture analyzer.")
 console = Console()
@@ -34,6 +35,25 @@ def analyze(
         return
 
     _print_console_report(result.model_dump())
+
+
+@app.command()
+def evaluate(
+    benchmark: Path = typer.Argument(..., help="Ground-truth benchmark YAML file."),
+    output_dir: Path = typer.Option(Path("evaluation-results"), "--output-dir", "-o", help="Directory for CSV/JSON metrics."),
+    chatty_threshold: int = typer.Option(3, help="Static call-site threshold for chatty services."),
+) -> None:
+    report = evaluate_benchmark(benchmark, chatty_threshold=chatty_threshold)
+    paths = export_evaluation(report, output_dir)
+    overall = report["overall"]
+    console.print("[bold]MESA Evaluation Report[/bold]")
+    console.print(
+        f"Precision: {overall['precision']} | "
+        f"Recall: {overall['recall']} | "
+        f"F1: {overall['f1_score']}"
+    )
+    console.print(f"Wrote JSON results to {paths['json']}")
+    console.print(f"Wrote CSV results to {paths['csv']}")
 
 
 def _print_console_report(result: dict) -> None:
