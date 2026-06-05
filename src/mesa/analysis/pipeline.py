@@ -4,6 +4,7 @@ from pathlib import Path
 
 from mesa.analysis.extractor import extract_service_facts
 from mesa.analysis.health import calculate_health_scores
+from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.detectors import (
     ChattyServiceDetector,
     CyclicDependencyDetector,
@@ -33,6 +34,7 @@ def analyze_services(service_paths: list[str], chatty_threshold: int = 3) -> Ana
     _attach_linked_finding_counts(graph, findings)
     god_service_scores = [score.to_dict() for score in score_god_services(graph)]
     findings.extend(GodServiceDetector().detect(graph))
+    findings = enrich_findings_with_recommendations(findings)
     health_scores = calculate_health_scores(graph, findings, god_service_scores)
 
     return AnalysisResult(

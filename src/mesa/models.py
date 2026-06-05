@@ -117,6 +117,19 @@ class HealthScore(BaseModel):
     recommendations: list[str] = Field(default_factory=list)
 
 
+class FindingRecommendation(BaseModel):
+    root_cause: str
+    architectural_consequence: str
+    affected_services: list[str] = Field(default_factory=list)
+    affected_files: list[str] = Field(default_factory=list)
+    refactoring_steps: list[str] = Field(default_factory=list)
+    expected_impact: str
+    priority: str
+    estimated_difficulty: str
+    evidence: list[dict[str, Any]] = Field(default_factory=list)
+    source: str = "rule-based"
+
+
 class Finding(BaseModel):
     id: str
     type: FindingType
@@ -126,6 +139,7 @@ class Finding(BaseModel):
     description: str
     evidence: list[dict[str, Any]]
     recommendation: str
+    recommendations: list[FindingRecommendation] = Field(default_factory=list)
 
 
 class AnalysisRequest(BaseModel):

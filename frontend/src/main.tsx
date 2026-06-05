@@ -3,6 +3,19 @@ import ReactDOM from "react-dom/client";
 import cytoscape from "cytoscape";
 import "./styles.css";
 
+type FindingRecommendation = {
+  root_cause: string;
+  architectural_consequence: string;
+  affected_services: string[];
+  affected_files: string[];
+  refactoring_steps: string[];
+  expected_impact: string;
+  priority: string;
+  estimated_difficulty: string;
+  evidence: Array<Record<string, unknown>>;
+  source: string;
+};
+
 type Finding = {
   id: string;
   type: string;
@@ -12,6 +25,7 @@ type Finding = {
   description: string;
   evidence: Array<Record<string, unknown>>;
   recommendation: string;
+  recommendations?: FindingRecommendation[];
 };
 
 type GraphNode = {
@@ -711,6 +725,45 @@ function DimensionBars({ breakdown }: { breakdown: Record<string, number> }) {
   );
 }
 
+function RecommendationDetails({ finding }: { finding: Finding }) {
+  const recommendation = finding.recommendations?.[0];
+  if (!recommendation) {
+    return (
+      <div className="recommendation">
+        <strong>Recommendation</strong>
+        <small>{finding.recommendation}</small>
+      </div>
+    );
+  }
+  return (
+    <section className="recommendation structuredRecommendation">
+      <div className="recommendationHeader">
+        <strong>Architectural Recommendation</strong>
+        <span>{recommendation.priority} priority - {recommendation.estimated_difficulty} difficulty</span>
+      </div>
+      <dl>
+        <dt>Root cause</dt>
+        <dd>{recommendation.root_cause}</dd>
+        <dt>Consequence</dt>
+        <dd>{recommendation.architectural_consequence}</dd>
+        <dt>Expected impact</dt>
+        <dd>{recommendation.expected_impact}</dd>
+      </dl>
+      {recommendation.affected_files.length > 0 ? (
+        <div className="affectedFiles">
+          <strong>Affected files</strong>
+          {recommendation.affected_files.slice(0, 5).map((file) => <code key={file}>{file}</code>)}
+        </div>
+      ) : null}
+      <strong>Refactoring steps</strong>
+      <ol>
+        {recommendation.refactoring_steps.map((step) => <li key={step}>{step}</li>)}
+      </ol>
+      <small>Source: {recommendation.source}</small>
+    </section>
+  );
+}
+
 function FindingDrawer({ finding, onClose }: { finding: Finding; onClose: () => void }) {
   return (
     <div className="drawerOverlay" onClick={onClose}>
@@ -725,10 +778,7 @@ function FindingDrawer({ finding, onClose }: { finding: Finding; onClose: () => 
           {finding.services.map((service) => <span key={service}>{service}</span>)}
         </div>
         <p>{finding.description}</p>
-        <div className="recommendation">
-          <strong>Recommendation</strong>
-          <small>{finding.recommendation}</small>
-        </div>
+        <RecommendationDetails finding={finding} />
         <h3>Evidence</h3>
         <pre>{JSON.stringify(finding.evidence, null, 2)}</pre>
       </aside>
