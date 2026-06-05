@@ -17,14 +17,54 @@ type Finding = {
 type GraphNode = {
   id: string;
   type?: string;
+  label?: string;
+  serviceName?: string;
+  risk?: string;
+  findingCount?: number;
+  healthScore?: number;
   language?: string;
+  properties?: Record<string, unknown>;
 };
 
 type GraphEdge = {
   source: string;
   target: string;
   type?: string;
+  label?: string;
+  risk?: string;
+  findingCount?: number;
+  evidence?: Record<string, unknown>;
   source_location?: unknown;
+};
+
+type DigitalTwinGraph = {
+  nodes: Array<{
+    element_id: string;
+    labels: string[];
+    properties: Record<string, unknown>;
+  }>;
+  relationships: Array<{
+    source: string;
+    target: string;
+    type: string;
+    properties: Record<string, unknown>;
+  }>;
+};
+
+type DisplayGraph = {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  source: "digital-twin" | "scan-report";
+};
+
+type GraphSelection = {
+  kind: "node" | "edge";
+  id: string;
+  title: string;
+  subtitle: string;
+  properties: Record<string, unknown>;
+  findings: Finding[];
+  healthScore?: HealthScore;
 };
 
 type HealthScore = {
@@ -120,12 +160,14 @@ function App() {
   const [history, setHistory] = React.useState<ScanRecord[]>([]);
   const [activeScan, setActiveScan] = React.useState<ScanRecord | null>(null);
   const [result, setResult] = React.useState<AnalysisResult | null>(null);
+  const [displayGraph, setDisplayGraph] = React.useState<DisplayGraph | null>(null);
   const [scores, setScores] = React.useState<HealthScore[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [isCreating, setIsCreating] = React.useState(false);
   const [isScanning, setIsScanning] = React.useState(false);
   const [isLoadingScan, setIsLoadingScan] = React.useState(false);
   const [selectedFinding, setSelectedFinding] = React.useState<Finding | null>(null);
+  const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
   const [filters, setFilters] = React.useState<Filters>({
     type: "ALL",
     severity: "ALL",
@@ -145,6 +187,7 @@ function App() {
       setHistory([]);
       setActiveScan(null);
       setResult(null);
+      setDisplayGraph(null);
       setScores([]);
       return;
     }
@@ -152,8 +195,8 @@ function App() {
   }, [selectedProjectId]);
 
   const aggregatedEdges = React.useMemo(
-    () => (result ? aggregateEdges(result.graph.edges) : []),
-    [result]
+    () => (displayGraph ? aggregateEdges(displayGraph.edges) : []),
+    [displayGraph]
   );
 
   const filteredFindings = React.useMemo(
@@ -164,9 +207,9 @@ function App() {
   const filterOptions = React.useMemo(() => buildFilterOptions(result?.findings ?? []), [result]);
 
   React.useEffect(() => {
-    if (!result || !graphRef.current) return;
+    if (!displayGraph || !graphRef.current) return;
 
-    const elements = buildGraphElements(result.graph.nodes, aggregatedEdges);
+    const elements = buildGraphElements(displayGraph.nodes, aggregatedEdges);
     const cy = cytoscape({
       container: graphRef.current,
       elements,
@@ -181,8 +224,14 @@ function App() {
       cy.fit(undefined, 54);
       cy.center();
     });
+    cy.on("tap", "node", (event) => {
+      setSelectedGraphElement(selectionForNode(event.target.data(), result?.findings ?? [], scores));
+    });
+    cy.on("tap", "edge", (event) => {
+      setSelectedGraphElement(selectionForEdge(event.target.data(), displayGraph.nodes, result?.findings ?? []));
+    });
     return () => cy.destroy();
-  }, [aggregatedEdges, result]);
+  }, [aggregatedEdges, displayGraph, result, scores]);
 
   async function createProject() {
     setError(null);
@@ -218,8 +267,12 @@ function App() {
       });
       setActiveScan(payload.scan);
       setResult(payload.result);
-      setScores(flattenScores(payload.result.summary.health_scores));
+      const nextScores = flattenScores(payload.result.summary.health_scores);
+      setScores(nextScores);
+      setDisplayGraph(graphFromReport(payload.result, nextScores));
       setSelectedFinding(null);
+      setSelectedGraphElement(null);
+      await loadDigitalTwinGraph(payload.scan.id, payload.result, nextScores);
       await loadHistory(selectedProjectId, payload.scan.id);
     } catch (caught) {
       setError(messageFor(caught, "Scan failed"));
@@ -250,17 +303,31 @@ function App() {
       const payload = await api<PersistedScanResult>(`/api/scans/${scanId}`);
       setActiveScan(payload.scan);
       setResult(payload.result);
-      setScores(flattenScores(payload.result.summary.health_scores));
+      let nextScores = flattenScores(payload.result.summary.health_scores);
+      setScores(nextScores);
+      setDisplayGraph(graphFromReport(payload.result, nextScores));
       setSelectedFinding(null);
+      setSelectedGraphElement(null);
       try {
-        setScores(await api<HealthScore[]>(`/api/scans/${scanId}/scores`));
+        nextScores = await api<HealthScore[]>(`/api/scans/${scanId}/scores`);
+        setScores(nextScores);
       } catch {
-        setScores(flattenScores(payload.result.summary.health_scores));
+        setScores(nextScores);
       }
+      await loadDigitalTwinGraph(scanId, payload.result, nextScores);
     } catch (caught) {
       setError(messageFor(caught, "Could not load scan"));
     } finally {
       setIsLoadingScan(false);
+    }
+  }
+
+  async function loadDigitalTwinGraph(scanId: string, scanResult: AnalysisResult, currentScores: HealthScore[]) {
+    try {
+      const twin = await api<DigitalTwinGraph>(`/api/scans/${scanId}/graph`);
+      setDisplayGraph(graphFromDigitalTwin(twin, scanResult, currentScores));
+    } catch {
+      setDisplayGraph(graphFromReport(scanResult, currentScores));
     }
   }
 
@@ -354,15 +421,17 @@ function App() {
               <div className="graphHeader">
                 <div>
                   <h2>Architecture Graph</h2>
-                  <p>{activeScan ? `Scan ${shortId(activeScan.id)}` : "Run or select a scan to build the graph"}</p>
+                  <p>{activeScan ? `Scan ${shortId(activeScan.id)} - ${displayGraph?.source === "digital-twin" ? "Digital Twin" : "Report Graph"}` : "Run or select a scan to build the graph"}</p>
                 </div>
                 <div className="legend">
                   <span><i className="serviceDot" /> Service</span>
+                  <span><i className="apiDot" /> API</span>
                   <span><i className="databaseDot" /> Database</span>
-                  <span><i className="edgeLine" /> Dependency</span>
+                  <span><i className="riskLine" /> Risk</span>
                 </div>
               </div>
               {result ? <div ref={graphRef} className="graph" /> : <div className="emptyState">No scan selected.</div>}
+              <GraphInspector selection={selectedGraphElement} />
             </section>
 
             <HealthScoreView systemScore={systemScore ?? null} serviceScores={serviceScores} />
@@ -383,6 +452,43 @@ function App() {
         <FindingDrawer finding={selectedFinding} onClose={() => setSelectedFinding(null)} />
       ) : null}
     </main>
+  );
+}
+
+function GraphInspector({ selection }: { selection: GraphSelection | null }) {
+  if (!selection) {
+    return (
+      <div className="graphInspector emptyInspector">
+        Click a service, API, database, or dependency edge to inspect digital-twin evidence.
+      </div>
+    );
+  }
+  return (
+    <div className="graphInspector">
+      <div className="findingMeta">
+        <span>{selection.kind.toUpperCase()}</span>
+        <strong>{selection.findings.length} linked findings</strong>
+      </div>
+      <h3>{selection.title}</h3>
+      <p>{selection.subtitle}</p>
+      {selection.healthScore ? (
+        <div className="miniHealth">
+          <strong>{selection.healthScore.score.toFixed(1)}</strong>
+          <span>{selection.healthScore.grade} health</span>
+        </div>
+      ) : null}
+      {selection.findings.length > 0 ? (
+        <div className="linkedFindings">
+          {selection.findings.slice(0, 4).map((finding) => (
+            <span key={finding.id} className={`severity ${finding.severity.toLowerCase()}`}>{formatType(finding.type)}</span>
+          ))}
+        </div>
+      ) : null}
+      <details>
+        <summary>Evidence properties</summary>
+        <pre>{JSON.stringify(selection.properties, null, 2)}</pre>
+      </details>
+    </div>
   );
 }
 
@@ -542,10 +648,15 @@ function buildGraphElements(nodes: GraphNode[], edges: AggregatedEdge[]) {
       return {
         data: {
           id: node.id,
-          label: formatNodeLabel(node.id, node.type),
+          label: node.label ?? formatNodeLabel(node.id, node.type),
           type: node.type ?? "service",
-          role: degree === maxDegree && degree > 0 && node.type !== "database" ? "hub" : "node",
-          weight: degree
+          serviceName: node.serviceName ?? node.id,
+          risk: node.risk ?? "none",
+          findingCount: node.findingCount ?? 0,
+          healthScore: node.healthScore ?? 0,
+          properties: node.properties ?? {},
+          role: degree === maxDegree && degree > 0 && node.type === "service" ? "hub" : "node",
+          weight: Math.min(14, degree)
         },
         position: positions.get(node.id) ?? { x: 0, y: 0 }
       };
@@ -557,6 +668,9 @@ function buildGraphElements(nodes: GraphNode[], edges: AggregatedEdge[]) {
         target: edge.target,
         label: edge.label,
         type: edge.type ?? "depends",
+        risk: edge.risk ?? "none",
+        findingCount: edge.findingCount ?? 0,
+        evidence: edge.evidence ?? {},
         count: edge.count
       }
     }))
@@ -565,28 +679,34 @@ function buildGraphElements(nodes: GraphNode[], edges: AggregatedEdge[]) {
 
 function calculateArchitecturePositions(nodes: GraphNode[], edges: AggregatedEdge[]) {
   const positions = new Map<string, { x: number; y: number }>();
-  const serviceNodes = nodes.filter((node) => node.type !== "database").map((node) => node.id).sort();
+  const serviceNodes = nodes.filter((node) => (node.type ?? "service") === "service").sort((a, b) => a.id.localeCompare(b.id));
+  const serviceIds = serviceNodes.map((node) => node.id);
+  const serviceIdByName = new Map(serviceNodes.map((node) => [node.serviceName ?? node.label ?? node.id, node.id]));
+  const apiNodes = nodes.filter((node) => node.type === "api").sort((a, b) => a.id.localeCompare(b.id));
   const databaseNodes = nodes.filter((node) => node.type === "database").map((node) => node.id).sort();
+  const supportNodes = nodes
+    .filter((node) => !["service", "api", "database"].includes(node.type ?? "service"))
+    .sort((a, b) => a.id.localeCompare(b.id));
   const degreeByNode = calculateDegrees(edges);
-  const canvas = { width: 1040, height: 680 };
-  const hub = [...serviceNodes].sort((a, b) => {
+  const canvas = { width: 1420, height: 920 };
+  const hub = [...serviceIds].sort((a, b) => {
     const degreeDelta = (degreeByNode.get(b) ?? 0) - (degreeByNode.get(a) ?? 0);
     return degreeDelta || a.localeCompare(b);
   })[0];
 
   if (!hub) return positions;
 
-  const hubPosition = { x: canvas.width * 0.43, y: canvas.height * 0.43 };
+  const hubPosition = { x: canvas.width * 0.46, y: canvas.height * 0.52 };
   positions.set(hub, hubPosition);
 
   const inbound: string[] = [];
   const outbound: string[] = [];
   const satellites: string[] = [];
 
-  for (const service of serviceNodes.filter((item) => item !== hub)) {
+  for (const service of serviceIds.filter((item) => item !== hub)) {
     const callsHub = edges.some((edge) => edge.source === service && edge.target === hub);
     const calledByHub = edges.some((edge) => edge.source === hub && edge.target === service);
-    if (callsHub) {
+    if (callsHub && !calledByHub) {
       inbound.push(service);
     } else if (calledByHub) {
       outbound.push(service);
@@ -595,32 +715,68 @@ function calculateArchitecturePositions(nodes: GraphNode[], edges: AggregatedEdg
     }
   }
 
-  placeColumn(inbound.sort(), canvas.width * 0.16, 150, 520, positions);
-  placeColumn(outbound.sort(), canvas.width * 0.72, 150, 520, positions);
-  placeColumn(satellites.sort(), canvas.width * 0.43, 80, 150, positions);
+  placeColumn(inbound.sort(), canvas.width * 0.16, 190, 700, positions);
+  placeColumn(outbound.sort(), canvas.width * 0.82, 170, 750, positions);
+  placeRow(satellites.sort(), canvas.width * 0.28, canvas.width * 0.68, 120, positions);
+
+  const apisByService = groupNodesByService(apiNodes);
+  for (const [service, apis] of apisByService) {
+    const ownerPosition = positions.get(serviceIdByName.get(service) ?? service);
+    if (!ownerPosition) continue;
+    apis.forEach((api, index) => {
+      positions.set(api.id, {
+        x: clamp(ownerPosition.x + distribute(index, apis.length, -46, 46), 95, canvas.width - 95),
+        y: clamp(ownerPosition.y - 112, 70, canvas.height - 115)
+      });
+    });
+  }
+
+  supportNodes.forEach((node, index) => {
+    const ownerPosition = node.serviceName ? positions.get(serviceIdByName.get(node.serviceName) ?? node.serviceName) : null;
+    positions.set(node.id, {
+      x: ownerPosition ? clamp(ownerPosition.x - 120, 85, canvas.width - 85) : distribute(index, supportNodes.length, 130, canvas.width - 130),
+      y: ownerPosition ? clamp(ownerPosition.y + 112, 110, canvas.height - 110) : canvas.height * 0.18
+    });
+  });
 
   const databaseOwners = new Map<string, string>();
   databaseNodes.forEach((database) => {
-    const owner = ownerForDatabase(database, edges);
+    const owner = ownerForDatabase(database, edges, nodes);
     if (owner) databaseOwners.set(database, owner);
   });
 
   databaseNodes.forEach((database, index) => {
     const owner = databaseOwners.get(database);
     const ownerPosition = owner ? positions.get(owner) : null;
-    const fallbackX = distribute(index, databaseNodes.length, canvas.width * 0.22, canvas.width * 0.82);
+    const fallbackX = distribute(index, databaseNodes.length, canvas.width * 0.2, canvas.width * 0.8);
     positions.set(database, {
-      x: ownerPosition ? clamp(ownerPosition.x + 110, canvas.width * 0.18, canvas.width * 0.86) : fallbackX,
-      y: canvas.height * 0.78 + (index % 2) * 48
+      x: ownerPosition ? clamp(ownerPosition.x + 150, canvas.width * 0.12, canvas.width * 0.9) : fallbackX,
+      y: ownerPosition ? clamp(ownerPosition.y + 155, canvas.height * 0.66, canvas.height * 0.92) : canvas.height * 0.84
     });
   });
 
   return positions;
 }
 
+function groupNodesByService(nodes: GraphNode[]) {
+  const grouped = new Map<string, GraphNode[]>();
+  for (const node of nodes) {
+    const service = node.serviceName;
+    if (!service) continue;
+    grouped.set(service, [...(grouped.get(service) ?? []), node]);
+  }
+  return grouped;
+}
+
 function placeColumn(items: string[], x: number, yStart: number, yEnd: number, positions: Map<string, { x: number; y: number }>) {
   items.forEach((item, index) => {
     positions.set(item, { x, y: distribute(index, items.length, yStart, yEnd) });
+  });
+}
+
+function placeRow(items: string[], xStart: number, xEnd: number, y: number, positions: Map<string, { x: number; y: number }>) {
+  items.forEach((item, index) => {
+    positions.set(item, { x: distribute(index, items.length, xStart, xEnd), y });
   });
 }
 
@@ -633,7 +789,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-
 function calculateDegrees(edges: AggregatedEdge[]) {
   const degrees = new Map<string, number>();
   for (const edge of edges) {
@@ -643,14 +798,254 @@ function calculateDegrees(edges: AggregatedEdge[]) {
   return degrees;
 }
 
-function ownerForDatabase(database: string, edges: AggregatedEdge[]) {
+function ownerForDatabase(database: string, edges: AggregatedEdge[], nodes: GraphNode[]) {
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const owners = edges
     .filter((edge) => edge.target === database || edge.source === database)
     .map((edge) => (edge.target === database ? edge.source : edge.target))
-    .filter((node) => !node.startsWith("db:"));
+    .filter((nodeId) => nodeById.get(nodeId)?.type === "service");
   return owners.sort()[0];
 }
 
+function graphFromReport(result: AnalysisResult, scores: HealthScore[]): DisplayGraph {
+  const nodes = result.graph.nodes.map((node) => {
+    const type = node.type ?? "service";
+    const serviceName = type === "service" ? node.id : node.serviceName;
+    const linkedFindings = serviceName ? findingsForService(result.findings, serviceName) : [];
+    const health = serviceName ? serviceHealthScore(scores, serviceName) : undefined;
+    return {
+      ...node,
+      type,
+      label: node.label ?? formatNodeLabel(node.id, type),
+      serviceName,
+      risk: riskFromFindings(linkedFindings, health),
+      findingCount: linkedFindings.length,
+      healthScore: health?.score,
+      properties: { id: node.id, type }
+    };
+  });
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  return {
+    source: "scan-report",
+    nodes,
+    edges: result.graph.edges.map((edge) => enrichEdge(edge, result.findings, nodeById))
+  };
+}
+
+function graphFromDigitalTwin(twin: DigitalTwinGraph, result: AnalysisResult, scores: HealthScore[]): DisplayGraph {
+  const rawNodeById = new Map(twin.nodes.map((node) => [node.element_id, node]));
+  const apiCountsByService = new Map<string, number>();
+  const apiBundleByRawId = new Map<string, string>();
+  const nodes: GraphNode[] = [];
+
+  for (const rawNode of twin.nodes) {
+    const type = primaryGraphType(rawNode.labels);
+    const serviceName = serviceNameForNode(type, rawNode.properties);
+    if (type === "api" && serviceName) {
+      apiCountsByService.set(serviceName, (apiCountsByService.get(serviceName) ?? 0) + 1);
+      apiBundleByRawId.set(rawNode.element_id, `api:${serviceName}`);
+      continue;
+    }
+    const node = nodeFromDigitalTwin(rawNode, result.findings, scores);
+    if (node) nodes.push(node);
+  }
+
+  for (const [serviceName, count] of apiCountsByService) {
+    const linkedFindings = findingsForService(result.findings, serviceName);
+    const health = serviceHealthScore(scores, serviceName);
+    nodes.push({
+      id: `api:${serviceName}`,
+      type: "api",
+      label: `APIs (${count})`,
+      serviceName,
+      risk: riskFromFindings(linkedFindings, health),
+      findingCount: linkedFindings.length,
+      healthScore: health?.score,
+      properties: { service: serviceName, api_count: count }
+    });
+  }
+
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const edges = twin.relationships
+    .map((relationship) => {
+      const source = apiBundleByRawId.get(relationship.source) ?? relationship.source;
+      const target = apiBundleByRawId.get(relationship.target) ?? relationship.target;
+      const sourceRaw = rawNodeById.get(relationship.source);
+      const targetRaw = rawNodeById.get(relationship.target);
+      return {
+        source,
+        target,
+        sourceRaw,
+        targetRaw,
+        relationship
+      };
+    })
+    .filter((item) => item.source !== item.target && nodeById.has(item.source) && nodeById.has(item.target))
+    .map((item) => enrichEdge({
+      source: item.source,
+      target: item.target,
+      type: normalizeRelationshipType(item.relationship.type),
+      evidence: {
+        ...item.relationship.properties,
+        source_node_type: item.sourceRaw ? primaryGraphType(item.sourceRaw.labels) : undefined,
+        target_node_type: item.targetRaw ? primaryGraphType(item.targetRaw.labels) : undefined
+      }
+    }, result.findings, nodeById));
+  return { source: "digital-twin", nodes, edges };
+}
+
+function nodeFromDigitalTwin(
+  node: DigitalTwinGraph["nodes"][number],
+  findings: Finding[],
+  scores: HealthScore[]
+): GraphNode | null {
+  const type = primaryGraphType(node.labels);
+  if (type === "project") return null;
+  const serviceName = serviceNameForNode(type, node.properties);
+  const label = labelForDigitalTwinNode(type, node.properties, node.element_id);
+  const linkedFindings = serviceName ? findingsForService(findings, serviceName) : [];
+  const health = serviceName ? serviceHealthScore(scores, serviceName) : undefined;
+  return {
+    id: node.element_id,
+    type,
+    label,
+    serviceName,
+    risk: riskFromFindings(linkedFindings, health),
+    findingCount: linkedFindings.length,
+    healthScore: health?.score,
+    properties: node.properties
+  };
+}
+
+function primaryGraphType(labels: string[]) {
+  const label = labels.find((item) => item !== "ArchitectureNode") ?? labels[0] ?? "Service";
+  const mapped: Record<string, string> = {
+    Project: "project",
+    Service: "service",
+    API: "api",
+    Database: "database",
+    Config: "config",
+    Library: "library",
+    MessageBroker: "message_broker",
+    EnvironmentVariable: "environment_variable"
+  };
+  return mapped[label] ?? label.toLowerCase();
+}
+
+function serviceNameForNode(type: string, properties: Record<string, unknown>) {
+  if (type === "service") return propertyString(properties, "name");
+  return propertyString(properties, "service") ?? propertyString(properties, "owner") ?? propertyString(properties, "service_name");
+}
+
+function labelForDigitalTwinNode(type: string, properties: Record<string, unknown>, fallback: string) {
+  if (type === "api") {
+    const method = propertyString(properties, "method");
+    const path = propertyString(properties, "path") ?? propertyString(properties, "endpoint");
+    return [method, path].filter(Boolean).join(" ") || "API";
+  }
+  if (type === "database") return databaseLabel(properties, fallback);
+  if (type === "config") return propertyString(properties, "name") ?? propertyString(properties, "key") ?? "config";
+  if (type === "library") return propertyString(properties, "name") ?? "library";
+  if (type === "message_broker") return propertyString(properties, "name") ?? "broker";
+  if (type === "environment_variable") return propertyString(properties, "name") ?? propertyString(properties, "key") ?? "env var";
+  return propertyString(properties, "name") ?? propertyString(properties, "key") ?? formatNodeLabel(fallback, type);
+}
+
+function databaseLabel(properties: Record<string, unknown>, fallback: string) {
+  const value = propertyString(properties, "database") ?? propertyString(properties, "name") ?? propertyString(properties, "url") ?? fallback;
+  return value.replace(/^db:/, "").split("/").pop() ?? value;
+}
+
+function enrichEdge(edge: GraphEdge, findings: Finding[], nodeById: Map<string, GraphNode>): GraphEdge {
+  const sourceNode = nodeById.get(edge.source);
+  const targetNode = nodeById.get(edge.target);
+  const sourceService = sourceNode?.serviceName ?? edge.source;
+  const targetService = targetNode?.serviceName ?? edge.target;
+  const linkedFindings = findingsForEdge(findings, sourceService, targetService, edge.type ?? "depends");
+  return {
+    ...edge,
+    label: edge.label ?? formatEdgeLabel(edge.type ?? "depends", 1),
+    risk: edgeRisk(edge.type ?? "depends", linkedFindings),
+    findingCount: linkedFindings.length,
+    evidence: edge.evidence ?? { source_location: edge.source_location }
+  };
+}
+
+function findingsForService(findings: Finding[], service: string) {
+  return findings.filter((finding) => finding.services.includes(service));
+}
+
+function findingsForEdge(findings: Finding[], sourceService: string, targetService: string, edgeType: string) {
+  return findings.filter((finding) => {
+    const hasBothServices = finding.services.includes(sourceService) && finding.services.includes(targetService);
+    if (hasBothServices) return true;
+    if (edgeType.includes("database")) return finding.type.includes("SHARED") || finding.type.includes("DATABASE");
+    return false;
+  });
+}
+
+function serviceHealthScore(scores: HealthScore[], service: string) {
+  return scores.find((score) => score.scope === "service" && score.target === service);
+}
+
+function riskFromFindings(findings: Finding[], health?: HealthScore) {
+  const highest = getHighestSeverity(findings);
+  if (highest !== "None") return highest.toLowerCase();
+  if (health && health.score < 40) return "high";
+  if (health && health.score < 65) return "medium";
+  return "none";
+}
+
+function edgeRisk(edgeType: string, findings: Finding[]) {
+  if (findings.length > 0) return getHighestSeverity(findings).toLowerCase();
+  if (["shared_database", "shares_database_with"].includes(edgeType)) return "high";
+  if (["hard_coded_dependency", "hard_coded_service_dependency"].includes(edgeType)) return "medium";
+  return "none";
+}
+
+function selectionForNode(data: Record<string, unknown>, findings: Finding[], scores: HealthScore[]): GraphSelection {
+  const service = String(data.serviceName ?? data.id);
+  const linkedFindings = findingsForService(findings, service);
+  return {
+    kind: "node",
+    id: String(data.id),
+    title: String(data.label ?? data.id),
+    subtitle: `${formatType(String(data.type ?? "service"))}${service !== data.id ? ` owned by ${service}` : ""}`,
+    properties: propertyRecord(data.properties),
+    findings: linkedFindings,
+    healthScore: serviceHealthScore(scores, service)
+  };
+}
+
+function selectionForEdge(data: Record<string, unknown>, nodes: GraphNode[], findings: Finding[]): GraphSelection {
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const source = nodeById.get(String(data.source));
+  const target = nodeById.get(String(data.target));
+  const sourceService = source?.serviceName ?? source?.label ?? String(data.source);
+  const targetService = target?.serviceName ?? target?.label ?? String(data.target);
+  const linkedFindings = findingsForEdge(findings, sourceService, targetService, String(data.type ?? "depends"));
+  return {
+    kind: "edge",
+    id: String(data.id),
+    title: `${source?.label ?? sourceService} -> ${target?.label ?? targetService}`,
+    subtitle: formatType(String(data.type ?? "dependency")),
+    properties: propertyRecord(data.evidence),
+    findings: linkedFindings
+  };
+}
+
+function propertyString(properties: Record<string, unknown>, key: string) {
+  const value = properties[key];
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function propertyRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function normalizeRelationshipType(type: string) {
+  return type.toLowerCase();
+}
 
 function Metric({ label, value, tone }: { label: string; value: string | number; tone?: string }) {
   return (
@@ -669,10 +1064,17 @@ function aggregateEdges(edges: GraphEdge[]): AggregatedEdge[] {
     const existing = grouped.get(key);
     if (existing) {
       existing.count += 1;
-      existing.label = formatEdgeLabel(type, existing.count);
+      existing.findingCount = Math.max(existing.findingCount ?? 0, edge.findingCount ?? 0);
+      existing.risk = strongerRisk(existing.risk, edge.risk);
+      existing.label = formatEdgeLabel(type, existing.count, existing.risk, existing.findingCount);
       continue;
     }
-    grouped.set(key, { ...edge, id: key, count: 1, label: formatEdgeLabel(type, 1) });
+    grouped.set(key, {
+      ...edge,
+      id: key,
+      count: 1,
+      label: formatEdgeLabel(type, 1, edge.risk, edge.findingCount)
+    });
   }
   return [...grouped.values()];
 }
@@ -718,14 +1120,28 @@ function flattenScores(scores?: AnalysisResult["summary"]["health_scores"]): Hea
   return [scores.system, ...scores.domain, ...scores.service].filter(Boolean);
 }
 
-function formatEdgeLabel(type: string, count: number) {
-  if (type === "api_call") return count > 1 ? `api x${count}` : "";
+function formatEdgeLabel(type: string, count: number, risk = "none", findingCount = 0) {
+  if (risk === "critical") return findingCount > 0 ? `${findingCount} risks` : "critical";
+  if (risk === "high") return findingCount > 0 ? `${findingCount} risks` : "high risk";
   const compactLabels: Record<string, string> = {
+    api_call: "api",
+    calls: "call",
+    depends_on: "depends",
+    shared_database: "shared db",
+    shares_database_with: "shared db",
     uses_database: "db",
-    shared_database: "shared db"
+    reads_from: "db read",
+    writes_to: "db write"
   };
+  const shouldLabel = ["shared_database", "shares_database_with", "uses_database", "reads_from", "writes_to"].includes(type) || count > 2;
+  if (!shouldLabel) return "";
   const label = compactLabels[type] ?? type.replace(/_/g, " ");
   return count > 1 ? `${label} x${count}` : label;
+}
+
+function strongerRisk(current = "none", next = "none") {
+  const rank: Record<string, number> = { none: 0, low: 1, medium: 2, high: 3, critical: 4 };
+  return (rank[next] ?? 0) > (rank[current] ?? 0) ? next : current;
 }
 
 function formatNodeLabel(id: string, type?: string) {
@@ -772,17 +1188,23 @@ const graphStyle: Array<{ selector: string; style: Record<string, string | numbe
       label: "data(label)",
       "background-color": "#2563eb",
       "border-color": "#bfdbfe",
-      "border-width": 3,
+      "border-width": 2,
       color: "#0f172a",
-      "font-size": "11px",
+      "font-size": "9px",
       "font-weight": 800,
       "text-valign": "bottom",
       "text-halign": "center",
       "text-wrap": "wrap",
-      "text-max-width": "96px",
-      "text-margin-y": 9,
-      width: "mapData(weight, 0, 14, 34, 52)",
-      height: "mapData(weight, 0, 14, 34, 52)",
+      "text-max-width": "92px",
+      "text-margin-y": 8,
+      "text-background-color": "#ffffff",
+      "text-background-opacity": 0.9,
+      "text-background-padding": "3px",
+      "text-border-color": "#e2e8f0",
+      "text-border-width": 1,
+      "text-border-opacity": 0.9,
+      width: "mapData(weight, 0, 14, 26, 42)",
+      height: "mapData(weight, 0, 14, 26, 42)",
       "overlay-opacity": 0
     }
   },
@@ -791,8 +1213,23 @@ const graphStyle: Array<{ selector: string; style: Record<string, string | numbe
     style: {
       "background-color": "#1d4ed8",
       "border-color": "#93c5fd",
-      "border-width": 5,
-      "font-size": "11px"
+      "border-width": 4,
+      width: "mapData(weight, 0, 14, 36, 50)",
+      height: "mapData(weight, 0, 14, 36, 50)",
+      "font-size": "10px"
+    }
+  },
+  {
+    selector: "node[type = 'api']",
+    style: {
+      "background-color": "#059669",
+      "border-color": "#a7f3d0",
+      shape: "diamond",
+      width: 24,
+      height: 24,
+      "font-size": "8px",
+      "text-max-width": "74px",
+      color: "#065f46"
     }
   },
   {
@@ -801,43 +1238,120 @@ const graphStyle: Array<{ selector: string; style: Record<string, string | numbe
       "background-color": "#7c3aed",
       "border-color": "#ddd6fe",
       shape: "round-rectangle",
-      width: 42,
-      height: 26,
+      width: 38,
+      height: 24,
       "font-size": "8px",
-      "text-max-width": "70px"
+      "text-max-width": "72px",
+      color: "#4c1d95"
+    }
+  },
+  {
+    selector: "node[type = 'config'], node[type = 'library'], node[type = 'message_broker'], node[type = 'environment_variable']",
+    style: {
+      "background-color": "#64748b",
+      "border-color": "#cbd5e1",
+      shape: "round-rectangle",
+      width: 24,
+      height: 18,
+      "font-size": "0px",
+      "text-opacity": 0,
+      "text-max-width": "0px"
+    }
+  },
+  {
+    selector: "node[risk = 'critical']",
+    style: {
+      "border-color": "#dc2626",
+      "border-width": 5
+    }
+  },
+  {
+    selector: "node[risk = 'high']",
+    style: {
+      "border-color": "#f97316",
+      "border-width": 4
+    }
+  },
+  {
+    selector: "node[risk = 'medium']",
+    style: {
+      "border-color": "#f59e0b",
+      "border-width": 4
     }
   },
   {
     selector: "edge",
     style: {
       label: "data(label)",
-      width: "mapData(count, 1, 8, 1.2, 3.2)",
+      width: "mapData(count, 1, 8, 0.8, 2.4)",
       "line-color": "#94a3b8",
       "target-arrow-color": "#94a3b8",
       "target-arrow-shape": "triangle",
-      "target-arrow-scale": 0.75,
-      "curve-style": "unbundled-bezier",
-      "control-point-distances": "30 -30 54",
-      "control-point-weights": "0.35 0.65 0.5",
+      "target-arrow-scale": 0.65,
+      "curve-style": "bezier",
+      "control-point-step-size": 36,
       "font-size": "7px",
       "font-weight": 800,
-      color: "#475569",
+      color: "#334155",
       "text-background-color": "#ffffff",
       "text-background-opacity": 0.95,
       "text-background-padding": "2px",
       "text-border-color": "#e2e8f0",
       "text-border-opacity": 1,
       "text-border-width": 1,
-      "text-rotation": "autorotate",
-      "opacity": 0.82
+      "text-rotation": "none",
+      opacity: 0.62
     }
   },
   {
-    selector: "edge[type = 'shared_database']",
+    selector: "edge[type = 'exposes_api'], edge[type = 'consumes_api']",
+    style: {
+      "line-color": "#059669",
+      "target-arrow-color": "#059669",
+      "line-style": "dotted",
+      opacity: 0.62
+    }
+  },
+  {
+    selector: "edge[type = 'uses_database'], edge[type = 'reads_from'], edge[type = 'writes_to'], edge[type = 'shared_database'], edge[type = 'shares_database_with']",
     style: {
       "line-color": "#7c3aed",
       "target-arrow-color": "#7c3aed",
       "line-style": "dashed"
+    }
+  },
+  {
+    selector: "edge[risk = 'critical']",
+    style: {
+      "line-color": "#dc2626",
+      "target-arrow-color": "#dc2626",
+      width: 2.8,
+      opacity: 0.9
+    }
+  },
+  {
+    selector: "edge[risk = 'high']",
+    style: {
+      "line-color": "#f97316",
+      "target-arrow-color": "#f97316",
+      width: 2.5,
+      opacity: 0.88
+    }
+  },
+  {
+    selector: "edge[risk = 'medium']",
+    style: {
+      "line-color": "#f59e0b",
+      "target-arrow-color": "#f59e0b",
+      width: 2.4
+    }
+  },
+  {
+    selector: ":selected",
+    style: {
+      "border-color": "#0f172a",
+      "line-color": "#0f172a",
+      "target-arrow-color": "#0f172a"
     }
   }
 ];
