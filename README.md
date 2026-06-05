@@ -75,3 +75,8 @@ Phase 4 adds a weighted God Service score for every analyzed service. Scores are
 ## Architectural Health Scores
 
 Phase 5 adds service-level, domain-level, and system-level architectural health scores. Scores are returned in `summary.health_scores`, persisted in the `scores` table, and exposed through `GET /scans/{scan_id}/scores`. See `docs/architecture/PHASE_5_ARCHITECTURAL_HEALTH_SCORE.md` for dimensions, weights, grades, and test workflow.
+
+
+## Scan History and Findings Dashboard
+
+Phase 6 adds a persistent frontend workflow for project creation, scan execution, scan history, findings filtering, finding detail inspection, and health score review. See `docs/architecture/PHASE_6_SCAN_HISTORY_AND_FINDINGS_DASHBOARD.md` for the dashboard workflow and limitations.
