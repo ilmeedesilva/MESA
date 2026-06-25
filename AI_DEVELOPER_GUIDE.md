@@ -1,6 +1,10 @@
 # MESA — AI Developer Guide
 ## Complete Technical Specification for Building the Software from Scratch
 
+> Current status: proposal-era baseline. This guide describes the original Python CLI prototype scope. The current approved stack and expanded architecture are documented in `docs/inception/MESA_PROJECT_INCEPTION.md` and `docs/architecture/MESA_TECH_STACK.md`.
+>
+> Current core stack: Python/FastAPI backend, Tree-sitter multi-language parsing, Python AST, LibCST, JavaParser only for Java project analysis, Neo4j, NetworkX, PostgreSQL, React + TypeScript, Cytoscape.js, LangGraph/LangChain, Docker, and GitHub Actions.
+
 **Project:** MESA: A Cross-Service Static Analysis Tool for Detecting Microservices Architectural Anti-Patterns  
 **Author:** K I W DE Silva (Coventry Index: 16110094 | NIBM: COBSCCOMP24.2P-029)  
 **Degree:** BSc Hons in Computing 2024.2 — Coventry University / NIBM  

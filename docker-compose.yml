@@ -1,0 +1,50 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      MESA_POSTGRES_DSN: postgresql://mesa:mesa@postgres:5432/mesa
+      MESA_PERSISTENCE: postgres
+      MESA_NEO4J_ENABLED: "true"
+      MESA_NEO4J_URI: bolt://neo4j:7687
+      MESA_NEO4J_USER: neo4j
+      MESA_NEO4J_PASSWORD: mesa-password
+    volumes:
+      - .:/workspace:ro
+    depends_on:
+      - postgres
+      - neo4j
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mesa
+      POSTGRES_USER: mesa
+      POSTGRES_PASSWORD: mesa
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: neo4j/mesa-password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+
+volumes:
+  postgres-data:
+  neo4j-data:
+
