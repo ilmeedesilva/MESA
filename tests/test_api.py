@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 from fastapi.testclient import TestClient
 
@@ -28,6 +29,87 @@ def test_analyze_endpoint() -> None:
     )
     assert response.status_code == 200
     assert response.json()["summary"]["finding_count"] >= 1
+
+
+def test_repo_scan_preview_for_local_path() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/repo-scans/preview",
+        json={
+            "source_type": "LOCAL_PATH",
+            "location": str(ROOT / "chatty"),
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["source"]["source_type"] == "LOCAL_PATH"
+    assert "order-service" in payload["top_level_entries"]
+    assert "order-service" in payload["candidate_service_paths"]
+    assert payload["file_count"] >= 2
+
+
+def test_project_repo_scan_from_local_path_persists_source_metadata() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Repo Scan Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/repo-scans",
+        json={
+            "source_type": "LOCAL_PATH",
+            "location": str(ROOT / "chatty"),
+            "service_paths": ["order-service", "user-service"],
+        },
+    )
+    assert scan_response.status_code == 201
+    payload = scan_response.json()
+    assert payload["scan"]["source_type"] == "LOCAL_PATH"
+    assert payload["scan"]["source_label"] == "chatty"
+    assert payload["result"]["summary"]["repository_source"]["source_type"] == "LOCAL_PATH"
+    assert payload["result"]["summary"]["finding_count"] >= 1
+
+    del app.state.persistence_repository
+
+
+def test_project_repo_scan_supports_archive_sources(tmp_path) -> None:
+    archive_source = tmp_path / "chatty"
+    shutil.copytree(ROOT / "chatty", archive_source)
+    archive_base = tmp_path / "chatty-archive"
+    archive_path = Path(shutil.make_archive(str(archive_base), "zip", archive_source))
+
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Archive Repo Scan"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    preview_response = client.post(
+        "/repo-scans/preview",
+        json={
+            "source_type": "ARCHIVE_PATH",
+            "location": str(archive_path),
+        },
+    )
+    assert preview_response.status_code == 200
+    assert preview_response.json()["source"]["source_type"] == "ARCHIVE_PATH"
+
+    scan_response = client.post(
+        f"/projects/{project_id}/repo-scans",
+        json={
+            "source_type": "ARCHIVE_PATH",
+            "location": str(archive_path),
+            "service_paths": ["order-service", "user-service"],
+        },
+    )
+    assert scan_response.status_code == 201
+    assert scan_response.json()["scan"]["source_type"] == "ARCHIVE_PATH"
+
+    del app.state.persistence_repository
 
 
 
