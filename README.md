@@ -1,6 +1,24 @@
 # MESA
 
-MESA is a cross-service static analysis tool for detecting microservices architectural anti-patterns.
+MESA is an architecture intelligence platform for microservice systems.
+
+Current implementation:
+
+- performs cross-service static analysis
+- detects architectural anti-patterns from source and configuration evidence
+- builds a graph-based architectural view of a system
+- calculates health scores and recommendations
+- supports governance policies, scan history, and evolution analysis
+
+Target product direction:
+
+- dynamic public repository intake
+- automatic service discovery
+- guided workflow for non-expert users
+- integrated documentation portal
+- optional AI-assisted explanation grounded in MESA evidence
+
+See [docs/guides/PRODUCT_VISION.md](docs/guides/PRODUCT_VISION.md), [docs/guides/USER_PERSONAS_AND_FLOWS.md](docs/guides/USER_PERSONAS_AND_FLOWS.md), [docs/guides/FEATURE_SCOPE_AND_RELEASE_PLAN.md](docs/guides/FEATURE_SCOPE_AND_RELEASE_PLAN.md), and [docs/guides/PRODUCT_LANGUAGE_AND_TERMINOLOGY.md](docs/guides/PRODUCT_LANGUAGE_AND_TERMINOLOGY.md) for the Phase 1 product foundation.
 
 Current vertical slice:
 
