@@ -30,6 +30,22 @@ Body:
 POST /repo-scans/preview
 ```
 
+Preview response now includes:
+
+- repository metadata
+- top-level entry summary
+- candidate service paths
+- `discovered_services` with:
+  - `service_name`
+  - `relative_path`
+  - `language`
+  - `confidence`
+  - `selected_by_default`
+  - `reasons`
+  - `manifests`
+  - `entrypoints`
+  - `signal_counts`
+
 Body examples:
 
 Local directory:
@@ -82,6 +98,10 @@ Repository-backed project scan example:
   "service_paths": ["order-service", "user-service"]
 }
 ```
+
+Phase 3 note:
+
+- use the `discovered_services` array from the preview response as the review step before deciding which `service_paths` to send into the persisted repo scan
 
 ## Graph APIs
 

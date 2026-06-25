@@ -172,6 +172,19 @@ class RepoScanPreviewRequest(BaseModel):
     subdirectory: str | None = None
 
 
+class ServiceDiscoveryCandidate(BaseModel):
+    service_name: str
+    relative_path: str
+    absolute_path: str
+    language: str = "unknown"
+    confidence: float = Field(ge=0.0, le=1.0)
+    selected_by_default: bool = True
+    reasons: list[str] = Field(default_factory=list)
+    manifests: list[str] = Field(default_factory=list)
+    entrypoints: list[str] = Field(default_factory=list)
+    signal_counts: dict[str, int] = Field(default_factory=dict)
+
+
 class RepoScanPreview(BaseModel):
     source: RepoSourceMetadata
     root_path: str
@@ -179,6 +192,7 @@ class RepoScanPreview(BaseModel):
     file_count: int = 0
     manifest_counts: dict[str, int] = Field(default_factory=dict)
     candidate_service_paths: list[str] = Field(default_factory=list)
+    discovered_services: list[ServiceDiscoveryCandidate] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
 

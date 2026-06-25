@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 from uuid import uuid4
 
+from mesa.discovery import discover_service_candidates
 from mesa.models import RepoScanPreview, RepoScanPreviewRequest, RepoScanRunRequest, RepoSourceMetadata
 
 _MANIFEST_FILENAMES = {
@@ -20,18 +21,6 @@ _MANIFEST_FILENAMES = {
     "Dockerfile",
     "docker-compose.yml",
     "docker-compose.yaml",
-}
-_SERVICE_ENTRYPOINT_FILENAMES = {
-    "app.py",
-    "main.py",
-    "server.py",
-    "application.py",
-    "index.js",
-    "server.js",
-    "main.ts",
-    "index.ts",
-    "Application.java",
-    "App.java",
 }
 _ARCHIVE_SUFFIXES = {".zip", ".tar", ".gz", ".tgz", ".bz2", ".xz"}
 _MAX_PREVIEW_FILES = 5000
@@ -66,7 +55,9 @@ def prepare_repository(request: RepoScanPreviewRequest | RepoScanRunRequest) -> 
 
 def preview_repository(request: RepoScanPreviewRequest) -> RepoScanPreview:
     prepared = prepare_repository(request)
-    manifest_counts, candidate_paths, top_level_entries, file_count = _summarize_repository(prepared.root_path)
+    manifest_counts, top_level_entries, file_count = _summarize_repository(prepared.root_path)
+    discovered_services = discover_service_candidates(prepared.root_path)
+    candidate_paths = [candidate.relative_path for candidate in discovered_services]
     warnings = list(prepared.warnings)
     if file_count >= _MAX_PREVIEW_FILES:
         warnings.append(
@@ -82,6 +73,7 @@ def preview_repository(request: RepoScanPreviewRequest) -> RepoScanPreview:
         file_count=file_count,
         manifest_counts=manifest_counts,
         candidate_service_paths=candidate_paths,
+        discovered_services=discovered_services,
         warnings=warnings,
     )
 
@@ -90,7 +82,12 @@ def resolve_service_paths(prepared: PreparedRepository, request: RepoScanRunRequ
     if request.service_paths:
         return [str(_resolve_relative_path(prepared.root_path, raw_path)) for raw_path in request.service_paths]
 
-    _, candidate_paths, _, _ = _summarize_repository(prepared.root_path)
+    candidates = discover_service_candidates(prepared.root_path)
+    candidate_paths = [
+        candidate.relative_path
+        for candidate in candidates
+        if candidate.selected_by_default
+    ] or [candidate.relative_path for candidate in candidates]
     if not candidate_paths:
         raise RepositoryPreparationError(
             "No service paths were provided and no likely service roots were detected automatically."
@@ -269,9 +266,8 @@ def _resolve_relative_path(root_path: Path, raw_path: str) -> Path:
     return resolved
 
 
-def _summarize_repository(root_path: Path) -> tuple[dict[str, int], list[str], list[str], int]:
+def _summarize_repository(root_path: Path) -> tuple[dict[str, int], list[str], int]:
     manifest_counts = {manifest: 0 for manifest in sorted(_MANIFEST_FILENAMES)}
-    candidate_paths: set[str] = set()
     top_level_entries = sorted(child.name for child in root_path.iterdir())[:40]
     file_count = 0
 
@@ -279,20 +275,12 @@ def _summarize_repository(root_path: Path) -> tuple[dict[str, int], list[str], l
         if not file_path.is_file() or _is_ignored(file_path):
             continue
         file_count += 1
-        relative_parent = file_path.parent.relative_to(root_path)
         if file_path.name in manifest_counts:
             manifest_counts[file_path.name] += 1
-            candidate_paths.add("." if relative_parent == Path(".") else relative_parent.as_posix())
-        elif file_path.name in _SERVICE_ENTRYPOINT_FILENAMES:
-            candidate_paths.add("." if relative_parent == Path(".") else relative_parent.as_posix())
         if file_count >= _MAX_PREVIEW_FILES:
             break
 
-    normalized_candidates = sorted(path for path in candidate_paths if path)
-    if "." in candidate_paths:
-        normalized_candidates = [".", *[path for path in normalized_candidates if path != "."]]
-
-    return manifest_counts, normalized_candidates, top_level_entries, file_count
+    return manifest_counts, top_level_entries, file_count
 
 
 def _is_ignored(file_path: Path) -> bool:
