@@ -46,6 +46,8 @@ def test_repo_scan_preview_for_local_path() -> None:
     assert payload["source"]["source_type"] == "LOCAL_PATH"
     assert "order-service" in payload["top_level_entries"]
     assert "order-service" in payload["candidate_service_paths"]
+    assert payload["discovered_services"][0]["confidence"] > 0
+    assert payload["discovered_services"][0]["reasons"]
     assert payload["file_count"] >= 2
 
 

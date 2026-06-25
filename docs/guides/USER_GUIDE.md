@@ -55,13 +55,32 @@ Current supported source types:
 Recommended workflow:
 
 1. Preview a repository source with `POST /repo-scans/preview`.
-2. Review the suggested service paths from the preview response.
-3. Run a persisted repository scan with `POST /projects/{project_id}/repo-scans`.
+2. Review the `discovered_services` section from the preview response.
+3. Keep the candidates you want to analyze and note their `relative_path` values.
+4. Run a persisted repository scan with `POST /projects/{project_id}/repo-scans`.
 
 Current limitation:
 
-- automatic service discovery preview is heuristic and still becomes a dedicated product workflow in a later phase
+- automatic service discovery is heuristic and explainable, not guaranteed perfect
 - GitHub URL fetching depends on runtime network access and an accessible public archive
+
+## Phase 3 Service Discovery Review
+
+Phase 3 adds explainable service discovery on top of repository preview.
+
+Each discovered service candidate now includes:
+
+- confidence score
+- detected language
+- signal manifests
+- detected entrypoints
+- human-readable reasons for why MESA believes the directory is a likely service
+
+Recommended interpretation:
+
+- high-confidence candidates are usually safe defaults for scanning
+- medium-confidence candidates should be reviewed before selection
+- if a repository contains orchestration files but weak per-service signals, review the candidate list carefully instead of assuming all directories are services
 
 ## CLI Usage
 

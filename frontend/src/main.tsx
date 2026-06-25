@@ -110,6 +110,38 @@ type AnalysisResult = {
   };
 };
 
+type ServiceDiscoveryCandidate = {
+  service_name: string;
+  relative_path: string;
+  absolute_path: string;
+  language: string;
+  confidence: number;
+  selected_by_default: boolean;
+  reasons: string[];
+  manifests: string[];
+  entrypoints: string[];
+  signal_counts: Record<string, number>;
+};
+
+type RepoScanPreview = {
+  source: {
+    source_type: string;
+    source_label: string;
+    source_path?: string | null;
+    repo_url?: string | null;
+    repo_provider?: string | null;
+    repo_ref?: string | null;
+    workspace_path?: string | null;
+  };
+  root_path: string;
+  top_level_entries: string[];
+  file_count: number;
+  manifest_counts: Record<string, number>;
+  candidate_service_paths: string[];
+  discovered_services: ServiceDiscoveryCandidate[];
+  warnings: string[];
+};
+
 type ProjectRecord = {
   id: string;
   name: string;
@@ -227,6 +259,11 @@ function App() {
   const [projectName, setProjectName] = React.useState("MESA Demo Project");
   const [projectDescription, setProjectDescription] = React.useState("Static architecture analysis demo");
   const [paths, setPaths] = React.useState(defaultPaths);
+  const [sourceType, setSourceType] = React.useState("LOCAL_PATH");
+  const [sourceLocation, setSourceLocation] = React.useState("");
+  const [sourceRef, setSourceRef] = React.useState("main");
+  const [repoPreview, setRepoPreview] = React.useState<RepoScanPreview | null>(null);
+  const [selectedDiscoveryPaths, setSelectedDiscoveryPaths] = React.useState<string[]>([]);
   const [history, setHistory] = React.useState<ScanRecord[]>([]);
   const [evolution, setEvolution] = React.useState<EvolutionReport[]>([]);
   const [policyText, setPolicyText] = React.useState(defaultPolicyDocument);
@@ -237,6 +274,7 @@ function App() {
   const [scores, setScores] = React.useState<HealthScore[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [isCreating, setIsCreating] = React.useState(false);
+  const [isPreviewingRepo, setIsPreviewingRepo] = React.useState(false);
   const [isScanning, setIsScanning] = React.useState(false);
   const [isLoadingScan, setIsLoadingScan] = React.useState(false);
   const [isSavingPolicies, setIsSavingPolicies] = React.useState(false);
@@ -334,15 +372,33 @@ function App() {
       setError("Create or select a project before running a scan.");
       return;
     }
+    if (sourceLocation.trim() && !repoPreview) {
+      setError("Preview the repository source before running a repository-backed scan.");
+      return;
+    }
+    if (repoPreview && repoPreview.discovered_services.length > 0 && selectedDiscoveryPaths.length === 0) {
+      setError("Select at least one discovered service before running a repository-backed scan.");
+      return;
+    }
     setError(null);
     setIsScanning(true);
-    const service_paths = servicePathsFromText(paths);
     try {
-      const payload = await api<PersistedScanResult>(`/api/projects/${selectedProjectId}/scans`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service_paths })
-      });
+      const payload = repoPreview
+        ? await api<PersistedScanResult>(`/api/projects/${selectedProjectId}/repo-scans`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              source_type: sourceType,
+              location: sourceLocation,
+              ref: sourceType === "GITHUB_URL" ? sourceRef.trim() || undefined : undefined,
+              service_paths: selectedDiscoveryPaths
+            })
+          })
+        : await api<PersistedScanResult>(`/api/projects/${selectedProjectId}/scans`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ service_paths: servicePathsFromText(paths) })
+          });
       setActiveScan(payload.scan);
       setResult(payload.result);
       const nextScores = flattenScores(payload.result.summary.health_scores);
@@ -357,6 +413,55 @@ function App() {
     } finally {
       setIsScanning(false);
     }
+  }
+
+  async function previewRepositorySource() {
+    if (!sourceLocation.trim()) {
+      setError("Enter a repository source before requesting discovery preview.");
+      return;
+    }
+    setError(null);
+    setIsPreviewingRepo(true);
+    try {
+      const preview = await api<RepoScanPreview>("/api/repo-scans/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source_type: sourceType,
+          location: sourceLocation,
+          ref: sourceType === "GITHUB_URL" ? sourceRef.trim() || undefined : undefined
+        })
+      });
+      setRepoPreview(preview);
+      setSelectedDiscoveryPaths(
+        preview.discovered_services
+          .filter((candidate) => candidate.selected_by_default)
+          .map((candidate) => candidate.relative_path)
+      );
+    } catch (caught) {
+      setRepoPreview(null);
+      setSelectedDiscoveryPaths([]);
+      setError(messageFor(caught, "Repository preview failed"));
+    } finally {
+      setIsPreviewingRepo(false);
+    }
+  }
+
+  function toggleDiscoveredService(relativePath: string) {
+    setSelectedDiscoveryPaths((current) =>
+      current.includes(relativePath)
+        ? current.filter((path) => path !== relativePath)
+        : [...current, relativePath]
+    );
+  }
+
+  function applyDiscoveredServices() {
+    if (selectedDiscoveryPaths.length === 0) {
+      setError("Select at least one discovered service before applying the review set.");
+      return;
+    }
+    setPaths(selectedDiscoveryPaths.join("\n"));
+    setError(null);
   }
 
   async function loadHistory(projectId: string, preferredScanId?: string) {
@@ -466,7 +571,7 @@ function App() {
         <div className="toolbarActions">
           <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
           <button onClick={runScan} disabled={isScanning || !selectedProjectId}>
-            {isScanning ? "Scanning..." : "Run Scan"}
+            {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
           </button>
         </div>
       </section>
@@ -499,9 +604,112 @@ function App() {
               <h2>Scan Input</h2>
               <span>{servicePathsFromText(paths).length} services</span>
             </div>
+            <label htmlFor="sourceType">Repository source type</label>
+            <select
+              id="sourceType"
+              value={sourceType}
+              onChange={(event) => {
+                setSourceType(event.target.value);
+                setRepoPreview(null);
+                setSelectedDiscoveryPaths([]);
+              }}
+            >
+              <option value="LOCAL_PATH">Local path</option>
+              <option value="ARCHIVE_PATH">Archive path</option>
+              <option value="GITHUB_URL">GitHub URL</option>
+            </select>
+            <label htmlFor="sourceLocation">Repository source</label>
+            <input
+              id="sourceLocation"
+              placeholder={
+                sourceType === "GITHUB_URL"
+                  ? "https://github.com/example-org/example-repo"
+                  : "/workspace/tests/fixtures/chatty"
+              }
+              value={sourceLocation}
+              onChange={(event) => {
+                setSourceLocation(event.target.value);
+                setRepoPreview(null);
+                setSelectedDiscoveryPaths([]);
+              }}
+            />
+            {sourceType === "GITHUB_URL" ? (
+              <>
+                <label htmlFor="sourceRef">Branch or ref</label>
+                <input
+                  id="sourceRef"
+                  placeholder="main"
+                  value={sourceRef}
+                  onChange={(event) => {
+                    setSourceRef(event.target.value);
+                    setRepoPreview(null);
+                    setSelectedDiscoveryPaths([]);
+                  }}
+                />
+              </>
+            ) : null}
+            <button className="fullButton" onClick={previewRepositorySource} disabled={isPreviewingRepo}>
+              {isPreviewingRepo ? "Previewing..." : "Preview Discovery"}
+            </button>
+            <p className="hint">
+              Preview shows likely services with confidence and reasons. Leave this empty to keep using manual service paths only.
+            </p>
+            {repoPreview ? (
+              <div className="discoveryPanel">
+                <div className="panelHeader compact">
+                  <h3>Discovered Services</h3>
+                  <span>{repoPreview.discovered_services.length} candidates</span>
+                </div>
+                <div className="discoveryMeta">
+                  <span>{repoPreview.file_count} files previewed</span>
+                  <span>{selectedDiscoveryPaths.length} selected</span>
+                </div>
+                {repoPreview.warnings.length > 0 ? (
+                  <div className="warningList">
+                    {repoPreview.warnings.map((warning) => <small key={warning}>{warning}</small>)}
+                  </div>
+                ) : null}
+                {repoPreview.discovered_services.length === 0 ? (
+                  <div className="emptyInline">No service candidates detected from this source preview.</div>
+                ) : (
+                  <div className="discoveryList">
+                    {repoPreview.discovered_services.map((candidate) => {
+                      const selected = selectedDiscoveryPaths.includes(candidate.relative_path);
+                      return (
+                        <article key={candidate.relative_path} className={`discoveryCard ${selected ? "selected" : ""}`}>
+                          <label className="discoveryToggle">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => toggleDiscoveredService(candidate.relative_path)}
+                            />
+                            <span>{candidate.service_name}</span>
+                          </label>
+                          <div className="discoveryStats">
+                            <strong>{Math.round(candidate.confidence * 100)}%</strong>
+                            <span>{candidate.language}</span>
+                            <small>{candidate.relative_path}</small>
+                          </div>
+                          <div className="signalTags">
+                            {candidate.manifests.map((manifest) => <code key={manifest}>{manifest}</code>)}
+                            {candidate.entrypoints.map((entrypoint) => <code key={entrypoint}>{entrypoint}</code>)}
+                          </div>
+                          <ul className="reasonList">
+                            {candidate.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                          </ul>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+                <button className="fullButton secondaryButton" onClick={applyDiscoveredServices} disabled={selectedDiscoveryPaths.length === 0}>
+                  Apply Selected Services
+                </button>
+              </div>
+            ) : null}
             <label htmlFor="paths">Service paths</label>
             <textarea id="paths" value={paths} onChange={(event) => setPaths(event.target.value)} />
-            <p className="hint">Use Docker paths. Add one service directory per line.</p>
+            <p className="hint">Manual fallback: use one service directory per line. Repository discovery can fill this automatically.</p>
             {error ? <div className="error">{error}</div> : null}
           </section>
 

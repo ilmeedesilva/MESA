@@ -201,6 +201,11 @@ aside {
   margin: 12px 0 2px;
 }
 
+.secondaryButton {
+  background: #0f172a;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+}
+
 .hint {
   font-size: 13px;
   line-height: 1.45;
@@ -213,6 +218,115 @@ aside {
   background: #fee2e2;
   color: #991b1b;
   font-weight: 700;
+}
+
+.discoveryPanel {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.discoveryMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.warningList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.warningList small {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #92400e;
+  background: #fef3c7;
+  line-height: 1.4;
+}
+
+.discoveryList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.discoveryCard {
+  padding: 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.discoveryCard.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.discoveryToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.discoveryToggle input {
+  width: auto;
+}
+
+.discoveryStats {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 8px;
+}
+
+.discoveryStats strong {
+  color: #2563eb;
+  font-size: 15px;
+}
+
+.discoveryStats span,
+.discoveryStats small {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.signalTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.signalTags code {
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #dbeafe;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.reasonList {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .mainDeck {
@@ -931,4 +1045,3 @@ meter {
     grid-template-columns: 1fr;
   }
 }
-
