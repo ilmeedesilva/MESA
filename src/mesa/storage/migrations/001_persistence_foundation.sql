@@ -12,9 +12,22 @@ CREATE TABLE IF NOT EXISTS scans (
     status TEXT NOT NULL,
     service_count INTEGER NOT NULL DEFAULT 0,
     finding_count INTEGER NOT NULL DEFAULT 0,
+    source_type TEXT,
+    source_label TEXT,
+    repo_url TEXT,
+    repo_provider TEXT,
+    repo_ref TEXT,
+    commit_sha TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     completed_at TIMESTAMPTZ
 );
+
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS source_type TEXT;
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS source_label TEXT;
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS repo_url TEXT;
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS repo_provider TEXT;
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS repo_ref TEXT;
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS commit_sha TEXT;
 
 CREATE TABLE IF NOT EXISTS services (
     id BIGSERIAL PRIMARY KEY,

@@ -10,6 +10,7 @@ from mesa.analysis import analyze_services
 from mesa.analysis.evolution import compare_scan_results
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
+from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
 from mesa.models import (
     AnalysisRequest,
     AnalysisResult,
@@ -22,6 +23,9 @@ from mesa.models import (
     PersistedScanResult,
     ProjectCreate,
     ProjectRecord,
+    RepoScanPreview,
+    RepoScanPreviewRequest,
+    RepoScanRunRequest,
     RunScanRequest,
     ScanRecord,
     SnapshotRecord,
@@ -90,6 +94,14 @@ def health() -> dict[str, str]:
 @app.post("/analyze", response_model=AnalysisResult)
 def analyze(request: AnalysisRequest) -> AnalysisResult:
     return analyze_services(request.service_paths, request.chatty_threshold)
+
+
+@app.post("/repo-scans/preview", response_model=RepoScanPreview)
+def preview_repo_scan(payload: RepoScanPreviewRequest) -> RepoScanPreview:
+    try:
+        return preview_repository(payload)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @app.post("/projects", response_model=ProjectRecord, status_code=201)
@@ -163,6 +175,37 @@ def run_project_scan(project_id: str, payload: RunScanRequest, request: Request)
         result.findings = enrich_findings_with_recommendations(result.findings)
         _refresh_finding_summary(result)
     scan = repository.save_scan_result(project_id, result)
+    architecture_store = get_architecture_store(request)
+    if architecture_store is not None:
+        architecture_store.save_scan_graph(project_id, scan.id, result)
+    return PersistedScanResult(scan=scan, result=result)
+
+
+@app.post("/projects/{project_id}/repo-scans", response_model=PersistedScanResult, status_code=201)
+def run_project_repo_scan(
+    project_id: str,
+    payload: RepoScanRunRequest,
+    request: Request,
+) -> PersistedScanResult:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    try:
+        prepared = prepare_repository(payload)
+        service_paths = resolve_service_paths(prepared, payload)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    result = analyze_services(service_paths, payload.chatty_threshold)
+    policies = repository.list_policies(project_id)
+    policy_findings = evaluate_policies(result, policies)
+    if policy_findings:
+        result.findings.extend(policy_findings)
+        result.findings = enrich_findings_with_recommendations(result.findings)
+        _refresh_finding_summary(result)
+    result.summary["repository_source"] = prepared.metadata.model_dump(mode="json")
+    scan = repository.save_scan_result(project_id, result, source_metadata=prepared.metadata)
     architecture_store = get_architecture_store(request)
     if architecture_store is not None:
         architecture_store.save_scan_graph(project_id, scan.id, result)

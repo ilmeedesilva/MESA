@@ -19,6 +19,7 @@ from mesa.models import (
     PolicyRecord,
     ProjectCreate,
     ProjectRecord,
+    RepoSourceMetadata,
     ScanRecord,
     SnapshotRecord,
 )
@@ -46,7 +47,12 @@ class PersistenceRepository(Protocol):
     def get_project(self, project_id: str) -> ProjectRecord | None:
         ...
 
-    def save_scan_result(self, project_id: str, result: AnalysisResult) -> ScanRecord:
+    def save_scan_result(
+        self,
+        project_id: str,
+        result: AnalysisResult,
+        source_metadata: RepoSourceMetadata | None = None,
+    ) -> ScanRecord:
         ...
 
     def get_scan(self, scan_id: str) -> ScanRecord | None:
@@ -116,13 +122,24 @@ class InMemoryPersistenceRepository:
     def get_project(self, project_id: str) -> ProjectRecord | None:
         return self.projects.get(project_id)
 
-    def save_scan_result(self, project_id: str, result: AnalysisResult) -> ScanRecord:
+    def save_scan_result(
+        self,
+        project_id: str,
+        result: AnalysisResult,
+        source_metadata: RepoSourceMetadata | None = None,
+    ) -> ScanRecord:
         scan = ScanRecord(
             id=str(uuid4()),
             project_id=project_id,
             status="COMPLETED",
             service_count=result.summary["service_count"],
             finding_count=result.summary["finding_count"],
+            source_type=source_metadata.source_type if source_metadata else None,
+            source_label=source_metadata.source_label if source_metadata else None,
+            repo_url=source_metadata.repo_url if source_metadata else None,
+            repo_provider=source_metadata.repo_provider if source_metadata else None,
+            repo_ref=source_metadata.repo_ref if source_metadata else None,
+            commit_sha=source_metadata.commit_sha if source_metadata else None,
             created_at=_now_iso(),
             completed_at=_now_iso(),
         )
@@ -256,18 +273,38 @@ class PostgresPersistenceRepository:
             ).fetchone()
         return ProjectRecord(**row) if row else None
 
-    def save_scan_result(self, project_id: str, result: AnalysisResult) -> ScanRecord:
+    def save_scan_result(
+        self,
+        project_id: str,
+        result: AnalysisResult,
+        source_metadata: RepoSourceMetadata | None = None,
+    ) -> ScanRecord:
         scan_id = str(uuid4())
         snapshot_id = str(uuid4())
         with self._connect(row_factory=dict_row) as connection:
             row = connection.execute(
                 """
-                INSERT INTO scans (id, project_id, status, service_count, finding_count, completed_at)
-                VALUES (%s, %s, 'COMPLETED', %s, %s, now())
+                INSERT INTO scans (
+                    id, project_id, status, service_count, finding_count, source_type,
+                    source_label, repo_url, repo_provider, repo_ref, commit_sha, completed_at
+                )
+                VALUES (%s, %s, 'COMPLETED', %s, %s, %s, %s, %s, %s, %s, %s, now())
                 RETURNING id, project_id, status, service_count, finding_count,
+                          source_type, source_label, repo_url, repo_provider, repo_ref, commit_sha,
                           created_at::text, completed_at::text
                 """,
-                (scan_id, project_id, result.summary["service_count"], result.summary["finding_count"]),
+                (
+                    scan_id,
+                    project_id,
+                    result.summary["service_count"],
+                    result.summary["finding_count"],
+                    source_metadata.source_type.value if source_metadata else None,
+                    source_metadata.source_label if source_metadata else None,
+                    source_metadata.repo_url if source_metadata else None,
+                    source_metadata.repo_provider if source_metadata else None,
+                    source_metadata.repo_ref if source_metadata else None,
+                    source_metadata.commit_sha if source_metadata else None,
+                ),
             ).fetchone()
 
             for service in result.services:
@@ -344,6 +381,7 @@ class PostgresPersistenceRepository:
             row = connection.execute(
                 """
                 SELECT id, project_id, status, service_count, finding_count,
+                       source_type, source_label, repo_url, repo_provider, repo_ref, commit_sha,
                        created_at::text, completed_at::text
                 FROM scans
                 WHERE id = %s
@@ -365,6 +403,7 @@ class PostgresPersistenceRepository:
             rows = connection.execute(
                 """
                 SELECT id, project_id, status, service_count, finding_count,
+                       source_type, source_label, repo_url, repo_provider, repo_ref, commit_sha,
                        created_at::text, completed_at::text
                 FROM scans
                 WHERE project_id = %s
