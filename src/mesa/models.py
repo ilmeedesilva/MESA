@@ -148,6 +148,40 @@ class AnalysisRequest(BaseModel):
     chatty_threshold: int = 3
 
 
+class RepoSourceType(str, Enum):
+    LOCAL_PATH = "LOCAL_PATH"
+    ARCHIVE_PATH = "ARCHIVE_PATH"
+    GITHUB_URL = "GITHUB_URL"
+
+
+class RepoSourceMetadata(BaseModel):
+    source_type: RepoSourceType
+    source_label: str
+    source_path: str | None = None
+    repo_url: str | None = None
+    repo_provider: str | None = None
+    repo_ref: str | None = None
+    commit_sha: str | None = None
+    workspace_path: str | None = None
+
+
+class RepoScanPreviewRequest(BaseModel):
+    source_type: RepoSourceType
+    location: str
+    ref: str | None = None
+    subdirectory: str | None = None
+
+
+class RepoScanPreview(BaseModel):
+    source: RepoSourceMetadata
+    root_path: str
+    top_level_entries: list[str] = Field(default_factory=list)
+    file_count: int = 0
+    manifest_counts: dict[str, int] = Field(default_factory=dict)
+    candidate_service_paths: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class AnalysisResult(BaseModel):
     services: list[ServiceFacts]
     findings: list[Finding]
@@ -199,12 +233,23 @@ class RunScanRequest(BaseModel):
     chatty_threshold: int = 3
 
 
+class RepoScanRunRequest(RepoScanPreviewRequest):
+    service_paths: list[str] = Field(default_factory=list)
+    chatty_threshold: int = 3
+
+
 class ScanRecord(BaseModel):
     id: str
     project_id: str
     status: str
     service_count: int = 0
     finding_count: int = 0
+    source_type: RepoSourceType | None = None
+    source_label: str | None = None
+    repo_url: str | None = None
+    repo_provider: str | None = None
+    repo_ref: str | None = None
+    commit_sha: str | None = None
     created_at: str | None = None
     completed_at: str | None = None
 
@@ -239,4 +284,3 @@ class EvolutionReport(BaseModel):
 
 def service_name_from_path(path: str | Path) -> str:
     return Path(path).resolve().name
-
