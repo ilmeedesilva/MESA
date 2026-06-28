@@ -55,6 +55,83 @@ neo4j / mesa-password
 7. Click `Run Scan` or `Run Repo Scan`.
 8. Review findings, graph, health scores, evolution, and recommendations.
 
+## Read Results More Easily
+
+Phase 5 adds an interpretation layer to make findings easier for non-experts to understand.
+
+After a scan, use the result interpretation switch near the top of the results area:
+
+- `Beginner`
+  - plain-language finding titles
+  - clearer "why it matters" guidance
+  - first recommended action
+  - explanation of what the result does not prove
+- `Research`
+  - everything from beginner mode
+  - detector label visibility
+  - raw evidence payloads
+  - more technical context for deeper evaluation
+
+Use beginner mode when:
+
+- demonstrating MESA to evaluators
+- reviewing results with non-technical stakeholders
+- doing a first pass through a new repository
+
+Use research mode when:
+
+- validating the detector output
+- comparing evidence quality across findings
+- preparing research notes or implementation follow-up
+
+## How to Interpret a Finding
+
+Each finding now has a clearer structure in the drawer:
+
+1. `What MESA found`
+2. `Why it matters`
+3. `Why MESA thinks this`
+4. `What to do first`
+5. `Expected impact`
+6. `What this does not prove`
+
+Recommended reading order:
+
+1. Start with the plain-language title.
+2. Check which services are affected.
+3. Read `Why it matters` to understand the architectural risk.
+4. Read `Why MESA thinks this` to inspect detector support.
+5. Check confidence before deciding how urgent the issue is.
+6. Read the first refactoring step before planning changes.
+7. Read `What this does not prove` to avoid over-interpreting the result.
+
+## Understanding Confidence
+
+Confidence is not the same as severity.
+
+- Severity tells you how serious the architectural risk may be.
+- Confidence tells you how strongly the current detector evidence supports that result.
+
+Practical interpretation:
+
+- `Very high` or `High` confidence:
+  - usually safe to treat as a strong signal for review and remediation planning
+- `Moderate` confidence:
+  - review the evidence before acting
+- `Low` confidence:
+  - treat as an early signal that needs manual confirmation
+
+## Summary Cards Meaning
+
+The summary strip now helps users understand where to focus first:
+
+- `Findings`: total findings in the scan
+- `Services`: services included in the scan
+- `System Health`: overall architecture score
+- `Highest Risk`: strongest severity currently present
+- `Hotspot Service`: service with the densest concentration of linked findings
+- `Focus First`: the first issue MESA suggests reviewing
+
 ## Guided Workflow Meaning
 
 The current UI now guides users through these steps:
