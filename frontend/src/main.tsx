@@ -228,6 +228,8 @@ type WorkflowStep = {
   optional?: boolean;
 };
 
+type InterpretationMode = "beginner" | "research";
+
 const defaultPaths = [
   "/workspace/tests/fixtures/god/platform-service",
   "/workspace/tests/fixtures/god/order-service",
@@ -289,6 +291,7 @@ function App() {
   const [isSavingPolicies, setIsSavingPolicies] = React.useState(false);
   const [selectedFinding, setSelectedFinding] = React.useState<Finding | null>(null);
   const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
+  const [interpretationMode, setInterpretationMode] = React.useState<InterpretationMode>("beginner");
   const [filters, setFilters] = React.useState<Filters>({
     type: "ALL",
     severity: "ALL",
@@ -569,6 +572,8 @@ function App() {
   const highestSeverity = getHighestSeverity(result?.findings ?? []);
   const systemScore = scores.find((score) => score.scope === "system") ?? result?.summary.health_scores?.system;
   const serviceScores = scores.filter((score) => score.scope === "service");
+  const urgentFinding = getMostUrgentFinding(result?.findings ?? []);
+  const hotspot = getHotspotService(result?.findings ?? [], serviceScores);
   const hasProject = Boolean(selectedProjectId);
   const hasSourceConfigured = Boolean(sourceLocation.trim()) || manualServicePaths.length > 0;
   const hasRepoPreview = Boolean(repoPreview);
@@ -849,11 +854,84 @@ function App() {
         </aside>
 
         <section className="mainDeck">
+          <section className="interpretationPanel">
+            <div className="interpretationIntro">
+              <div className="eyebrow">Result Interpretation</div>
+              <h2>Choose how to read this scan</h2>
+              <p>
+                Switch between a guided plain-language view and a deeper research-oriented explanation without changing
+                the underlying detector results.
+              </p>
+            </div>
+            <div className="modeToggle" role="tablist" aria-label="Interpretation mode">
+              <button
+                type="button"
+                className={interpretationMode === "beginner" ? "modeButton active" : "modeButton"}
+                onClick={() => setInterpretationMode("beginner")}
+              >
+                <small>Recommended</small>
+                <strong>Beginner</strong>
+                <span>Plain language explanations, impact, and the best first action.</span>
+              </button>
+              <button
+                type="button"
+                className={interpretationMode === "research" ? "modeButton active" : "modeButton"}
+                onClick={() => setInterpretationMode("research")}
+              >
+                <small>Detailed</small>
+                <strong>Research</strong>
+                <span>Detector labels, richer evidence detail, and technical context.</span>
+              </button>
+            </div>
+          </section>
+
           <section className="summaryStrip">
-            <Metric label="Findings" value={result?.summary.finding_count ?? 0} />
-            <Metric label="Services" value={result?.summary.service_count ?? 0} />
-            <Metric label="System Health" value={systemScore ? Math.round(systemScore.score) : "--"} tone={systemScore ? gradeTone(systemScore.grade) : ""} />
-            <Metric label="Risk" value={highestSeverity} tone={highestSeverity.toLowerCase()} />
+            <Metric
+              label="Findings"
+              value={result?.summary.finding_count ?? 0}
+              detail={result ? `${filteredFindings.length} visible with current filters` : "Run a scan to populate results"}
+              kind="number"
+            />
+            <Metric
+              label="Services"
+              value={result?.summary.service_count ?? 0}
+              detail={result ? "Microservices included in this scan" : "No source analyzed yet"}
+              kind="number"
+            />
+            <Metric
+              label="System Health"
+              value={systemScore ? Math.round(systemScore.score) : "--"}
+              tone={systemScore ? gradeTone(systemScore.grade) : ""}
+              detail={systemScore ? `${systemScore.grade} overall architecture quality` : "Available after a completed scan"}
+              kind="number"
+            />
+            <Metric
+              label="Highest Risk"
+              value={highestSeverity}
+              tone={highestSeverity.toLowerCase()}
+              detail={highestSeverity === "None" ? "No active findings yet" : "Strongest severity currently detected"}
+              kind="status"
+            />
+            <Metric
+              label="Hotspot Service"
+              value={hotspot?.service ?? "--"}
+              tone={hotspot ? hotspot.tone : ""}
+              detail={hotspot?.detail ?? "Most concentrated risk area in the scan"}
+              kind="service"
+              featured
+            />
+            <Metric
+              label="Focus First"
+              value={urgentFinding ? summaryFindingTitle(urgentFinding) : "No urgent issue"}
+              tone={urgentFinding ? urgentFinding.severity.toLowerCase() : ""}
+              detail={urgentFinding ? compactMetricDetail(recommendationPreview(urgentFinding), 28) : "Run a scan to generate prioritized guidance"}
+              kind="summary"
+              featured
+              wide
+              detailLines={5}
+              expandableDetail={Boolean(urgentFinding)}
+              fullDetail={urgentFinding ? recommendationPreview(urgentFinding) : undefined}
+            />
           </section>
 
           <section className="historyPanel">
@@ -897,9 +975,9 @@ function App() {
               {result ? <div ref={graphRef} className="graph" /> : <div className="emptyState">No scan selected.</div>}
               <GraphInspector selection={selectedGraphElement} />
             </section>
-
-            <HealthScoreView systemScore={systemScore ?? null} serviceScores={serviceScores} />
           </section>
+
+          <HealthScoreView systemScore={systemScore ?? null} serviceScores={serviceScores} />
         </section>
 
         <FindingsDashboard
@@ -907,13 +985,18 @@ function App() {
           filteredFindings={filteredFindings}
           filters={filters}
           filterOptions={filterOptions}
+          interpretationMode={interpretationMode}
           onFilterChange={setFilters}
           onSelectFinding={setSelectedFinding}
         />
       </section>
 
       {selectedFinding ? (
-        <FindingDrawer finding={selectedFinding} onClose={() => setSelectedFinding(null)} />
+        <FindingDrawer
+          finding={selectedFinding}
+          interpretationMode={interpretationMode}
+          onClose={() => setSelectedFinding(null)}
+        />
       ) : null}
     </main>
   );
@@ -961,6 +1044,7 @@ function FindingsDashboard({
   filteredFindings,
   filters,
   filterOptions,
+  interpretationMode,
   onFilterChange,
   onSelectFinding
 }: {
@@ -968,6 +1052,7 @@ function FindingsDashboard({
   filteredFindings: Finding[];
   filters: Filters;
   filterOptions: { types: string[]; severities: string[]; services: string[] };
+  interpretationMode: InterpretationMode;
   onFilterChange: (filters: Filters) => void;
   onSelectFinding: (finding: Finding) => void;
 }) {
@@ -978,6 +1063,7 @@ function FindingsDashboard({
           <h2>Findings Dashboard</h2>
           <p>{filteredFindings.length} of {findings.length} findings</p>
         </div>
+        <span>{interpretationMode === "beginner" ? "Plain-language view" : "Research detail view"}</span>
       </div>
 
       <div className="filters">
@@ -1012,15 +1098,30 @@ function FindingsDashboard({
       {filteredFindings.map((finding) => (
         <article key={finding.id} className="findingCard clickable" onClick={() => onSelectFinding(finding)}>
           <div className="findingMeta">
-            <span>{finding.id}</span>
+            <span>{interpretationMode === "research" ? finding.id : confidenceLabel(finding.confidence)}</span>
             <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
           </div>
-          <h3>{formatType(finding.type)}</h3>
+          <h3>{plainLanguageFindingTitle(finding)}</h3>
+          {interpretationMode === "research" ? (
+            <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
+          ) : null}
           <div className="serviceChips">
             {finding.services.map((service) => <span key={service}>{service}</span>)}
           </div>
-          <p>{finding.description}</p>
-          <small className="confidenceText">Confidence {Math.round(finding.confidence * 100)}%</small>
+          <p>{renderHighlightedText(finding.description)}</p>
+          <div className="findingHighlights">
+            <div>
+              <strong>Why it matters</strong>
+              <span>{findingWhyItMatters(finding)}</span>
+            </div>
+            <div>
+              <strong>Do first</strong>
+              <span>{recommendationPreview(finding)}</span>
+            </div>
+          </div>
+          <small className="confidenceText">
+            {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%)
+          </small>
         </article>
       ))}
     </aside>
@@ -1130,28 +1231,34 @@ function DimensionBars({ breakdown }: { breakdown: Record<string, number> }) {
   );
 }
 
-function RecommendationDetails({ finding }: { finding: Finding }) {
+function RecommendationDetails({
+  finding,
+  interpretationMode
+}: {
+  finding: Finding;
+  interpretationMode: InterpretationMode;
+}) {
   const recommendation = finding.recommendations?.[0];
   if (!recommendation) {
     return (
-      <div className="recommendation">
-        <strong>Recommendation</strong>
-        <small>{finding.recommendation}</small>
-      </div>
+      <section className="drawerSection recommendation">
+        <h3>What to do first</h3>
+        <p>{finding.recommendation}</p>
+      </section>
     );
   }
   return (
-    <section className="recommendation structuredRecommendation">
+    <section className="drawerSection recommendation structuredRecommendation">
       <div className="recommendationHeader">
-        <strong>Architectural Recommendation</strong>
+        <strong>What to do first</strong>
         <span>{recommendation.priority} priority - {recommendation.estimated_difficulty} difficulty</span>
       </div>
       <dl>
-        <dt>Root cause</dt>
+        <dt>Likely root cause</dt>
         <dd>{recommendation.root_cause}</dd>
-        <dt>Consequence</dt>
+        <dt>Expected consequence if unchanged</dt>
         <dd>{recommendation.architectural_consequence}</dd>
-        <dt>Expected impact</dt>
+        <dt>Expected impact after refactor</dt>
         <dd>{recommendation.expected_impact}</dd>
       </dl>
       {recommendation.affected_files.length > 0 ? (
@@ -1160,16 +1267,24 @@ function RecommendationDetails({ finding }: { finding: Finding }) {
           {recommendation.affected_files.slice(0, 5).map((file) => <code key={file}>{file}</code>)}
         </div>
       ) : null}
-      <strong>Refactoring steps</strong>
+      <strong>Suggested refactoring steps</strong>
       <ol>
         {recommendation.refactoring_steps.map((step) => <li key={step}>{step}</li>)}
       </ol>
-      <small>Source: {recommendation.source}</small>
+      {interpretationMode === "research" ? <small>Recommendation source: {recommendation.source}</small> : null}
     </section>
   );
 }
 
-function FindingDrawer({ finding, onClose }: { finding: Finding; onClose: () => void }) {
+function FindingDrawer({
+  finding,
+  interpretationMode,
+  onClose
+}: {
+  finding: Finding;
+  interpretationMode: InterpretationMode;
+  onClose: () => void;
+}) {
   return (
     <div className="drawerOverlay" onClick={onClose}>
       <aside className="drawer" onClick={(event) => event.stopPropagation()}>
@@ -1178,14 +1293,50 @@ function FindingDrawer({ finding, onClose }: { finding: Finding; onClose: () => 
           <span>{finding.id}</span>
           <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
         </div>
-        <h2>{formatType(finding.type)}</h2>
+        <h2>{plainLanguageFindingTitle(finding)}</h2>
+        <p className="drawerModeNote">
+          {interpretationMode === "beginner"
+            ? "Beginner mode focuses on the meaning of the result and the first actions to take."
+            : "Research mode keeps the same interpretation but also shows raw detector evidence and technical labels."}
+        </p>
+        {interpretationMode === "research" ? (
+          <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
+        ) : null}
         <div className="serviceChips">
           {finding.services.map((service) => <span key={service}>{service}</span>)}
         </div>
-        <p>{finding.description}</p>
-        <RecommendationDetails finding={finding} />
-        <h3>Evidence</h3>
-        <pre>{JSON.stringify(finding.evidence, null, 2)}</pre>
+        <section className="drawerSection">
+          <h3>What MESA found</h3>
+          <p>{finding.description}</p>
+        </section>
+        <section className="drawerSection">
+          <h3>Why it matters</h3>
+          <p>{findingWhyItMatters(finding)}</p>
+        </section>
+        <section className="drawerSection">
+          <h3>Why MESA thinks this</h3>
+          <ul className="evidenceBulletList">
+            {summarizeEvidence(finding.evidence).map((item) => <li key={item}>{item}</li>)}
+          </ul>
+          <small className="supportText">
+            {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%). {confidenceGuidance(finding.confidence)}
+          </small>
+        </section>
+        <RecommendationDetails finding={finding} interpretationMode={interpretationMode} />
+        <section className="drawerSection">
+          <h3>Expected impact</h3>
+          <p>{recommendationImpact(finding)}</p>
+        </section>
+        <section className="drawerSection">
+          <h3>What this does not prove</h3>
+          <p>{findingLimitation(finding)}</p>
+        </section>
+        {interpretationMode === "research" ? (
+          <section className="drawerSection">
+            <h3>Raw evidence</h3>
+            <pre>{JSON.stringify(finding.evidence, null, 2)}</pre>
+          </section>
+        ) : null}
       </aside>
     </div>
   );
@@ -1601,12 +1752,75 @@ function normalizeRelationshipType(type: string) {
   return type.toLowerCase();
 }
 
-function Metric({ label, value, tone }: { label: string; value: string | number; tone?: string }) {
+function Metric({
+  label,
+  value,
+  tone,
+  detail,
+  kind = "summary",
+  featured = false,
+  wide = false,
+  detailLines = 3,
+  expandableDetail = false,
+  fullDetail
+}: {
+  label: string;
+  value: string | number;
+  tone?: string;
+  detail?: string;
+  kind?: "number" | "status" | "service" | "summary";
+  featured?: boolean;
+  wide?: boolean;
+  detailLines?: 2 | 3 | 4 | 5 | 6;
+  expandableDetail?: boolean;
+  fullDetail?: string;
+}) {
+  const [isDetailOpen, setIsDetailOpen] = React.useState(false);
+  const valueLength = String(value).length;
+  const valueClassName = [
+    "metricValue",
+    `metricValue-${kind}`,
+    valueLength > 18 ? "long" : "",
+    valueLength > 30 ? "xlong" : ""
+  ].filter(Boolean).join(" ");
   return (
-    <div className={`metric ${tone ?? ""}`}>
-      <strong>{value}</strong>
+    <article
+      className={`metric ${tone ?? ""} ${featured ? "featured" : ""} ${wide ? "wide" : ""}`}
+      title={typeof value === "string" ? value : undefined}
+    >
+      {kind === "service" ? (
+        <code className={valueClassName}>{value}</code>
+      ) : (
+        <strong className={valueClassName}>{value}</strong>
+      )}
       <span>{label}</span>
-    </div>
+      {detail ? <small className={`detailLines-${detailLines}`} title={detail}>{detail}</small> : null}
+      {expandableDetail && fullDetail ? (
+        <>
+          <button
+            type="button"
+            className="metricMoreButton"
+            onClick={() => setIsDetailOpen((current) => !current)}
+            aria-expanded={isDetailOpen}
+          >
+            {isDetailOpen ? "Hide detail" : "See more"}
+          </button>
+          {isDetailOpen ? (
+            <div className="metricPopover" role="dialog" aria-label={`${label} detail`}>
+              <div className="metricPopoverHeader">
+                <strong>{label}</strong>
+                <button type="button" className="metricPopoverClose" onClick={() => setIsDetailOpen(false)}>
+                  Close
+                </button>
+              </div>
+              <div className="metricPopoverBody">
+                <p>{fullDetail}</p>
+              </div>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+    </article>
   );
 }
 
@@ -1715,6 +1929,172 @@ function formatNodeLabel(id: string, type?: string) {
   if (type !== "database") return id;
   const database = id.split("/").pop()?.replace(/^db:/, "") ?? id.replace(/^db:/, "");
   return `${database} db`;
+}
+
+function plainLanguageFindingTitle(finding: Finding) {
+  const titles: Record<string, string> = {
+    GOD_SERVICE: "A service is doing too much",
+    CHATTY_SERVICE: "Two services are talking too often",
+    SHARED_DATABASE: "Multiple services rely on the same database",
+    HARD_CODED_SERVICE_URL: "A service dependency is hard coded",
+    DEPENDENCY_CYCLE: "Services depend on each other in a loop"
+  };
+  return titles[finding.type] ?? formatType(finding.type);
+}
+
+function summaryFindingTitle(finding: Finding) {
+  const titles: Record<string, string> = {
+    GOD_SERVICE: "Overloaded service",
+    CHATTY_SERVICE: "Chatty service flow",
+    SHARED_DATABASE: "Shared database risk",
+    HARD_CODED_SERVICE_URL: "Hard-coded dependency",
+    DEPENDENCY_CYCLE: "Dependency cycle",
+    GOVERNANCE_POLICY_VIOLATION: "Policy violation"
+  };
+  return titles[finding.type] ?? plainLanguageFindingTitle(finding);
+}
+
+function compactMetricDetail(text: string, maxWords: number) {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return `${words.slice(0, maxWords).join(" ")}...`;
+}
+
+function renderHighlightedText(text: string) {
+  const parts = tokenizeHighlightedText(text);
+  return parts.map((part, index) =>
+    part.kind === "code" ? (
+      <code key={`${part.value}-${index}`} className="inlineCode">
+        {part.value}
+      </code>
+    ) : (
+      <React.Fragment key={`${part.value}-${index}`}>{part.value}</React.Fragment>
+    )
+  );
+}
+
+function tokenizeHighlightedText(text: string) {
+  const pattern = /(https?:\/\/[^\s)]+|\/[^\s,;]+|[a-z0-9]+(?:-[a-z0-9]+){1,}(?=[\s.,;:)])?)/gi;
+  const parts: Array<{ kind: "text" | "code"; value: string }> = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    const [raw] = match;
+    const start = match.index;
+    if (start > lastIndex) {
+      parts.push({ kind: "text", value: text.slice(lastIndex, start) });
+    }
+
+    const trimmed = trimTrailingPunctuation(raw);
+    const trailing = raw.slice(trimmed.length);
+    parts.push({ kind: "code", value: trimmed });
+    if (trailing) {
+      parts.push({ kind: "text", value: trailing });
+    }
+    lastIndex = start + raw.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ kind: "text", value: text.slice(lastIndex) });
+  }
+
+  return parts;
+}
+
+function trimTrailingPunctuation(value: string) {
+  return value.replace(/[.,;:]+$/, "");
+}
+
+function findingWhyItMatters(finding: Finding) {
+  if (finding.type.includes("GOD")) return "This service can become hard to change safely because too many responsibilities are concentrated in one place.";
+  if (finding.type.includes("CHATTY")) return "Frequent cross-service calls can slow requests down and make failures spread more easily between services.";
+  if (finding.type.includes("SHARED") || finding.type.includes("DATABASE")) return "Shared data ownership weakens service boundaries and makes independent releases more difficult.";
+  if (finding.type.includes("HARD_CODED")) return "Hard-coded dependencies reduce portability and make environment changes or service moves more fragile.";
+  if (finding.type.includes("CYCLE")) return "Dependency loops usually increase coupling and make it harder to isolate, test, and evolve services.";
+  return "This finding suggests a structural risk that could reduce maintainability, clarity, or service independence.";
+}
+
+function findingLimitation(finding: Finding) {
+  if (finding.type.includes("CHATTY")) return "This does not prove the calls are always bad. It indicates a pattern worth validating against traffic, latency, and business workflow needs.";
+  if (finding.type.includes("SHARED") || finding.type.includes("DATABASE")) return "This does not prove the database schema is wrong. It highlights a likely ownership boundary that needs architectural review.";
+  if (finding.type.includes("HARD_CODED")) return "This does not prove runtime failures are happening now. It shows a portability and maintainability risk in the current implementation.";
+  if (finding.type.includes("GOD")) return "This does not prove the service is impossible to maintain. It signals that responsibility may be too concentrated and should be reviewed.";
+  if (finding.type.includes("CYCLE")) return "This does not prove every dependency in the cycle is unnecessary. It shows a loop that deserves closer design analysis.";
+  return "This result is evidence of a likely architectural issue, not a complete explanation of all runtime behavior.";
+}
+
+function confidenceLabel(confidence: number) {
+  if (confidence >= 0.9) return "Very high";
+  if (confidence >= 0.75) return "High";
+  if (confidence >= 0.55) return "Moderate";
+  return "Low";
+}
+
+function confidenceGuidance(confidence: number) {
+  if (confidence >= 0.9) return "The detector found strong signals that consistently support this result.";
+  if (confidence >= 0.75) return "The detector found several supporting signals, but human review is still useful before acting.";
+  if (confidence >= 0.55) return "The result is plausible, though the evidence is lighter and should be reviewed carefully.";
+  return "Treat this as an early signal that needs manual confirmation before making architectural changes.";
+}
+
+function recommendationPreview(finding: Finding) {
+  const recommendation = finding.recommendations?.[0];
+  if (recommendation?.refactoring_steps?.[0]) return recommendation.refactoring_steps[0];
+  return finding.recommendation;
+}
+
+function recommendationImpact(finding: Finding) {
+  const recommendation = finding.recommendations?.[0];
+  if (recommendation?.expected_impact) return recommendation.expected_impact;
+  return "Addressing this finding should reduce architectural risk and improve clarity of service boundaries.";
+}
+
+function summarizeEvidence(evidence: Array<Record<string, unknown>>) {
+  if (evidence.length === 0) return ["No structured detector evidence was attached to this finding."];
+  return evidence.slice(0, 4).map((record, index) => {
+    const fragments = Object.entries(record)
+      .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
+      .slice(0, 3)
+      .map(([key, value]) => `${formatType(key)}: ${String(value)}`);
+    return fragments.length > 0 ? fragments.join(" | ") : `Evidence item ${index + 1} contains nested detector metadata.`;
+  });
+}
+
+function getMostUrgentFinding(findings: Finding[]) {
+  return [...findings].sort((left, right) => {
+    const severityDelta = (severityRank[right.severity] ?? 0) - (severityRank[left.severity] ?? 0);
+    if (severityDelta !== 0) return severityDelta;
+    return right.confidence - left.confidence;
+  })[0];
+}
+
+function getHotspotService(findings: Finding[], scores: HealthScore[]) {
+  const serviceCounts = new Map<string, { count: number; severity: string; score?: number }>();
+  findings.forEach((finding) => {
+    finding.services.forEach((service) => {
+      const current = serviceCounts.get(service) ?? { count: 0, severity: "low", score: serviceHealthScore(scores, service)?.score };
+      const nextSeverity = (severityRank[finding.severity] ?? 0) > (severityRank[current.severity] ?? 0) ? finding.severity : current.severity;
+      serviceCounts.set(service, {
+        count: current.count + 1,
+        severity: nextSeverity,
+        score: current.score
+      });
+    });
+  });
+  const [service, meta] = [...serviceCounts.entries()].sort((left, right) => {
+    const countDelta = right[1].count - left[1].count;
+    if (countDelta !== 0) return countDelta;
+    const severityDelta = (severityRank[right[1].severity] ?? 0) - (severityRank[left[1].severity] ?? 0);
+    if (severityDelta !== 0) return severityDelta;
+    return (left[1].score ?? 100) - (right[1].score ?? 100);
+  })[0] ?? [];
+  if (!service || !meta) return null;
+  return {
+    service,
+    tone: meta.severity.toLowerCase(),
+    detail: `${meta.count} linked findings${meta.score !== undefined ? `, health ${Math.round(meta.score)}` : ""}`
+  };
 }
 
 function formatType(type: string) {
