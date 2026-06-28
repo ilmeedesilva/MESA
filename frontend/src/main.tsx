@@ -292,6 +292,9 @@ function App() {
   const [selectedFinding, setSelectedFinding] = React.useState<Finding | null>(null);
   const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
   const [interpretationMode, setInterpretationMode] = React.useState<InterpretationMode>("beginner");
+  const [showSetupWorkspace, setShowSetupWorkspace] = React.useState(true);
+  const [hasAutoCollapsedSetup, setHasAutoCollapsedSetup] = React.useState(false);
+  const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");
   const [filters, setFilters] = React.useState<Filters>({
     type: "ALL",
     severity: "ALL",
@@ -580,6 +583,12 @@ function App() {
   const hasServiceSelection = repoPreview ? selectedDiscoveryPaths.length > 0 : manualServicePaths.length > 0;
   const hasSavedPolicies = policyCount > 0;
   const hasCompletedScan = Boolean(activeScan && result);
+  React.useEffect(() => {
+    if (hasCompletedScan && !hasAutoCollapsedSetup) {
+      setShowSetupWorkspace(false);
+      setHasAutoCollapsedSetup(true);
+    }
+  }, [hasAutoCollapsedSetup, hasCompletedScan]);
   const nextAction = !hasProject
     ? "Create or select a project to begin the guided workflow."
     : !hasSourceConfigured
@@ -629,6 +638,21 @@ function App() {
       active: hasProject && hasServiceSelection && !hasCompletedScan
     }
   ];
+  const pendingWorkflowSteps = workflowSteps.filter((step) => !step.done);
+  const activeWorkflowStep = workflowSteps.find((step) => step.active) ?? pendingWorkflowSteps[0] ?? workflowSteps[workflowSteps.length - 1];
+  const activeSetupStepIndex = Math.max(0, workflowSteps.findIndex((step) => step.id === activeSetupStepId));
+  const activeSetupStep = workflowSteps[activeSetupStepIndex] ?? workflowSteps[0];
+
+  React.useEffect(() => {
+    if (!workflowSteps.some((step) => step.id === activeSetupStepId)) {
+      setActiveSetupStepId(activeWorkflowStep.id);
+    }
+  }, [activeSetupStepId, activeWorkflowStep.id, workflowSteps]);
+
+  function openSetupStep(stepId: WorkflowStep["id"]) {
+    setActiveSetupStepId(stepId);
+    setShowSetupWorkspace(true);
+  }
 
   return (
     <main>
@@ -653,31 +677,78 @@ function App() {
             <h2>Guided Scan Flow</h2>
             <p>{nextAction}</p>
           </div>
-          <div className="workflowStatus">
-            <strong>{workflowSteps.filter((step) => step.done).length}/{workflowSteps.length}</strong>
-            <span>steps ready</span>
+          <div className="workflowActions">
+            <div className="workflowStatus">
+              <strong>{workflowSteps.filter((step) => step.done).length}/{workflowSteps.length}</strong>
+              <span>steps ready</span>
+            </div>
+            <button
+              type="button"
+              className="workflowToggle"
+              onClick={() => setShowSetupWorkspace((current) => !current)}
+            >
+              {showSetupWorkspace ? "Hide setup workspace" : "Show setup workspace"}
+            </button>
           </div>
         </div>
-        <div className="workflowStrip">
+        <div className="workflowFlow">
           {workflowSteps.map((step, index) => (
-            <article
-              key={step.id}
-              className={`workflowStep ${step.done ? "done" : ""} ${step.active ? "active" : ""} ${step.optional ? "optional" : ""}`}
-            >
-              <div className="workflowStepTop">
-                <span>Step {index + 1}</span>
-                {step.optional ? <small>Optional</small> : null}
-              </div>
-              <strong>{step.label}</strong>
-              <p>{step.description}</p>
-            </article>
+            <React.Fragment key={step.id}>
+              <button
+                type="button"
+                className={`workflowNode ${step.done ? "done" : ""} ${step.id === activeSetupStepId ? "current" : ""} ${step.active ? "active" : ""} ${step.optional ? "optional" : ""}`}
+                onClick={() => openSetupStep(step.id)}
+              >
+                <small>Step {index + 1}</small>
+                <strong>{step.label}</strong>
+              </button>
+              {index < workflowSteps.length - 1 ? <span className="workflowArrow" aria-hidden="true">→</span> : null}
+            </React.Fragment>
           ))}
         </div>
       </section>
 
       <section className="dashboardShell">
-        <aside className="sideRail">
-          <section className="panelBlock">
+        {showSetupWorkspace ? (
+          <section className="setupWorkspace">
+            <div className="setupWorkspaceHeader">
+              <div>
+                <div className="eyebrow">Setup Workspace</div>
+                <h2>{hasCompletedScan ? "Update project inputs when you need to rescan" : "Move through the setup steps in order"}</h2>
+                <p>
+                  {hasCompletedScan
+                    ? "Your existing results stay available below. Reopen this area only when you want to change sources, services, policies, or run a fresh scan."
+                    : "Use these cards from left to right to create a project, choose a source, review services, add policies, and run the scan."}
+                </p>
+              </div>
+              <div className="setupWorkspaceStatus">
+                <strong>{`Step ${activeSetupStepIndex + 1}. ${activeSetupStep.label}`}</strong>
+                <span>{activeSetupStep.description}</span>
+              </div>
+            </div>
+
+            <div className="setupStepNav">
+              <button
+                type="button"
+                className="secondaryButton"
+                onClick={() => openSetupStep(workflowSteps[Math.max(0, activeSetupStepIndex - 1)].id)}
+                disabled={activeSetupStepIndex === 0}
+              >
+                Previous step
+              </button>
+              <span>{`${activeSetupStepIndex + 1} of ${workflowSteps.length}`}</span>
+              <button
+                type="button"
+                onClick={() => openSetupStep(workflowSteps[Math.min(workflowSteps.length - 1, activeSetupStepIndex + 1)].id)}
+                disabled={activeSetupStepIndex === workflowSteps.length - 1}
+              >
+                Next step
+              </button>
+            </div>
+
+            <div className="sideRail singleStep">
+              {activeSetupStepId === "project" ? (
+                <section className="panelBlock">
             <div className="panelHeader compact">
               <h2>Step 1. Project</h2>
               <span>{projects.length} saved</span>
@@ -696,9 +767,11 @@ function App() {
                 <option key={project.id} value={project.id}>{project.name}</option>
               ))}
             </select>
-          </section>
+                </section>
+              ) : null}
 
-          <section className="panelBlock">
+              {activeSetupStepId === "source" ? (
+                <section className="panelBlock">
             <div className="panelHeader compact">
               <h2>Step 2. Source</h2>
               <span>{sourceLocation.trim() ? sourceType : "Manual mode"}</span>
@@ -758,9 +831,11 @@ function App() {
                 Preview discovery to unlock the service review step and confirm what MESA will analyze.
               </div>
             ) : null}
-          </section>
+                </section>
+              ) : null}
 
-          <section className="panelBlock">
+              {activeSetupStepId === "review" ? (
+                <section className="panelBlock">
             <div className="panelHeader compact">
               <h2>Step 3. Review Services</h2>
               <span>{repoPreview ? `${selectedDiscoveryPaths.length} selected` : `${manualServicePaths.length} manual paths`}</span>
@@ -826,9 +901,11 @@ function App() {
             <textarea id="paths" value={paths} onChange={(event) => setPaths(event.target.value)} />
             <p className="hint">Manual fallback: use one service directory per line. Repository discovery can fill this automatically.</p>
             {error ? <div className="error">{error}</div> : null}
-          </section>
+                </section>
+              ) : null}
 
-          <section className="panelBlock policyEditor">
+              {activeSetupStepId === "policies" ? (
+                <section className="panelBlock policyEditor">
             <div className="panelHeader compact">
               <h2>Step 4. Governance Policies</h2>
               <span>{policyCount} active optional rules</span>
@@ -839,9 +916,11 @@ function App() {
             <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProjectId}>
               {isSavingPolicies ? "Saving..." : "Save Policies"}
             </button>
-          </section>
+                </section>
+              ) : null}
 
-          <section className="panelBlock runStepCard">
+              {activeSetupStepId === "scan" ? (
+                <section className="panelBlock runStepCard">
             <div className="panelHeader compact">
               <h2>Step 5. Run Scan</h2>
               <span>{repoPreview ? "Repository-backed" : "Manual paths"}</span>
@@ -850,8 +929,11 @@ function App() {
             <button onClick={runScan} disabled={isScanning || !selectedProjectId}>
               {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
             </button>
+                </section>
+              ) : null}
+            </div>
           </section>
-        </aside>
+        ) : null}
 
         <section className="mainDeck">
           <section className="interpretationPanel">
@@ -1058,15 +1140,15 @@ function FindingsDashboard({
 }) {
   return (
     <aside className="findings dashboardFindings">
-      <div className="panelHeader">
-        <div>
+      <div className="findingsHeader">
+        <div className="findingsHeaderText">
           <h2>Findings Dashboard</h2>
           <p>{filteredFindings.length} of {findings.length} findings</p>
         </div>
-        <span>{interpretationMode === "beginner" ? "Plain-language view" : "Research detail view"}</span>
+        <span className="modePill">{interpretationMode === "beginner" ? "Plain-language view" : "Research detail view"}</span>
       </div>
 
-      <div className="filters">
+      <div className="filters findingsFilters">
         <select value={filters.type} onChange={(event) => onFilterChange({ ...filters, type: event.target.value })}>
           <option value="ALL">All anti-patterns</option>
           {filterOptions.types.map((type) => <option key={type} value={type}>{formatType(type)}</option>)}
@@ -1095,35 +1177,39 @@ function FindingsDashboard({
       {findings.length === 0 ? <div className="emptyList">No findings for this scan.</div> : null}
       {findings.length > 0 && filteredFindings.length === 0 ? <div className="emptyList">No findings match these filters.</div> : null}
 
-      {filteredFindings.map((finding) => (
-        <article key={finding.id} className="findingCard clickable" onClick={() => onSelectFinding(finding)}>
-          <div className="findingMeta">
-            <span>{interpretationMode === "research" ? finding.id : confidenceLabel(finding.confidence)}</span>
-            <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
-          </div>
-          <h3>{plainLanguageFindingTitle(finding)}</h3>
-          {interpretationMode === "research" ? (
-            <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
-          ) : null}
-          <div className="serviceChips">
-            {finding.services.map((service) => <span key={service}>{service}</span>)}
-          </div>
-          <p>{renderHighlightedText(finding.description)}</p>
-          <div className="findingHighlights">
-            <div>
-              <strong>Why it matters</strong>
-              <span>{findingWhyItMatters(finding)}</span>
-            </div>
-            <div>
-              <strong>Do first</strong>
-              <span>{recommendationPreview(finding)}</span>
-            </div>
-          </div>
-          <small className="confidenceText">
-            {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%)
-          </small>
-        </article>
-      ))}
+      {filteredFindings.length > 0 ? (
+        <div className="findingsGrid">
+          {filteredFindings.map((finding) => (
+            <article key={finding.id} className="findingCard clickable" onClick={() => onSelectFinding(finding)}>
+              <div className="findingMeta">
+                <span>{interpretationMode === "research" ? finding.id : confidenceLabel(finding.confidence)}</span>
+                <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
+              </div>
+              <h3>{plainLanguageFindingTitle(finding)}</h3>
+              {interpretationMode === "research" ? (
+                <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
+              ) : null}
+              <div className="serviceChips">
+                {finding.services.map((service) => <span key={service}>{service}</span>)}
+              </div>
+              <p>{renderHighlightedText(finding.description)}</p>
+              <div className="findingHighlights">
+                <div>
+                  <strong>Why it matters</strong>
+                  <span>{findingWhyItMatters(finding)}</span>
+                </div>
+                <div>
+                  <strong>Do first</strong>
+                  <span>{recommendationPreview(finding)}</span>
+                </div>
+              </div>
+              <small className="confidenceText">
+                {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%)
+              </small>
+            </article>
+          ))}
+        </div>
+      ) : null}
     </aside>
   );
 }
