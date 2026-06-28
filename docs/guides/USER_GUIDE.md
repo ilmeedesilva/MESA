@@ -25,8 +25,21 @@ neo4j / mesa-password
 ## Run a Scan in the UI
 
 1. Open `http://localhost:5173`.
-2. Create or select a project.
-3. Use Docker-mounted service paths, for example:
+2. Follow the guided workflow at the top of the page.
+3. Create or select a project.
+4. Choose one of these input styles:
+
+- Repository-backed workflow:
+  - choose source type
+  - enter a local path, archive path, or public GitHub URL
+  - click `Preview Discovery`
+  - review the discovered services and keep the ones you want
+  - click `Apply Selected Services`
+- Manual fallback:
+  - leave the repository source empty
+  - paste service directories manually
+
+5. If you use manual service paths, use Docker-mounted paths such as:
 
 ```text
 /workspace/tests/fixtures/god/platform-service
@@ -38,9 +51,27 @@ neo4j / mesa-password
 /workspace/tests/fixtures/god/notification-service
 ```
 
-4. Optional: edit and save governance policies.
-5. Click Run Scan.
-6. Review findings, graph, health scores, evolution, and recommendations.
+6. Optional: edit and save governance policies.
+7. Click `Run Scan` or `Run Repo Scan`.
+8. Review findings, graph, health scores, evolution, and recommendations.
+
+## Guided Workflow Meaning
+
+The current UI now guides users through these steps:
+
+1. Project
+2. Source
+3. Review Services
+4. Governance Policies
+5. Run Scan
+
+The workflow banner at the top shows:
+
+- what step is currently complete
+- what step is currently active
+- the next recommended action
+
+This is intended to reduce first-run confusion and make the system easier to evaluate.
 
 ## Repository Ingestion APIs
 
