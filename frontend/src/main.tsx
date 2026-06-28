@@ -671,40 +671,73 @@ function App() {
       </section>
 
       <section className="workflowHero">
-        <div className="workflowSummary">
-          <div>
-            <div className="eyebrow">Next Action</div>
-            <h2>Guided Scan Flow</h2>
-            <p>{nextAction}</p>
-          </div>
-          <div className="workflowActions">
-            <div className="workflowStatus">
-              <strong>{workflowSteps.filter((step) => step.done).length}/{workflowSteps.length}</strong>
-              <span>steps ready</span>
+        <div className="topControlGrid">
+          <section className="workflowTrackPanel">
+            <div className="workflowSummary">
+              <div>
+                <div className="eyebrow">Next Action</div>
+                <h2>Guided Scan Flow</h2>
+                <p>{nextAction}</p>
+              </div>
+              <div className="workflowActions">
+                <div className="workflowStatus">
+                  <strong>{workflowSteps.filter((step) => step.done).length}/{workflowSteps.length}</strong>
+                  <span>steps ready</span>
+                </div>
+                <button
+                  type="button"
+                  className="workflowToggle"
+                  onClick={() => setShowSetupWorkspace((current) => !current)}
+                >
+                  {showSetupWorkspace ? "Hide setup workspace" : "Show setup workspace"}
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              className="workflowToggle"
-              onClick={() => setShowSetupWorkspace((current) => !current)}
-            >
-              {showSetupWorkspace ? "Hide setup workspace" : "Show setup workspace"}
-            </button>
-          </div>
-        </div>
-        <div className="workflowFlow">
-          {workflowSteps.map((step, index) => (
-            <React.Fragment key={step.id}>
+            <div className="workflowFlow">
+              {workflowSteps.map((step, index) => (
+                <button
+                  key={step.id}
+                  type="button"
+                  className={`workflowNode ${step.done ? "done" : ""} ${step.id === activeSetupStepId ? "current" : ""} ${step.active ? "active" : ""} ${step.optional ? "optional" : ""}`}
+                  onClick={() => openSetupStep(step.id)}
+                >
+                  <small>Step {index + 1}</small>
+                  <strong>{step.label}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="interpretationPanel">
+            <div className="interpretationIntro">
+              <div className="eyebrow">Result Interpretation</div>
+              <h2>Choose how to read this scan</h2>
+              <p>
+                Switch between a guided plain-language view and a deeper research-oriented explanation without changing
+                the underlying detector results.
+              </p>
+            </div>
+            <div className="modeToggle" role="tablist" aria-label="Interpretation mode">
               <button
                 type="button"
-                className={`workflowNode ${step.done ? "done" : ""} ${step.id === activeSetupStepId ? "current" : ""} ${step.active ? "active" : ""} ${step.optional ? "optional" : ""}`}
-                onClick={() => openSetupStep(step.id)}
+                className={interpretationMode === "beginner" ? "modeButton active" : "modeButton"}
+                onClick={() => setInterpretationMode("beginner")}
               >
-                <small>Step {index + 1}</small>
-                <strong>{step.label}</strong>
+                <small>Recommended</small>
+                <strong>Beginner</strong>
+                <span>Plain language explanations, impact, and the best first action.</span>
               </button>
-              {index < workflowSteps.length - 1 ? <span className="workflowArrow" aria-hidden="true">→</span> : null}
-            </React.Fragment>
-          ))}
+              <button
+                type="button"
+                className={interpretationMode === "research" ? "modeButton active" : "modeButton"}
+                onClick={() => setInterpretationMode("research")}
+              >
+                <small>Detailed</small>
+                <strong>Research</strong>
+                <span>Detector labels, richer evidence detail, and technical context.</span>
+              </button>
+            </div>
+          </section>
         </div>
       </section>
 
@@ -936,106 +969,77 @@ function App() {
         ) : null}
 
         <section className="mainDeck">
-          <section className="interpretationPanel">
-            <div className="interpretationIntro">
-              <div className="eyebrow">Result Interpretation</div>
-              <h2>Choose how to read this scan</h2>
-              <p>
-                Switch between a guided plain-language view and a deeper research-oriented explanation without changing
-                the underlying detector results.
-              </p>
-            </div>
-            <div className="modeToggle" role="tablist" aria-label="Interpretation mode">
-              <button
-                type="button"
-                className={interpretationMode === "beginner" ? "modeButton active" : "modeButton"}
-                onClick={() => setInterpretationMode("beginner")}
-              >
-                <small>Recommended</small>
-                <strong>Beginner</strong>
-                <span>Plain language explanations, impact, and the best first action.</span>
-              </button>
-              <button
-                type="button"
-                className={interpretationMode === "research" ? "modeButton active" : "modeButton"}
-                onClick={() => setInterpretationMode("research")}
-              >
-                <small>Detailed</small>
-                <strong>Research</strong>
-                <span>Detector labels, richer evidence detail, and technical context.</span>
-              </button>
-            </div>
-          </section>
+          <section className="overviewRow">
+            <section className="summaryStrip">
+              <Metric
+                label="Findings"
+                value={result?.summary.finding_count ?? 0}
+                detail={result ? `${filteredFindings.length} visible with current filters` : "Run a scan to populate results"}
+                kind="number"
+              />
+              <Metric
+                label="Services"
+                value={result?.summary.service_count ?? 0}
+                detail={result ? "Microservices included in this scan" : "No source analyzed yet"}
+                kind="number"
+              />
+              <Metric
+                label="System Health"
+                value={systemScore ? Math.round(systemScore.score) : "--"}
+                tone={systemScore ? gradeTone(systemScore.grade) : ""}
+                detail={systemScore ? `${systemScore.grade} overall architecture quality` : "Available after a completed scan"}
+                kind="number"
+              />
+              <Metric
+                label="Highest Risk"
+                value={highestSeverity}
+                tone={highestSeverity.toLowerCase()}
+                detail={highestSeverity === "None" ? "No active findings yet" : "Strongest severity currently detected"}
+                kind="status"
+              />
+              <Metric
+                label="Hotspot Service"
+                value={hotspot?.service ?? "--"}
+                tone={hotspot ? hotspot.tone : ""}
+                detail={hotspot?.detail ?? "Most concentrated risk area in the scan"}
+                kind="service"
+                featured
+              />
+              <Metric
+                label="Focus First"
+                value={urgentFinding ? summaryFindingTitle(urgentFinding) : "No urgent issue"}
+                tone={urgentFinding ? urgentFinding.severity.toLowerCase() : ""}
+                detail={urgentFinding ? compactMetricDetail(recommendationPreview(urgentFinding), 28) : "Run a scan to generate prioritized guidance"}
+                kind="summary"
+                featured
+                wide
+                detailLines={5}
+                expandableDetail={Boolean(urgentFinding)}
+                fullDetail={urgentFinding ? recommendationPreview(urgentFinding) : undefined}
+              />
+            </section>
 
-          <section className="summaryStrip">
-            <Metric
-              label="Findings"
-              value={result?.summary.finding_count ?? 0}
-              detail={result ? `${filteredFindings.length} visible with current filters` : "Run a scan to populate results"}
-              kind="number"
-            />
-            <Metric
-              label="Services"
-              value={result?.summary.service_count ?? 0}
-              detail={result ? "Microservices included in this scan" : "No source analyzed yet"}
-              kind="number"
-            />
-            <Metric
-              label="System Health"
-              value={systemScore ? Math.round(systemScore.score) : "--"}
-              tone={systemScore ? gradeTone(systemScore.grade) : ""}
-              detail={systemScore ? `${systemScore.grade} overall architecture quality` : "Available after a completed scan"}
-              kind="number"
-            />
-            <Metric
-              label="Highest Risk"
-              value={highestSeverity}
-              tone={highestSeverity.toLowerCase()}
-              detail={highestSeverity === "None" ? "No active findings yet" : "Strongest severity currently detected"}
-              kind="status"
-            />
-            <Metric
-              label="Hotspot Service"
-              value={hotspot?.service ?? "--"}
-              tone={hotspot ? hotspot.tone : ""}
-              detail={hotspot?.detail ?? "Most concentrated risk area in the scan"}
-              kind="service"
-              featured
-            />
-            <Metric
-              label="Focus First"
-              value={urgentFinding ? summaryFindingTitle(urgentFinding) : "No urgent issue"}
-              tone={urgentFinding ? urgentFinding.severity.toLowerCase() : ""}
-              detail={urgentFinding ? compactMetricDetail(recommendationPreview(urgentFinding), 28) : "Run a scan to generate prioritized guidance"}
-              kind="summary"
-              featured
-              wide
-              detailLines={5}
-              expandableDetail={Boolean(urgentFinding)}
-              fullDetail={urgentFinding ? recommendationPreview(urgentFinding) : undefined}
-            />
-          </section>
-
-          <section className="historyPanel">
-            <div className="panelHeader compact">
-              <h2>Scan History</h2>
-              <span>{history.length} scans</span>
-            </div>
-            <div className="scanList">
-              {history.length === 0 ? <div className="emptyInline">No persistent scans yet.</div> : null}
-              {history.map((scan) => (
-                <button
-                  key={scan.id}
-                  className={`scanItem ${activeScan?.id === scan.id ? "active" : ""}`}
-                  onClick={() => void loadScan(scan.id)}
-                  disabled={isLoadingScan}
-                >
-                  <strong>{scan.finding_count} findings</strong>
-                  <span>{scan.service_count} services</span>
-                  <small>{formatDate(scan.completed_at ?? scan.created_at)}</small>
-                </button>
-              ))}
-            </div>
+            <section className="historyPanel">
+              <div className="panelHeader compact">
+                <h2>Scan History</h2>
+                <span>{history.length} scans</span>
+              </div>
+              <div className="scanList">
+                {history.length === 0 ? <div className="emptyInline">No persistent scans yet.</div> : null}
+                {history.map((scan) => (
+                  <button
+                    key={scan.id}
+                    className={`scanItem ${activeScan?.id === scan.id ? "active" : ""}`}
+                    onClick={() => void loadScan(scan.id)}
+                    disabled={isLoadingScan}
+                  >
+                    <strong>{scan.finding_count} findings</strong>
+                    <span>{scan.service_count} services</span>
+                    <small>{formatDate(scan.completed_at ?? scan.created_at)}</small>
+                  </button>
+                ))}
+              </div>
+            </section>
           </section>
 
           <EvolutionPanel reports={evolution} />
@@ -1057,9 +1061,9 @@ function App() {
               {result ? <div ref={graphRef} className="graph" /> : <div className="emptyState">No scan selected.</div>}
               <GraphInspector selection={selectedGraphElement} />
             </section>
-          </section>
 
-          <HealthScoreView systemScore={systemScore ?? null} serviceScores={serviceScores} />
+            <HealthScoreView systemScore={systemScore ?? null} serviceScores={serviceScores} />
+          </section>
         </section>
 
         <FindingsDashboard
@@ -1227,41 +1231,50 @@ function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
       </div>
       {!latest ? <div className="emptyInline">Run at least two scans to see architecture evolution.</div> : null}
       {latest ? (
-        <div className="evolutionSummary">
-          <div>
-            <strong>{formatSigned(latest.score_trend.system_delta)}</strong>
-            <span>System score delta</span>
+        <div className="evolutionGrid">
+          <div className="evolutionPrimary">
+            <div className="evolutionSummary">
+              <div>
+                <strong>{formatSigned(latest.score_trend.system_delta)}</strong>
+                <span>System score delta</span>
+              </div>
+              <div>
+                <strong>{formatSigned(latest.risk_trend.delta)}</strong>
+                <span>Risk delta</span>
+              </div>
+              <div>
+                <strong>{latest.new_dependencies.length}</strong>
+                <span>New dependencies</span>
+              </div>
+              <div>
+                <strong>{latest.new_cycles.length}</strong>
+                <span>New cycles</span>
+              </div>
+            </div>
+            <p className="evolutionSentence">{String(latest.architecture_change_summary.summary ?? "No summary available.")}</p>
+            {latest.recommendations.length ? (
+              <div className="evolutionRecommendations">
+                <strong>Recommendation</strong>
+                <span>{latest.recommendations[0]}</span>
+              </div>
+            ) : null}
           </div>
-          <div>
-            <strong>{formatSigned(latest.risk_trend.delta)}</strong>
-            <span>Risk delta</span>
+
+          <div className="evolutionSecondary">
+            <div className="evolutionSecondaryHeader">
+              <strong>Comparison History</strong>
+              <span>{reports.length} snapshots</span>
+            </div>
+            <div className="evolutionTimeline">
+              {reports.slice().reverse().map((report) => (
+                <article key={`${report.base_scan_id}-${report.target_scan_id}`}>
+                  <strong>{`${shortId(report.base_scan_id)} -> ${shortId(report.target_scan_id)}`}</strong>
+                  <span>{report.risk_trend.new_risk_count ?? 0} new risks, {report.risk_trend.resolved_risk_count ?? 0} resolved</span>
+                  <small>{formatSigned(report.score_trend.system_delta)} health</small>
+                </article>
+              ))}
+            </div>
           </div>
-          <div>
-            <strong>{latest.new_dependencies.length}</strong>
-            <span>New dependencies</span>
-          </div>
-          <div>
-            <strong>{latest.new_cycles.length}</strong>
-            <span>New cycles</span>
-          </div>
-        </div>
-      ) : null}
-      {latest ? <p className="evolutionSentence">{String(latest.architecture_change_summary.summary ?? "No summary available.")}</p> : null}
-      {latest?.recommendations.length ? (
-        <div className="evolutionRecommendations">
-          <strong>Recommendation</strong>
-          <span>{latest.recommendations[0]}</span>
-        </div>
-      ) : null}
-      {reports.length > 0 ? (
-        <div className="evolutionTimeline">
-          {reports.slice().reverse().map((report) => (
-            <article key={`${report.base_scan_id}-${report.target_scan_id}`}>
-              <strong>{`${shortId(report.base_scan_id)} -> ${shortId(report.target_scan_id)}`}</strong>
-              <span>{report.risk_trend.new_risk_count ?? 0} new risks, {report.risk_trend.resolved_risk_count ?? 0} resolved</span>
-              <small>{formatSigned(report.score_trend.system_delta)} health</small>
-            </article>
-          ))}
         </div>
       ) : null}
     </section>
