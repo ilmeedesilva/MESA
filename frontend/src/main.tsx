@@ -219,6 +219,15 @@ type Filters = {
   minConfidence: number;
 };
 
+type WorkflowStep = {
+  id: string;
+  label: string;
+  description: string;
+  done: boolean;
+  active: boolean;
+  optional?: boolean;
+};
+
 const defaultPaths = [
   "/workspace/tests/fixtures/god/platform-service",
   "/workspace/tests/fixtures/god/order-service",
@@ -289,6 +298,7 @@ function App() {
   const graphRef = React.useRef<HTMLDivElement | null>(null);
 
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
+  const manualServicePaths = React.useMemo(() => servicePathsFromText(paths), [paths]);
 
   React.useEffect(() => {
     localStorage.setItem(projectStorageKey, JSON.stringify(projects));
@@ -559,14 +569,69 @@ function App() {
   const highestSeverity = getHighestSeverity(result?.findings ?? []);
   const systemScore = scores.find((score) => score.scope === "system") ?? result?.summary.health_scores?.system;
   const serviceScores = scores.filter((score) => score.scope === "service");
+  const hasProject = Boolean(selectedProjectId);
+  const hasSourceConfigured = Boolean(sourceLocation.trim()) || manualServicePaths.length > 0;
+  const hasRepoPreview = Boolean(repoPreview);
+  const hasServiceSelection = repoPreview ? selectedDiscoveryPaths.length > 0 : manualServicePaths.length > 0;
+  const hasSavedPolicies = policyCount > 0;
+  const hasCompletedScan = Boolean(activeScan && result);
+  const nextAction = !hasProject
+    ? "Create or select a project to begin the guided workflow."
+    : !hasSourceConfigured
+      ? "Choose a repository source or enter manual service paths."
+      : sourceLocation.trim() && !hasRepoPreview
+        ? "Preview the repository source so MESA can discover likely services."
+        : !hasServiceSelection
+          ? "Review the discovered services and keep at least one selection for the scan."
+          : !hasCompletedScan
+            ? "Run the scan to generate findings, health scores, and the architecture graph."
+            : "Review the results, compare history, and inspect findings in detail.";
+  const workflowSteps: WorkflowStep[] = [
+    {
+      id: "project",
+      label: "Project",
+      description: "Create or select the project that will hold scan history.",
+      done: hasProject,
+      active: !hasProject
+    },
+    {
+      id: "source",
+      label: "Source",
+      description: "Choose a repository source or provide manual service paths.",
+      done: hasSourceConfigured,
+      active: hasProject && !hasSourceConfigured
+    },
+    {
+      id: "review",
+      label: "Review Services",
+      description: "Preview discovery and confirm the services to analyze.",
+      done: hasServiceSelection,
+      active: hasProject && hasSourceConfigured && !hasServiceSelection
+    },
+    {
+      id: "policies",
+      label: "Policies",
+      description: "Optionally save governance policies before the scan runs.",
+      done: hasSavedPolicies,
+      active: hasProject && hasServiceSelection && !hasCompletedScan,
+      optional: true
+    },
+    {
+      id: "scan",
+      label: "Run Scan",
+      description: "Generate findings, graph evidence, scores, and history.",
+      done: hasCompletedScan,
+      active: hasProject && hasServiceSelection && !hasCompletedScan
+    }
+  ];
 
   return (
     <main>
       <section className="toolbar">
         <div>
-          <div className="eyebrow">Architecture Governance Dashboard</div>
+          <div className="eyebrow">Guided Architecture Scan Workflow</div>
           <h1>MESA</h1>
-          <p>Cross-service scan history, findings triage, and architectural health scoring</p>
+          <p>Move from project setup to source review, service discovery, governance, and architecture results.</p>
         </div>
         <div className="toolbarActions">
           <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
@@ -576,11 +641,40 @@ function App() {
         </div>
       </section>
 
+      <section className="workflowHero">
+        <div className="workflowSummary">
+          <div>
+            <div className="eyebrow">Next Action</div>
+            <h2>Guided Scan Flow</h2>
+            <p>{nextAction}</p>
+          </div>
+          <div className="workflowStatus">
+            <strong>{workflowSteps.filter((step) => step.done).length}/{workflowSteps.length}</strong>
+            <span>steps ready</span>
+          </div>
+        </div>
+        <div className="workflowStrip">
+          {workflowSteps.map((step, index) => (
+            <article
+              key={step.id}
+              className={`workflowStep ${step.done ? "done" : ""} ${step.active ? "active" : ""} ${step.optional ? "optional" : ""}`}
+            >
+              <div className="workflowStepTop">
+                <span>Step {index + 1}</span>
+                {step.optional ? <small>Optional</small> : null}
+              </div>
+              <strong>{step.label}</strong>
+              <p>{step.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="dashboardShell">
         <aside className="sideRail">
           <section className="panelBlock">
             <div className="panelHeader compact">
-              <h2>Project</h2>
+              <h2>Step 1. Project</h2>
               <span>{projects.length} saved</span>
             </div>
             <label htmlFor="projectName">Project name</label>
@@ -601,8 +695,8 @@ function App() {
 
           <section className="panelBlock">
             <div className="panelHeader compact">
-              <h2>Scan Input</h2>
-              <span>{servicePathsFromText(paths).length} services</span>
+              <h2>Step 2. Source</h2>
+              <span>{sourceLocation.trim() ? sourceType : "Manual mode"}</span>
             </div>
             <label htmlFor="sourceType">Repository source type</label>
             <select
@@ -654,8 +748,20 @@ function App() {
             <p className="hint">
               Preview shows likely services with confidence and reasons. Leave this empty to keep using manual service paths only.
             </p>
+            {!repoPreview && sourceLocation.trim() ? (
+              <div className="stepHintCard">
+                Preview discovery to unlock the service review step and confirm what MESA will analyze.
+              </div>
+            ) : null}
+          </section>
+
+          <section className="panelBlock">
+            <div className="panelHeader compact">
+              <h2>Step 3. Review Services</h2>
+              <span>{repoPreview ? `${selectedDiscoveryPaths.length} selected` : `${manualServicePaths.length} manual paths`}</span>
+            </div>
             {repoPreview ? (
-              <div className="discoveryPanel">
+              <div className="discoveryPanel discoveryPanelStandalone">
                 <div className="panelHeader compact">
                   <h3>Discovered Services</h3>
                   <span>{repoPreview.discovered_services.length} candidates</span>
@@ -706,7 +812,11 @@ function App() {
                   Apply Selected Services
                 </button>
               </div>
-            ) : null}
+            ) : (
+              <div className="stepHintCard">
+                No repository preview is active. You can still continue with manual service paths below.
+              </div>
+            )}
             <label htmlFor="paths">Service paths</label>
             <textarea id="paths" value={paths} onChange={(event) => setPaths(event.target.value)} />
             <p className="hint">Manual fallback: use one service directory per line. Repository discovery can fill this automatically.</p>
@@ -715,14 +825,25 @@ function App() {
 
           <section className="panelBlock policyEditor">
             <div className="panelHeader compact">
-              <h2>Governance Policies</h2>
-              <span>{policyCount} active</span>
+              <h2>Step 4. Governance Policies</h2>
+              <span>{policyCount} active optional rules</span>
             </div>
             <label htmlFor="policyText">Policy YAML</label>
             <textarea id="policyText" value={policyText} onChange={(event) => setPolicyText(event.target.value)} />
             <p className="hint">Policies run during project scans and violations appear as findings.</p>
             <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProjectId}>
               {isSavingPolicies ? "Saving..." : "Save Policies"}
+            </button>
+          </section>
+
+          <section className="panelBlock runStepCard">
+            <div className="panelHeader compact">
+              <h2>Step 5. Run Scan</h2>
+              <span>{repoPreview ? "Repository-backed" : "Manual paths"}</span>
+            </div>
+            <p className="hint">Run the current selection to generate findings, scores, history, and graph evidence.</p>
+            <button onClick={runScan} disabled={isScanning || !selectedProjectId}>
+              {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
             </button>
           </section>
         </aside>
