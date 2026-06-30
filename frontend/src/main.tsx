@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import cytoscape from "cytoscape";
+import { docBySlug, docNeighbors, docsByQuery, docsCatalog, docsCategories, type DocPage } from "./docsPortal";
 import "./styles.css";
 
 type FindingRecommendation = {
@@ -229,6 +230,7 @@ type WorkflowStep = {
 };
 
 type InterpretationMode = "beginner" | "research";
+type WorkspaceView = "analysis" | "docs";
 
 const defaultPaths = [
   "/workspace/tests/fixtures/god/platform-service",
@@ -295,6 +297,10 @@ function App() {
   const [showSetupWorkspace, setShowSetupWorkspace] = React.useState(true);
   const [hasAutoCollapsedSetup, setHasAutoCollapsedSetup] = React.useState(false);
   const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");
+  const [workspaceView, setWorkspaceView] = React.useState<WorkspaceView>("analysis");
+  const [selectedDocSlug, setSelectedDocSlug] = React.useState("evaluator-quick-start");
+  const [docsQuery, setDocsQuery] = React.useState("");
+  const [docsCategory, setDocsCategory] = React.useState("ALL");
   const [filters, setFilters] = React.useState<Filters>({
     type: "ALL",
     severity: "ALL",
@@ -654,6 +660,11 @@ function App() {
     setShowSetupWorkspace(true);
   }
 
+  function openDoc(slug: string) {
+    setSelectedDocSlug(slug);
+    setWorkspaceView("docs");
+  }
+
   return (
     <main>
       <section className="toolbar">
@@ -663,13 +674,31 @@ function App() {
           <p>Move from project setup to source review, service discovery, governance, and architecture results.</p>
         </div>
         <div className="toolbarActions">
+          <div className="workspaceTabs">
+            <button
+              type="button"
+              className={workspaceView === "analysis" ? "toolbarTab active" : "toolbarTab"}
+              onClick={() => setWorkspaceView("analysis")}
+            >
+              Analysis
+            </button>
+            <button
+              type="button"
+              className={workspaceView === "docs" ? "toolbarTab active" : "toolbarTab"}
+              onClick={() => setWorkspaceView("docs")}
+            >
+              Documentation
+            </button>
+          </div>
           <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
-          <button onClick={runScan} disabled={isScanning || !selectedProjectId}>
+          <button onClick={runScan} disabled={isScanning || !selectedProjectId || workspaceView === "docs"}>
             {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
           </button>
         </div>
       </section>
 
+      {workspaceView === "analysis" ? (
+        <>
       <section className="workflowHero">
         <div className="topControlGrid">
           <section className="workflowTrackPanel">
@@ -678,6 +707,10 @@ function App() {
                 <div className="eyebrow">Next Action</div>
                 <h2>Guided Scan Flow</h2>
                 <p>{nextAction}</p>
+                <div className="docLinks">
+                  <DocLinkButton label="Evaluator quick start" onClick={() => openDoc("evaluator-quick-start")} />
+                  <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
+                </div>
               </div>
               <div className="workflowActions">
                 <div className="workflowStatus">
@@ -716,6 +749,9 @@ function App() {
                 Switch between a guided plain-language view and a deeper research-oriented explanation without changing
                 the underlying detector results.
               </p>
+              <div className="docLinks">
+                <DocLinkButton label="Findings guide" onClick={() => openDoc("findings-guide")} />
+              </div>
             </div>
             <div className="modeToggle" role="tablist" aria-label="Interpretation mode">
               <button
@@ -1062,7 +1098,11 @@ function App() {
               <GraphInspector selection={selectedGraphElement} />
             </section>
 
-            <HealthScoreView systemScore={systemScore ?? null} serviceScores={serviceScores} />
+            <HealthScoreView
+              systemScore={systemScore ?? null}
+              serviceScores={serviceScores}
+              onOpenDoc={openDoc}
+            />
           </section>
         </section>
 
@@ -1073,6 +1113,7 @@ function App() {
           filterOptions={filterOptions}
           interpretationMode={interpretationMode}
           onFilterChange={setFilters}
+          onOpenDoc={openDoc}
           onSelectFinding={setSelectedFinding}
         />
       </section>
@@ -1084,6 +1125,18 @@ function App() {
           onClose={() => setSelectedFinding(null)}
         />
       ) : null}
+        </>
+      ) : (
+        <DocumentationPortal
+          selectedDocSlug={selectedDocSlug}
+          docsQuery={docsQuery}
+          docsCategory={docsCategory}
+          onChangeQuery={setDocsQuery}
+          onChangeCategory={setDocsCategory}
+          onSelectDoc={setSelectedDocSlug}
+          onBackToAnalysis={() => setWorkspaceView("analysis")}
+        />
+      )}
     </main>
   );
 }
@@ -1125,6 +1178,134 @@ function GraphInspector({ selection }: { selection: GraphSelection | null }) {
   );
 }
 
+function DocumentationPortal({
+  selectedDocSlug,
+  docsQuery,
+  docsCategory,
+  onChangeQuery,
+  onChangeCategory,
+  onSelectDoc,
+  onBackToAnalysis
+}: {
+  selectedDocSlug: string;
+  docsQuery: string;
+  docsCategory: string;
+  onChangeQuery: (value: string) => void;
+  onChangeCategory: (value: string) => void;
+  onSelectDoc: (slug: string) => void;
+  onBackToAnalysis: () => void;
+}) {
+  const filteredDocs = React.useMemo(() => docsByQuery(docsQuery, docsCategory), [docsCategory, docsQuery]);
+  const selectedDoc = docBySlug(selectedDocSlug);
+  const neighbors = docNeighbors(selectedDoc.slug);
+
+  React.useEffect(() => {
+    if (filteredDocs.length > 0 && !filteredDocs.some((doc) => doc.slug === selectedDocSlug)) {
+      onSelectDoc(filteredDocs[0].slug);
+    }
+  }, [filteredDocs, onSelectDoc, selectedDocSlug]);
+
+  return (
+    <section className="docsPortal">
+      <aside className="docsSidebar">
+        <div className="docsSidebarHeader">
+          <div>
+            <div className="eyebrow">Documentation Portal</div>
+            <h2>Learn MESA from inside the product</h2>
+            <p>{`Search ${docsCatalog.length} pages covering guides, methodology, limitations, API notes, and evaluator walkthroughs.`}</p>
+          </div>
+          <button type="button" className="workflowToggle" onClick={onBackToAnalysis}>
+            Back to analysis
+          </button>
+        </div>
+
+        <div className="docsSearchPanel">
+          <label htmlFor="docsQuery">Search docs</label>
+          <input
+            id="docsQuery"
+            placeholder="Search guides, research, API docs..."
+            value={docsQuery}
+            onChange={(event) => onChangeQuery(event.target.value)}
+          />
+          <label htmlFor="docsCategory">Category</label>
+          <select id="docsCategory" value={docsCategory} onChange={(event) => onChangeCategory(event.target.value)}>
+            <option value="ALL">All categories</option>
+            {docsCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+          </select>
+        </div>
+
+        <div className="docsQuickLinks">
+          <strong>Quick links</strong>
+          <div className="docLinks">
+            <DocLinkButton label="Evaluator quick start" onClick={() => onSelectDoc("evaluator-quick-start")} />
+            <DocLinkButton label="User guide" onClick={() => onSelectDoc("user-guide")} />
+            <DocLinkButton label="Demo guide" onClick={() => onSelectDoc("demo-guide")} />
+          </div>
+        </div>
+
+        <nav className="docsNav" aria-label="Documentation navigation">
+          {docsCategories.map((category) => {
+            const docsInCategory = filteredDocs.filter((doc) => doc.category === category);
+            if (docsInCategory.length === 0) return null;
+            return (
+              <section key={category} className="docsCategoryGroup">
+                <h3>{category}</h3>
+                {docsInCategory.map((doc) => (
+                  <button
+                    key={doc.slug}
+                    type="button"
+                    className={doc.slug === selectedDoc.slug ? "docsNavItem active" : "docsNavItem"}
+                    onClick={() => onSelectDoc(doc.slug)}
+                  >
+                    <strong>{doc.title}</strong>
+                    <span>{doc.summary}</span>
+                  </button>
+                ))}
+              </section>
+            );
+          })}
+        </nav>
+      </aside>
+
+      <article className="docsArticle">
+        <div className="docsArticleHeader">
+          <div>
+            <div className="eyebrow">{selectedDoc.category}</div>
+            <h1>{selectedDoc.title}</h1>
+            <p>{selectedDoc.summary}</p>
+          </div>
+          <code>{selectedDoc.path.replace("../../docs/", "docs/")}</code>
+        </div>
+
+        <div className="docsTags">
+          {selectedDoc.tags.map((tag) => <span key={tag}>{tag}</span>)}
+        </div>
+
+        <div className="docsMarkdown">
+          {renderMarkdown(selectedDoc.content)}
+        </div>
+
+        <div className="docsPager">
+          <button type="button" className="docsPagerButton" onClick={() => neighbors.previous && onSelectDoc(neighbors.previous.slug)} disabled={!neighbors.previous}>
+            {neighbors.previous ? `Previous: ${neighbors.previous.title}` : "No previous page"}
+          </button>
+          <button type="button" className="docsPagerButton" onClick={() => neighbors.next && onSelectDoc(neighbors.next.slug)} disabled={!neighbors.next}>
+            {neighbors.next ? `Next: ${neighbors.next.title}` : "No next page"}
+          </button>
+        </div>
+      </article>
+    </section>
+  );
+}
+
+function DocLinkButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" className="docLinkButton" onClick={onClick}>
+      {label}
+    </button>
+  );
+}
+
 function FindingsDashboard({
   findings,
   filteredFindings,
@@ -1132,6 +1313,7 @@ function FindingsDashboard({
   filterOptions,
   interpretationMode,
   onFilterChange,
+  onOpenDoc,
   onSelectFinding
 }: {
   findings: Finding[];
@@ -1140,6 +1322,7 @@ function FindingsDashboard({
   filterOptions: { types: string[]; severities: string[]; services: string[] };
   interpretationMode: InterpretationMode;
   onFilterChange: (filters: Filters) => void;
+  onOpenDoc: (slug: string) => void;
   onSelectFinding: (finding: Finding) => void;
 }) {
   return (
@@ -1148,6 +1331,9 @@ function FindingsDashboard({
         <div className="findingsHeaderText">
           <h2>Findings Dashboard</h2>
           <p>{filteredFindings.length} of {findings.length} findings</p>
+          <div className="docLinks">
+            <DocLinkButton label="How to read findings" onClick={() => onOpenDoc("findings-guide")} />
+          </div>
         </div>
         <span className="modePill">{interpretationMode === "beginner" ? "Plain-language view" : "Research detail view"}</span>
       </div>
@@ -1281,7 +1467,15 @@ function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
   );
 }
 
-function HealthScoreView({ systemScore, serviceScores }: { systemScore: HealthScore | null; serviceScores: HealthScore[] }) {
+function HealthScoreView({
+  systemScore,
+  serviceScores,
+  onOpenDoc
+}: {
+  systemScore: HealthScore | null;
+  serviceScores: HealthScore[];
+  onOpenDoc: (slug: string) => void;
+}) {
   const sortedServices = [...serviceScores].sort((a, b) => a.score - b.score).slice(0, 6);
   return (
     <section className="healthPanel">
@@ -1289,6 +1483,9 @@ function HealthScoreView({ systemScore, serviceScores }: { systemScore: HealthSc
         <div>
           <h2>Health Scores</h2>
           <p>Service, domain, and system-level architecture quality</p>
+          <div className="docLinks">
+            <DocLinkButton label="Health score guide" onClick={() => onOpenDoc("health-score-guide")} />
+          </div>
         </div>
       </div>
       {!systemScore ? <div className="emptyList">No health score available yet.</div> : null}
@@ -1849,6 +2046,111 @@ function propertyRecord(value: unknown): Record<string, unknown> {
 
 function normalizeRelationshipType(type: string) {
   return type.toLowerCase();
+}
+
+function renderMarkdown(markdown: string) {
+  const lines = markdown.replace(/\r/g, "").split("\n");
+  const blocks: React.ReactNode[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+
+    if (!line.trim()) {
+      index += 1;
+      continue;
+    }
+
+    if (line.startsWith("```")) {
+      const language = line.slice(3).trim();
+      const codeLines: string[] = [];
+      index += 1;
+      while (index < lines.length && !lines[index].startsWith("```")) {
+        codeLines.push(lines[index]);
+        index += 1;
+      }
+      index += 1;
+      blocks.push(
+        <pre key={`code-${index}`} className="docsCodeBlock">
+          <code data-language={language || undefined}>{codeLines.join("\n")}</code>
+        </pre>
+      );
+      continue;
+    }
+
+    if (/^###\s+/.test(line)) {
+      blocks.push(<h3 key={`h3-${index}`}>{line.replace(/^###\s+/, "")}</h3>);
+      index += 1;
+      continue;
+    }
+
+    if (/^##\s+/.test(line)) {
+      blocks.push(<h2 key={`h2-${index}`}>{line.replace(/^##\s+/, "")}</h2>);
+      index += 1;
+      continue;
+    }
+
+    if (/^#\s+/.test(line)) {
+      blocks.push(<h1 key={`h1-${index}`}>{line.replace(/^#\s+/, "")}</h1>);
+      index += 1;
+      continue;
+    }
+
+    if (/^-\s+/.test(line)) {
+      const items: string[] = [];
+      while (index < lines.length && /^-\s+/.test(lines[index])) {
+        items.push(lines[index].replace(/^-\s+/, ""));
+        index += 1;
+      }
+      blocks.push(
+        <ul key={`ul-${index}`}>
+          {items.map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>)}
+        </ul>
+      );
+      continue;
+    }
+
+    if (/^\d+\.\s+/.test(line)) {
+      const items: string[] = [];
+      while (index < lines.length && /^\d+\.\s+/.test(lines[index])) {
+        items.push(lines[index].replace(/^\d+\.\s+/, ""));
+        index += 1;
+      }
+      blocks.push(
+        <ol key={`ol-${index}`}>
+          {items.map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>)}
+        </ol>
+      );
+      continue;
+    }
+
+    const paragraphLines: string[] = [];
+    while (
+      index < lines.length &&
+      lines[index].trim() &&
+      !lines[index].startsWith("```") &&
+      !/^#{1,3}\s+/.test(lines[index]) &&
+      !/^- /.test(lines[index]) &&
+      !/^\d+\.\s+/.test(lines[index])
+    ) {
+      paragraphLines.push(lines[index].trim());
+      index += 1;
+    }
+
+    blocks.push(<p key={`p-${index}`}>{renderInlineMarkdown(paragraphLines.join(" "))}</p>);
+  }
+
+  return blocks;
+}
+
+function renderInlineMarkdown(text: string) {
+  const segments = text.split(/(`[^`]+`)/g);
+  return segments.map((segment, index) => {
+    if (segment.startsWith("`") && segment.endsWith("`")) {
+      return <code key={`${segment}-${index}`}>{segment.slice(1, -1)}</code>;
+    }
+    return <React.Fragment key={`${segment}-${index}`}>{segment}</React.Fragment>;
+  });
 }
 
 function Metric({

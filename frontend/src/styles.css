@@ -115,6 +115,29 @@ label {
   gap: 12px;
 }
 
+.workspaceTabs {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid #dbe4f0;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+.toolbarTab {
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #475569;
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.toolbarTab.active {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
 .toolbarActions span {
   color: #475569;
   font-size: 13px;
@@ -128,6 +151,242 @@ label {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.docLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.docLinkButton {
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.docsPortal {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.34fr) minmax(0, 0.66fr);
+  gap: 18px;
+  padding: 18px 24px 24px;
+  min-height: calc(100vh - 93px);
+}
+
+.docsSidebar,
+.docsArticle {
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(148, 163, 184, 0.08);
+}
+
+.docsSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+}
+
+.docsSidebarHeader h2,
+.docsArticleHeader h1 {
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.docsSidebarHeader p,
+.docsArticleHeader p {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.docsSearchPanel {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.docsQuickLinks {
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.docsQuickLinks strong {
+  display: block;
+  font-size: 12px;
+}
+
+.docsQuickLinks .docLinks {
+  margin-top: 10px;
+}
+
+.docsNav {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.docsCategoryGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.docsCategoryGroup h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.docsNavItem {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: #0f172a;
+  background: #ffffff;
+  box-shadow: none;
+  text-align: left;
+}
+
+.docsNavItem.active {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.docsNavItem strong {
+  font-size: 13px;
+}
+
+.docsNavItem span {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.docsArticle {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+}
+
+.docsArticleHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.docsArticleHeader code {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 11px;
+}
+
+.docsTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.docsTags span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #475569;
+  background: #f1f5f9;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.docsMarkdown {
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fbfdff;
+}
+
+.docsMarkdown h1,
+.docsMarkdown h2,
+.docsMarkdown h3 {
+  margin-top: 18px;
+}
+
+.docsMarkdown h1:first-child,
+.docsMarkdown h2:first-child,
+.docsMarkdown h3:first-child {
+  margin-top: 0;
+}
+
+.docsMarkdown h2 {
+  font-size: 18px;
+}
+
+.docsMarkdown h3 {
+  font-size: 14px;
+}
+
+.docsMarkdown p,
+.docsMarkdown li {
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.docsMarkdown ul,
+.docsMarkdown ol {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.docsMarkdown code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 12px;
+}
+
+.docsCodeBlock {
+  margin: 12px 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 12px;
+  color: #e2e8f0;
+  background: #0f172a;
+  font-size: 12px;
+}
+
+.docsPager {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.docsPagerButton {
+  padding: 12px;
+  border-radius: 12px;
+  color: #0f172a;
+  background: #f8fafc;
+  box-shadow: none;
+  text-align: left;
 }
 
 .workflowHero {
@@ -1713,6 +1972,10 @@ meter {
 }
 
 @media (max-width: 1320px) {
+  .docsPortal {
+    grid-template-columns: 1fr;
+  }
+
   .sideRail {
     grid-template-columns: 1fr 1fr;
   }
@@ -1757,6 +2020,12 @@ meter {
   .workflowActions,
   .setupWorkspaceHeader {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .docsArticleHeader,
+  .docsPager {
+    grid-template-columns: 1fr;
     flex-direction: column;
   }
 
@@ -1810,6 +2079,11 @@ meter {
 }
 
 @media (max-width: 640px) {
+  .docsSidebar,
+  .docsArticle {
+    padding: 16px;
+  }
+
   .summaryStrip {
     grid-template-columns: 1fr;
   }
