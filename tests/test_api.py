@@ -4,6 +4,7 @@ import shutil
 from fastapi.testclient import TestClient
 
 from mesa.api.main import app
+from mesa.analysis import explainer as explainer_module
 from mesa.storage import InMemoryPersistenceRepository
 
 ROOT = Path(__file__).parent / "fixtures"
@@ -423,3 +424,276 @@ def test_health_scores_appear_in_api_response() -> None:
     assert health["service"]
     assert health["domain"]
     assert any(score["target"] == "platform-service" for score in health["service"])
+
+
+def test_ai_explainer_summarizes_scan_with_grounded_evidence() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Explainer Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    explainer_response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "SCAN_SUMMARY",
+            "project_id": project_id,
+            "scan_id": scan_id,
+            "question": "Summarize this scan.",
+        },
+    )
+    assert explainer_response.status_code == 200
+    payload = explainer_response.json()
+    assert payload["intent"] == "SCAN_SUMMARY"
+    assert payload["grounded"] is True
+    assert payload["evidence"]
+    assert "services" in payload["answer"].lower()
+
+    del app.state.persistence_repository
+
+
+def test_ai_explainer_searches_docs_without_scan_context() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "DOC_QA",
+            "question": "How do I scan a public repository?",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "DOC_QA"
+    assert payload["evidence"]
+    assert any(item["kind"] == "doc" for item in payload["evidence"])
+
+
+def test_ai_explainer_compares_two_scans() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Explainer Compare Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    first_scan = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    second_scan = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+            ]
+        },
+    )
+    assert first_scan.status_code == 201
+    assert second_scan.status_code == 201
+
+    response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "COMPARE_SCANS",
+            "project_id": project_id,
+            "base_scan_id": first_scan.json()["scan"]["id"],
+            "target_scan_id": second_scan.json()["scan"]["id"],
+            "question": "What changed between these two scans?",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "COMPARE_SCANS"
+    assert payload["evidence"]
+    assert "changed" in payload["answer"].lower() or "new risks" in payload["answer"].lower()
+
+    del app.state.persistence_repository
+
+
+def test_ai_explainer_uses_live_hybrid_path_when_enabled(monkeypatch) -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Hybrid AI Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    monkeypatch.setenv("MESA_AI_MODE", "hybrid")
+    monkeypatch.setenv("MESA_OPENAI_API_KEY", "test-key")
+
+    def fake_openai_response(payload, grounded_response, api_key):
+        assert payload.scan_id == scan_id
+        assert api_key == "test-key"
+        return grounded_response.model_copy(
+            update={
+                "title": "Live hybrid explanation",
+                "answer": "This answer came from the live hybrid AI path.",
+                "source": "openai-hybrid:test-model",
+            }
+        )
+
+    monkeypatch.setattr(explainer_module, "_call_openai_responses_api", fake_openai_response)
+
+    response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "SCAN_SUMMARY",
+            "project_id": project_id,
+            "scan_id": scan_id,
+            "question": "Summarize this scan with the live AI path.",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["title"] == "Live hybrid explanation"
+    assert payload["source"] == "openai-hybrid:test-model"
+    assert "live hybrid ai path" in payload["answer"].lower()
+
+    del app.state.persistence_repository
+
+
+def test_ai_explainer_stream_returns_done_payload() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Stream Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    response = client.post(
+        "/ai/explainer/stream",
+        json={
+            "intent": "AUTO",
+            "project_id": project_id,
+            "scan_id": scan_id,
+            "question": "Explain simply what should be solved first.",
+        },
+    )
+
+    assert response.status_code == 200
+    text = response.text
+    assert "event: delta" in text
+    assert "event: done" in text
+    assert "PRIORITIZE_FIXES" in text
+
+    del app.state.persistence_repository
+
+
+def test_ai_explainer_can_generate_policy_draft() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Policy Draft Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "POLICY_WRITING_ASSISTANCE",
+            "project_id": project_id,
+            "scan_id": scan_id,
+            "question": "Draft governance policy YAML for this project.",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "POLICY_WRITING_ASSISTANCE"
+    assert payload["policy_document"]
+    assert "policies:" in payload["policy_document"]
+
+    del app.state.persistence_repository
+
+
+def test_ai_status_reports_placeholder_key(monkeypatch) -> None:
+    client = TestClient(app)
+    monkeypatch.setenv("MESA_AI_MODE", "hybrid")
+    monkeypatch.setenv("MESA_OPENAI_API_KEY", "your_api_key_here")
+
+    response = client.get("/ai/explainer/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["state"] == "PLACEHOLDER_API_KEY"
+    assert payload["live_enabled"] is True
+
+
+def test_ai_status_reports_invalid_key_from_probe(monkeypatch) -> None:
+    client = TestClient(app)
+    monkeypatch.setenv("MESA_AI_MODE", "hybrid")
+    monkeypatch.setenv("MESA_OPENAI_API_KEY", "sk-test123456")
+
+    monkeypatch.setattr(
+        explainer_module,
+        "_probe_openai_status",
+        lambda api_key, base_url, model: (
+            explainer_module.AIConnectionState.INVALID_API_KEY,
+            "OpenAI rejected the configured API key.",
+        ),
+    )
+
+    response = client.get("/ai/explainer/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["state"] == "INVALID_API_KEY"
+    assert "rejected" in payload["message"].lower()

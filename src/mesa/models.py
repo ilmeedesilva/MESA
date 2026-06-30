@@ -203,6 +203,80 @@ class AnalysisResult(BaseModel):
     summary: dict[str, Any]
 
 
+class AIExplainerIntent(str, Enum):
+    AUTO = "AUTO"
+    SCAN_SUMMARY = "SCAN_SUMMARY"
+    FINDING_EXPLANATION = "FINDING_EXPLANATION"
+    PRIORITIZE_FIXES = "PRIORITIZE_FIXES"
+    HEALTH_SCORE_EXPLANATION = "HEALTH_SCORE_EXPLANATION"
+    COMPARE_SCANS = "COMPARE_SCANS"
+    GOVERNANCE_POLICY_HELP = "GOVERNANCE_POLICY_HELP"
+    POLICY_WRITING_ASSISTANCE = "POLICY_WRITING_ASSISTANCE"
+    DOC_QA = "DOC_QA"
+
+
+class AIExplainerConfidence(str, Enum):
+    LOW = "LOW"
+    MODERATE = "MODERATE"
+    HIGH = "HIGH"
+
+
+class AIExplainerEvidence(BaseModel):
+    kind: str
+    label: str
+    pointer: str
+    snippet: str
+
+
+class AIExplainerRequest(BaseModel):
+    intent: AIExplainerIntent = AIExplainerIntent.AUTO
+    question: str = ""
+    project_id: str | None = None
+    scan_id: str | None = None
+    finding_id: str | None = None
+    score_target: str | None = None
+    service_name: str | None = None
+    base_scan_id: str | None = None
+    target_scan_id: str | None = None
+    doc_query: str | None = None
+
+
+class AIExplainerResponse(BaseModel):
+    intent: AIExplainerIntent
+    title: str
+    answer: str
+    evidence: list[AIExplainerEvidence] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+    policy_document: str | None = None
+    confidence: AIExplainerConfidence = AIExplainerConfidence.MODERATE
+    grounded: bool = True
+    source: str = "mesa-grounded-explainer"
+
+
+class AIConnectionState(str, Enum):
+    GROUNDED_ONLY = "GROUNDED_ONLY"
+    MISSING_API_KEY = "MISSING_API_KEY"
+    PLACEHOLDER_API_KEY = "PLACEHOLDER_API_KEY"
+    INVALID_API_KEY = "INVALID_API_KEY"
+    MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE"
+    ACCESS_DENIED = "ACCESS_DENIED"
+    CONNECTION_ERROR = "CONNECTION_ERROR"
+    READY = "READY"
+
+
+class AIExplainerStatus(BaseModel):
+    mode: str
+    state: AIConnectionState
+    live_enabled: bool
+    api_key_configured: bool
+    api_key_hint: str | None = None
+    model: str
+    base_url: str
+    message: str
+
+
 class ProjectCreate(BaseModel):
     name: str
     description: str | None = None
