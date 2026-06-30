@@ -231,6 +231,56 @@ type WorkflowStep = {
 
 type InterpretationMode = "beginner" | "research";
 type WorkspaceView = "analysis" | "docs";
+type AIExplainerIntent =
+  | "AUTO"
+  | "SCAN_SUMMARY"
+  | "FINDING_EXPLANATION"
+  | "PRIORITIZE_FIXES"
+  | "HEALTH_SCORE_EXPLANATION"
+  | "COMPARE_SCANS"
+  | "GOVERNANCE_POLICY_HELP"
+  | "POLICY_WRITING_ASSISTANCE"
+  | "DOC_QA";
+
+type AIExplainerEvidence = {
+  kind: string;
+  label: string;
+  pointer: string;
+  snippet: string;
+};
+
+type AIExplainerResponse = {
+  intent: AIExplainerIntent;
+  title: string;
+  answer: string;
+  evidence: AIExplainerEvidence[];
+  suggestions: string[];
+  follow_up_questions: string[];
+  limitations: string[];
+  policy_document?: string | null;
+  confidence: "LOW" | "MODERATE" | "HIGH";
+  grounded: boolean;
+  source: string;
+};
+
+type AIExplainerStatus = {
+  mode: string;
+  state:
+    | "GROUNDED_ONLY"
+    | "MISSING_API_KEY"
+    | "PLACEHOLDER_API_KEY"
+    | "INVALID_API_KEY"
+    | "MODEL_UNAVAILABLE"
+    | "ACCESS_DENIED"
+    | "CONNECTION_ERROR"
+    | "READY";
+  live_enabled: boolean;
+  api_key_configured: boolean;
+  api_key_hint?: string | null;
+  model: string;
+  base_url: string;
+  message: string;
+};
 
 const defaultPaths = [
   "/workspace/tests/fixtures/god/platform-service",
@@ -298,6 +348,12 @@ function App() {
   const [hasAutoCollapsedSetup, setHasAutoCollapsedSetup] = React.useState(false);
   const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");
   const [workspaceView, setWorkspaceView] = React.useState<WorkspaceView>("analysis");
+  const [aiQuestion, setAiQuestion] = React.useState("");
+  const [aiResponse, setAiResponse] = React.useState<AIExplainerResponse | null>(null);
+  const [isExplaining, setIsExplaining] = React.useState(false);
+  const [streamingAnswer, setStreamingAnswer] = React.useState("");
+  const [aiStatus, setAiStatus] = React.useState<AIExplainerStatus | null>(null);
+  const [isCheckingAIStatus, setIsCheckingAIStatus] = React.useState(false);
   const [selectedDocSlug, setSelectedDocSlug] = React.useState("evaluator-quick-start");
   const [docsQuery, setDocsQuery] = React.useState("");
   const [docsCategory, setDocsCategory] = React.useState("ALL");
@@ -331,6 +387,10 @@ function App() {
     void loadHistory(selectedProjectId);
     void loadPolicies(selectedProjectId);
   }, [selectedProjectId]);
+
+  React.useEffect(() => {
+    void loadAIStatus();
+  }, []);
 
   const aggregatedEdges = React.useMemo(
     () => (displayGraph ? aggregateEdges(displayGraph.edges) : []),
@@ -428,6 +488,8 @@ function App() {
       setDisplayGraph(graphFromReport(payload.result, nextScores));
       setSelectedFinding(null);
       setSelectedGraphElement(null);
+      setAiResponse(null);
+      setStreamingAnswer("");
       await loadDigitalTwinGraph(payload.scan.id, payload.result, nextScores);
       await loadHistory(selectedProjectId, payload.scan.id);
     } catch (caught) {
@@ -555,6 +617,8 @@ function App() {
       setDisplayGraph(graphFromReport(payload.result, nextScores));
       setSelectedFinding(null);
       setSelectedGraphElement(null);
+      setAiResponse(null);
+      setStreamingAnswer("");
       try {
         nextScores = await api<HealthScore[]>(`/api/scans/${scanId}/scores`);
         setScores(nextScores);
@@ -578,11 +642,77 @@ function App() {
     }
   }
 
+  async function requestAIExplanation(
+    intent: AIExplainerIntent,
+    options?: {
+      question?: string;
+      findingId?: string;
+      baseScanId?: string;
+      targetScanId?: string;
+      docQuery?: string;
+      scoreTarget?: string;
+      serviceName?: string;
+    }
+  ) {
+    const needsScan = intent !== "DOC_QA";
+    if (needsScan && !activeScan) {
+      setError("Run or load a scan before using the AI explainer for scan insights.");
+      return;
+    }
+
+    setError(null);
+    setIsExplaining(true);
+    setStreamingAnswer("");
+    setAiResponse(null);
+    try {
+      const payload = {
+        intent,
+        question: options?.question ?? aiQuestion,
+        project_id: selectedProjectId || undefined,
+        scan_id: activeScan?.id,
+        finding_id: options?.findingId,
+        base_scan_id: options?.baseScanId,
+        target_scan_id: options?.targetScanId,
+        doc_query: options?.docQuery,
+        score_target: options?.scoreTarget,
+        service_name: options?.serviceName
+      };
+      const response = await streamAIResponse("/api/ai/explainer/stream", payload, (chunk) => {
+        setStreamingAnswer((current) => current + chunk);
+      });
+      setAiResponse(response);
+      if (response.policy_document) {
+        setPolicyText((current) =>
+          intent === "POLICY_WRITING_ASSISTANCE" && current.trim() === defaultPolicyDocument.trim()
+            ? response.policy_document ?? current
+            : current
+        );
+      }
+    } catch (caught) {
+      setError(messageFor(caught, "AI explainer request failed"));
+    } finally {
+      setIsExplaining(false);
+    }
+  }
+
+  async function loadAIStatus() {
+    setIsCheckingAIStatus(true);
+    try {
+      const status = await api<AIExplainerStatus>("/api/ai/explainer/status");
+      setAiStatus(status);
+    } catch {
+      setAiStatus(null);
+    } finally {
+      setIsCheckingAIStatus(false);
+    }
+  }
+
   const highestSeverity = getHighestSeverity(result?.findings ?? []);
   const systemScore = scores.find((score) => score.scope === "system") ?? result?.summary.health_scores?.system;
   const serviceScores = scores.filter((score) => score.scope === "service");
   const urgentFinding = getMostUrgentFinding(result?.findings ?? []);
   const hotspot = getHotspotService(result?.findings ?? [], serviceScores);
+  const compareBaseScan = activeScan ? comparisonBaseScan(history, activeScan.id) : null;
   const hasProject = Boolean(selectedProjectId);
   const hasSourceConfigured = Boolean(sourceLocation.trim()) || manualServicePaths.length > 0;
   const hasRepoPreview = Boolean(repoPreview);
@@ -982,6 +1112,16 @@ function App() {
             <label htmlFor="policyText">Policy YAML</label>
             <textarea id="policyText" value={policyText} onChange={(event) => setPolicyText(event.target.value)} />
             <p className="hint">Policies run during project scans and violations appear as findings.</p>
+            <div className="panelButtonRow">
+              <button
+                type="button"
+                className="secondaryButton"
+                onClick={() => void requestAIExplanation("POLICY_WRITING_ASSISTANCE", { question: "Draft governance policy YAML for this project." })}
+                disabled={isExplaining || !selectedProjectId || !activeScan}
+              >
+                {isExplaining ? "Drafting..." : "Draft Policies With AI"}
+              </button>
+            </div>
             <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProjectId}>
               {isSavingPolicies ? "Saving..." : "Save Policies"}
             </button>
@@ -1078,6 +1218,25 @@ function App() {
             </section>
           </section>
 
+          <AIExplainerPanel
+            activeScan={activeScan}
+            compareBaseScan={compareBaseScan}
+            response={aiResponse}
+            status={aiStatus}
+            streamingAnswer={streamingAnswer}
+            question={aiQuestion}
+            isLoading={isExplaining}
+            isCheckingStatus={isCheckingAIStatus}
+            urgentFinding={urgentFinding ?? null}
+            systemScore={systemScore ?? null}
+            policyText={policyText}
+            onQuestionChange={setAiQuestion}
+            onAsk={(intent, options) => void requestAIExplanation(intent, options)}
+            onApplyPolicyDraft={(draft) => setPolicyText(draft)}
+            onRefreshStatus={() => void loadAIStatus()}
+            onOpenDoc={openDoc}
+          />
+
           <EvolutionPanel reports={evolution} />
 
           <section className="contentGrid">
@@ -1115,6 +1274,13 @@ function App() {
           onFilterChange={setFilters}
           onOpenDoc={openDoc}
           onSelectFinding={setSelectedFinding}
+          onAskAI={(finding) => {
+            setAiQuestion(`Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`);
+            void requestAIExplanation("FINDING_EXPLANATION", {
+              question: `Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`,
+              findingId: finding.id
+            });
+          }}
         />
       </section>
 
@@ -1122,6 +1288,13 @@ function App() {
         <FindingDrawer
           finding={selectedFinding}
           interpretationMode={interpretationMode}
+          onAskAI={() => {
+            setAiQuestion(`Explain simply what to solve first about ${plainLanguageFindingTitle(selectedFinding).toLowerCase()}.`);
+            void requestAIExplanation("FINDING_EXPLANATION", {
+              question: `Explain simply what to solve first about ${plainLanguageFindingTitle(selectedFinding).toLowerCase()}.`,
+              findingId: selectedFinding.id
+            });
+          }}
           onClose={() => setSelectedFinding(null)}
         />
       ) : null}
@@ -1306,6 +1479,269 @@ function DocLinkButton({ label, onClick }: { label: string; onClick: () => void 
   );
 }
 
+function AIExplainerPanel({
+  activeScan,
+  compareBaseScan,
+  response,
+  status,
+  streamingAnswer,
+  question,
+  isLoading,
+  isCheckingStatus,
+  urgentFinding,
+  systemScore,
+  policyText,
+  onQuestionChange,
+  onAsk,
+  onApplyPolicyDraft,
+  onRefreshStatus,
+  onOpenDoc
+}: {
+  activeScan: ScanRecord | null;
+  compareBaseScan: ScanRecord | null;
+  response: AIExplainerResponse | null;
+  status: AIExplainerStatus | null;
+  streamingAnswer: string;
+  question: string;
+  isLoading: boolean;
+  isCheckingStatus: boolean;
+  urgentFinding: Finding | null;
+  systemScore: HealthScore | null;
+  policyText: string;
+  onQuestionChange: (value: string) => void;
+  onAsk: (
+    intent: AIExplainerIntent,
+    options?: {
+      question?: string;
+      findingId?: string;
+      baseScanId?: string;
+      targetScanId?: string;
+      docQuery?: string;
+      scoreTarget?: string;
+      serviceName?: string;
+    }
+  ) => void;
+  onApplyPolicyDraft: (draft: string) => void;
+  onRefreshStatus: () => void;
+  onOpenDoc: (slug: string) => void;
+}) {
+  const answerProvider = aiAnswerProvider(response?.source);
+  return (
+    <section className="aiExplainerPanel">
+      <div className="aiExplainerHeader">
+        <div>
+          <div className="eyebrow">AI Explainer</div>
+          <h2>Ask MESA for grounded interpretation</h2>
+          <p>
+            This assistant explains scan results from deterministic findings, scores, scan history, and local
+            documentation. It does not replace the detector.
+          </p>
+          <div className="docLinks">
+            <DocLinkButton label="AI explainer guide" onClick={() => onOpenDoc("ai-explainer-guide")} />
+            <DocLinkButton label="User guide" onClick={() => onOpenDoc("user-guide")} />
+          </div>
+        </div>
+        <div className="aiStatusCard">
+          <strong>{activeScan ? `Scan ${shortId(activeScan.id)}` : "No active scan"}</strong>
+          <span>
+            {response
+              ? response.source.startsWith("openai-hybrid")
+                ? "Live OpenAI hybrid response"
+                : "Grounded MESA fallback response"
+              : isLoading
+                ? "Streaming response in progress"
+                : "Waiting for a question"}
+          </span>
+          <button type="button" className="secondaryButton" onClick={onRefreshStatus} disabled={isCheckingStatus}>
+            {isCheckingStatus ? "Checking..." : "Refresh AI Status"}
+          </button>
+        </div>
+      </div>
+
+      <div className="aiWorkspaceGrid">
+        <div className="aiAskPane">
+          <div className={`aiConnectionBanner ${status ? aiStatusTone(status.state) : "neutral"}`}>
+            <strong>{status ? aiStatusLabel(status.state) : "AI status unavailable"}</strong>
+            <span>{status?.message ?? "MESA could not load the AI configuration status right now."}</span>
+            {status ? (
+              <small>
+                Mode: <code>{status.mode}</code> | Model: <code>{status.model}</code>
+                {status.api_key_hint ? <> | Key: <code>{status.api_key_hint}</code></> : null}
+              </small>
+            ) : null}
+          </div>
+
+          <div className="aiPromptGrid">
+            <button type="button" className="aiQuickAction" onClick={() => onAsk("SCAN_SUMMARY")} disabled={!activeScan || isLoading}>
+              <strong>Summarize this scan</strong>
+              <span>Get a short explanation of the overall result.</span>
+            </button>
+            <button type="button" className="aiQuickAction" onClick={() => onAsk("PRIORITIZE_FIXES", { question: "Explain simply what should be solved first." })} disabled={!activeScan || isLoading}>
+              <strong>What should I fix first?</strong>
+              <span>Prioritize the most important architecture issues.</span>
+            </button>
+            <button
+              type="button"
+              className="aiQuickAction"
+              onClick={() => onAsk("FINDING_EXPLANATION", { findingId: urgentFinding?.id })}
+              disabled={!activeScan || !urgentFinding || isLoading}
+            >
+              <strong>Explain the top finding</strong>
+              <span>{urgentFinding ? summaryFindingTitle(urgentFinding) : "Available after a scan"}</span>
+            </button>
+            <button
+              type="button"
+              className="aiQuickAction"
+              onClick={() => onAsk("HEALTH_SCORE_EXPLANATION", { scoreTarget: systemScore ? `system:${systemScore.target}` : "system" })}
+              disabled={!activeScan || !systemScore || isLoading}
+            >
+              <strong>Explain the health score</strong>
+              <span>{systemScore ? `${systemScore.score.toFixed(1)}/100 ${systemScore.grade}` : "Available after a scan"}</span>
+            </button>
+            <button
+              type="button"
+              className="aiQuickAction"
+              onClick={() =>
+                compareBaseScan &&
+                onAsk("COMPARE_SCANS", { baseScanId: compareBaseScan.id, targetScanId: activeScan?.id })
+              }
+              disabled={!activeScan || !compareBaseScan || isLoading}
+            >
+              <strong>Compare with previous scan</strong>
+              <span>{compareBaseScan ? `Against ${shortId(compareBaseScan.id)}` : "Need at least two scans"}</span>
+            </button>
+            <button type="button" className="aiQuickAction" onClick={() => onAsk("GOVERNANCE_POLICY_HELP")} disabled={!activeScan || isLoading}>
+              <strong>Explain governance</strong>
+              <span>Review active rules and policy violations.</span>
+            </button>
+            <button type="button" className="aiQuickAction" onClick={() => onAsk("POLICY_WRITING_ASSISTANCE")} disabled={!activeScan || isLoading}>
+              <strong>Draft policy YAML</strong>
+              <span>Suggest governance rules from the current scan.</span>
+            </button>
+            <button type="button" className="aiQuickAction" onClick={() => onAsk("DOC_QA", { question: "How do I use this tool?", docQuery: "How do I use this tool?" })} disabled={isLoading}>
+              <strong>Ask from docs</strong>
+              <span>Use in-product documentation as the answer source.</span>
+            </button>
+          </div>
+
+          <div className="aiQuestionBar">
+            <label htmlFor="aiQuestion">Custom question</label>
+            <div className="aiQuestionControls">
+              <input
+                id="aiQuestion"
+                placeholder="Example: Explain simply what should be solved first."
+                value={question}
+                onChange={(event) => onQuestionChange(event.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => onAsk(activeScan ? "AUTO" : "DOC_QA", { question, docQuery: question })}
+                disabled={isLoading || !question.trim()}
+              >
+                {isLoading ? "Thinking..." : "Ask MESA"}
+              </button>
+            </div>
+          </div>
+
+          <div className="aiHelperCard">
+            <strong>Current policy editor</strong>
+            <span>{policyText.trim() ? "Policy YAML is loaded and ready for AI drafting help." : "No policy YAML loaded yet."}</span>
+          </div>
+        </div>
+
+        {!response && !isLoading ? (
+          <div className="aiEmptyState">
+            Ask for a summary, fix priority, health explanation, scan comparison, or documentation help.
+          </div>
+        ) : (
+          <div className="aiResponseCard">
+          <div className="aiResponseHeader">
+            <div>
+              <div className="findingMeta">
+                <span>{response?.source ?? "streaming"}</span>
+                <strong className={`severity ${(response?.confidence ?? "MODERATE").toLowerCase()}`}>{response?.confidence ?? "MODERATE"}</strong>
+              </div>
+              <div className={`aiAnswerBadge ${answerProvider.tone}`}>
+                {answerProvider.label}
+              </div>
+              <h3>{response?.title ?? "MESA is preparing the answer..."}</h3>
+            </div>
+            <span className="modePill">{(response?.intent ?? "AUTO").replace(/_/g, " ")}</span>
+          </div>
+            <p className="aiAnswer">{streamingAnswer || response?.answer || "Waiting for response..."}</p>
+
+            {response?.policy_document ? (
+              <div className="aiPolicyDraftCard">
+                <div className="aiPolicyDraftHeader">
+                  <strong>Suggested policy draft</strong>
+                  <button type="button" className="aiDraftActionButton" onClick={() => onApplyPolicyDraft(response.policy_document ?? "")}>
+                    Use this draft
+                  </button>
+                </div>
+                <pre>{response.policy_document}</pre>
+              </div>
+            ) : null}
+
+            {response?.evidence.length ? (
+              <div className="aiEvidenceGrid">
+                {response.evidence.map((item) => (
+                  <article key={`${item.kind}-${item.pointer}-${item.label}`} className="aiEvidenceCard">
+                    <small>{item.kind}</small>
+                    <strong>{item.label}</strong>
+                    <code>{item.pointer}</code>
+                    <p>{renderHighlightedText(item.snippet)}</p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="aiResponseColumns">
+              <div>
+                <strong>Suggestions</strong>
+                {response?.suggestions.length ? (
+                  <ul className="aiList">
+                    {response.suggestions.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                ) : (
+                  <div className="emptyInline">No suggestions returned.</div>
+                )}
+              </div>
+              <div>
+                <strong>Limitations</strong>
+                {response?.limitations.length ? (
+                  <ul className="aiList">
+                    {response.limitations.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                ) : (
+                  <div className="emptyInline">No limitations returned.</div>
+                )}
+              </div>
+            </div>
+
+            {response?.follow_up_questions.length ? (
+              <div className="aiFollowUps">
+                <strong>Try next</strong>
+                <div className="docLinks">
+                  {response.follow_up_questions.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className="docLinkButton"
+                      onClick={() => onAsk(activeScan ? "AUTO" : "DOC_QA", { question: item, docQuery: item })}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function FindingsDashboard({
   findings,
   filteredFindings,
@@ -1314,7 +1750,8 @@ function FindingsDashboard({
   interpretationMode,
   onFilterChange,
   onOpenDoc,
-  onSelectFinding
+  onSelectFinding,
+  onAskAI
 }: {
   findings: Finding[];
   filteredFindings: Finding[];
@@ -1324,6 +1761,7 @@ function FindingsDashboard({
   onFilterChange: (filters: Filters) => void;
   onOpenDoc: (slug: string) => void;
   onSelectFinding: (finding: Finding) => void;
+  onAskAI: (finding: Finding) => void;
 }) {
   return (
     <aside className="findings dashboardFindings">
@@ -1396,6 +1834,11 @@ function FindingsDashboard({
               <small className="confidenceText">
                 {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%)
               </small>
+              <div className="findingActions" onClick={(event) => event.stopPropagation()}>
+                <button type="button" className="secondaryButton" onClick={() => onAskAI(finding)}>
+                  Ask AI
+                </button>
+              </div>
             </article>
           ))}
         </div>
@@ -1575,10 +2018,12 @@ function RecommendationDetails({
 function FindingDrawer({
   finding,
   interpretationMode,
+  onAskAI,
   onClose
 }: {
   finding: Finding;
   interpretationMode: InterpretationMode;
+  onAskAI: () => void;
   onClose: () => void;
 }) {
   return (
@@ -1600,6 +2045,9 @@ function FindingDrawer({
         ) : null}
         <div className="serviceChips">
           {finding.services.map((service) => <span key={service}>{service}</span>)}
+        </div>
+        <div className="drawerActionRow">
+          <button type="button" className="secondaryButton" onClick={onAskAI}>Ask AI About This</button>
         </div>
         <section className="drawerSection">
           <h3>What MESA found</h3>
@@ -2265,10 +2713,90 @@ function buildFilterOptions(findings: Finding[]) {
   };
 }
 
+function comparisonBaseScan(history: ScanRecord[], activeScanId: string) {
+  const index = history.findIndex((scan) => scan.id === activeScanId);
+  if (index === -1) return null;
+  return history[index + 1] ?? history[index - 1] ?? null;
+}
+
+function aiStatusLabel(state: AIExplainerStatus["state"]) {
+  return {
+    GROUNDED_ONLY: "Grounded-only mode",
+    MISSING_API_KEY: "Missing API key",
+    PLACEHOLDER_API_KEY: "Placeholder API key",
+    INVALID_API_KEY: "Invalid API key",
+    MODEL_UNAVAILABLE: "Model unavailable",
+    ACCESS_DENIED: "Access denied",
+    CONNECTION_ERROR: "Connection problem",
+    READY: "Live AI ready"
+  }[state];
+}
+
+function aiStatusTone(state: AIExplainerStatus["state"]) {
+  if (state === "READY") return "good";
+  if (state === "GROUNDED_ONLY") return "neutral";
+  if (state === "CONNECTION_ERROR" || state === "MODEL_UNAVAILABLE") return "medium";
+  return "high";
+}
+
+function aiAnswerProvider(source?: string) {
+  if (source?.startsWith("openai-hybrid")) {
+    return { label: "Answered by OpenAI", tone: "good" };
+  }
+  if (source?.includes("fallback")) {
+    return { label: "Answered by MESA fallback", tone: "high" };
+  }
+  return { label: "Answered by MESA", tone: "neutral" };
+}
+
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, init);
   if (!response.ok) throw new Error(`API returned ${response.status}`);
   return (await response.json()) as T;
+}
+
+async function streamAIResponse(
+  path: string,
+  payload: Record<string, unknown>,
+  onDelta: (chunk: string) => void
+): Promise<AIExplainerResponse> {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok || !response.body) throw new Error(`API returned ${response.status}`);
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalPayload: AIExplainerResponse | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split("\n\n");
+    buffer = events.pop() ?? "";
+
+    for (const rawEvent of events) {
+      const lines = rawEvent.split("\n");
+      const eventLine = lines.find((line) => line.startsWith("event:"));
+      const dataLine = lines.find((line) => line.startsWith("data:"));
+      if (!eventLine || !dataLine) continue;
+      const eventName = eventLine.slice(6).trim();
+      const data = JSON.parse(dataLine.slice(5).trim()) as Record<string, unknown>;
+      if (eventName === "delta" && typeof data.text === "string") {
+        onDelta(data.text);
+      }
+      if (eventName === "done") {
+        finalPayload = data as unknown as AIExplainerResponse;
+      }
+    }
+  }
+
+  if (!finalPayload) throw new Error("No final AI response was returned");
+  return finalPayload;
 }
 
 function servicePathsFromText(value: string) {

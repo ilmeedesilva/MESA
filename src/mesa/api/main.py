@@ -1,17 +1,28 @@
 from __future__ import annotations
 
+import json
 import os
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from mesa import __version__
 from mesa.analysis import analyze_services
 from mesa.analysis.evolution import compare_scan_results
+from mesa.analysis.explainer import (
+    ai_status,
+    explain_with_grounded_context,
+    grounded_response_for_request,
+    stream_answer_text,
+)
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
 from mesa.models import (
+    AIExplainerStatus,
+    AIExplainerRequest,
+    AIExplainerResponse,
     AnalysisRequest,
     AnalysisResult,
     EvolutionReport,
@@ -300,6 +311,44 @@ def get_scan_scores(scan_id: str, request: Request) -> list[HealthScore]:
     return repository.list_scores(scan_id)
 
 
+@app.post("/ai/explainer", response_model=AIExplainerResponse)
+def explain_scan_results(payload: AIExplainerRequest, request: Request) -> AIExplainerResponse:
+    result, scores, policies, comparison = _load_ai_context(payload, request)
+    return explain_with_grounded_context(
+        payload,
+        result=result,
+        scores=scores,
+        policies=policies,
+        comparison=comparison,
+    )
+
+
+@app.get("/ai/explainer/status", response_model=AIExplainerStatus)
+def get_ai_explainer_status(probe: bool = True) -> AIExplainerStatus:
+    return ai_status(probe=probe)
+
+
+@app.post("/ai/explainer/stream")
+def explain_scan_results_stream(payload: AIExplainerRequest, request: Request) -> StreamingResponse:
+    result, scores, policies, comparison = _load_ai_context(payload, request)
+    grounded_response = grounded_response_for_request(
+        payload,
+        intent=payload.intent if payload.intent.value != "AUTO" else None,
+        result=result,
+        scores=scores,
+        policies=policies,
+        comparison=comparison,
+    )
+
+    def event_stream():
+        final_response, chunks = stream_answer_text(payload, grounded_response)
+        for chunk in chunks:
+            yield _sse_event("delta", {"text": chunk})
+        yield _sse_event("done", final_response.model_dump(mode="json"))
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 @app.get("/scans/{scan_id}/graph")
 def get_scan_architecture_graph(scan_id: str, request: Request) -> dict:
     repository = get_repository(request)
@@ -367,3 +416,58 @@ def _count_by(items: list, attr: str) -> dict[str, int]:
         key = value.value if hasattr(value, "value") else str(value)
         counts[key] = counts.get(key, 0) + 1
     return counts
+
+
+def _load_ai_context(
+    payload: AIExplainerRequest, request: Request
+) -> tuple[AnalysisResult | None, list[HealthScore], list[PolicyRecord], EvolutionReport | None]:
+    repository = get_repository(request)
+
+    scan_id = payload.scan_id or payload.target_scan_id
+    result: AnalysisResult | None = None
+    scores: list[HealthScore] = []
+    project_id = payload.project_id
+
+    if scan_id:
+        scan = repository.get_scan(scan_id)
+        if scan is None:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        result = repository.get_scan_result(scan_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Scan report not found")
+        scores = repository.list_scores(scan_id)
+        project_id = project_id or scan.project_id
+
+    policies = []
+    if project_id:
+        project = repository.get_project(project_id)
+        if project is None:
+            raise HTTPException(status_code=404, detail="Project not found")
+        policies = repository.list_policies(project_id)
+
+    comparison = None
+    if payload.base_scan_id and payload.target_scan_id:
+        base_scan = repository.get_scan(payload.base_scan_id)
+        target_scan = repository.get_scan(payload.target_scan_id)
+        if base_scan is None or target_scan is None:
+            raise HTTPException(status_code=404, detail="Comparison scan not found")
+        base_result = repository.get_scan_result(payload.base_scan_id)
+        target_result = repository.get_scan_result(payload.target_scan_id)
+        if base_result is None or target_result is None:
+            raise HTTPException(status_code=404, detail="Comparison scan report not found")
+        comparison = compare_scan_results(
+            project_id or target_scan.project_id,
+            payload.base_scan_id,
+            base_result,
+            payload.target_scan_id,
+            target_result,
+        )
+        if payload.target_scan_id == scan_id:
+            result = target_result
+            scores = repository.list_scores(payload.target_scan_id)
+
+    return result, scores, policies, comparison
+
+
+def _sse_event(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
