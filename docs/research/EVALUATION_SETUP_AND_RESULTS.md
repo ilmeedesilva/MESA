@@ -42,3 +42,22 @@ These values reflect deterministic seeded synthetic fixtures. They demonstrate t
 
 - `evaluation-results/mesa_evaluation_results.json`
 - `evaluation-results/mesa_evaluation_results.csv`
+- `evaluation-results/mesa_evaluation_summary.md`
+
+## Phase I Evaluation Expansion
+
+The upgraded evaluation flow now separates:
+
+- detector quality
+- service discovery quality
+- explanation quality
+- recommendation quality
+- evaluator notes and limitations
+
+This makes the evaluation stronger because MESA no longer treats:
+
+- detection accuracy
+- discovery accuracy
+- explanation helpfulness
+
+as if they were the same thing.

@@ -1,0 +1,4696 @@
+{
+  "benchmark": "mesa-phase-11-synthetic-benchmarks",
+  "version": 1,
+  "matching": "type_and_service_set",
+  "overall": {
+    "true_positives": 50,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0
+  },
+  "by_type": {
+    "CHATTY_SERVICE": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
+    "CYCLIC_DEPENDENCY": {
+      "true_positives": 7,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
+    "GOD_SERVICE": {
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
+    "HARD_CODED_SERVICE_DEPENDENCY": {
+      "true_positives": 39,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
+    "SHARED_DATABASE": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    }
+  },
+  "systems": [
+    {
+      "id": "clean-architecture",
+      "name": "Clean architecture",
+      "category": "clean architecture",
+      "service_paths": [
+        "../tests/fixtures/clean/order-service",
+        "../tests/fixtures/clean/user-service"
+      ],
+      "expected_count": 0,
+      "predicted_count": 0,
+      "metrics": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": []
+    },
+    {
+      "id": "chatty-services",
+      "name": "Chatty services",
+      "category": "chatty services",
+      "service_paths": [
+        "../tests/fixtures/chatty/order-service",
+        "../tests/fixtures/chatty/user-service"
+      ],
+      "expected_count": 4,
+      "predicted_count": 4,
+      "metrics": {
+        "true_positives": 4,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "order-service",
+            "user-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CHAT-001",
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "order-service",
+            "user-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.65
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        }
+      ]
+    },
+    {
+      "id": "cyclic-dependencies",
+      "name": "Cyclic dependencies",
+      "category": "cyclic dependencies",
+      "service_paths": [
+        "../tests/fixtures/cycle/order-service",
+        "../tests/fixtures/cycle/payment-service"
+      ],
+      "expected_count": 3,
+      "predicted_count": 3,
+      "metrics": {
+        "true_positives": 3,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "payment-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "payment-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "payment-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "payment-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        }
+      ]
+    },
+    {
+      "id": "shared-database",
+      "name": "Shared database",
+      "category": "shared database",
+      "service_paths": [
+        "../tests/fixtures/shared-db/order-service",
+        "../tests/fixtures/shared-db/payment-service"
+      ],
+      "expected_count": 3,
+      "predicted_count": 3,
+      "metrics": {
+        "true_positives": 3,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "SHARED_DATABASE",
+          "services": [
+            "order-service",
+            "payment-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "payment-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-SHDB-001",
+          "type": "SHARED_DATABASE",
+          "services": [
+            "order-service",
+            "payment-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "payment-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "id": "hard-coded-dependencies",
+      "name": "Hard-coded dependencies",
+      "category": "hard-coded dependencies",
+      "service_paths": [
+        "../tests/fixtures/hardcoded/order-service",
+        "../tests/fixtures/hardcoded/billing-service"
+      ],
+      "expected_count": 6,
+      "predicted_count": 6,
+      "metrics": {
+        "true_positives": 6,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        }
+      ]
+    },
+    {
+      "id": "god-service",
+      "name": "God Service",
+      "category": "God Service",
+      "service_paths": [
+        "../tests/fixtures/god/platform-service",
+        "../tests/fixtures/god/order-service",
+        "../tests/fixtures/god/billing-service",
+        "../tests/fixtures/god/inventory-service",
+        "../tests/fixtures/god/user-service",
+        "../tests/fixtures/god/payment-service",
+        "../tests/fixtures/god/notification-service"
+      ],
+      "expected_count": 17,
+      "predicted_count": 17,
+      "metrics": {
+        "true_positives": 17,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "inventory-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "inventory-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "inventory-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-CYCL-002",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-CYCL-003",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "inventory-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-007",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-008",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-009",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-010",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-011",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-012",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-013",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-GODS-001",
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.925
+        }
+      ]
+    },
+    {
+      "id": "distributed-monolith",
+      "name": "Distributed monolith composite",
+      "category": "distributed monolith",
+      "service_paths": [
+        "../tests/fixtures/god/platform-service",
+        "../tests/fixtures/god/order-service",
+        "../tests/fixtures/god/billing-service",
+        "../tests/fixtures/god/inventory-service",
+        "../tests/fixtures/god/user-service",
+        "../tests/fixtures/god/payment-service",
+        "../tests/fixtures/god/notification-service"
+      ],
+      "expected_count": 17,
+      "predicted_count": 17,
+      "metrics": {
+        "true_positives": 17,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "inventory-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "inventory-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "inventory-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-CYCL-002",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-CYCL-003",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "inventory-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-007",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-008",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-009",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-010",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-011",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-012",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-013",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-GODS-001",
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.925
+        }
+      ]
+    }
+  ],
+  "detector": {
+    "overall": {
+      "true_positives": 50,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
+    "by_type": {
+      "CHATTY_SERVICE": {
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "CYCLIC_DEPENDENCY": {
+        "true_positives": 7,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "GOD_SERVICE": {
+        "true_positives": 2,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "HARD_CODED_SERVICE_DEPENDENCY": {
+        "true_positives": 39,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "SHARED_DATABASE": {
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      }
+    },
+    "systems": [
+      {
+        "id": "clean-architecture",
+        "name": "Clean architecture",
+        "category": "clean architecture",
+        "service_paths": [
+          "../tests/fixtures/clean/order-service",
+          "../tests/fixtures/clean/user-service"
+        ],
+        "expected_count": 0,
+        "predicted_count": 0,
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": []
+      },
+      {
+        "id": "chatty-services",
+        "name": "Chatty services",
+        "category": "chatty services",
+        "service_paths": [
+          "../tests/fixtures/chatty/order-service",
+          "../tests/fixtures/chatty/user-service"
+        ],
+        "expected_count": 4,
+        "predicted_count": 4,
+        "metrics": {
+          "true_positives": 4,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [
+          {
+            "type": "CHATTY_SERVICE",
+            "services": [
+              "order-service",
+              "user-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          }
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "services": [
+              "order-service",
+              "user-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.65
+          },
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          }
+        ]
+      },
+      {
+        "id": "cyclic-dependencies",
+        "name": "Cyclic dependencies",
+        "category": "cyclic dependencies",
+        "service_paths": [
+          "../tests/fixtures/cycle/order-service",
+          "../tests/fixtures/cycle/payment-service"
+        ],
+        "expected_count": 3,
+        "predicted_count": 3,
+        "metrics": {
+          "true_positives": 3,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "order-service",
+              "payment-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "payment-service"
+            ]
+          }
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "order-service",
+              "payment-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "payment-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          }
+        ]
+      },
+      {
+        "id": "shared-database",
+        "name": "Shared database",
+        "category": "shared database",
+        "service_paths": [
+          "../tests/fixtures/shared-db/order-service",
+          "../tests/fixtures/shared-db/payment-service"
+        ],
+        "expected_count": 3,
+        "predicted_count": 3,
+        "metrics": {
+          "true_positives": 3,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [
+          {
+            "type": "SHARED_DATABASE",
+            "services": [
+              "order-service",
+              "payment-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "payment-service"
+            ]
+          }
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-SHDB-001",
+            "type": "SHARED_DATABASE",
+            "services": [
+              "order-service",
+              "payment-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "payment-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          }
+        ]
+      },
+      {
+        "id": "hard-coded-dependencies",
+        "name": "Hard-coded dependencies",
+        "category": "hard-coded dependencies",
+        "service_paths": [
+          "../tests/fixtures/hardcoded/order-service",
+          "../tests/fixtures/hardcoded/billing-service"
+        ],
+        "expected_count": 6,
+        "predicted_count": 6,
+        "metrics": {
+          "true_positives": 6,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          }
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ],
+            "severity": "HIGH",
+            "confidence": 0.95
+          },
+          {
+            "id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          },
+          {
+            "id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.8500000000000001
+          },
+          {
+            "id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          }
+        ]
+      },
+      {
+        "id": "god-service",
+        "name": "God Service",
+        "category": "God Service",
+        "service_paths": [
+          "../tests/fixtures/god/platform-service",
+          "../tests/fixtures/god/order-service",
+          "../tests/fixtures/god/billing-service",
+          "../tests/fixtures/god/inventory-service",
+          "../tests/fixtures/god/user-service",
+          "../tests/fixtures/god/payment-service",
+          "../tests/fixtures/god/notification-service"
+        ],
+        "expected_count": 17,
+        "predicted_count": 17,
+        "metrics": {
+          "true_positives": 17,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "billing-service",
+              "platform-service"
+            ]
+          },
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "order-service",
+              "platform-service"
+            ]
+          },
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "inventory-service",
+              "platform-service"
+            ]
+          },
+          {
+            "type": "GOD_SERVICE",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "inventory-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          }
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "inventory-service",
+              "platform-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-CYCL-002",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "order-service",
+              "platform-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-CYCL-003",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "billing-service",
+              "platform-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "inventory-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.925
+          }
+        ]
+      },
+      {
+        "id": "distributed-monolith",
+        "name": "Distributed monolith composite",
+        "category": "distributed monolith",
+        "service_paths": [
+          "../tests/fixtures/god/platform-service",
+          "../tests/fixtures/god/order-service",
+          "../tests/fixtures/god/billing-service",
+          "../tests/fixtures/god/inventory-service",
+          "../tests/fixtures/god/user-service",
+          "../tests/fixtures/god/payment-service",
+          "../tests/fixtures/god/notification-service"
+        ],
+        "expected_count": 17,
+        "predicted_count": 17,
+        "metrics": {
+          "true_positives": 17,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "billing-service",
+              "platform-service"
+            ]
+          },
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "order-service",
+              "platform-service"
+            ]
+          },
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "inventory-service",
+              "platform-service"
+            ]
+          },
+          {
+            "type": "GOD_SERVICE",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "inventory-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ]
+          }
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "inventory-service",
+              "platform-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-CYCL-002",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "order-service",
+              "platform-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-CYCL-003",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "billing-service",
+              "platform-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "inventory-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "order-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "services": [
+              "platform-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.925
+          }
+        ]
+      }
+    ]
+  },
+  "discovery": {
+    "overall": {
+      "system_count": 7,
+      "precision": 1.0,
+      "recall": 0.9524,
+      "f1_score": 0.9714
+    },
+    "systems": [
+      {
+        "system_id": "clean-architecture",
+        "root": "../tests/fixtures/clean",
+        "expected_candidates": [
+          "order-service",
+          "user-service"
+        ],
+        "predicted_candidates": [
+          "order-service",
+          "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      {
+        "system_id": "chatty-services",
+        "root": "../tests/fixtures/chatty",
+        "expected_candidates": [
+          "order-service",
+          "user-service"
+        ],
+        "predicted_candidates": [
+          "order-service",
+          "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      {
+        "system_id": "cyclic-dependencies",
+        "root": "../tests/fixtures/cycle",
+        "expected_candidates": [
+          "order-service",
+          "payment-service"
+        ],
+        "predicted_candidates": [
+          "order-service",
+          "payment-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      {
+        "system_id": "shared-database",
+        "root": "../tests/fixtures/shared-db",
+        "expected_candidates": [
+          "order-service",
+          "payment-service"
+        ],
+        "predicted_candidates": [
+          "order-service",
+          "payment-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      {
+        "system_id": "hard-coded-dependencies",
+        "root": "../tests/fixtures/hardcoded",
+        "expected_candidates": [
+          "billing-service",
+          "clean-service",
+          "order-service"
+        ],
+        "predicted_candidates": [
+          "clean-service",
+          "order-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [
+          "billing-service"
+        ],
+        "precision": 1.0,
+        "recall": 0.6667,
+        "f1_score": 0.8
+      },
+      {
+        "system_id": "god-service",
+        "root": "../tests/fixtures/god",
+        "expected_candidates": [
+          "billing-service",
+          "inventory-service",
+          "notification-service",
+          "order-service",
+          "payment-service",
+          "platform-service",
+          "small-service",
+          "user-service"
+        ],
+        "predicted_candidates": [
+          "billing-service",
+          "inventory-service",
+          "notification-service",
+          "order-service",
+          "payment-service",
+          "platform-service",
+          "small-service",
+          "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      {
+        "system_id": "distributed-monolith",
+        "root": "../tests/fixtures/god",
+        "expected_candidates": [
+          "billing-service",
+          "inventory-service",
+          "notification-service",
+          "order-service",
+          "payment-service",
+          "platform-service",
+          "small-service",
+          "user-service"
+        ],
+        "predicted_candidates": [
+          "billing-service",
+          "inventory-service",
+          "notification-service",
+          "order-service",
+          "payment-service",
+          "platform-service",
+          "small-service",
+          "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      }
+    ]
+  },
+  "explanations": {
+    "overall": {
+      "system_count": 7,
+      "helpfulness_score": 0.9393,
+      "grounding_score": 1.0,
+      "coverage_score": 0.9786
+    },
+    "systems": [
+      {
+        "system_id": "clean-architecture",
+        "case_count": 1,
+        "helpfulness_score": 0.8,
+        "grounding_score": 1.0,
+        "coverage_score": 0.85,
+        "cases": [
+          {
+            "system_id": "clean-architecture",
+            "id": "clean-scan-summary",
+            "intent": "SCAN_SUMMARY",
+            "question": "Summarize this scan simply.",
+            "title": "Grounded scan summary",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 0.8,
+            "grounding_score": 1.0,
+            "coverage_score": 0.85,
+            "evidence_kinds": [
+              "scan",
+              "score"
+            ],
+            "suggestion_count": 0,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      {
+        "system_id": "chatty-services",
+        "case_count": 2,
+        "helpfulness_score": 0.925,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "chatty-services",
+            "id": "chatty-priority",
+            "intent": "PRIORITIZE_FIXES",
+            "question": "Explain simply what should be solved first.",
+            "title": "Recommended fix order",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 0.85,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding"
+            ],
+            "suggestion_count": 4,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          },
+          {
+            "system_id": "chatty-services",
+            "id": "chatty-finding",
+            "intent": "FINDING_EXPLANATION",
+            "question": "Explain simply why this should be reviewed.",
+            "title": "A chatty service interaction",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "evidence",
+              "finding"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      {
+        "system_id": "cyclic-dependencies",
+        "case_count": 2,
+        "helpfulness_score": 0.925,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "cyclic-dependencies",
+            "id": "cycle-priority",
+            "intent": "PRIORITIZE_FIXES",
+            "question": "What should I fix first here?",
+            "title": "Recommended fix order",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 0.85,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding"
+            ],
+            "suggestion_count": 4,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          },
+          {
+            "system_id": "cyclic-dependencies",
+            "id": "cycle-health",
+            "intent": "HEALTH_SCORE_EXPLANATION",
+            "question": "Explain the health score.",
+            "title": "System health for system",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "dimension",
+              "score"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          }
+        ]
+      },
+      {
+        "system_id": "shared-database",
+        "case_count": 1,
+        "helpfulness_score": 1.0,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "shared-database",
+            "id": "shared-db-summary",
+            "intent": "SCAN_SUMMARY",
+            "question": "Summarize the main architecture issues.",
+            "title": "Grounded scan summary",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding",
+              "scan",
+              "score"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      {
+        "system_id": "hard-coded-dependencies",
+        "case_count": 1,
+        "helpfulness_score": 1.0,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "hard-coded-dependencies",
+            "id": "hardcoded-finding",
+            "intent": "FINDING_EXPLANATION",
+            "question": "Explain simply why this hard-coded dependency matters.",
+            "title": "A hard-coded service dependency",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "evidence",
+              "file",
+              "finding"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      {
+        "system_id": "god-service",
+        "case_count": 2,
+        "helpfulness_score": 0.925,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "god-service",
+            "id": "god-priority",
+            "intent": "PRIORITIZE_FIXES",
+            "question": "Explain simply what should be solved first.",
+            "title": "Recommended fix order",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 0.85,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding"
+            ],
+            "suggestion_count": 4,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          },
+          {
+            "system_id": "god-service",
+            "id": "god-health",
+            "intent": "HEALTH_SCORE_EXPLANATION",
+            "question": "Why is the health score low?",
+            "title": "System health for system",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "dimension",
+              "score"
+            ],
+            "suggestion_count": 2,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          }
+        ]
+      },
+      {
+        "system_id": "distributed-monolith",
+        "case_count": 1,
+        "helpfulness_score": 1.0,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "distributed-monolith",
+            "id": "distributed-summary",
+            "intent": "SCAN_SUMMARY",
+            "question": "Summarize this scan.",
+            "title": "Grounded scan summary",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding",
+              "scan",
+              "score"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      }
+    ]
+  },
+  "recommendations": {
+    "overall": {
+      "system_count": 7,
+      "usefulness_score": 0.8373,
+      "structured_coverage": 1.0,
+      "step_quality_score": 0.8571
+    },
+    "systems": [
+      {
+        "system_id": "clean-architecture",
+        "finding_count": 0,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.0,
+        "step_quality_score": 0.0,
+        "findings": []
+      },
+      {
+        "system_id": "chatty-services",
+        "finding_count": 4,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.975,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      },
+      {
+        "system_id": "cyclic-dependencies",
+        "finding_count": 3,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9667,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      },
+      {
+        "system_id": "shared-database",
+        "finding_count": 3,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9667,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-SHDB-001",
+            "type": "SHARED_DATABASE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      },
+      {
+        "system_id": "hard-coded-dependencies",
+        "finding_count": 6,
+        "structured_coverage": 1.0,
+        "usefulness_score": 1.0,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      },
+      {
+        "system_id": "god-service",
+        "finding_count": 17,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9765,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-002",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-003",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          }
+        ]
+      },
+      {
+        "system_id": "distributed-monolith",
+        "finding_count": 17,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9765,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-002",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-003",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    ]
+  },
+  "evaluation_notes": {
+    "systems_with_notes": [
+      {
+        "id": "clean-architecture",
+        "notes": [
+          "Clean fixtures are useful to confirm MESA does not invent findings in a simple baseline."
+        ],
+        "limitations": [
+          "This system is synthetic and smaller than a real service repository."
+        ]
+      },
+      {
+        "id": "chatty-services",
+        "notes": [
+          "Chatty services are still inferred from static call-site count, not real runtime traffic."
+        ],
+        "limitations": [
+          "Repeated hard-coded findings are counted by occurrence rather than by unique endpoint family."
+        ]
+      },
+      {
+        "id": "cyclic-dependencies",
+        "notes": [
+          "Two-service cycles are especially useful for evaluator demos because the cause is easy to explain."
+        ],
+        "limitations": []
+      },
+      {
+        "id": "shared-database",
+        "notes": [],
+        "limitations": [
+          "Shared database evidence is static and does not measure runtime transaction coupling."
+        ]
+      },
+      {
+        "id": "hard-coded-dependencies",
+        "notes": [
+          "Discovery may surface utility-style directories alongside service directories in mixed roots."
+        ],
+        "limitations": []
+      },
+      {
+        "id": "god-service",
+        "notes": [
+          "This fixture behaves like a concentrated hotspot and is useful for roadmap, health, and priority evaluation together."
+        ],
+        "limitations": [
+          "It is still a synthetic benchmark even though it combines multiple anti-pattern signals."
+        ]
+      },
+      {
+        "id": "distributed-monolith",
+        "notes": [
+          "This benchmark is a useful stand-in for distributed monolith symptoms, but it is not a real production repository."
+        ],
+        "limitations": []
+      }
+    ],
+    "track_summary": {
+      "detector_quality_is_separate_from_explanation_quality": true,
+      "discovery_evaluated_separately": true,
+      "explanations_evaluated_separately": true
+    }
+  },
+  "phase_i_systems": [
+    {
+      "id": "clean-architecture",
+      "name": "Clean architecture",
+      "category": "clean architecture",
+      "service_paths": [
+        "../tests/fixtures/clean/order-service",
+        "../tests/fixtures/clean/user-service"
+      ],
+      "expected_count": 0,
+      "predicted_count": 0,
+      "metrics": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [],
+      "evaluator_notes": [
+        "Clean fixtures are useful to confirm MESA does not invent findings in a simple baseline."
+      ],
+      "known_limitations": [
+        "This system is synthetic and smaller than a real service repository."
+      ],
+      "discovery": {
+        "system_id": "clean-architecture",
+        "root": "../tests/fixtures/clean",
+        "expected_candidates": [
+          "order-service",
+          "user-service"
+        ],
+        "predicted_candidates": [
+          "order-service",
+          "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "explanations": {
+        "system_id": "clean-architecture",
+        "case_count": 1,
+        "helpfulness_score": 0.8,
+        "grounding_score": 1.0,
+        "coverage_score": 0.85,
+        "cases": [
+          {
+            "system_id": "clean-architecture",
+            "id": "clean-scan-summary",
+            "intent": "SCAN_SUMMARY",
+            "question": "Summarize this scan simply.",
+            "title": "Grounded scan summary",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 0.8,
+            "grounding_score": 1.0,
+            "coverage_score": 0.85,
+            "evidence_kinds": [
+              "scan",
+              "score"
+            ],
+            "suggestion_count": 0,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      "recommendations": {
+        "system_id": "clean-architecture",
+        "finding_count": 0,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.0,
+        "step_quality_score": 0.0,
+        "findings": []
+      }
+    },
+    {
+      "id": "chatty-services",
+      "name": "Chatty services",
+      "category": "chatty services",
+      "service_paths": [
+        "../tests/fixtures/chatty/order-service",
+        "../tests/fixtures/chatty/user-service"
+      ],
+      "expected_count": 4,
+      "predicted_count": 4,
+      "metrics": {
+        "true_positives": 4,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "order-service",
+            "user-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CHAT-001",
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "order-service",
+            "user-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.65
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        }
+      ],
+      "evaluator_notes": [
+        "Chatty services are still inferred from static call-site count, not real runtime traffic."
+      ],
+      "known_limitations": [
+        "Repeated hard-coded findings are counted by occurrence rather than by unique endpoint family."
+      ],
+      "discovery": {
+        "system_id": "chatty-services",
+        "root": "../tests/fixtures/chatty",
+        "expected_candidates": [
+          "order-service",
+          "user-service"
+        ],
+        "predicted_candidates": [
+          "order-service",
+          "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "explanations": {
+        "system_id": "chatty-services",
+        "case_count": 2,
+        "helpfulness_score": 0.925,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "chatty-services",
+            "id": "chatty-priority",
+            "intent": "PRIORITIZE_FIXES",
+            "question": "Explain simply what should be solved first.",
+            "title": "Recommended fix order",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 0.85,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding"
+            ],
+            "suggestion_count": 4,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          },
+          {
+            "system_id": "chatty-services",
+            "id": "chatty-finding",
+            "intent": "FINDING_EXPLANATION",
+            "question": "Explain simply why this should be reviewed.",
+            "title": "A chatty service interaction",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "evidence",
+              "finding"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      "recommendations": {
+        "system_id": "chatty-services",
+        "finding_count": 4,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.975,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "cyclic-dependencies",
+      "name": "Cyclic dependencies",
+      "category": "cyclic dependencies",
+      "service_paths": [
+        "../tests/fixtures/cycle/order-service",
+        "../tests/fixtures/cycle/payment-service"
+      ],
+      "expected_count": 3,
+      "predicted_count": 3,
+      "metrics": {
+        "true_positives": 3,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "payment-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "payment-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "payment-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "payment-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        }
+      ],
+      "evaluator_notes": [
+        "Two-service cycles are especially useful for evaluator demos because the cause is easy to explain."
+      ],
+      "known_limitations": [],
+      "discovery": {
+        "system_id": "cyclic-dependencies",
+        "root": "../tests/fixtures/cycle",
+        "expected_candidates": [
+          "order-service",
+          "payment-service"
+        ],
+        "predicted_candidates": [
+          "order-service",
+          "payment-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "explanations": {
+        "system_id": "cyclic-dependencies",
+        "case_count": 2,
+        "helpfulness_score": 0.925,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "cyclic-dependencies",
+            "id": "cycle-priority",
+            "intent": "PRIORITIZE_FIXES",
+            "question": "What should I fix first here?",
+            "title": "Recommended fix order",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 0.85,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding"
+            ],
+            "suggestion_count": 4,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          },
+          {
+            "system_id": "cyclic-dependencies",
+            "id": "cycle-health",
+            "intent": "HEALTH_SCORE_EXPLANATION",
+            "question": "Explain the health score.",
+            "title": "System health for system",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "dimension",
+              "score"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          }
+        ]
+      },
+      "recommendations": {
+        "system_id": "cyclic-dependencies",
+        "finding_count": 3,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9667,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "shared-database",
+      "name": "Shared database",
+      "category": "shared database",
+      "service_paths": [
+        "../tests/fixtures/shared-db/order-service",
+        "../tests/fixtures/shared-db/payment-service"
+      ],
+      "expected_count": 3,
+      "predicted_count": 3,
+      "metrics": {
+        "true_positives": 3,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "SHARED_DATABASE",
+          "services": [
+            "order-service",
+            "payment-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "payment-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-SHDB-001",
+          "type": "SHARED_DATABASE",
+          "services": [
+            "order-service",
+            "payment-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "payment-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        }
+      ],
+      "evaluator_notes": [],
+      "known_limitations": [
+        "Shared database evidence is static and does not measure runtime transaction coupling."
+      ],
+      "discovery": {
+        "system_id": "shared-database",
+        "root": "../tests/fixtures/shared-db",
+        "expected_candidates": [
+          "order-service",
+          "payment-service"
+        ],
+        "predicted_candidates": [
+          "order-service",
+          "payment-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "explanations": {
+        "system_id": "shared-database",
+        "case_count": 1,
+        "helpfulness_score": 1.0,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "shared-database",
+            "id": "shared-db-summary",
+            "intent": "SCAN_SUMMARY",
+            "question": "Summarize the main architecture issues.",
+            "title": "Grounded scan summary",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding",
+              "scan",
+              "score"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      "recommendations": {
+        "system_id": "shared-database",
+        "finding_count": 3,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9667,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-SHDB-001",
+            "type": "SHARED_DATABASE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "hard-coded-dependencies",
+      "name": "Hard-coded dependencies",
+      "category": "hard-coded dependencies",
+      "service_paths": [
+        "../tests/fixtures/hardcoded/order-service",
+        "../tests/fixtures/hardcoded/billing-service"
+      ],
+      "expected_count": 6,
+      "predicted_count": 6,
+      "metrics": {
+        "true_positives": 6,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        }
+      ],
+      "evaluator_notes": [
+        "Discovery may surface utility-style directories alongside service directories in mixed roots."
+      ],
+      "known_limitations": [],
+      "discovery": {
+        "system_id": "hard-coded-dependencies",
+        "root": "../tests/fixtures/hardcoded",
+        "expected_candidates": [
+          "billing-service",
+          "clean-service",
+          "order-service"
+        ],
+        "predicted_candidates": [
+          "clean-service",
+          "order-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [
+          "billing-service"
+        ],
+        "precision": 1.0,
+        "recall": 0.6667,
+        "f1_score": 0.8
+      },
+      "explanations": {
+        "system_id": "hard-coded-dependencies",
+        "case_count": 1,
+        "helpfulness_score": 1.0,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "hard-coded-dependencies",
+            "id": "hardcoded-finding",
+            "intent": "FINDING_EXPLANATION",
+            "question": "Explain simply why this hard-coded dependency matters.",
+            "title": "A hard-coded service dependency",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "evidence",
+              "file",
+              "finding"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      "recommendations": {
+        "system_id": "hard-coded-dependencies",
+        "finding_count": 6,
+        "structured_coverage": 1.0,
+        "usefulness_score": 1.0,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "god-service",
+      "name": "God Service",
+      "category": "God Service",
+      "service_paths": [
+        "../tests/fixtures/god/platform-service",
+        "../tests/fixtures/god/order-service",
+        "../tests/fixtures/god/billing-service",
+        "../tests/fixtures/god/inventory-service",
+        "../tests/fixtures/god/user-service",
+        "../tests/fixtures/god/payment-service",
+        "../tests/fixtures/god/notification-service"
+      ],
+      "expected_count": 17,
+      "predicted_count": 17,
+      "metrics": {
+        "true_positives": 17,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "inventory-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "inventory-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "inventory-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-CYCL-002",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-CYCL-003",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "inventory-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-007",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-008",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-009",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-010",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-011",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-012",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-013",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-GODS-001",
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.925
+        }
+      ],
+      "evaluator_notes": [
+        "This fixture behaves like a concentrated hotspot and is useful for roadmap, health, and priority evaluation together."
+      ],
+      "known_limitations": [
+        "It is still a synthetic benchmark even though it combines multiple anti-pattern signals."
+      ],
+      "discovery": {
+        "system_id": "god-service",
+        "root": "../tests/fixtures/god",
+        "expected_candidates": [
+          "billing-service",
+          "inventory-service",
+          "notification-service",
+          "order-service",
+          "payment-service",
+          "platform-service",
+          "small-service",
+          "user-service"
+        ],
+        "predicted_candidates": [
+          "billing-service",
+          "inventory-service",
+          "notification-service",
+          "order-service",
+          "payment-service",
+          "platform-service",
+          "small-service",
+          "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "explanations": {
+        "system_id": "god-service",
+        "case_count": 2,
+        "helpfulness_score": 0.925,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "god-service",
+            "id": "god-priority",
+            "intent": "PRIORITIZE_FIXES",
+            "question": "Explain simply what should be solved first.",
+            "title": "Recommended fix order",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 0.85,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding"
+            ],
+            "suggestion_count": 4,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          },
+          {
+            "system_id": "god-service",
+            "id": "god-health",
+            "intent": "HEALTH_SCORE_EXPLANATION",
+            "question": "Why is the health score low?",
+            "title": "System health for system",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "dimension",
+              "score"
+            ],
+            "suggestion_count": 2,
+            "follow_up_count": 3,
+            "limitation_count": 1
+          }
+        ]
+      },
+      "recommendations": {
+        "system_id": "god-service",
+        "finding_count": 17,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9765,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-002",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-003",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "distributed-monolith",
+      "name": "Distributed monolith composite",
+      "category": "distributed monolith",
+      "service_paths": [
+        "../tests/fixtures/god/platform-service",
+        "../tests/fixtures/god/order-service",
+        "../tests/fixtures/god/billing-service",
+        "../tests/fixtures/god/inventory-service",
+        "../tests/fixtures/god/user-service",
+        "../tests/fixtures/god/payment-service",
+        "../tests/fixtures/god/notification-service"
+      ],
+      "expected_count": 17,
+      "predicted_count": 17,
+      "metrics": {
+        "true_positives": 17,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "inventory-service",
+            "platform-service"
+          ]
+        },
+        {
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "inventory-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "inventory-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-CYCL-002",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "order-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-CYCL-003",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-service",
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "inventory-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "order-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-007",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-008",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-009",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-010",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-011",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-012",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-013",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-GODS-001",
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.925
+        }
+      ],
+      "evaluator_notes": [
+        "This benchmark is a useful stand-in for distributed monolith symptoms, but it is not a real production repository."
+      ],
+      "known_limitations": [],
+      "discovery": {
+        "system_id": "distributed-monolith",
+        "root": "../tests/fixtures/god",
+        "expected_candidates": [
+          "billing-service",
+          "inventory-service",
+          "notification-service",
+          "order-service",
+          "payment-service",
+          "platform-service",
+          "small-service",
+          "user-service"
+        ],
+        "predicted_candidates": [
+          "billing-service",
+          "inventory-service",
+          "notification-service",
+          "order-service",
+          "payment-service",
+          "platform-service",
+          "small-service",
+          "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "explanations": {
+        "system_id": "distributed-monolith",
+        "case_count": 1,
+        "helpfulness_score": 1.0,
+        "grounding_score": 1.0,
+        "coverage_score": 1.0,
+        "cases": [
+          {
+            "system_id": "distributed-monolith",
+            "id": "distributed-summary",
+            "intent": "SCAN_SUMMARY",
+            "question": "Summarize this scan.",
+            "title": "Grounded scan summary",
+            "source": "mesa-grounded-explainer",
+            "helpfulness_score": 1.0,
+            "grounding_score": 1.0,
+            "coverage_score": 1.0,
+            "evidence_kinds": [
+              "finding",
+              "scan",
+              "score"
+            ],
+            "suggestion_count": 3,
+            "follow_up_count": 3,
+            "limitation_count": 2
+          }
+        ]
+      },
+      "recommendations": {
+        "system_id": "distributed-monolith",
+        "finding_count": 17,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9765,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-002",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-003",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    }
+  ]
+}
