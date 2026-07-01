@@ -45,15 +45,33 @@ def evaluate(
 ) -> None:
     report = evaluate_benchmark(benchmark, chatty_threshold=chatty_threshold)
     paths = export_evaluation(report, output_dir)
-    overall = report["overall"]
+    overall = report["detector"]["overall"]
+    discovery = report["discovery"]["overall"]
+    explanations = report["explanations"]["overall"]
+    recommendations = report["recommendations"]["overall"]
     console.print("[bold]MESA Evaluation Report[/bold]")
     console.print(
-        f"Precision: {overall['precision']} | "
-        f"Recall: {overall['recall']} | "
-        f"F1: {overall['f1_score']}"
+        f"Detector precision: {overall['precision']} | "
+        f"Detector recall: {overall['recall']} | "
+        f"Detector F1: {overall['f1_score']}"
+    )
+    console.print(
+        f"Discovery precision: {discovery['precision']} | "
+        f"Discovery recall: {discovery['recall']} | "
+        f"Discovery F1: {discovery['f1_score']}"
+    )
+    console.print(
+        f"Explanation helpfulness: {explanations['helpfulness_score']} | "
+        f"Grounding: {explanations['grounding_score']} | "
+        f"Coverage: {explanations['coverage_score']}"
+    )
+    console.print(
+        f"Recommendation usefulness: {recommendations['usefulness_score']} | "
+        f"Structured coverage: {recommendations['structured_coverage']}"
     )
     console.print(f"Wrote JSON results to {paths['json']}")
     console.print(f"Wrote CSV results to {paths['csv']}")
+    console.print(f"Wrote Markdown summary to {paths['markdown']}")
 
 
 def _print_console_report(result: dict) -> None:
@@ -84,4 +102,3 @@ def _print_console_report(result: dict) -> None:
 
 if __name__ == "__main__":
     app()
-
