@@ -44,6 +44,14 @@ const docs = [
     tags: ["public repo", "github", "discovery", "scan"]
   },
   {
+    slug: "public-demo-guide",
+    title: "Public Demo Guide",
+    category: "Demo",
+    summary: "How to use MESA when the live backend is unavailable.",
+    path: "docs/guides/PUBLIC_DEMO_GUIDE.md",
+    tags: ["demo", "public", "embedded", "evaluator"]
+  },
+  {
     slug: "local-scan-guide",
     title: "Local Scan Guide",
     category: "Scan Guides",

@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import cytoscape from "cytoscape";
 import { docBySlug, docNeighbors, docsByQuery, docsCatalog, docsCategories, type DocPage } from "./docsPortal";
+import { demoWorkspace } from "./demoData";
 import "./styles.css";
 
 type FindingRecommendation = {
@@ -285,6 +286,7 @@ type WorkflowStep = {
 
 type InterpretationMode = "beginner" | "research";
 type WorkspaceView = "analysis" | "docs";
+type ApiAvailability = "checking" | "online" | "offline";
 type AIExplainerIntent =
   | "AUTO"
   | "SCAN_SUMMARY"
@@ -404,6 +406,8 @@ function App() {
   const [hasAutoCollapsedSetup, setHasAutoCollapsedSetup] = React.useState(false);
   const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");
   const [workspaceView, setWorkspaceView] = React.useState<WorkspaceView>("analysis");
+  const [apiAvailability, setApiAvailability] = React.useState<ApiAvailability>("checking");
+  const [isPublicDemoMode, setIsPublicDemoMode] = React.useState(false);
   const [aiQuestion, setAiQuestion] = React.useState("");
   const [aiResponse, setAiResponse] = React.useState<AIExplainerResponse | null>(null);
   const [isExplaining, setIsExplaining] = React.useState(false);
@@ -425,8 +429,9 @@ function App() {
   const manualServicePaths = React.useMemo(() => servicePathsFromText(paths), [paths]);
 
   React.useEffect(() => {
+    if (isPublicDemoMode) return;
     localStorage.setItem(projectStorageKey, JSON.stringify(projects));
-  }, [projects]);
+  }, [isPublicDemoMode, projects]);
 
   React.useEffect(() => {
     if (!selectedProjectId) {
@@ -441,12 +446,26 @@ function App() {
       setScores([]);
       return;
     }
+    if (isPublicDemoProject(selectedProjectId)) {
+      setHistory(demoWorkspace.scans as unknown as ScanRecord[]);
+      setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
+      setPolicyCount(demoWorkspace.policies.length);
+      setPolicyText(demoWorkspace.policyText);
+      if (!activeScan) {
+        void loadScan(demoWorkspace.scans[0].id);
+      }
+      return;
+    }
     void loadHistory(selectedProjectId);
     void loadPolicies(selectedProjectId);
-  }, [selectedProjectId]);
+  }, [activeScan, selectedProjectId]);
 
   React.useEffect(() => {
     void loadAIStatus();
+  }, []);
+
+  React.useEffect(() => {
+    void probeApiAvailability();
   }, []);
 
   const aggregatedEdges = React.useMemo(
@@ -489,6 +508,7 @@ function App() {
   }, [aggregatedEdges, displayGraph, result, scores]);
 
   async function createProject() {
+    setIsPublicDemoMode(false);
     setError(null);
     setIsCreating(true);
     try {
@@ -507,6 +527,10 @@ function App() {
   }
 
   async function runScan() {
+    if (isPublicDemoMode && apiAvailability !== "online") {
+      setError("Public demo mode is using embedded example results. Start the full backend stack to run live scans.");
+      return;
+    }
     if (!selectedProjectId) {
       setError("Create or select a project before running a scan.");
       return;
@@ -558,6 +582,10 @@ function App() {
   }
 
   async function previewRepositorySource() {
+    if (isPublicDemoMode && apiAvailability !== "online") {
+      setError("Repository preview needs the live backend. Public demo mode only includes embedded example scans.");
+      return;
+    }
     if (!sourceLocation.trim()) {
       setError("Enter a repository source before requesting discovery preview.");
       return;
@@ -607,6 +635,15 @@ function App() {
   }
 
   async function loadHistory(projectId: string, preferredScanId?: string) {
+    if (isPublicDemoProject(projectId)) {
+      setHistory(demoWorkspace.scans as unknown as ScanRecord[]);
+      setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
+      if (preferredScanId) return;
+      if (!activeScan && demoWorkspace.scans.length > 0) {
+        await loadScan(demoWorkspace.scans[0].id);
+      }
+      return;
+    }
     setError(null);
     try {
       const scans = await api<ScanRecord[]>(`/api/projects/${projectId}/scans`);
@@ -624,6 +661,10 @@ function App() {
   }
 
   async function loadEvolution(projectId: string) {
+    if (isPublicDemoProject(projectId)) {
+      setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
+      return;
+    }
     try {
       setEvolution(await api<EvolutionReport[]>(`/api/projects/${projectId}/evolution`));
     } catch {
@@ -632,6 +673,11 @@ function App() {
   }
 
   async function loadPolicies(projectId: string) {
+    if (isPublicDemoProject(projectId)) {
+      setPolicyCount(demoWorkspace.policies.length);
+      setPolicyText(demoWorkspace.policyText);
+      return;
+    }
     try {
       const policies = await api<PolicyRecord[]>(`/api/projects/${projectId}/policies`);
       setPolicyCount(policies.length);
@@ -642,6 +688,10 @@ function App() {
   }
 
   async function savePolicies() {
+    if (isPublicDemoMode && apiAvailability !== "online") {
+      setError("Policy saving is disabled in public demo mode because the backend is not connected.");
+      return;
+    }
     if (!selectedProjectId) {
       setError("Create or select a project before saving policies.");
       return;
@@ -664,6 +714,20 @@ function App() {
   }
 
   async function loadScan(scanId: string) {
+    if (isDemoScan(scanId)) {
+      const payload = demoPersistedScan(scanId);
+      const nextScores = flattenScores(payload.result.summary.health_scores);
+      setActiveScan(payload.scan);
+      setResult(payload.result);
+      setScores(nextScores);
+      setDisplayGraph(graphFromReport(payload.result, nextScores));
+      setRoadmap(demoWorkspace.roadmaps[scanId as keyof typeof demoWorkspace.roadmaps] as unknown as RemediationRoadmap);
+      setSelectedFinding(null);
+      setSelectedGraphElement(null);
+      setAiResponse(null);
+      setStreamingAnswer("");
+      return;
+    }
     setError(null);
     setIsLoadingScan(true);
     try {
@@ -693,6 +757,10 @@ function App() {
   }
 
   async function loadDigitalTwinGraph(scanId: string, scanResult: AnalysisResult, currentScores: HealthScore[]) {
+    if (isDemoScan(scanId)) {
+      setDisplayGraph(graphFromReport(scanResult, currentScores));
+      return;
+    }
     try {
       const twin = await api<DigitalTwinGraph>(`/api/scans/${scanId}/graph`);
       setDisplayGraph(graphFromDigitalTwin(twin, scanResult, currentScores));
@@ -702,6 +770,11 @@ function App() {
   }
 
   async function loadRoadmap(scanId: string) {
+    if (isDemoScan(scanId)) {
+      setRoadmap(demoWorkspace.roadmaps[scanId as keyof typeof demoWorkspace.roadmaps] as unknown as RemediationRoadmap);
+      setIsLoadingRoadmap(false);
+      return;
+    }
     setIsLoadingRoadmap(true);
     try {
       setRoadmap(await api<RemediationRoadmap>(`/api/scans/${scanId}/roadmap`));
@@ -724,6 +797,28 @@ function App() {
       serviceName?: string;
     }
   ) {
+    if (isPublicDemoMode && apiAvailability !== "online") {
+      const response = localDemoAIResponse({
+        intent,
+        question: options?.question ?? aiQuestion,
+        activeScan,
+        result,
+        scores,
+        compareBaseScan,
+        roadmap,
+        docQuery: options?.docQuery
+      });
+      setStreamingAnswer("");
+      setAiResponse(response);
+      if (response.policy_document) {
+        setPolicyText((current) =>
+          intent === "POLICY_WRITING_ASSISTANCE" && current.trim() === defaultPolicyDocument.trim()
+            ? response.policy_document ?? current
+            : current
+        );
+      }
+      return;
+    }
     const needsScan = intent !== "DOC_QA";
     if (needsScan && !activeScan) {
       setError("Run or load a scan before using the AI explainer for scan insights.");
@@ -766,6 +861,20 @@ function App() {
   }
 
   async function loadAIStatus() {
+    if (isPublicDemoMode && apiAvailability !== "online") {
+      setAiStatus({
+        mode: "demo",
+        state: "GROUNDED_ONLY",
+        live_enabled: false,
+        api_key_configured: false,
+        api_key_hint: null,
+        model: "demo-embedded",
+        base_url: "embedded",
+        message: "Public demo mode is running from embedded example data without a live backend."
+      });
+      setIsCheckingAIStatus(false);
+      return;
+    }
     setIsCheckingAIStatus(true);
     try {
       const status = await api<AIExplainerStatus>("/api/ai/explainer/status");
@@ -865,6 +974,58 @@ function App() {
     setWorkspaceView("docs");
   }
 
+  async function probeApiAvailability() {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 2500);
+    try {
+      const response = await fetch("/api/health", { signal: controller.signal });
+      if (!response.ok) throw new Error(`Health probe returned ${response.status}`);
+      setApiAvailability("online");
+    } catch {
+      setApiAvailability("offline");
+      if (!isPublicDemoMode) {
+        activatePublicDemo();
+      }
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  function activatePublicDemo(scanId = demoWorkspace.scans[0].id) {
+    setIsPublicDemoMode(true);
+    setProjects([demoWorkspace.project as unknown as ProjectRecord]);
+    setSelectedProjectId(demoWorkspace.project.id);
+    setHistory(demoWorkspace.scans as unknown as ScanRecord[]);
+    setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
+    setPolicyCount(demoWorkspace.policies.length);
+    setPolicyText(demoWorkspace.policyText);
+    setShowSetupWorkspace(false);
+    setHasAutoCollapsedSetup(true);
+    setError(null);
+    void loadScan(scanId);
+  }
+
+  function leavePublicDemo() {
+    setIsPublicDemoMode(false);
+    setProjects(loadStoredProjects());
+    setSelectedProjectId(loadStoredProjects()[0]?.id ?? "");
+    setHistory([]);
+    setEvolution([]);
+    setPolicyCount(0);
+    setPolicyText(defaultPolicyDocument);
+    setActiveScan(null);
+    setResult(null);
+    setRoadmap(null);
+    setDisplayGraph(null);
+    setScores([]);
+    setAiResponse(null);
+    setStreamingAnswer("");
+    setError(null);
+  }
+
+  const backendUnavailable = apiAvailability === "offline";
+  const usingEmbeddedDemo = isPublicDemoMode && backendUnavailable;
+
   return (
     <main>
       <section className="toolbar">
@@ -891,11 +1052,20 @@ function App() {
             </button>
           </div>
           <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
-          <button onClick={runScan} disabled={isScanning || !selectedProjectId || workspaceView === "docs"}>
+          <button onClick={runScan} disabled={isScanning || !selectedProjectId || workspaceView === "docs" || usingEmbeddedDemo}>
             {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
           </button>
         </div>
       </section>
+
+      <PublicDemoBanner
+        apiAvailability={apiAvailability}
+        isPublicDemoMode={isPublicDemoMode}
+        usingEmbeddedDemo={usingEmbeddedDemo}
+        onActivateDemo={() => activatePublicDemo()}
+        onLeaveDemo={() => leavePublicDemo()}
+        onOpenDoc={openDoc}
+      />
 
       {workspaceView === "analysis" ? (
         <>
@@ -1387,6 +1557,72 @@ function App() {
         />
       )}
     </main>
+  );
+}
+
+function PublicDemoBanner({
+  apiAvailability,
+  isPublicDemoMode,
+  usingEmbeddedDemo,
+  onActivateDemo,
+  onLeaveDemo,
+  onOpenDoc
+}: {
+  apiAvailability: ApiAvailability;
+  isPublicDemoMode: boolean;
+  usingEmbeddedDemo: boolean;
+  onActivateDemo: () => void;
+  onLeaveDemo: () => void;
+  onOpenDoc: (slug: string) => void;
+}) {
+  if (apiAvailability === "checking") {
+    return (
+      <section className="publicDemoBanner neutral">
+        <strong>Checking backend availability</strong>
+        <span>MESA is checking whether the live API is reachable before choosing the best experience for this session.</span>
+      </section>
+    );
+  }
+
+  if (usingEmbeddedDemo) {
+    return (
+      <section className="publicDemoBanner demo">
+        <div>
+          <strong>Public demo mode is active</strong>
+          <span>
+            The live backend is not connected, so MESA loaded embedded example scans, roadmap data, docs, and a guided evaluator-friendly walkthrough.
+          </span>
+        </div>
+        <div className="publicDemoActions">
+          <button type="button" className="workflowToggle" onClick={() => onOpenDoc("public-demo-guide")}>
+            Demo guide
+          </button>
+          <button type="button" className="workflowToggle" onClick={() => onOpenDoc("evaluator-quick-start")}>
+            Evaluator walkthrough
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="publicDemoBanner live">
+      <div>
+        <strong>Live workspace is available</strong>
+        <span>{isPublicDemoMode ? "The embedded demo workspace is loaded even though the live backend is available." : "You can analyze your own repositories normally, or switch to the embedded public demo examples at any time."}</span>
+      </div>
+      <div className="publicDemoActions">
+        {isPublicDemoMode ? (
+          <button type="button" className="workflowToggle" onClick={onLeaveDemo}>
+            Return to live workspace
+          </button>
+        ) : (
+          <button type="button" className="workflowToggle" onClick={onActivateDemo}>
+            Load demo workspace
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -2238,6 +2474,237 @@ function bucketLabel(bucket: RoadmapBucket) {
   if (bucket === "quick_win") return "Quick win";
   if (bucket === "medium_term") return "Medium-term";
   return "High-effort";
+}
+
+function isPublicDemoProject(projectId: string) {
+  return projectId === demoWorkspace.project.id;
+}
+
+function isDemoScan(scanId: string) {
+  return demoWorkspace.scans.some((scan) => scan.id === scanId);
+}
+
+function demoPersistedScan(scanId: string): PersistedScanResult {
+  const scan = demoWorkspace.scans.find((item) => item.id === scanId);
+  const result = demoWorkspace.results[scanId as keyof typeof demoWorkspace.results];
+  if (!scan || !result) {
+    throw new Error("Demo scan payload is not available.");
+  }
+  return {
+    scan: scan as unknown as ScanRecord,
+    result: result as unknown as AnalysisResult
+  };
+}
+
+function localDemoAIResponse({
+  intent,
+  question,
+  activeScan,
+  result,
+  scores,
+  compareBaseScan,
+  roadmap,
+  docQuery
+}: {
+  intent: AIExplainerIntent;
+  question: string;
+  activeScan: ScanRecord | null;
+  result: AnalysisResult | null;
+  scores: HealthScore[];
+  compareBaseScan: ScanRecord | null;
+  roadmap: RemediationRoadmap | null;
+  docQuery?: string;
+}): AIExplainerResponse {
+  const resolvedIntent = intent === "AUTO" ? resolveDemoIntent(question, Boolean(result), Boolean(docQuery)) : intent;
+  const urgentFinding = result ? getMostUrgentFinding(result.findings) : null;
+  const systemScore = scores.find((score) => score.scope === "system") ?? result?.summary.health_scores?.system ?? null;
+
+  if (resolvedIntent === "DOC_QA") {
+    const docs = docsByQuery(docQuery || question, "ALL");
+    const doc = docs[0] ?? docBySlug("public-demo-guide");
+    return {
+      intent: "DOC_QA",
+      title: `Doc answer: ${doc.title}`,
+      answer: `${doc.summary} Open the ${doc.title} page from the documentation workspace for the full step-by-step guide.`,
+      evidence: [
+        {
+          kind: "doc",
+          label: doc.title,
+          pointer: doc.path.replace("../../docs/", "docs/"),
+          snippet: doc.summary
+        }
+      ],
+      suggestions: ["Open the full documentation page from inside MESA.", "Use the evaluator quick start if you are reviewing the demo."],
+      follow_up_questions: ["How do I use this demo?", "What should I look at first in the results?"],
+      limitations: ["This answer is from embedded documentation, not the live backend."],
+      confidence: "HIGH",
+      grounded: true,
+      source: "mesa-public-demo-docs"
+    };
+  }
+
+  if (!result || !activeScan) {
+    return {
+      intent: resolvedIntent,
+      title: "Demo data not loaded",
+      answer: "Load the embedded demo workspace first so MESA can show example results.",
+      evidence: [],
+      suggestions: ["Use the public demo workspace banner to load embedded examples."],
+      follow_up_questions: ["How do I use this demo?"],
+      limitations: ["No active demo scan was loaded."],
+      confidence: "LOW",
+      grounded: true,
+      source: "mesa-public-demo"
+    };
+  }
+
+  if (resolvedIntent === "PRIORITIZE_FIXES") {
+    const firstAction = roadmap?.suggested_order[0];
+    return {
+      intent: "PRIORITIZE_FIXES",
+      title: "Recommended fix order",
+      answer: firstAction
+        ? `Start with ${firstAction.title.toLowerCase()}. In this demo scan, that action comes first because it reduces immediate coupling and clears the path for the larger structural fixes that follow.`
+        : `Start with ${summaryFindingTitle(urgentFinding ?? result.findings[0]).toLowerCase()}. This is the strongest signal in the current demo result.`,
+      evidence: [
+        {
+          kind: "scan",
+          label: "Demo scan",
+          pointer: activeScan.id,
+          snippet: `${result.summary.finding_count} findings across ${result.summary.service_count} services.`
+        },
+        ...(roadmap?.suggested_order[0]
+          ? [
+              {
+                kind: "roadmap",
+                label: "Suggested order",
+                pointer: roadmap.suggested_order[0].action_id,
+                snippet: roadmap.suggested_order[0].why_now
+              }
+            ]
+          : [])
+      ],
+      suggestions: roadmap?.suggested_order.slice(0, 3).map((step) => step.title) ?? [recommendationPreview(urgentFinding ?? result.findings[0])],
+      follow_up_questions: ["Explain the top finding.", "Why is the health score low?"],
+      limitations: ["This answer is generated from embedded demo data, not from a live backend response."],
+      confidence: "HIGH",
+      grounded: true,
+      source: "mesa-public-demo"
+    };
+  }
+
+  if (resolvedIntent === "HEALTH_SCORE_EXPLANATION" && systemScore) {
+    return {
+      intent: "HEALTH_SCORE_EXPLANATION",
+      title: "Demo health score explanation",
+      answer: `${systemScore.target} is graded ${systemScore.grade.toLowerCase()} with a score of ${systemScore.score.toFixed(1)}/100. In this demo, the weakest areas are ${Object.entries(systemScore.breakdown)
+        .sort((a, b) => a[1] - b[1])
+        .slice(0, 3)
+        .map(([dimension]) => formatType(dimension).toLowerCase())
+        .join(", ")}.`,
+      evidence: [
+        {
+          kind: "score",
+          label: "System score",
+          pointer: "health_scores.system",
+          snippet: `${systemScore.score.toFixed(1)}/100 (${systemScore.grade})`
+        }
+      ],
+      suggestions: systemScore.recommendations.slice(0, 3),
+      follow_up_questions: ["What should I fix first?", "Show me the roadmap."],
+      limitations: ["This explanation comes from embedded example results."],
+      confidence: "HIGH",
+      grounded: true,
+      source: "mesa-public-demo"
+    };
+  }
+
+  if (resolvedIntent === "COMPARE_SCANS" && compareBaseScan) {
+    const latestReport = demoWorkspace.evolution[0];
+    return {
+      intent: "COMPARE_SCANS",
+      title: "Demo comparison summary",
+      answer: `Between ${shortId(compareBaseScan.id)} and ${shortId(activeScan.id)}, the example system added more services, more dependencies, and more risks. The later snapshot is more platform-centered and the overall health score dropped by ${latestReport.score_trend.system_delta}.`,
+      evidence: [
+        {
+          kind: "comparison",
+          label: "Architecture change summary",
+          pointer: "architecture_change_summary.summary",
+          snippet: String(latestReport.architecture_change_summary.summary)
+        }
+      ],
+      suggestions: [...latestReport.recommendations],
+      follow_up_questions: ["What should I fix first?", "Explain the roadmap order."],
+      limitations: ["The comparison is between two embedded demo scans."],
+      confidence: "HIGH",
+      grounded: true,
+      source: "mesa-public-demo"
+    };
+  }
+
+  if (resolvedIntent === "POLICY_WRITING_ASSISTANCE") {
+    return {
+      intent: "POLICY_WRITING_ASSISTANCE",
+      title: "Demo policy draft",
+      answer: "This embedded demo suggests starting with rules for dependency cycles, hard-coded service URLs, and outbound dependency limits.",
+      evidence: [
+        {
+          kind: "policy",
+          label: "Current demo policy set",
+          pointer: "policies",
+          snippet: "The demo project already includes policies for cycles, hard-coded URLs, and outbound dependency limits."
+        }
+      ],
+      suggestions: ["Save the current draft into a live project when the backend is available.", "Keep policy names simple and specific for evaluators."],
+      follow_up_questions: ["Explain governance simply.", "What should I fix first?"],
+      limitations: ["Draft generation is static in public demo mode."],
+      policy_document: demoWorkspace.policyText,
+      confidence: "MODERATE",
+      grounded: true,
+      source: "mesa-public-demo"
+    };
+  }
+
+  const scanSummary = `This demo scan shows ${result.summary.finding_count} findings across ${result.summary.service_count} services. The most urgent area is ${summaryFindingTitle(urgentFinding ?? result.findings[0]).toLowerCase()}, and the roadmap is designed to show what should be cleaned up first versus what needs deeper refactoring.`;
+  return {
+    intent: resolvedIntent,
+    title: "Demo scan summary",
+    answer: scanSummary,
+    evidence: [
+      {
+        kind: "scan",
+        label: "Demo scan summary",
+        pointer: activeScan.id,
+        snippet: `${result.summary.finding_count} findings across ${result.summary.service_count} services.`
+      },
+      ...(urgentFinding
+        ? [
+            {
+              kind: "finding",
+              label: summaryFindingTitle(urgentFinding),
+              pointer: urgentFinding.id,
+              snippet: urgentFinding.description
+            }
+          ]
+        : [])
+    ],
+    suggestions: roadmap?.suggested_order.slice(0, 3).map((step) => step.title) ?? ["Open the remediation roadmap.", "Inspect the architecture graph.", "Compare the two demo scans."],
+    follow_up_questions: ["What should I fix first?", "Explain the health score.", "How do I use this demo?"],
+    limitations: ["This answer comes from embedded example results and does not analyze your own repository."],
+    confidence: "HIGH",
+    grounded: true,
+    source: "mesa-public-demo"
+  };
+}
+
+function resolveDemoIntent(question: string, hasScan: boolean, hasDocQuery: boolean) {
+  const normalized = `${question} ${hasDocQuery ? "doc" : ""}`.toLowerCase();
+  if (normalized.includes("fix first") || normalized.includes("solve first") || normalized.includes("priority")) return "PRIORITIZE_FIXES";
+  if (normalized.includes("health") || normalized.includes("score")) return "HEALTH_SCORE_EXPLANATION";
+  if (normalized.includes("compare") || normalized.includes("changed")) return "COMPARE_SCANS";
+  if (normalized.includes("policy") || normalized.includes("governance") || normalized.includes("yaml")) return "POLICY_WRITING_ASSISTANCE";
+  if (normalized.includes("doc") || normalized.includes("guide") || normalized.includes("how do i") || normalized.includes("how to")) return "DOC_QA";
+  return hasScan ? "SCAN_SUMMARY" : "DOC_QA";
 }
 
 function DimensionBars({ breakdown }: { breakdown: Record<string, number> }) {

@@ -45,6 +45,19 @@ uvicorn mesa.api.main:app --reload
 pytest
 ```
 
+## Public Demo Experience
+
+Phase J adds a backend-free public demo experience inside the frontend.
+
+If the live API is unavailable, the UI can still load:
+
+- embedded demo scans
+- embedded documentation
+- roadmap, graph, and score examples
+- evaluator walkthrough guidance
+
+See `docs/guides/PUBLIC_DEMO_GUIDE.md` for the public-demo workflow.
+
 
 
 ## Persistent API Workflow

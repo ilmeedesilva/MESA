@@ -57,6 +57,20 @@ export const generatedDocs = [
     "content": "# Public Repo Scan Guide\n\n## Goal\n\nThis guide explains how to scan a public repository using MESA without manually typing service paths.\n\n## Workflow\n\n1. Create or select a project.\n2. Choose `GitHub URL` as the repository source type.\n3. Enter the public repository URL.\n4. Optionally enter a branch, tag, or ref.\n5. Click `Preview Discovery`.\n6. Review the discovered service candidates.\n7. Keep the services you want to analyze.\n8. Run the repository-backed scan.\n\n## What Preview Discovery Does\n\nPreview discovery tries to identify likely service boundaries before the full scan runs. It shows:\n\n- candidate service names\n- paths\n- language\n- confidence\n- reasons for selection\n\n## When To Be Careful\n\nReview the candidate list more carefully when:\n\n- the repository mixes libraries and services\n- orchestration files exist but service entrypoints are weak\n- services share folders or are nested deeply\n\n## Recommended Interpretation\n\n- high-confidence candidates are usually good defaults\n- medium-confidence candidates should be reviewed manually\n- low-confidence candidates should be treated as suggestions, not final truth\n"
   },
   {
+    "slug": "public-demo-guide",
+    "title": "Public Demo Guide",
+    "category": "Demo",
+    "summary": "How to use MESA when the live backend is unavailable.",
+    "path": "docs/guides/PUBLIC_DEMO_GUIDE.md",
+    "tags": [
+      "demo",
+      "public",
+      "embedded",
+      "evaluator"
+    ],
+    "content": "# Public Demo Guide\n\n## Purpose\n\nThis guide explains how to use MESA in public demo mode.\n\nPublic demo mode is meant for:\n\n- evaluators\n- reviewers\n- first-time visitors\n- anyone who wants to understand MESA without setting up the full backend stack first\n\n## What Public Demo Mode Includes\n\nWhen the live backend is not available, MESA can still load:\n\n- embedded demo scans\n- findings\n- architecture graph views\n- health scores\n- remediation roadmap\n- scan comparison\n- embedded documentation\n- evaluator walkthrough guidance\n\n## What Public Demo Mode Does Not Do\n\nPublic demo mode does not:\n\n- scan your own repositories\n- save new projects\n- persist new scans\n- run live backend AI requests\n\nIt is a guided example workspace, not a full analysis runtime.\n\n## How To Use It\n\n1. Open the frontend.\n2. If the backend is unavailable, MESA automatically loads the embedded demo workspace.\n3. Read the banner at the top to confirm that public demo mode is active.\n4. Review the sample project and scan history.\n5. Start with these areas:\n\n- summary strip\n- findings dashboard\n- remediation roadmap\n- architecture graph\n- health score panel\n- architecture evolution\n\n## Recommended Evaluator Walkthrough\n\n1. Read the summary strip first.\n2. Open the most urgent finding.\n3. Open the remediation roadmap to see grouped actions.\n4. Compare the latest demo scan with the previous one.\n5. Switch to the documentation portal.\n6. Read:\n\n- `Evaluator Quick Start`\n- `Getting Started`\n- `How To Read Findings`\n- `Remediation Roadmap Guide`\n\n## Best Questions To Ask In Demo Mode\n\nTry these example questions in the AI panel:\n\n- `Explain simply what should be solved first.`\n- `Why is the health score low?`\n- `Summarize this scan.`\n- `How do I use this tool?`\n\nIn public demo mode, the AI panel answers from embedded example data and documentation.\n\n## How To Leave Demo Mode\n\nIf the live backend is available, use:\n\n- `Load demo workspace`\n- `Return to live workspace`\n\nfrom the top banner to switch between the embedded example view and the live workspace.\n\n## When To Use The Full Stack Instead\n\nUse the full backend stack when you want to:\n\n- analyze your own repositories\n- save projects and scans\n- use live repository preview and service discovery\n- persist graphs, history, and policies\n- use the live hybrid AI path\n"
+  },
+  {
     "slug": "local-scan-guide",
     "title": "Local Scan Guide",
     "category": "Scan Guides",

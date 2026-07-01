@@ -144,6 +144,57 @@ label {
   font-weight: 800;
 }
 
+.publicDemoBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 14px 24px 0;
+  padding: 14px 16px;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
+}
+
+.publicDemoBanner.demo {
+  border-color: #bfdbfe;
+  background: linear-gradient(135deg, #eff6ff, #ffffff);
+}
+
+.publicDemoBanner.live {
+  border-color: #bbf7d0;
+  background: linear-gradient(135deg, #f0fdf4, #ffffff);
+}
+
+.publicDemoBanner.neutral {
+  border-color: #dbe4f0;
+  background: #f8fafc;
+}
+
+.publicDemoBanner strong,
+.publicDemoBanner span {
+  display: block;
+}
+
+.publicDemoBanner strong {
+  font-size: 13px;
+}
+
+.publicDemoBanner span {
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.55;
+  max-width: 72ch;
+}
+
+.publicDemoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .eyebrow {
   margin-bottom: 4px;
   color: #2563eb;
@@ -2646,7 +2697,8 @@ meter {
   }
 
   .toolbar,
-  .toolbarActions {
+  .toolbarActions,
+  .publicDemoBanner {
     align-items: stretch;
     flex-direction: column;
   }
