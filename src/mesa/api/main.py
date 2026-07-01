@@ -17,6 +17,7 @@ from mesa.analysis.explainer import (
     stream_answer_text,
 )
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
+from mesa.analysis.roadmap import build_remediation_roadmap
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
 from mesa.models import (
@@ -34,6 +35,7 @@ from mesa.models import (
     PersistedScanResult,
     ProjectCreate,
     ProjectRecord,
+    RemediationRoadmap,
     RepoScanPreview,
     RepoScanPreviewRequest,
     RepoScanRunRequest,
@@ -309,6 +311,17 @@ def get_scan_scores(scan_id: str, request: Request) -> list[HealthScore]:
     if repository.get_scan(scan_id) is None:
         raise HTTPException(status_code=404, detail="Scan not found")
     return repository.list_scores(scan_id)
+
+
+@app.get("/scans/{scan_id}/roadmap", response_model=RemediationRoadmap)
+def get_scan_remediation_roadmap(scan_id: str, request: Request) -> RemediationRoadmap:
+    repository = get_repository(request)
+    if repository.get_scan(scan_id) is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    result = repository.get_scan_result(scan_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Scan report not found")
+    return build_remediation_roadmap(scan_id, result)
 
 
 @app.post("/ai/explainer", response_model=AIExplainerResponse)

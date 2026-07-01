@@ -157,6 +157,13 @@ def test_project_scan_persistence_endpoints() -> None:
     assert any(score["scope"] == "service" for score in scores)
     assert all(0 <= score["score"] <= 100 for score in scores)
 
+    roadmap_response = client.get(f"/scans/{scan_id}/roadmap")
+    assert roadmap_response.status_code == 200
+    roadmap = roadmap_response.json()
+    assert roadmap["generated_from_finding_count"] >= 1
+    assert roadmap["summary"]
+    assert roadmap["suggested_order"]
+
     del app.state.persistence_repository
 
 
@@ -214,6 +221,69 @@ def test_project_evolution_timeline_compares_consecutive_snapshots() -> None:
     comparison = compare_response.json()
     assert comparison["architecture_change_summary"]["summary"]
     assert comparison["score_trend"]["system_delta"] is not None
+
+    del app.state.persistence_repository
+
+
+def test_scan_roadmap_groups_actions_and_dependencies() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Roadmap Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    policy_document = """
+policies:
+  - id: no-cycles
+    name: No cyclic dependencies
+    rule: dependency_cycle_count == 0
+    severity: critical
+  - id: no-hardcoded-service-urls
+    name: No hard-coded service URLs
+    rule: hard_coded_service_url_count == 0
+    severity: high
+"""
+    import_response = client.post(
+        f"/projects/{project_id}/policies/import",
+        json={"content": policy_document},
+    )
+    assert import_response.status_code == 200
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+                str(ROOT / "hardcoded" / "billing-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    roadmap_response = client.get(f"/scans/{scan_id}/roadmap")
+    assert roadmap_response.status_code == 200
+    roadmap = roadmap_response.json()
+
+    assert roadmap["quick_wins"]
+    assert roadmap["medium_term_changes"]
+    assert roadmap["high_effort_refactors"]
+    assert len(roadmap["suggested_order"]) == (
+        len(roadmap["quick_wins"])
+        + len(roadmap["medium_term_changes"])
+        + len(roadmap["high_effort_refactors"])
+    )
+    assert roadmap["dependencies"]
+    assert any(
+        "GOVERNANCE_POLICY_VIOLATION" in action["related_finding_types"]
+        for action in roadmap["medium_term_changes"]
+    )
+    assert any(
+        action["title"].lower().startswith("break the dependency cycle")
+        for action in roadmap["high_effort_refactors"]
+    )
 
     del app.state.persistence_repository
 

@@ -207,6 +207,60 @@ type EvolutionReport = {
   recommendations: string[];
 };
 
+type RoadmapBucket = "quick_win" | "medium_term" | "high_effort";
+
+type RoadmapAction = {
+  id: string;
+  title: string;
+  bucket: RoadmapBucket;
+  priority_rank: number;
+  priority_score: number;
+  summary: string;
+  rationale: string;
+  expected_benefit: string;
+  suggested_order_reason: string;
+  estimated_difficulty: string;
+  affected_services: string[];
+  related_findings: string[];
+  related_finding_types: string[];
+  dependencies: string[];
+  metrics: {
+    finding_count?: number;
+    max_severity?: string;
+    average_confidence?: number;
+    service_centrality?: number;
+    max_linked_findings?: number;
+    service_health_pressure?: number;
+    impacted_dimensions?: string[];
+  };
+};
+
+type RoadmapDependency = {
+  action_id: string;
+  depends_on: string;
+  reason: string;
+};
+
+type RoadmapPlanStep = {
+  order: number;
+  action_id: string;
+  title: string;
+  bucket: RoadmapBucket;
+  why_now: string;
+};
+
+type RemediationRoadmap = {
+  scan_id: string;
+  generated_from_finding_count: number;
+  system_health_score?: number | null;
+  summary: string;
+  quick_wins: RoadmapAction[];
+  medium_term_changes: RoadmapAction[];
+  high_effort_refactors: RoadmapAction[];
+  suggested_order: RoadmapPlanStep[];
+  dependencies: RoadmapDependency[];
+};
+
 type AggregatedEdge = GraphEdge & {
   id: string;
   count: number;
@@ -329,6 +383,7 @@ function App() {
   const [selectedDiscoveryPaths, setSelectedDiscoveryPaths] = React.useState<string[]>([]);
   const [history, setHistory] = React.useState<ScanRecord[]>([]);
   const [evolution, setEvolution] = React.useState<EvolutionReport[]>([]);
+  const [roadmap, setRoadmap] = React.useState<RemediationRoadmap | null>(null);
   const [policyText, setPolicyText] = React.useState(defaultPolicyDocument);
   const [policyCount, setPolicyCount] = React.useState(0);
   const [activeScan, setActiveScan] = React.useState<ScanRecord | null>(null);
@@ -340,6 +395,7 @@ function App() {
   const [isPreviewingRepo, setIsPreviewingRepo] = React.useState(false);
   const [isScanning, setIsScanning] = React.useState(false);
   const [isLoadingScan, setIsLoadingScan] = React.useState(false);
+  const [isLoadingRoadmap, setIsLoadingRoadmap] = React.useState(false);
   const [isSavingPolicies, setIsSavingPolicies] = React.useState(false);
   const [selectedFinding, setSelectedFinding] = React.useState<Finding | null>(null);
   const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
@@ -380,6 +436,7 @@ function App() {
       setPolicyText(defaultPolicyDocument);
       setActiveScan(null);
       setResult(null);
+      setRoadmap(null);
       setDisplayGraph(null);
       setScores([]);
       return;
@@ -491,6 +548,7 @@ function App() {
       setAiResponse(null);
       setStreamingAnswer("");
       await loadDigitalTwinGraph(payload.scan.id, payload.result, nextScores);
+      await loadRoadmap(payload.scan.id);
       await loadHistory(selectedProjectId, payload.scan.id);
     } catch (caught) {
       setError(messageFor(caught, "Scan failed"));
@@ -625,6 +683,7 @@ function App() {
       } catch {
         setScores(nextScores);
       }
+      await loadRoadmap(scanId);
       await loadDigitalTwinGraph(scanId, payload.result, nextScores);
     } catch (caught) {
       setError(messageFor(caught, "Could not load scan"));
@@ -639,6 +698,17 @@ function App() {
       setDisplayGraph(graphFromDigitalTwin(twin, scanResult, currentScores));
     } catch {
       setDisplayGraph(graphFromReport(scanResult, currentScores));
+    }
+  }
+
+  async function loadRoadmap(scanId: string) {
+    setIsLoadingRoadmap(true);
+    try {
+      setRoadmap(await api<RemediationRoadmap>(`/api/scans/${scanId}/roadmap`));
+    } catch {
+      setRoadmap(null);
+    } finally {
+      setIsLoadingRoadmap(false);
     }
   }
 
@@ -1238,6 +1308,12 @@ function App() {
           />
 
           <EvolutionPanel reports={evolution} />
+
+          <RemediationRoadmapPanel
+            roadmap={roadmap}
+            isLoading={isLoadingRoadmap}
+            onOpenDoc={openDoc}
+          />
 
           <section className="contentGrid">
             <section className="graphPanel dashboardGraph">
@@ -1910,6 +1986,208 @@ function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
   );
 }
 
+function RemediationRoadmapPanel({
+  roadmap,
+  isLoading,
+  onOpenDoc
+}: {
+  roadmap: RemediationRoadmap | null;
+  isLoading: boolean;
+  onOpenDoc: (slug: string) => void;
+}) {
+  const actionById = React.useMemo(() => {
+    const allActions = [
+      ...(roadmap?.quick_wins ?? []),
+      ...(roadmap?.medium_term_changes ?? []),
+      ...(roadmap?.high_effort_refactors ?? [])
+    ];
+    return new Map(allActions.map((action) => [action.id, action]));
+  }, [roadmap]);
+
+  return (
+    <section className="roadmapPanel">
+      <div className="panelHeader compact">
+        <div>
+          <h2>Remediation Roadmap</h2>
+          <p>One grouped plan that turns separate findings into a practical order of work.</p>
+          <div className="docLinks">
+            <DocLinkButton label="Roadmap guide" onClick={() => onOpenDoc("remediation-roadmap-guide")} />
+          </div>
+        </div>
+        <span>
+          {roadmap
+            ? `${roadmap.suggested_order.length} actions`
+            : isLoading
+              ? "Building roadmap"
+              : "No roadmap yet"}
+        </span>
+      </div>
+
+      {isLoading ? <div className="emptyInline">Building the grouped remediation roadmap for this scan...</div> : null}
+      {!isLoading && !roadmap ? <div className="emptyInline">Run or load a scan to generate the roadmap.</div> : null}
+
+      {roadmap ? (
+        <div className="roadmapLayout">
+          <div className="roadmapTopline">
+            <div className="roadmapSummaryCard">
+              <strong>Roadmap summary</strong>
+              <p>{roadmap.summary}</p>
+            </div>
+            <div className="roadmapStats">
+              <div>
+                <strong>{roadmap.quick_wins.length}</strong>
+                <span>Quick wins</span>
+              </div>
+              <div>
+                <strong>{roadmap.medium_term_changes.length}</strong>
+                <span>Medium-term</span>
+              </div>
+              <div>
+                <strong>{roadmap.high_effort_refactors.length}</strong>
+                <span>High-effort</span>
+              </div>
+              <div>
+                <strong>
+                  {roadmap.system_health_score !== undefined && roadmap.system_health_score !== null
+                    ? Math.round(roadmap.system_health_score)
+                    : "--"}
+                </strong>
+                <span>System health</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="roadmapGrid">
+            <RoadmapBucketColumn
+              title="Quick Wins"
+              subtitle="Low-friction fixes that reduce noise and operational coupling first."
+              actions={roadmap.quick_wins}
+              tone="quick"
+            />
+            <RoadmapBucketColumn
+              title="Medium-Term Changes"
+              subtitle="Boundary improvements that make the architecture easier to work with."
+              actions={roadmap.medium_term_changes}
+              tone="medium"
+            />
+            <RoadmapBucketColumn
+              title="High-Effort Refactors"
+              subtitle="Deeper structural changes that reshape ownership or service boundaries."
+              actions={roadmap.high_effort_refactors}
+              tone="high"
+            />
+          </div>
+
+          <div className="roadmapBottomGrid">
+            <div className="roadmapOrderCard">
+              <div className="roadmapSectionHeader">
+                <strong>Suggested order</strong>
+                <span>Follow this execution path</span>
+              </div>
+              <div className="roadmapOrderList">
+                {roadmap.suggested_order.map((step) => (
+                  <article key={step.action_id} className="roadmapOrderItem">
+                    <div className="roadmapOrderBadge">{step.order}</div>
+                    <div>
+                      <strong>{step.title}</strong>
+                      <small>{bucketLabel(step.bucket)}</small>
+                      <p>{step.why_now}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="roadmapDependencyCard">
+              <div className="roadmapSectionHeader">
+                <strong>Dependencies</strong>
+                <span>What should happen after what</span>
+              </div>
+              {roadmap.dependencies.length === 0 ? (
+                <div className="emptyInline">No hard dependencies were detected between roadmap actions.</div>
+              ) : (
+                <div className="roadmapDependencyList">
+                  {roadmap.dependencies.map((dependency) => (
+                    <article key={`${dependency.action_id}-${dependency.depends_on}`} className="roadmapDependencyItem">
+                      <strong>
+                        {actionById.get(dependency.depends_on)?.title ?? dependency.depends_on}
+                        {" -> "}
+                        {actionById.get(dependency.action_id)?.title ?? dependency.action_id}
+                      </strong>
+                      <p>{dependency.reason}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function RoadmapBucketColumn({
+  title,
+  subtitle,
+  actions,
+  tone
+}: {
+  title: string;
+  subtitle: string;
+  actions: RoadmapAction[];
+  tone: "quick" | "medium" | "high";
+}) {
+  return (
+    <section className={`roadmapColumn ${tone}`}>
+      <div className="roadmapSectionHeader">
+        <strong>{title}</strong>
+        <span>{subtitle}</span>
+      </div>
+      {actions.length === 0 ? <div className="emptyInline">No actions in this bucket for the current scan.</div> : null}
+      {actions.length > 0 ? (
+        <div className="roadmapActionList">
+          {actions.map((action) => (
+            <article key={action.id} className="roadmapActionCard">
+              <div className="roadmapActionMeta">
+                <span>{`#${action.priority_rank}`}</span>
+                <strong>{Math.round(action.priority_score)}</strong>
+              </div>
+              <h3>{action.title}</h3>
+              <p>{action.summary}</p>
+              <div className="roadmapTagRow">
+                <span>{action.estimated_difficulty}</span>
+                {action.metrics.max_severity ? <span>{action.metrics.max_severity}</span> : null}
+                <span>{`${action.related_findings.length} finding${action.related_findings.length === 1 ? "" : "s"}`}</span>
+              </div>
+              {action.affected_services.length > 0 ? (
+                <div className="serviceChips compact">
+                  {action.affected_services.map((service) => <span key={service}>{service}</span>)}
+                </div>
+              ) : null}
+              <dl className="roadmapActionDetails">
+                <div>
+                  <dt>Benefit</dt>
+                  <dd>{action.expected_benefit}</dd>
+                </div>
+                <div>
+                  <dt>Why now</dt>
+                  <dd>{action.suggested_order_reason}</dd>
+                </div>
+              </dl>
+              {action.metrics.impacted_dimensions?.length ? (
+                <div className="roadmapDimensions">
+                  {action.metrics.impacted_dimensions.map((dimension) => <code key={dimension}>{formatType(dimension)}</code>)}
+                </div>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function HealthScoreView({
   systemScore,
   serviceScores,
@@ -1954,6 +2232,12 @@ function HealthScoreView({
       ) : null}
     </section>
   );
+}
+
+function bucketLabel(bucket: RoadmapBucket) {
+  if (bucket === "quick_win") return "Quick win";
+  if (bucket === "medium_term") return "Medium-term";
+  return "High-effort";
 }
 
 function DimensionBars({ breakdown }: { breakdown: Record<string, number> }) {

@@ -277,6 +277,56 @@ class AIExplainerStatus(BaseModel):
     message: str
 
 
+class RoadmapBucket(str, Enum):
+    QUICK_WIN = "quick_win"
+    MEDIUM_TERM = "medium_term"
+    HIGH_EFFORT = "high_effort"
+
+
+class RoadmapAction(BaseModel):
+    id: str
+    title: str
+    bucket: RoadmapBucket
+    priority_rank: int = Field(ge=1)
+    priority_score: float = Field(ge=0.0, le=100.0)
+    summary: str
+    rationale: str
+    expected_benefit: str
+    suggested_order_reason: str
+    estimated_difficulty: str
+    affected_services: list[str] = Field(default_factory=list)
+    related_findings: list[str] = Field(default_factory=list)
+    related_finding_types: list[FindingType] = Field(default_factory=list)
+    dependencies: list[str] = Field(default_factory=list)
+    metrics: dict[str, Any] = Field(default_factory=dict)
+
+
+class RoadmapDependency(BaseModel):
+    action_id: str
+    depends_on: str
+    reason: str
+
+
+class RoadmapPlanStep(BaseModel):
+    order: int = Field(ge=1)
+    action_id: str
+    title: str
+    bucket: RoadmapBucket
+    why_now: str
+
+
+class RemediationRoadmap(BaseModel):
+    scan_id: str
+    generated_from_finding_count: int = 0
+    system_health_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    summary: str
+    quick_wins: list[RoadmapAction] = Field(default_factory=list)
+    medium_term_changes: list[RoadmapAction] = Field(default_factory=list)
+    high_effort_refactors: list[RoadmapAction] = Field(default_factory=list)
+    suggested_order: list[RoadmapPlanStep] = Field(default_factory=list)
+    dependencies: list[RoadmapDependency] = Field(default_factory=list)
+
+
 class ProjectCreate(BaseModel):
     name: str
     description: str | None = None

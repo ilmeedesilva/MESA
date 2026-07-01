@@ -54,6 +54,7 @@ neo4j / mesa-password
 6. Optional: edit and save governance policies.
 7. Click `Run Scan` or `Run Repo Scan`.
 8. Review findings, graph, health scores, evolution, and recommendations.
+9. Open the `Remediation Roadmap` panel to see grouped fixes in suggested order.
 
 ## Read Results More Easily
 
@@ -131,6 +132,26 @@ The summary strip now helps users understand where to focus first:
 - `Highest Risk`: strongest severity currently present
 - `Hotspot Service`: service with the densest concentration of linked findings
 - `Focus First`: the first issue MESA suggests reviewing
+
+## Remediation Roadmap
+
+The remediation roadmap combines multiple findings into one action plan.
+
+Use it when you want to know:
+
+- what to fix first
+- which actions are quick wins
+- which changes need deeper refactoring
+- what depends on earlier work
+
+Read it in this order:
+
+1. roadmap summary
+2. suggested order
+3. quick wins
+4. medium-term changes
+5. high-effort refactors
+6. dependencies
 
 ## Guided Workflow Meaning
 

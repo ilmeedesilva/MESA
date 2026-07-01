@@ -87,6 +87,7 @@ GET /projects/{project_id}/scans
 GET /scans/{scan_id}
 GET /scans/{scan_id}/findings
 GET /scans/{scan_id}/scores
+GET /scans/{scan_id}/roadmap
 ```
 
 Repository-backed project scan example:
@@ -121,6 +122,20 @@ GET /projects/{project_id}/snapshots
 GET /projects/{project_id}/evolution
 GET /projects/{project_id}/evolution/compare?base_scan_id=<old>&target_scan_id=<new>
 ```
+
+## Remediation Roadmap
+
+```text
+GET /scans/{scan_id}/roadmap
+```
+
+The roadmap groups multiple findings into:
+
+- quick wins
+- medium-term changes
+- high-effort refactors
+- suggested execution order
+- dependencies between actions
 
 ## Governance APIs
 
