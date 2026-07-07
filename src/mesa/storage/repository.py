@@ -11,6 +11,7 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from mesa.analysis.health import flatten_health_scores
+from mesa.analysis.research_records import calculate_metrics, with_calculated_metrics
 from mesa.models import (
     AnalysisResult,
     Finding,
@@ -19,6 +20,9 @@ from mesa.models import (
     PolicyRecord,
     ProjectCreate,
     ProjectRecord,
+    ResearchEvaluationRecord,
+    ResearchEvaluationRecordCreate,
+    ResearchEvaluationRecordUpdate,
     RepoSourceMetadata,
     ScanRecord,
     SnapshotRecord,
@@ -85,6 +89,23 @@ class PersistenceRepository(Protocol):
     def upsert_policies(self, project_id: str, policies: list[PolicyCreate]) -> list[PolicyRecord]:
         ...
 
+    def list_research_records(self) -> list[ResearchEvaluationRecord]:
+        ...
+
+    def create_research_record(self, data: ResearchEvaluationRecordCreate) -> ResearchEvaluationRecord:
+        ...
+
+    def get_research_record(self, record_id: str) -> ResearchEvaluationRecord | None:
+        ...
+
+    def update_research_record(
+        self, record_id: str, data: ResearchEvaluationRecordUpdate
+    ) -> ResearchEvaluationRecord | None:
+        ...
+
+    def delete_research_record(self, record_id: str) -> bool:
+        ...
+
 
 class InMemoryPersistenceRepository:
     def __init__(self) -> None:
@@ -93,6 +114,7 @@ class InMemoryPersistenceRepository:
         self.results: dict[str, AnalysisResult] = {}
         self.snapshots: dict[str, SnapshotRecord] = {}
         self.policies: dict[str, PolicyRecord] = {}
+        self.research_records: dict[str, ResearchEvaluationRecord] = {}
 
     def _connect(self, **kwargs):
         last_error: Exception | None = None
@@ -225,6 +247,58 @@ class InMemoryPersistenceRepository:
             updated = self.update_policy(project_id, policy_id, policy)
             records.append(updated if updated else self.create_policy(project_id, policy.model_copy(update={"id": policy_id})))
         return records
+
+    def list_research_records(self) -> list[ResearchEvaluationRecord]:
+        return sorted(
+            self.research_records.values(),
+            key=lambda record: record.updated_at or record.created_at or "",
+            reverse=True,
+        )
+
+    def create_research_record(self, data: ResearchEvaluationRecordCreate) -> ResearchEvaluationRecord:
+        payload = with_calculated_metrics(data)
+        record = ResearchEvaluationRecord(
+            id=str(uuid4()),
+            created_at=_now_iso(),
+            updated_at=_now_iso(),
+            **payload,
+        )
+        self.research_records[record.id] = record
+        return record
+
+    def get_research_record(self, record_id: str) -> ResearchEvaluationRecord | None:
+        return self.research_records.get(record_id)
+
+    def update_research_record(
+        self, record_id: str, data: ResearchEvaluationRecordUpdate
+    ) -> ResearchEvaluationRecord | None:
+        existing = self.research_records.get(record_id)
+        if existing is None:
+            return None
+        payload = data.model_dump(exclude_unset=True)
+        merged = existing.model_dump()
+        merged.update(payload)
+        precision, recall, f1_score = calculate_metrics(
+            merged.get("true_positives"),
+            merged.get("false_positives"),
+            merged.get("false_negatives"),
+        )
+        merged.update(
+            {
+                "id": existing.id,
+                "precision": precision,
+                "recall": recall,
+                "f1_score": f1_score,
+                "created_at": existing.created_at,
+                "updated_at": _now_iso(),
+            }
+        )
+        updated = ResearchEvaluationRecord.model_validate(merged)
+        self.research_records[record_id] = updated
+        return updated
+
+    def delete_research_record(self, record_id: str) -> bool:
+        return self.research_records.pop(record_id, None) is not None
 
 
 class PostgresPersistenceRepository:
@@ -510,6 +584,126 @@ class PostgresPersistenceRepository:
             records.append(updated if updated else self.create_policy(project_id, policy.model_copy(update={"id": policy_id})))
         return records
 
+    def list_research_records(self) -> list[ResearchEvaluationRecord]:
+        with self._connect(row_factory=dict_row) as connection:
+            rows = connection.execute(
+                f"""
+                SELECT {_research_record_columns()}
+                FROM research_evaluation_records
+                ORDER BY updated_at DESC, created_at DESC
+                """
+            ).fetchall()
+        return [ResearchEvaluationRecord(**row) for row in rows]
+
+    def create_research_record(self, data: ResearchEvaluationRecordCreate) -> ResearchEvaluationRecord:
+        record_id = str(uuid4())
+        payload = with_calculated_metrics(data)
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                f"""
+                INSERT INTO research_evaluation_records (
+                    id, scan_id, repo_name, repo_url, commit_ref, scan_date, project_type,
+                    expected_services, detected_services, expected_patterns, detected_patterns,
+                    total_findings, critical_findings, high_findings, medium_findings, low_findings,
+                    true_positives, false_positives, false_negatives, precision, recall, f1_score,
+                    notes, limitations, research_relevance, suitable_for_report
+                )
+                VALUES (
+                    %(id)s, %(scan_id)s, %(repo_name)s, %(repo_url)s, %(commit_ref)s, %(scan_date)s, %(project_type)s,
+                    %(expected_services)s, %(detected_services)s, %(expected_patterns)s, %(detected_patterns)s,
+                    %(total_findings)s, %(critical_findings)s, %(high_findings)s, %(medium_findings)s, %(low_findings)s,
+                    %(true_positives)s, %(false_positives)s, %(false_negatives)s, %(precision)s, %(recall)s, %(f1_score)s,
+                    %(notes)s, %(limitations)s, %(research_relevance)s, %(suitable_for_report)s
+                )
+                RETURNING {_research_record_columns()}
+                """,
+                {"id": record_id, **payload},
+            ).fetchone()
+        return ResearchEvaluationRecord(**row)
+
+    def get_research_record(self, record_id: str) -> ResearchEvaluationRecord | None:
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                f"""
+                SELECT {_research_record_columns()}
+                FROM research_evaluation_records
+                WHERE id = %s
+                """,
+                (record_id,),
+            ).fetchone()
+        return ResearchEvaluationRecord(**row) if row else None
+
+    def update_research_record(
+        self, record_id: str, data: ResearchEvaluationRecordUpdate
+    ) -> ResearchEvaluationRecord | None:
+        existing = self.get_research_record(record_id)
+        if existing is None:
+            return None
+        merged = existing.model_dump()
+        merged.update(data.model_dump(exclude_unset=True))
+        precision, recall, f1_score = calculate_metrics(
+            merged.get("true_positives"),
+            merged.get("false_positives"),
+            merged.get("false_negatives"),
+        )
+        merged.update({"precision": precision, "recall": recall, "f1_score": f1_score})
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                f"""
+                UPDATE research_evaluation_records
+                SET scan_id = %(scan_id)s,
+                    repo_name = %(repo_name)s,
+                    repo_url = %(repo_url)s,
+                    commit_ref = %(commit_ref)s,
+                    scan_date = %(scan_date)s,
+                    project_type = %(project_type)s,
+                    expected_services = %(expected_services)s,
+                    detected_services = %(detected_services)s,
+                    expected_patterns = %(expected_patterns)s,
+                    detected_patterns = %(detected_patterns)s,
+                    total_findings = %(total_findings)s,
+                    critical_findings = %(critical_findings)s,
+                    high_findings = %(high_findings)s,
+                    medium_findings = %(medium_findings)s,
+                    low_findings = %(low_findings)s,
+                    true_positives = %(true_positives)s,
+                    false_positives = %(false_positives)s,
+                    false_negatives = %(false_negatives)s,
+                    precision = %(precision)s,
+                    recall = %(recall)s,
+                    f1_score = %(f1_score)s,
+                    notes = %(notes)s,
+                    limitations = %(limitations)s,
+                    research_relevance = %(research_relevance)s,
+                    suitable_for_report = %(suitable_for_report)s,
+                    updated_at = now()
+                WHERE id = %(id)s
+                RETURNING {_research_record_columns()}
+                """,
+                merged,
+            ).fetchone()
+        return ResearchEvaluationRecord(**row) if row else None
+
+    def delete_research_record(self, record_id: str) -> bool:
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "DELETE FROM research_evaluation_records WHERE id = %s",
+                (record_id,),
+            )
+        return bool(cursor.rowcount)
+
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _research_record_columns() -> str:
+    return """
+        id, scan_id, repo_name, repo_url, commit_ref, scan_date, project_type,
+        expected_services, detected_services, expected_patterns, detected_patterns,
+        total_findings, critical_findings, high_findings, medium_findings, low_findings,
+        true_positives, false_positives, false_negatives,
+        precision::float AS precision, recall::float AS recall, f1_score::float AS f1_score,
+        notes, limitations, research_relevance, suitable_for_report,
+        created_at::text, updated_at::text
+    """

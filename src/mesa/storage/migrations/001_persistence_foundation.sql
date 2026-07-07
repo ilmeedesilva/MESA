@@ -102,6 +102,39 @@ CREATE TABLE IF NOT EXISTS policies (
 
 CREATE INDEX IF NOT EXISTS idx_policies_project_id ON policies(project_id);
 
+CREATE TABLE IF NOT EXISTS research_evaluation_records (
+    id TEXT PRIMARY KEY,
+    scan_id TEXT REFERENCES scans(id) ON DELETE SET NULL,
+    repo_name TEXT NOT NULL,
+    repo_url TEXT,
+    commit_ref TEXT,
+    scan_date TEXT,
+    project_type TEXT,
+    expected_services INTEGER CHECK (expected_services IS NULL OR expected_services >= 0),
+    detected_services INTEGER NOT NULL DEFAULT 0 CHECK (detected_services >= 0),
+    expected_patterns TEXT,
+    detected_patterns TEXT,
+    total_findings INTEGER NOT NULL DEFAULT 0 CHECK (total_findings >= 0),
+    critical_findings INTEGER NOT NULL DEFAULT 0 CHECK (critical_findings >= 0),
+    high_findings INTEGER NOT NULL DEFAULT 0 CHECK (high_findings >= 0),
+    medium_findings INTEGER NOT NULL DEFAULT 0 CHECK (medium_findings >= 0),
+    low_findings INTEGER NOT NULL DEFAULT 0 CHECK (low_findings >= 0),
+    true_positives INTEGER CHECK (true_positives IS NULL OR true_positives >= 0),
+    false_positives INTEGER CHECK (false_positives IS NULL OR false_positives >= 0),
+    false_negatives INTEGER CHECK (false_negatives IS NULL OR false_negatives >= 0),
+    precision NUMERIC(8, 4),
+    recall NUMERIC(8, 4),
+    f1_score NUMERIC(8, 4),
+    notes TEXT,
+    limitations TEXT,
+    research_relevance TEXT,
+    suitable_for_report BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_research_evaluation_records_scan_id ON research_evaluation_records(scan_id);
+
 CREATE INDEX IF NOT EXISTS idx_scans_project_id ON scans(project_id);
 CREATE INDEX IF NOT EXISTS idx_findings_scan_id ON findings(scan_id);
 CREATE INDEX IF NOT EXISTS idx_services_scan_id ON services(scan_id);
