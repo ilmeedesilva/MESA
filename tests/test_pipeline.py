@@ -304,3 +304,34 @@ def test_health_score_calculation_is_deterministic() -> None:
     second = analyze_services(service_paths).summary["health_scores"]
 
     assert first == second
+
+
+def test_extracts_real_repo_style_service_facts() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "real-repo" / "shop" / "frontend-service"),
+            str(ROOT / "real-repo" / "shop" / "catalog-service"),
+            str(ROOT / "real-repo" / "shop" / "inventory-api"),
+        ]
+    )
+    services = {service.name: service for service in result.services}
+
+    frontend = services["frontend-service"]
+    assert frontend.language == "typescript"
+    assert any(endpoint.path == "/home" and endpoint.method == "GET" for endpoint in frontend.endpoints)
+    assert any(call.target_hint == "catalog-service" for call in frontend.calls)
+    assert any(library.name == "express" for library in frontend.libraries)
+
+    catalog = services["catalog-service"]
+    assert catalog.language == "java"
+    assert any(endpoint.path == "/products" and endpoint.method == "GET" for endpoint in catalog.endpoints)
+    assert any(endpoint.path == "/products" and endpoint.method == "POST" for endpoint in catalog.endpoints)
+    assert any(
+        library.name == "org.springframework.boot:spring-boot-starter-web"
+        for library in catalog.libraries
+    )
+    assert catalog.databases
+
+    inventory = services["inventory-api"]
+    assert any(endpoint.path == "/inventory" for endpoint in inventory.endpoints)
+    assert inventory.databases
