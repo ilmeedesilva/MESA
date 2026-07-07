@@ -2051,6 +2051,96 @@ aside {
   font-size: 10px;
 }
 
+.playbookDetails {
+  margin-top: 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.playbookDetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  cursor: pointer;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.playbookDetails summary small {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.playbookBody {
+  display: grid;
+  gap: 10px;
+  padding: 0 10px 10px;
+}
+
+.playbookBlock,
+.playbookPhase,
+.playbookList {
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.playbookBlock strong,
+.playbookPhase strong,
+.playbookList strong {
+  font-size: 11px;
+}
+
+.playbookBlock p,
+.playbookPhase p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.playbookPhaseList,
+.playbookGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.playbookPhase ul,
+.playbookList ul {
+  margin: 8px 0 0 16px;
+  padding: 0;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.playbookPhase li,
+.playbookList li {
+  margin-top: 4px;
+}
+
+.playbookChecks {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.playbookChecks span {
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
 .roadmapBottomGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);

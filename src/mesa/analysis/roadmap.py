@@ -9,6 +9,8 @@ from mesa.models import (
     Finding,
     FindingRecommendation,
     FindingType,
+    RefactoringPlaybook,
+    RefactoringPlaybookPhase,
     RemediationRoadmap,
     RoadmapAction,
     RoadmapBucket,
@@ -175,6 +177,8 @@ def _build_action(
         service_health_pressure=service_health,
     )
     expected_benefit = _expected_benefit(recommendations, primary_type)
+    estimated_difficulty = _estimated_difficulty(recommendations, bucket)
+    related_findings = [finding.id for finding in findings]
 
     return RoadmapAction(
         id=f"roadmap-{scan_id[:8]}-{cluster_index:02d}",
@@ -186,9 +190,9 @@ def _build_action(
         rationale=rationale,
         expected_benefit=expected_benefit,
         suggested_order_reason=suggested_order_reason,
-        estimated_difficulty=_estimated_difficulty(recommendations, bucket),
+        estimated_difficulty=estimated_difficulty,
         affected_services=affected_services,
-        related_findings=[finding.id for finding in findings],
+        related_findings=related_findings,
         related_finding_types=sorted({finding.type for finding in findings}, key=lambda item: item.value),
         metrics={
             "finding_count": len(findings),
@@ -199,6 +203,17 @@ def _build_action(
             "service_health_pressure": round(service_health, 2),
             "impacted_dimensions": impacted_dimensions,
         },
+        playbook=_build_playbook(
+            primary_type=primary_type,
+            findings=findings,
+            services=affected_services,
+            recommendations=recommendations,
+            summary=summary,
+            rationale=rationale,
+            expected_benefit=expected_benefit,
+            estimated_difficulty=estimated_difficulty,
+            related_findings=related_findings,
+        ),
     )
 
 
@@ -284,6 +299,439 @@ def _expected_benefit(recommendations: list[FindingRecommendation], primary_type
         FindingType.GOVERNANCE_POLICY_VIOLATION: "Brings the system back in line with agreed architecture rules.",
     }
     return fallback[primary_type]
+
+
+def _build_playbook(
+    *,
+    primary_type: FindingType,
+    findings: list[Finding],
+    services: list[str],
+    recommendations: list[FindingRecommendation],
+    summary: str,
+    rationale: str,
+    expected_benefit: str,
+    estimated_difficulty: str,
+    related_findings: list[str],
+) -> RefactoringPlaybook:
+    service_text = _service_text(services)
+    first_recommendation = recommendations[0] if recommendations else None
+    recommended_strategy = _playbook_strategy(primary_type, findings, service_text)
+    if first_recommendation and first_recommendation.refactoring_steps:
+        recommended_strategy = (
+            f"{recommended_strategy} Use the detector recommendation as the first implementation checklist: "
+            f"{first_recommendation.refactoring_steps[0]}"
+        )
+    phases = _playbook_phases(primary_type, findings, service_text)
+    return RefactoringPlaybook(
+        problem_summary=summary,
+        impact=f"{rationale} Expected benefit: {expected_benefit}",
+        recommended_strategy=recommended_strategy,
+        phases=phases,
+        verification_checks=_playbook_verification(primary_type, services),
+        rollback_plan=_playbook_rollback(primary_type),
+        risks=_playbook_risks(primary_type),
+        estimated_effort=_playbook_effort(primary_type, estimated_difficulty, len(findings), len(services)),
+        related_services=services,
+        related_findings=related_findings,
+    )
+
+
+def _playbook_strategy(primary_type: FindingType, findings: list[Finding], service_text: str) -> str:
+    if primary_type == FindingType.HARD_CODED_SERVICE_DEPENDENCY:
+        return (
+            "Move endpoint values out of source code into environment-specific configuration, "
+            "then route clients through a small typed configuration or service discovery adapter."
+        )
+    if primary_type == FindingType.CHATTY_SERVICE:
+        return (
+            "Redesign the interaction between the caller and callee around a coarser API, cached read model, "
+            "or event-driven update so one user workflow does not require repeated synchronous hops."
+        )
+    if primary_type == FindingType.CYCLIC_DEPENDENCY:
+        cycle = " -> ".join(_cycle_services(findings[0]))
+        return (
+            f"Choose one edge in the cycle ({cycle}) to remove, then replace it with an event, orchestration step, "
+            "or ownership transfer that preserves behavior without bidirectional service knowledge."
+        )
+    if primary_type == FindingType.SHARED_DATABASE:
+        database = _shared_database_key(findings[0])
+        return (
+            f"Assign a single owning service for {database}; move all other services behind owner APIs, events, "
+            "or replicated read models before removing direct database credentials."
+        )
+    if primary_type == FindingType.GOD_SERVICE:
+        return (
+            f"Stabilize the boundaries around {service_text}, then extract cohesive capabilities in thin vertical slices "
+            "instead of splitting by technical layers."
+        )
+    return (
+        "Treat the governance violation as an executable architecture checkpoint: resolve the underlying finding, "
+        "rerun the policy, and document any temporary exception with expiry."
+    )
+
+
+def _playbook_phases(
+    primary_type: FindingType, findings: list[Finding], service_text: str
+) -> list[RefactoringPlaybookPhase]:
+    if primary_type == FindingType.HARD_CODED_SERVICE_DEPENDENCY:
+        return [
+            RefactoringPlaybookPhase(
+                title="Phase 1 - Inventory and classify endpoint references",
+                objective="Create a complete list of hard-coded hosts, ports, and URLs before changing behavior.",
+                steps=[
+                    "Group occurrences by target service, environment, and source file.",
+                    "Separate production endpoints from test fixtures, examples, and local development defaults.",
+                    "Identify owners for each client service that must receive replacement configuration.",
+                ],
+                verification_checks=[
+                    "Every related finding maps to an owner and target configuration key.",
+                    "False positives are marked before implementation begins.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 2 - Externalize and standardize configuration",
+                objective="Replace embedded endpoint values with deployment-managed configuration.",
+                steps=[
+                    "Introduce typed configuration keys or a service discovery lookup for each target.",
+                    "Provide safe local defaults only in development-specific configuration files.",
+                    "Update deployment manifests, compose files, or secret/config stores with environment values.",
+                ],
+                verification_checks=[
+                    "Application startup fails clearly when required endpoint configuration is missing.",
+                    "No production endpoint is still committed in source code.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 3 - Prove portability",
+                objective="Confirm the service can move between environments without source edits.",
+                steps=[
+                    "Run the affected services with at least two different endpoint configurations.",
+                    "Add a regression check that scans for committed service URLs.",
+                    "Document the approved configuration keys for future integrations.",
+                ],
+                verification_checks=[
+                    "The MESA hard-coded dependency finding no longer appears after a rescan.",
+                    "Integration tests pass with configuration injected at runtime.",
+                ],
+            ),
+        ]
+    if primary_type == FindingType.CHATTY_SERVICE:
+        evidence = findings[0].evidence[0] if findings[0].evidence else {}
+        caller = str(evidence.get("caller", "caller service"))
+        callee = str(evidence.get("callee", "callee service"))
+        return [
+            RefactoringPlaybookPhase(
+                title="Phase 1 - Map the user workflow behind the calls",
+                objective=f"Understand why {caller} repeatedly calls {callee} before redesigning the API.",
+                steps=[
+                    "Trace the request path and group call sites by user action or batch job.",
+                    "Identify which responses are required immediately and which can be cached or eventual.",
+                    "Measure current latency, timeout, retry, and failure behavior for the interaction.",
+                ],
+                verification_checks=[
+                    "The team can name the workflow that creates the repeated calls.",
+                    "Critical synchronous data is separated from optional enrichment data.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 2 - Introduce a coarser boundary",
+                objective="Reduce the number of synchronous cross-service hops needed by one workflow.",
+                steps=[
+                    "Design one coarse endpoint, read model, batch endpoint, or domain event for the repeated data need.",
+                    "Ship the new boundary beside the existing calls and migrate one caller path first.",
+                    "Add contract tests so caller and callee can evolve without hidden coupling.",
+                ],
+                verification_checks=[
+                    "The migrated path performs fewer cross-service calls than the baseline.",
+                    "Timeout and retry behavior is explicit at the new boundary.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 3 - Remove the noisy interaction path",
+                objective="Retire duplicate call sites and keep only the simpler interaction model.",
+                steps=[
+                    "Migrate remaining caller paths and delete unused client methods.",
+                    "Update API documentation and ownership notes for the new boundary.",
+                    "Rescan the repository and compare call-count evidence with the original finding.",
+                ],
+                verification_checks=[
+                    "MESA reports lower chatty-service evidence for this caller and callee.",
+                    "Production metrics show lower latency or fewer downstream calls for the workflow.",
+                ],
+            ),
+        ]
+    if primary_type == FindingType.CYCLIC_DEPENDENCY:
+        return [
+            RefactoringPlaybookPhase(
+                title="Phase 1 - Choose the weakest dependency edge",
+                objective="Break the cycle at the edge with the lowest business ownership cost.",
+                steps=[
+                    "List each dependency edge in the detected cycle and the behavior it supports.",
+                    "Choose the edge that can become an event, callback, orchestration step, or ownership transfer.",
+                    "Define the source-of-truth service for the data or command crossing that edge.",
+                ],
+                verification_checks=[
+                    "The target edge has a named replacement pattern and service owner.",
+                    "No service in the cycle needs a simultaneous release for the first change.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 2 - Replace the direct dependency",
+                objective="Remove bidirectional knowledge without changing externally visible behavior.",
+                steps=[
+                    "Introduce the replacement event, orchestrator, or owned API behind a feature flag if possible.",
+                    "Move one call path to the new interaction and observe consistency behavior.",
+                    "Add contract or message-schema tests for the replacement boundary.",
+                ],
+                verification_checks=[
+                    "The old edge can be disabled in a test environment without breaking the workflow.",
+                    "Observability shows the replacement path is being used successfully.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 3 - Delete the old edge and rescan",
+                objective="Make the acyclic dependency direction permanent.",
+                steps=[
+                    "Remove unused client code, imports, deployment permissions, and configuration for the old edge.",
+                    "Update architecture documentation to show the new dependency direction.",
+                    "Run MESA again to confirm the cycle is gone.",
+                ],
+                verification_checks=[
+                    "No cyclic dependency finding remains for these services.",
+                    "Deployment order no longer requires the services in the cycle to move together.",
+                ],
+            ),
+        ]
+    if primary_type == FindingType.SHARED_DATABASE:
+        database = _shared_database_key(findings[0])
+        return [
+            RefactoringPlaybookPhase(
+                title="Phase 1 - Declare data ownership",
+                objective=f"Choose one service to own writes and schema evolution for {database}.",
+                steps=[
+                    "Inventory which services read, write, migrate, or join against the shared database objects.",
+                    "Select the owning service and classify every other service as read-only, write-dependent, or reporting.",
+                    "Define the replacement access pattern for each non-owner service.",
+                ],
+                verification_checks=[
+                    "There is exactly one named owner for schema changes.",
+                    "Every non-owner access has an API, event, export, or read-model replacement path.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 2 - Migrate consumers behind owner boundaries",
+                objective="Move non-owner services away from direct database access in controlled slices.",
+                steps=[
+                    "Add owner APIs or published events for the highest-risk consumer first.",
+                    "Use dual-read comparison or shadow traffic to validate behavior before cutting over.",
+                    "Remove direct credentials from each migrated non-owner service.",
+                ],
+                verification_checks=[
+                    "Migrated services no longer require direct database credentials.",
+                    "Data parity checks pass between old and new access paths.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 3 - Lock ownership and simplify operations",
+                objective="Prevent shared database coupling from returning.",
+                steps=[
+                    "Delete obsolete queries, migrations, and connection configuration from non-owner services.",
+                    "Restrict database permissions so only the owner can write or migrate owned tables.",
+                    "Add a governance rule or CI check for shared database access.",
+                ],
+                verification_checks=[
+                    "MESA no longer detects the shared database finding.",
+                    "Database permissions match the declared ownership model.",
+                ],
+            ),
+        ]
+    if primary_type == FindingType.GOD_SERVICE:
+        return [
+            RefactoringPlaybookPhase(
+                title="Phase 1 - Find cohesive responsibility slices",
+                objective=f"Turn {service_text} from a vague hotspot into a set of extractable capabilities.",
+                steps=[
+                    "Group files, endpoints, jobs, and dependencies by business capability.",
+                    "Identify the slices with high change frequency or high coupling to other services.",
+                    "Resolve surrounding cycles, shared data, or chatty paths that would make extraction brittle.",
+                ],
+                verification_checks=[
+                    "At least two candidate slices have clear owners, inputs, outputs, and data needs.",
+                    "The first extraction target does not require a broad cross-system release.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 2 - Modularize before distributing",
+                objective="Prove the boundary inside the existing deployable before creating new operational complexity.",
+                steps=[
+                    "Create internal modules or packages with explicit interfaces for the chosen slice.",
+                    "Add tests around the slice behavior and data contracts.",
+                    "Move callers to the internal interface and remove direct cross-module access.",
+                ],
+                verification_checks=[
+                    "The slice can be tested independently inside the current service.",
+                    "Static dependencies now point through the new module interface.",
+                ],
+            ),
+            RefactoringPlaybookPhase(
+                title="Phase 3 - Extract only when the boundary is stable",
+                objective="Create a new service or component only after the module boundary has proven useful.",
+                steps=[
+                    "Choose whether the slice should remain a module, become a worker, or become a separate service.",
+                    "If extracting, move one vertical workflow with telemetry, rollback, and ownership in place.",
+                    "Retire duplicate code and rescan service-size and coupling metrics.",
+                ],
+                verification_checks=[
+                    "The original service has lower hotspot evidence after the change.",
+                    "Operational ownership, dashboards, and runbooks exist for any extracted deployable.",
+                ],
+            ),
+        ]
+    return [
+        RefactoringPlaybookPhase(
+            title="Phase 1 - Validate the policy violation",
+            objective="Confirm the governance rule is failing for a real architectural reason.",
+            steps=[
+                "Read the policy threshold and compare it with the current finding evidence.",
+                "Decide whether the rule, the code, or both need adjustment.",
+                "Assign an owner and due date for the policy remediation.",
+            ],
+            verification_checks=[
+                "The policy failure has a linked finding, exception, or rule update proposal.",
+                "False positives are documented before implementation work starts.",
+            ],
+        ),
+        RefactoringPlaybookPhase(
+            title="Phase 2 - Fix the underlying cause",
+            objective="Resolve the architecture issue rather than only changing the policy result.",
+            steps=[
+                "Complete the dependent roadmap actions that overlap this policy.",
+                "Keep evidence from the before and after scans for research/demo comparison.",
+                "Update team guidance so future changes avoid the same violation.",
+            ],
+            verification_checks=[
+                "The related structural finding is fixed or explicitly accepted.",
+                "The policy document still expresses the intended architecture rule.",
+            ],
+        ),
+        RefactoringPlaybookPhase(
+            title="Phase 3 - Re-run governance and close the loop",
+            objective="Turn the policy from a warning into an enforceable quality gate.",
+            steps=[
+                "Run a new MESA scan and compare the governance result with the baseline.",
+                "Close temporary exceptions or attach a time-boxed waiver if the risk remains accepted.",
+                "Add the policy check to CI or release review once stable.",
+            ],
+            verification_checks=[
+                "The governance violation is gone or has a documented waiver with expiry.",
+                "CI or release review can reproduce the same policy outcome.",
+            ],
+        ),
+    ]
+
+
+def _playbook_verification(primary_type: FindingType, services: list[str]) -> list[str]:
+    checks = {
+        FindingType.HARD_CODED_SERVICE_DEPENDENCY: [
+            "Run the scanner and confirm hard-coded service URL findings are removed for the affected services.",
+            "Run integration tests with endpoint values supplied by environment or deployment configuration.",
+        ],
+        FindingType.CHATTY_SERVICE: [
+            "Compare before/after static call-count evidence for the caller and callee.",
+            "Confirm production or test telemetry shows fewer synchronous downstream calls for the workflow.",
+        ],
+        FindingType.CYCLIC_DEPENDENCY: [
+            "Run the scanner and confirm the detected cycle no longer appears.",
+            "Deploy the services independently in a test environment without a coordinated release.",
+        ],
+        FindingType.SHARED_DATABASE: [
+            "Confirm only the owning service retains direct database write or migration access.",
+            "Run data parity checks between old direct reads and the replacement API, event, or read model.",
+        ],
+        FindingType.GOD_SERVICE: [
+            "Compare hotspot metrics, dependency count, and finding count before and after the change.",
+            "Confirm the extracted module or service has clear ownership and independent tests.",
+        ],
+        FindingType.GOVERNANCE_POLICY_VIOLATION: [
+            "Run the governance rule again and record the new pass/fail result.",
+            "Attach the after-scan evidence to the research evaluation record or release note.",
+        ],
+    }
+    affected = f" for {_service_text(services)}" if services else ""
+    return checks[primary_type] + [f"Review the after-scan with the owning team{affected} before closing the action."]
+
+
+def _playbook_rollback(primary_type: FindingType) -> list[str]:
+    return {
+        FindingType.HARD_CODED_SERVICE_DEPENDENCY: [
+            "Keep previous endpoint values available in deployment configuration during the first release.",
+            "Rollback by restoring the previous config values, not by recommitting hard-coded URLs.",
+        ],
+        FindingType.CHATTY_SERVICE: [
+            "Ship the coarse endpoint, read model, or event path alongside the old calls first.",
+            "Rollback by routing the caller back to the old client path while preserving new telemetry.",
+        ],
+        FindingType.CYCLIC_DEPENDENCY: [
+            "Guard the replacement interaction with a feature flag or routing toggle where possible.",
+            "Rollback by re-enabling the old edge temporarily while keeping schema/message changes backward compatible.",
+        ],
+        FindingType.SHARED_DATABASE: [
+            "Use staged migration with parity checks before removing old reads or credentials.",
+            "Rollback by returning specific consumers to read-only direct access while investigating parity failures.",
+        ],
+        FindingType.GOD_SERVICE: [
+            "Modularize inside the current deployable before extracting a separate service.",
+            "Rollback an extraction by routing traffic back to the original module while retaining interface tests.",
+        ],
+        FindingType.GOVERNANCE_POLICY_VIOLATION: [
+            "Use a time-boxed policy waiver only when the architectural risk is accepted by an owner.",
+            "Rollback a policy threshold change by restoring the previous rule and documenting the exception.",
+        ],
+    }[primary_type]
+
+
+def _playbook_risks(primary_type: FindingType) -> list[str]:
+    return {
+        FindingType.HARD_CODED_SERVICE_DEPENDENCY: [
+            "Missing environment configuration can cause startup or runtime failures.",
+            "Different services may adopt inconsistent configuration key names without a shared convention.",
+        ],
+        FindingType.CHATTY_SERVICE: [
+            "A coarse endpoint can become too broad if it is not tied to a specific workflow.",
+            "Read models or cached data may introduce freshness and consistency questions.",
+        ],
+        FindingType.CYCLIC_DEPENDENCY: [
+            "Replacing a direct call with events can move complexity into eventual consistency handling.",
+            "The cycle may reappear if ownership is not clarified after the edge is removed.",
+        ],
+        FindingType.SHARED_DATABASE: [
+            "Data migration and parity defects can affect multiple services at once.",
+            "Dual-write periods can create inconsistency if they are not tightly controlled.",
+        ],
+        FindingType.GOD_SERVICE: [
+            "Premature extraction can create distributed complexity without reducing business complexity.",
+            "The first slice may be too horizontal if boundaries are drawn around technical layers.",
+        ],
+        FindingType.GOVERNANCE_POLICY_VIOLATION: [
+            "Policy thresholds can become performative if teams fix the rule instead of the architecture.",
+            "Strict gates may block delivery unless waivers and ownership are clear.",
+        ],
+    }[primary_type]
+
+
+def _playbook_effort(
+    primary_type: FindingType, estimated_difficulty: str, finding_count: int, service_count: int
+) -> str:
+    if primary_type == FindingType.HARD_CODED_SERVICE_DEPENDENCY:
+        base = "1-2 days"
+    elif primary_type in {FindingType.CHATTY_SERVICE, FindingType.GOVERNANCE_POLICY_VIOLATION}:
+        base = "3-7 days"
+    elif primary_type == FindingType.GOD_SERVICE:
+        base = "2-6 weeks"
+    else:
+        base = "1-4 weeks"
+    scope_note = f"{finding_count} finding{'s' if finding_count != 1 else ''}, {service_count} service{'s' if service_count != 1 else ''}"
+    return f"{base} ({estimated_difficulty}; scope: {scope_note})"
 
 
 def _estimated_difficulty(
