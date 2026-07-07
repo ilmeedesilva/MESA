@@ -240,6 +240,45 @@ def test_findings_include_evidence_grounded_structured_recommendations() -> None
         assert recommendation.source.startswith("rule-based")
 
 
+def test_findings_include_evidence_confidence_ledger() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "god" / "platform-service"),
+            str(ROOT / "god" / "order-service"),
+            str(ROOT / "god" / "billing-service"),
+            str(ROOT / "god" / "inventory-service"),
+            str(ROOT / "god" / "user-service"),
+            str(ROOT / "god" / "payment-service"),
+            str(ROOT / "god" / "notification-service"),
+        ]
+    )
+
+    assert result.findings
+    for finding in result.findings:
+        assert finding.detector_name
+        assert finding.rule_id
+        assert finding.evidence_chain
+        assert finding.confidence_reason
+        assert finding.limitations
+        assert finding.related_services == finding.services
+        assert finding.why_valid
+        assert 0 <= finding.confidence <= 1
+
+    hardcoded_result = analyze_services(
+        [
+            str(ROOT / "hardcoded" / "order-service"),
+            str(ROOT / "hardcoded" / "billing-service"),
+        ]
+    )
+    hardcoded = next(
+        finding
+        for finding in hardcoded_result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    )
+    assert hardcoded.source_files
+    assert hardcoded.evidence_chain[0].source is not None
+
+
 def test_recommendations_work_without_llm_configuration(monkeypatch) -> None:
     monkeypatch.delenv("MESA_LLM_RECOMMENDATIONS", raising=False)
     result = analyze_services([str(ROOT / "hardcoded" / "order-service")])

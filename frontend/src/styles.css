@@ -2544,6 +2544,83 @@ meter {
   font-size: 11px;
 }
 
+.evidenceFiles {
+  margin-top: 12px;
+}
+
+.ledgerMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.ledgerMetaGrid div {
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #eff6ff;
+}
+
+.ledgerMetaGrid span,
+.ledgerMetaGrid strong {
+  display: block;
+}
+
+.ledgerMetaGrid span {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ledgerMetaGrid strong {
+  margin-top: 3px;
+  color: #1e3a8a;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.evidenceChainList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  color: #475569;
+}
+
+.evidenceChainList li {
+  padding-left: 2px;
+  line-height: 1.45;
+}
+
+.evidenceChainList strong,
+.evidenceChainList span,
+.evidenceChainList code {
+  display: block;
+}
+
+.evidenceChainList strong {
+  color: #0f172a;
+  font-size: 12px;
+}
+
+.evidenceChainList span {
+  margin-top: 2px;
+}
+
+.evidenceChainList code {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 6px;
+  border-radius: 6px;
+  padding: 4px 7px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
 .recommendation small {
   display: block;
   color: #475569;

@@ -30,6 +30,13 @@ def test_analyze_endpoint() -> None:
     )
     assert response.status_code == 200
     assert response.json()["summary"]["finding_count"] >= 1
+    finding = response.json()["findings"][0]
+    assert finding["detector_name"]
+    assert finding["rule_id"]
+    assert finding["evidence_chain"]
+    assert finding["confidence_reason"]
+    assert finding["limitations"]
+    assert finding["why_valid"]
 
 
 def test_repo_scan_preview_for_local_path() -> None:

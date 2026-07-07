@@ -5,6 +5,7 @@ from typing import Any
 import networkx as nx
 
 from mesa.detectors.base import Detector
+from mesa.detectors.evidence import evidence_chain_item, source_files_from_evidence
 from mesa.models import Finding, FindingType, Severity
 
 CONFIG_FILE_TYPES = {
@@ -66,6 +67,23 @@ def _finding(
     confidence = _confidence(file_type, dependency.get("reason"), duplicate_count)
     value = dependency.get("value", "unknown endpoint")
     location = _location(source)
+    evidence = [
+        {
+            "anti_pattern": "Hard-Coded Service Dependency",
+            "service": service_name,
+            "value": value,
+            "host": dependency.get("host"),
+            "port": dependency.get("port"),
+            "scheme": dependency.get("scheme"),
+            "file_type": file_type,
+            "file_path": source.get("file_path"),
+            "line_number": source.get("line_number"),
+            "context": dependency.get("context"),
+            "reason": dependency.get("reason"),
+            "duplicate_occurrences": duplicate_count,
+            "explanation": _explanation(file_type, dependency.get("reason"), duplicate_count),
+        }
+    ]
 
     return Finding(
         id=f"MESA-HCDD-{index:03d}",
@@ -78,28 +96,45 @@ def _finding(
             "This creates a hard-coded service dependency that can bypass service discovery "
             "or environment-specific configuration."
         ),
-        evidence=[
-            {
-                "anti_pattern": "Hard-Coded Service Dependency",
-                "service": service_name,
-                "value": value,
-                "host": dependency.get("host"),
-                "port": dependency.get("port"),
-                "scheme": dependency.get("scheme"),
-                "file_type": file_type,
-                "file_path": source.get("file_path"),
-                "line_number": source.get("line_number"),
-                "context": dependency.get("context"),
-                "reason": dependency.get("reason"),
-                "duplicate_occurrences": duplicate_count,
-                "explanation": _explanation(file_type, dependency.get("reason"), duplicate_count),
-            }
-        ],
+        evidence=evidence,
         recommendation=(
             "Move endpoint values behind configuration or service discovery, inject them through "
             "environment-specific settings, and centralize client construction. For Kubernetes or "
             "Docker deployments, prefer DNS/service names supplied by deployment manifests instead "
             "of embedding URLs in application source code."
+        ),
+        detector_name="HardCodedServiceDependencyDetector",
+        rule_id="hard-coded-dependency.static-endpoint-reference",
+        evidence_chain=[
+            evidence_chain_item(
+                "scan_text_evidence",
+                f"Found endpoint-like value in {file_type} evidence.",
+                source=source,
+                data={"value": value, "reason": dependency.get("reason")},
+            ),
+            evidence_chain_item(
+                "classify_endpoint",
+                "Classified the value as a service dependency because it matches a service host, local endpoint, or private network endpoint.",
+                source=source,
+                data={"host": dependency.get("host"), "port": dependency.get("port")},
+            ),
+            evidence_chain_item(
+                "score_confidence",
+                "Adjusted confidence using file type, endpoint reason, and duplicate occurrence count.",
+                source=source,
+                data={"duplicate_occurrences": duplicate_count, "confidence": confidence},
+            ),
+        ],
+        confidence_reason=_explanation(file_type, dependency.get("reason"), duplicate_count),
+        limitations=[
+            "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
+            "The detector does not execute deployment manifests to prove the endpoint is active.",
+        ],
+        source_files=source_files_from_evidence(evidence),
+        related_services=[service_name],
+        why_valid=(
+            f"MESA found {value} directly embedded in {location}; this is concrete source/config "
+            "evidence of a deployment endpoint being coupled to the service implementation."
         ),
     )
 

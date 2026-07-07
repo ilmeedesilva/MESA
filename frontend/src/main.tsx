@@ -18,6 +18,16 @@ type FindingRecommendation = {
   source: string;
 };
 
+type EvidenceChainItem = {
+  step: string;
+  description: string;
+  source?: {
+    file_path: string;
+    line_number?: number | null;
+  } | null;
+  data: Record<string, unknown>;
+};
+
 type Finding = {
   id: string;
   type: string;
@@ -28,6 +38,14 @@ type Finding = {
   evidence: Array<Record<string, unknown>>;
   recommendation: string;
   recommendations?: FindingRecommendation[];
+  detector_name?: string;
+  rule_id?: string;
+  evidence_chain?: EvidenceChainItem[];
+  confidence_reason?: string;
+  limitations?: string[];
+  source_files?: string[];
+  related_services?: string[];
+  why_valid?: string;
 };
 
 type GraphNode = {
@@ -2809,13 +2827,44 @@ function FindingDrawer({
           <p>{findingWhyItMatters(finding)}</p>
         </section>
         <section className="drawerSection">
-          <h3>Why MESA thinks this</h3>
-          <ul className="evidenceBulletList">
-            {summarizeEvidence(finding.evidence).map((item) => <li key={item}>{item}</li>)}
-          </ul>
+          <h3>Why MESA believes this</h3>
+          <p>{finding.why_valid || "MESA attached structured detector evidence to support this finding."}</p>
+          <div className="ledgerMetaGrid">
+            <div>
+              <span>Detector</span>
+              <strong>{finding.detector_name || formatType(finding.type)}</strong>
+            </div>
+            <div>
+              <span>Rule</span>
+              <strong>{finding.rule_id || "Legacy finding"}</strong>
+            </div>
+          </div>
+          {finding.evidence_chain && finding.evidence_chain.length > 0 ? (
+            <ol className="evidenceChainList">
+              {finding.evidence_chain.map((item, index) => (
+                <li key={`${item.step}-${index}`}>
+                  <strong>{formatType(item.step)}</strong>
+                  <span>{item.description}</span>
+                  {item.source ? (
+                    <code>{item.source.file_path}{item.source.line_number ? `:${item.source.line_number}` : ""}</code>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <ul className="evidenceBulletList">
+              {summarizeEvidence(finding.evidence).map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          )}
           <small className="supportText">
-            {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%). {confidenceGuidance(finding.confidence)}
+            {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%). {finding.confidence_reason || confidenceGuidance(finding.confidence)}
           </small>
+          {finding.source_files && finding.source_files.length > 0 ? (
+            <div className="affectedFiles evidenceFiles">
+              <strong>Source files</strong>
+              {finding.source_files.slice(0, 6).map((file) => <code key={file}>{file}</code>)}
+            </div>
+          ) : null}
         </section>
         <RecommendationDetails finding={finding} interpretationMode={interpretationMode} />
         <section className="drawerSection">
@@ -2824,12 +2873,25 @@ function FindingDrawer({
         </section>
         <section className="drawerSection">
           <h3>What this does not prove</h3>
-          <p>{findingLimitation(finding)}</p>
+          {finding.limitations && finding.limitations.length > 0 ? (
+            <ul className="evidenceBulletList">
+              {finding.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}
+            </ul>
+          ) : (
+            <p>{findingLimitation(finding)}</p>
+          )}
         </section>
         {interpretationMode === "research" ? (
           <section className="drawerSection">
-            <h3>Raw evidence</h3>
-            <pre>{JSON.stringify(finding.evidence, null, 2)}</pre>
+            <h3>Raw evidence ledger</h3>
+            <pre>{JSON.stringify({
+              detector_name: finding.detector_name,
+              rule_id: finding.rule_id,
+              evidence_chain: finding.evidence_chain,
+              source_files: finding.source_files,
+              related_services: finding.related_services,
+              evidence: finding.evidence
+            }, null, 2)}</pre>
           </section>
         ) : null}
       </aside>

@@ -131,6 +131,13 @@ class FindingRecommendation(BaseModel):
     source: str = "rule-based"
 
 
+class EvidenceChainItem(BaseModel):
+    step: str
+    description: str
+    source: SourceLocation | None = None
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
 class Finding(BaseModel):
     id: str
     type: FindingType
@@ -141,6 +148,14 @@ class Finding(BaseModel):
     evidence: list[dict[str, Any]]
     recommendation: str
     recommendations: list[FindingRecommendation] = Field(default_factory=list)
+    detector_name: str = "Unknown detector"
+    rule_id: str = "unknown-rule"
+    evidence_chain: list[EvidenceChainItem] = Field(default_factory=list)
+    confidence_reason: str = ""
+    limitations: list[str] = Field(default_factory=list)
+    source_files: list[str] = Field(default_factory=list)
+    related_services: list[str] = Field(default_factory=list)
+    why_valid: str = ""
 
 
 class AnalysisRequest(BaseModel):
