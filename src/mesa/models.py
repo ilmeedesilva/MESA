@@ -391,6 +391,54 @@ class RepoScanRunRequest(RepoScanPreviewRequest):
     chatty_threshold: int = 3
 
 
+class ResearchEvaluationRecordBase(BaseModel):
+    scan_id: str | None = None
+    repo_name: str
+    repo_url: str | None = None
+    commit_ref: str | None = None
+    scan_date: str | None = None
+    project_type: str | None = None
+    expected_services: int | None = Field(default=None, ge=0)
+    detected_services: int = Field(default=0, ge=0)
+    expected_patterns: str | None = None
+    detected_patterns: str | None = None
+    total_findings: int = Field(default=0, ge=0)
+    critical_findings: int = Field(default=0, ge=0)
+    high_findings: int = Field(default=0, ge=0)
+    medium_findings: int = Field(default=0, ge=0)
+    low_findings: int = Field(default=0, ge=0)
+    true_positives: int | None = Field(default=None, ge=0)
+    false_positives: int | None = Field(default=None, ge=0)
+    false_negatives: int | None = Field(default=None, ge=0)
+    notes: str | None = None
+    limitations: str | None = None
+    research_relevance: str | None = None
+    suitable_for_report: bool = False
+
+
+class ResearchEvaluationRecordCreate(ResearchEvaluationRecordBase):
+    pass
+
+
+class ResearchEvaluationRecordUpdate(ResearchEvaluationRecordBase):
+    repo_name: str | None = None
+    detected_services: int | None = Field(default=None, ge=0)
+    total_findings: int | None = Field(default=None, ge=0)
+    critical_findings: int | None = Field(default=None, ge=0)
+    high_findings: int | None = Field(default=None, ge=0)
+    medium_findings: int | None = Field(default=None, ge=0)
+    low_findings: int | None = Field(default=None, ge=0)
+
+
+class ResearchEvaluationRecord(ResearchEvaluationRecordBase):
+    id: str
+    precision: float | None = None
+    recall: float | None = None
+    f1_score: float | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
 class ScanRecord(BaseModel):
     id: str
     project_id: str

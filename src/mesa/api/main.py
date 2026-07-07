@@ -5,7 +5,7 @@ import os
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from mesa import __version__
 from mesa.analysis import analyze_services
@@ -17,6 +17,7 @@ from mesa.analysis.explainer import (
     stream_answer_text,
 )
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
+from mesa.analysis.research_records import export_records, record_create_from_scan
 from mesa.analysis.roadmap import build_remediation_roadmap
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
@@ -35,6 +36,9 @@ from mesa.models import (
     PersistedScanResult,
     ProjectCreate,
     ProjectRecord,
+    ResearchEvaluationRecord,
+    ResearchEvaluationRecordCreate,
+    ResearchEvaluationRecordUpdate,
     RemediationRoadmap,
     RepoScanPreview,
     RepoScanPreviewRequest,
@@ -115,6 +119,73 @@ def preview_repo_scan(payload: RepoScanPreviewRequest) -> RepoScanPreview:
         return preview_repository(payload)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/research-records", response_model=list[ResearchEvaluationRecord])
+def list_research_records(request: Request) -> list[ResearchEvaluationRecord]:
+    return get_repository(request).list_research_records()
+
+
+@app.post("/research-records", response_model=ResearchEvaluationRecord, status_code=201)
+def create_research_record(
+    payload: ResearchEvaluationRecordCreate, request: Request
+) -> ResearchEvaluationRecord:
+    return get_repository(request).create_research_record(payload)
+
+
+@app.get("/research-records/export")
+def export_research_records(request: Request, format: str = "csv"):
+    export_format = format.lower()
+    repository = get_repository(request)
+    records = repository.list_research_records()
+    try:
+        content = export_records(records, export_format)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    if export_format == "json":
+        return json.loads(content)
+    media_type = "text/csv" if export_format == "csv" else "text/markdown"
+    filename = f"mesa-research-records.{ 'csv' if export_format == 'csv' else 'md' }"
+    return PlainTextResponse(
+        content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/research-records/{record_id}", response_model=ResearchEvaluationRecord)
+def get_research_record(record_id: str, request: Request) -> ResearchEvaluationRecord:
+    record = get_repository(request).get_research_record(record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Research record not found")
+    return record
+
+
+@app.put("/research-records/{record_id}", response_model=ResearchEvaluationRecord)
+def update_research_record(
+    record_id: str, payload: ResearchEvaluationRecordUpdate, request: Request
+) -> ResearchEvaluationRecord:
+    record = get_repository(request).update_research_record(record_id, payload)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Research record not found")
+    return record
+
+
+@app.delete("/research-records/{record_id}", status_code=204)
+def delete_research_record(record_id: str, request: Request) -> None:
+    deleted = get_repository(request).delete_research_record(record_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Research record not found")
+
+
+@app.post("/research-records/from-scan/{scan_id}", response_model=ResearchEvaluationRecord, status_code=201)
+def create_research_record_from_scan(scan_id: str, request: Request) -> ResearchEvaluationRecord:
+    repository = get_repository(request)
+    scan = repository.get_scan(scan_id)
+    result = repository.get_scan_result(scan_id)
+    if scan is None or result is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return repository.create_research_record(record_create_from_scan(scan, result))
 
 
 @app.post("/projects", response_model=ProjectRecord, status_code=201)

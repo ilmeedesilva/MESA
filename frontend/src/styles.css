@@ -1100,6 +1100,137 @@ aside {
   line-height: 1.45;
 }
 
+.researchWorkspace {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  min-height: calc(100vh - 93px);
+}
+
+.researchHero,
+.researchExportBar,
+.researchTablePanel {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(148, 163, 184, 0.08);
+}
+
+.researchHero,
+.researchExportBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.researchHero h2 {
+  font-size: 18px;
+}
+
+.researchHero p {
+  margin-top: 6px;
+  max-width: 68ch;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.researchActions,
+.researchExportBar div,
+.researchMetricPreview,
+.panelButtonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.researchSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.researchTableWrap {
+  overflow: auto;
+}
+
+.researchTable {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.researchTable th,
+.researchTable td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.researchTable th {
+  color: #475569;
+  background: #f8fafc;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.researchTable tbody tr {
+  cursor: pointer;
+}
+
+.researchTable tbody tr:hover,
+.researchTable tbody tr.selected {
+  background: #eff6ff;
+}
+
+.researchEditor {
+  display: grid;
+  gap: 12px;
+}
+
+.researchFormGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.researchFormGrid label,
+.reportReadyToggle {
+  display: grid;
+  gap: 6px;
+}
+
+.researchFormGrid span,
+.reportReadyToggle span {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.researchMetricPreview {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.researchMetricPreview span {
+  color: #475569;
+  font-size: 12px;
+}
+
+.researchEditor textarea {
+  min-height: 86px;
+}
+
+.reportReadyToggle {
+  display: flex;
+  align-items: center;
+}
+
 .error {
   margin-top: 12px;
   padding: 12px;

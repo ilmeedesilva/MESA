@@ -174,6 +174,85 @@ def test_project_scan_persistence_endpoints() -> None:
     del app.state.persistence_repository
 
 
+def test_research_evaluation_records_crud_from_scan_and_exports() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Research Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/repo-scans",
+        json={
+            "source_type": "LOCAL_PATH",
+            "location": str(ROOT / "real-repo" / "shop"),
+            "service_paths": ["frontend-service", "catalog-service", "inventory-api"],
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    create_response = client.post(f"/research-records/from-scan/{scan_id}")
+    assert create_response.status_code == 201
+    record = create_response.json()
+    record_id = record["id"]
+    assert record["scan_id"] == scan_id
+    assert record["repo_name"] == "shop"
+    assert record["expected_services"] == 3
+    assert record["detected_services"] == 3
+    assert record["total_findings"] >= 0
+    assert record["true_positives"] == record["total_findings"]
+    assert record["false_positives"] == 0
+    assert record["false_negatives"] == 0
+    assert record["precision"] == 1.0 if record["total_findings"] > 0 else record["precision"] is None
+    assert "Draft accuracy fields" in record["notes"]
+
+    update_response = client.put(
+        f"/research-records/{record_id}",
+        json={
+            **record,
+            "expected_services": 3,
+            "true_positives": 4,
+            "false_positives": 1,
+            "false_negatives": 1,
+            "notes": "Manual validation complete.",
+            "limitations": "Small fixture repository.",
+            "research_relevance": "Demonstrates real-repo style extraction.",
+            "suitable_for_report": True,
+        },
+    )
+    assert update_response.status_code == 200
+    updated = update_response.json()
+    assert updated["precision"] == 0.8
+    assert updated["recall"] == 0.8
+    assert updated["f1_score"] == 0.8
+    assert updated["suitable_for_report"] is True
+
+    list_response = client.get("/research-records")
+    assert list_response.status_code == 200
+    assert list_response.json()[0]["id"] == record_id
+
+    csv_response = client.get("/research-records/export", params={"format": "csv"})
+    assert csv_response.status_code == 200
+    assert "repo_name,commit_ref" in csv_response.text
+    assert "shop" in csv_response.text
+
+    markdown_response = client.get("/research-records/export", params={"format": "markdown"})
+    assert markdown_response.status_code == 200
+    assert "| repo_name | commit_ref |" in markdown_response.text
+
+    json_response = client.get("/research-records/export", params={"format": "json"})
+    assert json_response.status_code == 200
+    assert json_response.json()[0]["id"] == record_id
+
+    delete_response = client.delete(f"/research-records/{record_id}")
+    assert delete_response.status_code == 204
+    assert client.get(f"/research-records/{record_id}").status_code == 404
+
+    del app.state.persistence_repository
+
+
 def test_project_evolution_timeline_compares_consecutive_snapshots() -> None:
     app.state.persistence_repository = InMemoryPersistenceRepository()
     client = TestClient(app)

@@ -303,7 +303,7 @@ type WorkflowStep = {
 };
 
 type InterpretationMode = "beginner" | "research";
-type WorkspaceView = "analysis" | "docs";
+type WorkspaceView = "analysis" | "research" | "docs";
 type ApiAvailability = "checking" | "online" | "offline";
 type AIExplainerIntent =
   | "AUTO"
@@ -356,6 +356,37 @@ type AIExplainerStatus = {
   message: string;
 };
 
+type ResearchEvaluationRecord = {
+  id: string;
+  scan_id?: string | null;
+  repo_name: string;
+  repo_url?: string | null;
+  commit_ref?: string | null;
+  scan_date?: string | null;
+  project_type?: string | null;
+  expected_services?: number | null;
+  detected_services: number;
+  expected_patterns?: string | null;
+  detected_patterns?: string | null;
+  total_findings: number;
+  critical_findings: number;
+  high_findings: number;
+  medium_findings: number;
+  low_findings: number;
+  true_positives?: number | null;
+  false_positives?: number | null;
+  false_negatives?: number | null;
+  precision?: number | null;
+  recall?: number | null;
+  f1_score?: number | null;
+  notes?: string | null;
+  limitations?: string | null;
+  research_relevance?: string | null;
+  suitable_for_report: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 const defaultPaths = [
   "/workspace/tests/fixtures/god/platform-service",
   "/workspace/tests/fixtures/god/order-service",
@@ -404,6 +435,8 @@ function App() {
   const [history, setHistory] = React.useState<ScanRecord[]>([]);
   const [evolution, setEvolution] = React.useState<EvolutionReport[]>([]);
   const [roadmap, setRoadmap] = React.useState<RemediationRoadmap | null>(null);
+  const [researchRecords, setResearchRecords] = React.useState<ResearchEvaluationRecord[]>([]);
+  const [selectedResearchRecordId, setSelectedResearchRecordId] = React.useState("");
   const [policyText, setPolicyText] = React.useState(defaultPolicyDocument);
   const [policyCount, setPolicyCount] = React.useState(0);
   const [activeScan, setActiveScan] = React.useState<ScanRecord | null>(null);
@@ -416,7 +449,10 @@ function App() {
   const [isScanning, setIsScanning] = React.useState(false);
   const [isLoadingScan, setIsLoadingScan] = React.useState(false);
   const [isLoadingRoadmap, setIsLoadingRoadmap] = React.useState(false);
+  const [isLoadingResearchRecords, setIsLoadingResearchRecords] = React.useState(false);
   const [isSavingPolicies, setIsSavingPolicies] = React.useState(false);
+  const [isSavingResearchRecord, setIsSavingResearchRecord] = React.useState(false);
+  const [isExportingResearchRecords, setIsExportingResearchRecords] = React.useState(false);
   const [selectedFinding, setSelectedFinding] = React.useState<Finding | null>(null);
   const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
   const [interpretationMode, setInterpretationMode] = React.useState<InterpretationMode>("beginner");
@@ -480,11 +516,16 @@ function App() {
 
   React.useEffect(() => {
     void loadAIStatus();
+    void loadResearchRecords();
   }, []);
 
   React.useEffect(() => {
     void probeApiAvailability();
   }, []);
+
+  React.useEffect(() => {
+    if (workspaceView === "research") void loadResearchRecords();
+  }, [workspaceView]);
 
   const aggregatedEdges = React.useMemo(
     () => (displayGraph ? aggregateEdges(displayGraph.edges) : []),
@@ -592,6 +633,7 @@ function App() {
       await loadDigitalTwinGraph(payload.scan.id, payload.result, nextScores);
       await loadRoadmap(payload.scan.id);
       await loadHistory(selectedProjectId, payload.scan.id);
+      await loadResearchRecords();
     } catch (caught) {
       setError(messageFor(caught, "Scan failed"));
     } finally {
@@ -800,6 +842,99 @@ function App() {
       setRoadmap(null);
     } finally {
       setIsLoadingRoadmap(false);
+    }
+  }
+
+  async function loadResearchRecords() {
+    if (usingEmbeddedDemo) {
+      setResearchRecords([]);
+      return;
+    }
+    setIsLoadingResearchRecords(true);
+    try {
+      const records = await api<ResearchEvaluationRecord[]>("/api/research-records");
+      setResearchRecords(records);
+      setSelectedResearchRecordId((current) => current || records[0]?.id || "");
+    } catch (caught) {
+      if (workspaceView === "research") setError(messageFor(caught, "Could not load research records"));
+    } finally {
+      setIsLoadingResearchRecords(false);
+    }
+  }
+
+  async function createResearchRecordFromActiveScan() {
+    if (!activeScan) {
+      setError("Load or run a scan before creating a research evaluation record.");
+      return;
+    }
+    if (usingEmbeddedDemo) {
+      setError("Research records need the live backend. Public demo mode only includes embedded examples.");
+      return;
+    }
+    setIsSavingResearchRecord(true);
+    setError(null);
+    try {
+      const record = await api<ResearchEvaluationRecord>(`/api/research-records/from-scan/${activeScan.id}`, {
+        method: "POST"
+      });
+      setResearchRecords((current) => [record, ...current.filter((item) => item.id !== record.id)]);
+      setSelectedResearchRecordId(record.id);
+      setWorkspaceView("research");
+    } catch (caught) {
+      setError(messageFor(caught, "Could not create research record from scan"));
+    } finally {
+      setIsSavingResearchRecord(false);
+    }
+  }
+
+  async function updateResearchRecord(record: ResearchEvaluationRecord, patch: Partial<ResearchEvaluationRecord>) {
+    setIsSavingResearchRecord(true);
+    setError(null);
+    try {
+      const updated = await api<ResearchEvaluationRecord>(`/api/research-records/${record.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(normalizeResearchRecordPayload({ ...record, ...patch }))
+      });
+      setResearchRecords((current) => current.map((item) => item.id === updated.id ? updated : item));
+    } catch (caught) {
+      setError(messageFor(caught, "Could not update research record"));
+    } finally {
+      setIsSavingResearchRecord(false);
+    }
+  }
+
+  async function deleteResearchRecord(recordId: string) {
+    setIsSavingResearchRecord(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/research-records/${recordId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error(`API returned ${response.status}`);
+      setResearchRecords((current) => current.filter((record) => record.id !== recordId));
+      setSelectedResearchRecordId((current) => current === recordId ? "" : current);
+    } catch (caught) {
+      setError(messageFor(caught, "Could not delete research record"));
+    } finally {
+      setIsSavingResearchRecord(false);
+    }
+  }
+
+  async function exportResearchRecords(format: "csv" | "markdown" | "json") {
+    setIsExportingResearchRecords(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/research-records/export?format=${format}`);
+      if (!response.ok) throw new Error(`API returned ${response.status}`);
+      const text = format === "json" ? JSON.stringify(await response.json(), null, 2) : await response.text();
+      downloadTextFile(
+        `mesa-research-records.${format === "markdown" ? "md" : format}`,
+        text,
+        format === "json" ? "application/json" : format === "csv" ? "text/csv" : "text/markdown"
+      );
+    } catch (caught) {
+      setError(messageFor(caught, "Could not export research records"));
+    } finally {
+      setIsExportingResearchRecords(false);
     }
   }
 
@@ -1068,9 +1203,16 @@ function App() {
             >
               Documentation
             </button>
+            <button
+              type="button"
+              className={workspaceView === "research" ? "toolbarTab active" : "toolbarTab"}
+              onClick={() => setWorkspaceView("research")}
+            >
+              Research Evaluation
+            </button>
           </div>
           <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
-          <button onClick={runScan} disabled={isScanning || !selectedProjectId || workspaceView === "docs" || usingEmbeddedDemo}>
+          <button onClick={runScan} disabled={isScanning || !selectedProjectId || workspaceView !== "analysis" || usingEmbeddedDemo}>
             {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
           </button>
         </div>
@@ -1458,6 +1600,14 @@ function App() {
                 <h2>Scan History</h2>
                 <span>{history.length} scans</span>
               </div>
+              <button
+                type="button"
+                className="fullButton secondaryButton"
+                onClick={() => void createResearchRecordFromActiveScan()}
+                disabled={!activeScan || isSavingResearchRecord || usingEmbeddedDemo}
+              >
+                {isSavingResearchRecord ? "Saving Record..." : "Create Research Record"}
+              </button>
               <div className="scanList">
                 {history.length === 0 ? <div className="emptyInline">No persistent scans yet.</div> : null}
                 {history.map((scan) => (
@@ -1563,6 +1713,21 @@ function App() {
         />
       ) : null}
         </>
+      ) : workspaceView === "research" ? (
+        <ResearchEvaluationPanel
+          records={researchRecords}
+          selectedRecordId={selectedResearchRecordId}
+          activeScan={activeScan}
+          isLoading={isLoadingResearchRecords}
+          isSaving={isSavingResearchRecord}
+          isExporting={isExportingResearchRecords}
+          onSelectRecord={setSelectedResearchRecordId}
+          onCreateFromScan={() => void createResearchRecordFromActiveScan()}
+          onRefresh={() => void loadResearchRecords()}
+          onUpdate={(record, patch) => void updateResearchRecord(record, patch)}
+          onDelete={(recordId) => void deleteResearchRecord(recordId)}
+          onExport={(format) => void exportResearchRecords(format)}
+        />
       ) : (
         <DocumentationPortal
           selectedDocSlug={selectedDocSlug}
@@ -1575,6 +1740,233 @@ function App() {
         />
       )}
     </main>
+  );
+}
+
+function ResearchEvaluationPanel({
+  records,
+  selectedRecordId,
+  activeScan,
+  isLoading,
+  isSaving,
+  isExporting,
+  onSelectRecord,
+  onCreateFromScan,
+  onRefresh,
+  onUpdate,
+  onDelete,
+  onExport
+}: {
+  records: ResearchEvaluationRecord[];
+  selectedRecordId: string;
+  activeScan: ScanRecord | null;
+  isLoading: boolean;
+  isSaving: boolean;
+  isExporting: boolean;
+  onSelectRecord: (id: string) => void;
+  onCreateFromScan: () => void;
+  onRefresh: () => void;
+  onUpdate: (record: ResearchEvaluationRecord, patch: Partial<ResearchEvaluationRecord>) => void;
+  onDelete: (recordId: string) => void;
+  onExport: (format: "csv" | "markdown" | "json") => void;
+}) {
+  const selectedRecord = records.find((record) => record.id === selectedRecordId) ?? records[0] ?? null;
+  const reportReadyCount = records.filter((record) => record.suitable_for_report).length;
+  const averagePrecision = averageMetric(records.map((record) => record.precision));
+  const averageRecall = averageMetric(records.map((record) => record.recall));
+
+  return (
+    <section className="researchWorkspace">
+      <section className="researchHero">
+        <div>
+          <div className="eyebrow">Research Evaluation</div>
+          <h2>Project Scan Records</h2>
+          <p>
+            Convert real repository scans into reusable evaluation records for your final report,
+            viva walkthrough, and demo evidence table.
+          </p>
+        </div>
+        <div className="researchActions">
+          <button type="button" onClick={onCreateFromScan} disabled={!activeScan || isSaving}>
+            {isSaving ? "Creating..." : "Create From Active Scan"}
+          </button>
+          <button type="button" className="secondaryButton" onClick={onRefresh} disabled={isLoading}>
+            {isLoading ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
+      </section>
+
+      <section className="researchSummaryGrid">
+        <Metric label="Records" value={records.length} detail="Open-source project evaluations" kind="number" />
+        <Metric label="Report Ready" value={reportReadyCount} detail="Marked suitable for final paper/demo" kind="number" />
+        <Metric label="Avg Precision" value={formatMetricValue(averagePrecision)} detail="Manual TP/FP required" kind="status" />
+        <Metric label="Avg Recall" value={formatMetricValue(averageRecall)} detail="Manual TP/FN required" kind="status" />
+      </section>
+
+      <section className="researchExportBar">
+        <span>{records.length} records available for export</span>
+        <div>
+          <button type="button" className="secondaryButton" onClick={() => onExport("markdown")} disabled={isExporting || records.length === 0}>Markdown</button>
+          <button type="button" className="secondaryButton" onClick={() => onExport("csv")} disabled={isExporting || records.length === 0}>CSV</button>
+          <button type="button" className="secondaryButton" onClick={() => onExport("json")} disabled={isExporting || records.length === 0}>JSON</button>
+        </div>
+      </section>
+
+      <section className="researchTablePanel">
+        <div className="panelHeader compact">
+          <h2>Evaluation Records Table</h2>
+          <span>{isLoading ? "Loading" : `${records.length} rows`}</span>
+        </div>
+        {records.length === 0 ? (
+          <div className="emptyInline">
+            Run or load a scan, then create a research record from the active scan.
+          </div>
+        ) : (
+          <div className="researchTableWrap">
+            <table className="researchTable">
+              <thead>
+                <tr>
+                  <th>Repo</th>
+                  <th>Commit/Ref</th>
+                  <th>Services Expected</th>
+                  <th>Services Detected</th>
+                  <th>Findings</th>
+                  <th>TP</th>
+                  <th>FP</th>
+                  <th>FN</th>
+                  <th>Precision</th>
+                  <th>Recall</th>
+                  <th>F1</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((record) => (
+                  <tr
+                    key={record.id}
+                    className={selectedRecord?.id === record.id ? "selected" : ""}
+                    onClick={() => onSelectRecord(record.id)}
+                  >
+                    <td><strong>{record.repo_name}</strong></td>
+                    <td>{record.commit_ref || "N/A"}</td>
+                    <td>{record.expected_services ?? "N/A"}</td>
+                    <td>{record.detected_services}</td>
+                    <td>{record.total_findings}</td>
+                    <td>{record.true_positives ?? "N/A"}</td>
+                    <td>{record.false_positives ?? "N/A"}</td>
+                    <td>{record.false_negatives ?? "N/A"}</td>
+                    <td>{formatMetricValue(record.precision)}</td>
+                    <td>{formatMetricValue(record.recall)}</td>
+                    <td>{formatMetricValue(record.f1_score)}</td>
+                    <td>{record.notes || "Add notes"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {selectedRecord ? (
+        <ResearchRecordEditor
+          record={selectedRecord}
+          isSaving={isSaving}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+function ResearchRecordEditor({
+  record,
+  isSaving,
+  onUpdate,
+  onDelete
+}: {
+  record: ResearchEvaluationRecord;
+  isSaving: boolean;
+  onUpdate: (record: ResearchEvaluationRecord, patch: Partial<ResearchEvaluationRecord>) => void;
+  onDelete: (recordId: string) => void;
+}) {
+  const [draft, setDraft] = React.useState<ResearchEvaluationRecord>(record);
+
+  React.useEffect(() => {
+    setDraft(record);
+  }, [record]);
+
+  return (
+    <section className="researchEditor panelBlock">
+      <div className="panelHeader compact">
+        <h2>Manual Evaluation Details</h2>
+        <span>{record.suitable_for_report ? "Report-ready" : "Draft"}</span>
+      </div>
+      <div className="researchFormGrid">
+        <ResearchTextInput label="Repository name" value={draft.repo_name} onChange={(value) => setDraft({ ...draft, repo_name: value })} />
+        <ResearchTextInput label="Repository URL" value={draft.repo_url ?? ""} onChange={(value) => setDraft({ ...draft, repo_url: value })} />
+        <ResearchTextInput label="Commit/ref" value={draft.commit_ref ?? ""} onChange={(value) => setDraft({ ...draft, commit_ref: value })} />
+        <ResearchTextInput label="Project type/framework" value={draft.project_type ?? ""} onChange={(value) => setDraft({ ...draft, project_type: value })} />
+        <ResearchNumberInput label="Services expected" value={draft.expected_services} onChange={(value) => setDraft({ ...draft, expected_services: value })} />
+        <ResearchNumberInput label="True positives" value={draft.true_positives} onChange={(value) => setDraft({ ...draft, true_positives: value })} />
+        <ResearchNumberInput label="False positives" value={draft.false_positives} onChange={(value) => setDraft({ ...draft, false_positives: value })} />
+        <ResearchNumberInput label="False negatives" value={draft.false_negatives} onChange={(value) => setDraft({ ...draft, false_negatives: value })} />
+      </div>
+      <div className="researchMetricPreview">
+        <span>Precision: <strong>{formatMetricValue(draftMetricPreview(draft).precision)}</strong></span>
+        <span>Recall: <strong>{formatMetricValue(draftMetricPreview(draft).recall)}</strong></span>
+        <span>F1: <strong>{formatMetricValue(draftMetricPreview(draft).f1)}</strong></span>
+      </div>
+      <label htmlFor="expectedPatterns">Expected communication patterns</label>
+      <textarea id="expectedPatterns" value={draft.expected_patterns ?? ""} onChange={(event) => setDraft({ ...draft, expected_patterns: event.target.value })} />
+      <label htmlFor="detectedPatterns">Detected communication patterns</label>
+      <textarea id="detectedPatterns" value={draft.detected_patterns ?? ""} onChange={(event) => setDraft({ ...draft, detected_patterns: event.target.value })} />
+      <label htmlFor="researchNotes">Notes</label>
+      <textarea id="researchNotes" value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} />
+      <label htmlFor="researchLimitations">Limitations</label>
+      <textarea id="researchLimitations" value={draft.limitations ?? ""} onChange={(event) => setDraft({ ...draft, limitations: event.target.value })} />
+      <label htmlFor="researchRelevance">Research relevance</label>
+      <textarea id="researchRelevance" value={draft.research_relevance ?? ""} onChange={(event) => setDraft({ ...draft, research_relevance: event.target.value })} />
+      <label className="reportReadyToggle">
+        <input
+          type="checkbox"
+          checked={draft.suitable_for_report}
+          onChange={(event) => setDraft({ ...draft, suitable_for_report: event.target.checked })}
+        />
+        <span>Suitable for final report/demo</span>
+      </label>
+      <div className="panelButtonRow">
+        <button type="button" onClick={() => onUpdate(record, draft)} disabled={isSaving || !draft.repo_name.trim()}>
+          {isSaving ? "Saving..." : "Save Evaluation Record"}
+        </button>
+        <button type="button" className="secondaryButton" onClick={() => onDelete(record.id)} disabled={isSaving}>
+          Delete Record
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ResearchTextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label>
+      <span>{label}</span>
+      <input value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function ResearchNumberInput({ label, value, onChange }: { label: string; value?: number | null; onChange: (value: number | null) => void }) {
+  return (
+    <label>
+      <span>{label}</span>
+      <input
+        type="number"
+        min="0"
+        value={value ?? ""}
+        onChange={(event) => onChange(event.target.value === "" ? null : Math.max(0, Number(event.target.value)))}
+      />
+    </label>
   );
 }
 
@@ -3627,6 +4019,76 @@ function policyDocumentFromRecords(policies: PolicyRecord[]) {
     if (policy.description) lines.push(`    description: ${policy.description}`);
   }
   return lines.join("\n") + "\n";
+}
+
+function normalizeResearchRecordPayload(record: ResearchEvaluationRecord) {
+  return {
+    scan_id: record.scan_id ?? null,
+    repo_name: record.repo_name,
+    repo_url: emptyToNull(record.repo_url),
+    commit_ref: emptyToNull(record.commit_ref),
+    scan_date: emptyToNull(record.scan_date),
+    project_type: emptyToNull(record.project_type),
+    expected_services: record.expected_services ?? null,
+    detected_services: record.detected_services,
+    expected_patterns: emptyToNull(record.expected_patterns),
+    detected_patterns: emptyToNull(record.detected_patterns),
+    total_findings: record.total_findings,
+    critical_findings: record.critical_findings,
+    high_findings: record.high_findings,
+    medium_findings: record.medium_findings,
+    low_findings: record.low_findings,
+    true_positives: record.true_positives ?? null,
+    false_positives: record.false_positives ?? null,
+    false_negatives: record.false_negatives ?? null,
+    notes: emptyToNull(record.notes),
+    limitations: emptyToNull(record.limitations),
+    research_relevance: emptyToNull(record.research_relevance),
+    suitable_for_report: record.suitable_for_report
+  };
+}
+
+function emptyToNull(value?: string | null) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function draftMetricPreview(record: ResearchEvaluationRecord) {
+  const tp = record.true_positives;
+  const fp = record.false_positives;
+  const fn = record.false_negatives;
+  if (tp === null || tp === undefined || fp === null || fp === undefined || fn === null || fn === undefined) {
+    return { precision: null, recall: null, f1: null };
+  }
+  const precision = tp + fp > 0 ? tp / (tp + fp) : null;
+  const recall = tp + fn > 0 ? tp / (tp + fn) : null;
+  const f1 = precision !== null && recall !== null && precision + recall > 0
+    ? (2 * precision * recall) / (precision + recall)
+    : null;
+  return { precision, recall, f1 };
+}
+
+function averageMetric(values: Array<number | null | undefined>) {
+  const usable = values.filter((value): value is number => typeof value === "number");
+  if (usable.length === 0) return null;
+  return usable.reduce((sum, value) => sum + value, 0) / usable.length;
+}
+
+function formatMetricValue(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "N/A";
+  return value <= 1 ? value.toFixed(4) : String(value);
+}
+
+function downloadTextFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function loadStoredProjects(): ProjectRecord[] {
