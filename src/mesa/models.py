@@ -298,6 +298,27 @@ class RoadmapBucket(str, Enum):
     HIGH_EFFORT = "high_effort"
 
 
+class RefactoringPlaybookPhase(BaseModel):
+    title: str
+    objective: str
+    steps: list[str] = Field(default_factory=list)
+    verification_checks: list[str] = Field(default_factory=list)
+
+
+class RefactoringPlaybook(BaseModel):
+    problem_summary: str
+    impact: str
+    recommended_strategy: str
+    phases: list[RefactoringPlaybookPhase] = Field(default_factory=list)
+    verification_checks: list[str] = Field(default_factory=list)
+    rollback_plan: list[str] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    estimated_effort: str
+    related_services: list[str] = Field(default_factory=list)
+    related_findings: list[str] = Field(default_factory=list)
+    source: str = "mesa-rule-based-playbook"
+
+
 class RoadmapAction(BaseModel):
     id: str
     title: str
@@ -314,6 +335,7 @@ class RoadmapAction(BaseModel):
     related_finding_types: list[FindingType] = Field(default_factory=list)
     dependencies: list[str] = Field(default_factory=list)
     metrics: dict[str, Any] = Field(default_factory=dict)
+    playbook: RefactoringPlaybook | None = None
 
 
 class RoadmapDependency(BaseModel):

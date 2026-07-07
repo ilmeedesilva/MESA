@@ -228,6 +228,27 @@ type EvolutionReport = {
 
 type RoadmapBucket = "quick_win" | "medium_term" | "high_effort";
 
+type RefactoringPlaybookPhase = {
+  title: string;
+  objective: string;
+  steps: string[];
+  verification_checks: string[];
+};
+
+type RefactoringPlaybook = {
+  problem_summary: string;
+  impact: string;
+  recommended_strategy: string;
+  phases: RefactoringPlaybookPhase[];
+  verification_checks: string[];
+  rollback_plan: string[];
+  risks: string[];
+  estimated_effort: string;
+  related_services: string[];
+  related_findings: string[];
+  source: string;
+};
+
 type RoadmapAction = {
   id: string;
   title: string;
@@ -252,6 +273,7 @@ type RoadmapAction = {
     service_health_pressure?: number;
     impacted_dimensions?: string[];
   };
+  playbook?: RefactoringPlaybook | null;
 };
 
 type RoadmapDependency = {
@@ -2826,11 +2848,64 @@ function RoadmapBucketColumn({
                   {action.metrics.impacted_dimensions.map((dimension) => <code key={dimension}>{formatType(dimension)}</code>)}
                 </div>
               ) : null}
+              {action.playbook ? <RefactoringPlaybookDetails playbook={action.playbook} /> : null}
             </article>
           ))}
         </div>
       ) : null}
     </section>
+  );
+}
+
+function RefactoringPlaybookDetails({ playbook }: { playbook: RefactoringPlaybook }) {
+  return (
+    <details className="playbookDetails">
+      <summary>
+        <span>Refactoring playbook</span>
+        <small>{playbook.estimated_effort}</small>
+      </summary>
+      <div className="playbookBody">
+        <div className="playbookBlock">
+          <strong>Strategy</strong>
+          <p>{playbook.recommended_strategy}</p>
+        </div>
+        <div className="playbookPhaseList">
+          {playbook.phases.map((phase) => (
+            <article key={phase.title} className="playbookPhase">
+              <strong>{phase.title}</strong>
+              <p>{phase.objective}</p>
+              <ul>
+                {phase.steps.map((step) => <li key={step}>{step}</li>)}
+              </ul>
+              {phase.verification_checks.length ? (
+                <div className="playbookChecks">
+                  {phase.verification_checks.map((check) => <span key={check}>{check}</span>)}
+                </div>
+              ) : null}
+            </article>
+          ))}
+        </div>
+        <div className="playbookGrid">
+          <PlaybookList title="Verification" items={playbook.verification_checks} />
+          <PlaybookList title="Rollback" items={playbook.rollback_plan} />
+          <PlaybookList title="Risks" items={playbook.risks} />
+        </div>
+      </div>
+    </details>
+  );
+}
+
+function PlaybookList({ title, items }: { title: string; items: string[] }) {
+  if (!items.length) {
+    return null;
+  }
+  return (
+    <div className="playbookList">
+      <strong>{title}</strong>
+      <ul>
+        {items.map((item) => <li key={item}>{item}</li>)}
+      </ul>
+    </div>
   );
 }
 

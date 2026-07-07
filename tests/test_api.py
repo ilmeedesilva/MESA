@@ -370,6 +370,23 @@ policies:
         action["title"].lower().startswith("break the dependency cycle")
         for action in roadmap["high_effort_refactors"]
     )
+    all_actions = (
+        roadmap["quick_wins"]
+        + roadmap["medium_term_changes"]
+        + roadmap["high_effort_refactors"]
+    )
+    assert all(action["playbook"] for action in all_actions)
+    for action in all_actions:
+        playbook = action["playbook"]
+        assert playbook["problem_summary"] == action["summary"]
+        assert playbook["recommended_strategy"]
+        assert playbook["estimated_effort"]
+        assert len(playbook["phases"]) == 3
+        assert playbook["verification_checks"]
+        assert playbook["rollback_plan"]
+        assert playbook["risks"]
+        assert playbook["related_findings"] == action["related_findings"]
+        assert playbook["related_services"] == action["affected_services"]
 
     del app.state.persistence_repository
 
