@@ -7,6 +7,7 @@ from typing import Any
 
 import yaml
 
+from mesa.detectors.evidence import evidence_chain_item
 from mesa.models import AnalysisResult, Finding, FindingType, PolicyCreate, PolicyRecord, Severity
 
 _RULE_PATTERN = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)\s*(==|!=|<=|>=|<|>)\s*(.+)$")
@@ -171,6 +172,40 @@ def _policy_finding(
             "Bring the architecture back within the configured governance policy, then re-run "
             "MESA to verify the policy violation is resolved."
         ),
+        detector_name="GovernancePolicyEngine",
+        rule_id=f"governance-policy.{metric}",
+        evidence_chain=[
+            evidence_chain_item(
+                "parse_policy_rule",
+                f"Parsed governance policy rule '{metric} {op} {expected}'.",
+                data={"policy_id": policy.id, "policy_name": policy.name},
+            ),
+            evidence_chain_item(
+                "evaluate_metric",
+                f"Compared actual value {actual} against expected rule {metric} {op} {expected}.",
+                data={
+                    "metric": metric,
+                    "operator": op,
+                    "expected": expected,
+                    "actual": actual,
+                    "scope": scope,
+                },
+            ),
+        ],
+        confidence_reason=(
+            "Confidence is very high because the violation is produced by a deterministic "
+            "comparison between a configured policy rule and a measured MESA metric."
+        ),
+        limitations=[
+            "A policy violation may indicate that the policy threshold needs adjustment for this project context.",
+            "The engine reports rule failure; it does not decide whether the architecture exception is acceptable.",
+        ],
+        source_files=[],
+        related_services=services,
+        why_valid=(
+            f"The configured policy '{policy.name}' expected {metric} {op} {expected}, "
+            f"but MESA measured {actual} for {scope}."
+        ),
     )
 
 
@@ -184,6 +219,32 @@ def _unsupported_policy_finding(policy: PolicyRecord, metric: str) -> Finding:
         description=f"Governance policy '{policy.name}' uses unsupported metric '{metric}'.",
         evidence=[{"policy_id": policy.id, "rule": policy.rule, "metric": metric}],
         recommendation="Update the policy to use a supported MESA governance metric.",
+        detector_name="GovernancePolicyEngine",
+        rule_id="governance-policy.unsupported-metric",
+        evidence_chain=[
+            evidence_chain_item(
+                "parse_policy_rule",
+                f"Parsed governance policy rule '{policy.rule}'.",
+                data={"policy_id": policy.id, "policy_name": policy.name},
+            ),
+            evidence_chain_item(
+                "validate_metric",
+                f"Metric '{metric}' is not supported by the current governance engine.",
+                data={"metric": metric},
+            ),
+        ],
+        confidence_reason=(
+            "Confidence is based on deterministic policy parsing and supported metric validation."
+        ),
+        limitations=[
+            "This finding identifies unsupported policy syntax rather than an architecture defect.",
+        ],
+        source_files=[],
+        related_services=[],
+        why_valid=(
+            f"The policy '{policy.name}' references unsupported metric '{metric}', so MESA "
+            "cannot evaluate the intended governance rule."
+        ),
     )
 
 
