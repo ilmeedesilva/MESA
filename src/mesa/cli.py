@@ -9,7 +9,9 @@ from rich.table import Table
 
 from mesa import __version__
 from mesa.analysis import analyze_services
+from mesa.analysis.fitness_gate import evaluate_architecture_gate
 from mesa.evaluation import evaluate_benchmark, export_evaluation
+from mesa.models import AnalysisResult, ArchitectureGateThresholds
 
 app = typer.Typer(help="MESA cross-service static architecture analyzer.")
 console = Console()
@@ -35,6 +37,37 @@ def analyze(
         return
 
     _print_console_report(result.model_dump())
+
+
+@app.command()
+def gate(
+    service_paths: list[Path] = typer.Argument(..., help="Service directories to analyze."),
+    chatty_threshold: int = typer.Option(3, help="Static call-site threshold for chatty services."),
+    minimum_health_score: float = typer.Option(75.0, help="Minimum allowed system health score."),
+    maximum_critical_findings: int = typer.Option(0, help="Maximum allowed critical findings."),
+    baseline_report: Path | None = typer.Option(
+        None,
+        "--baseline-report",
+        help="Optional previous MESA JSON report for new-risk comparison.",
+    ),
+    output: Path | None = typer.Option(None, "--output", "-o", help="Write gate JSON to file."),
+    fail: bool = typer.Option(True, "--fail/--no-fail", help="Exit with code 1 when the gate fails."),
+) -> None:
+    result = analyze_services([str(path) for path in service_paths], chatty_threshold)
+    baseline = _load_analysis_report(baseline_report) if baseline_report else None
+    thresholds = ArchitectureGateThresholds(
+        minimum_health_score=minimum_health_score,
+        maximum_critical_findings=maximum_critical_findings,
+    )
+    gate_result = evaluate_architecture_gate(result, thresholds=thresholds, baseline=baseline)
+    payload = gate_result.model_dump_json(indent=2)
+    if output:
+        output.write_text(payload, encoding="utf-8")
+        console.print(f"Wrote gate result to {output}")
+    else:
+        console.print_json(payload)
+    if fail and gate_result.status.value == "failed":
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -98,6 +131,13 @@ def _print_console_report(result: dict) -> None:
         )
     console.print(table)
     console.print_json(json.dumps(result["summary"]))
+
+
+def _load_analysis_report(path: Path) -> AnalysisResult:
+    try:
+        return AnalysisResult.model_validate_json(path.read_text(encoding="utf-8"))
+    except Exception as error:
+        raise typer.BadParameter(f"Could not read baseline report '{path}': {error}") from error
 
 
 if __name__ == "__main__":

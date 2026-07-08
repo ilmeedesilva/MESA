@@ -16,6 +16,7 @@ from mesa.analysis.explainer import (
     grounded_response_for_request,
     stream_answer_text,
 )
+from mesa.analysis.fitness_gate import evaluate_architecture_gate
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
 from mesa.analysis.research_records import export_records, record_create_from_scan
 from mesa.analysis.roadmap import build_remediation_roadmap
@@ -25,6 +26,9 @@ from mesa.models import (
     AIExplainerStatus,
     AIExplainerRequest,
     AIExplainerResponse,
+    ArchitectureFitnessGateRequest,
+    ArchitectureFitnessGateResult,
+    ArchitectureGateThresholds,
     AnalysisRequest,
     AnalysisResult,
     EvolutionReport,
@@ -395,6 +399,28 @@ def get_scan_remediation_roadmap(scan_id: str, request: Request) -> RemediationR
     return build_remediation_roadmap(scan_id, result)
 
 
+@app.get("/scans/{scan_id}/gate", response_model=ArchitectureFitnessGateResult)
+def get_scan_architecture_gate(
+    scan_id: str,
+    request: Request,
+    minimum_health_score: float = 75.0,
+    maximum_critical_findings: int = 0,
+    baseline_scan_id: str | None = None,
+) -> ArchitectureFitnessGateResult:
+    thresholds = ArchitectureGateThresholds(
+        minimum_health_score=minimum_health_score,
+        maximum_critical_findings=maximum_critical_findings,
+    )
+    return _evaluate_scan_gate(scan_id, request, thresholds, baseline_scan_id)
+
+
+@app.post("/scans/{scan_id}/gate", response_model=ArchitectureFitnessGateResult)
+def post_scan_architecture_gate(
+    scan_id: str, payload: ArchitectureFitnessGateRequest, request: Request
+) -> ArchitectureFitnessGateResult:
+    return _evaluate_scan_gate(scan_id, request, payload.thresholds, payload.baseline_scan_id)
+
+
 @app.post("/ai/explainer", response_model=AIExplainerResponse)
 def explain_scan_results(payload: AIExplainerRequest, request: Request) -> AIExplainerResponse:
     result, scores, policies, comparison = _load_ai_context(payload, request)
@@ -500,6 +526,35 @@ def _count_by(items: list, attr: str) -> dict[str, int]:
         key = value.value if hasattr(value, "value") else str(value)
         counts[key] = counts.get(key, 0) + 1
     return counts
+
+
+def _evaluate_scan_gate(
+    scan_id: str,
+    request: Request,
+    thresholds: ArchitectureGateThresholds,
+    baseline_scan_id: str | None,
+) -> ArchitectureFitnessGateResult:
+    repository = get_repository(request)
+    if repository.get_scan(scan_id) is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    result = repository.get_scan_result(scan_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Scan report not found")
+
+    baseline = None
+    if baseline_scan_id:
+        if repository.get_scan(baseline_scan_id) is None:
+            raise HTTPException(status_code=404, detail="Baseline scan not found")
+        baseline = repository.get_scan_result(baseline_scan_id)
+        if baseline is None:
+            raise HTTPException(status_code=404, detail="Baseline scan report not found")
+
+    return evaluate_architecture_gate(
+        result,
+        thresholds=thresholds,
+        baseline=baseline,
+        baseline_scan_id=baseline_scan_id,
+    )
 
 
 def _load_ai_context(

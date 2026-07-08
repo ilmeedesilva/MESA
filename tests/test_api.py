@@ -171,6 +171,59 @@ def test_project_scan_persistence_endpoints() -> None:
     assert roadmap["summary"]
     assert roadmap["suggested_order"]
 
+    gate_response = client.get(f"/scans/{scan_id}/gate")
+    assert gate_response.status_code == 200
+    gate = gate_response.json()
+    assert gate["status"] in {"passed", "failed"}
+    assert gate["threshold"] == 75.0
+    assert len(gate["rules"]) == 5
+
+    del app.state.persistence_repository
+
+
+def test_scan_architecture_gate_supports_custom_thresholds() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Gate Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    default_response = client.get(f"/scans/{scan_id}/gate")
+    assert default_response.status_code == 200
+    default_gate = default_response.json()
+    assert default_gate["status"] == "failed"
+    assert "cyclic_dependency_detected" in default_gate["failed_rules"]
+
+    relaxed_response = client.post(
+        f"/scans/{scan_id}/gate",
+        json={
+            "thresholds": {
+                "minimum_health_score": 0,
+                "maximum_critical_findings": 10,
+                "allow_new_cyclic_dependencies": True,
+                "allow_governance_violations": True,
+                "allow_new_high_risk_coupling": True,
+            }
+        },
+    )
+    assert relaxed_response.status_code == 200
+    relaxed_gate = relaxed_response.json()
+    assert relaxed_gate["status"] == "passed"
+    assert relaxed_gate["failed_rules"] == []
+
     del app.state.persistence_repository
 
 

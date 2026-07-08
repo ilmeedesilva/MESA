@@ -88,6 +88,8 @@ GET /scans/{scan_id}
 GET /scans/{scan_id}/findings
 GET /scans/{scan_id}/scores
 GET /scans/{scan_id}/roadmap
+GET /scans/{scan_id}/gate
+POST /scans/{scan_id}/gate
 ```
 
 Repository-backed project scan example:
@@ -136,6 +138,35 @@ The roadmap groups multiple findings into:
 - high-effort refactors
 - suggested execution order
 - dependencies between actions
+
+## Architecture Fitness Gate
+
+```text
+GET /scans/{scan_id}/gate
+POST /scans/{scan_id}/gate
+```
+
+The default gate evaluates whether a scan is suitable for CI/CD promotion. It checks:
+
+- minimum system health score
+- maximum critical findings
+- cyclic dependencies
+- governance policy violations
+- high-risk service coupling
+
+Custom threshold example:
+
+```json
+{
+  "thresholds": {
+    "minimum_health_score": 80,
+    "maximum_critical_findings": 0,
+    "allow_new_cyclic_dependencies": false,
+    "allow_governance_violations": false,
+    "allow_new_high_risk_coupling": false
+  }
+}
+```
 
 ## Governance APIs
 
