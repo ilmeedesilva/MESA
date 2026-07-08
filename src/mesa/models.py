@@ -218,6 +218,44 @@ class AnalysisResult(BaseModel):
     summary: dict[str, Any]
 
 
+class ArchitectureGateStatus(str, Enum):
+    PASSED = "passed"
+    FAILED = "failed"
+
+
+class ArchitectureGateThresholds(BaseModel):
+    minimum_health_score: float = Field(default=75.0, ge=0.0, le=100.0)
+    maximum_critical_findings: int = Field(default=0, ge=0)
+    allow_new_cyclic_dependencies: bool = False
+    allow_governance_violations: bool = False
+    allow_new_high_risk_coupling: bool = False
+
+
+class ArchitectureGateRuleResult(BaseModel):
+    rule_id: str
+    passed: bool
+    message: str
+    observed_value: Any = None
+    threshold: Any = None
+    related_findings: list[str] = Field(default_factory=list)
+
+
+class ArchitectureFitnessGateResult(BaseModel):
+    status: ArchitectureGateStatus
+    health_score: float | None = None
+    threshold: float
+    failed_rules: list[str] = Field(default_factory=list)
+    rules: list[ArchitectureGateRuleResult] = Field(default_factory=list)
+    thresholds: ArchitectureGateThresholds = Field(default_factory=ArchitectureGateThresholds)
+    baseline_scan_id: str | None = None
+    source: str = "mesa-architecture-fitness-gate"
+
+
+class ArchitectureFitnessGateRequest(BaseModel):
+    thresholds: ArchitectureGateThresholds = Field(default_factory=ArchitectureGateThresholds)
+    baseline_scan_id: str | None = None
+
+
 class AIExplainerIntent(str, Enum):
     AUTO = "AUTO"
     SCAN_SUMMARY = "SCAN_SUMMARY"
