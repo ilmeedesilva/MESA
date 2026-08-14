@@ -374,7 +374,19 @@ type WorkflowStep = {
 };
 
 type InterpretationMode = "beginner" | "research";
-type WorkspaceView = "analysis" | "research" | "docs";
+type AppSection =
+  | "overview"
+  | "scan"
+  | "services"
+  | "findings"
+  | "graph"
+  | "history"
+  | "evolution"
+  | "roadmap"
+  | "ai"
+  | "evaluation"
+  | "policies"
+  | "docs";
 type ApiAvailability = "checking" | "online" | "offline";
 type ProjectListStatus = "idle" | "loading" | "ready" | "error";
 type AIExplainerIntent =
@@ -491,6 +503,68 @@ const severityRank: Record<string, number> = {
   LOW: 1
 };
 
+const appNavigation = [
+  {
+    group: "Project",
+    items: [
+      { id: "overview", label: "Overview", description: "Project summary and quick actions" }
+    ]
+  },
+  {
+    group: "Analysis",
+    items: [
+      { id: "scan", label: "Scan", description: "Configure sources and run scans" },
+      { id: "services", label: "Services", description: "Review discovered and selected services" },
+      { id: "findings", label: "Findings", description: "Inspect findings and filters" },
+      { id: "graph", label: "Graph", description: "Explore architecture and health" },
+      { id: "ai", label: "AI Explainer", description: "Ask grounded questions about the scan" }
+    ]
+  },
+  {
+    group: "Results",
+    items: [
+      { id: "history", label: "Scan History", description: "Review previous scans" },
+      { id: "evolution", label: "Evolution", description: "Compare architecture changes" },
+      { id: "roadmap", label: "Roadmap", description: "Recommended remediation order" }
+    ]
+  },
+  {
+    group: "Research",
+    items: [
+      { id: "evaluation", label: "Evaluation", description: "Research evidence and validation" }
+    ]
+  },
+  {
+    group: "Configuration",
+    items: [
+      { id: "policies", label: "Policies", description: "Governance rules and policy YAML" }
+    ]
+  },
+  {
+    group: "Reference",
+    items: [
+      { id: "docs", label: "Documentation", description: "Guides and methodology" }
+    ]
+  }
+] as const satisfies ReadonlyArray<{
+  group: string;
+  items: ReadonlyArray<{ id: AppSection; label: string; description: string }>;
+}>;
+
+const sectionsRequiringProject = new Set<AppSection>([
+  "overview",
+  "scan",
+  "services",
+  "findings",
+  "graph",
+  "history",
+  "evolution",
+  "roadmap",
+  "ai",
+  "evaluation",
+  "policies"
+]);
+
 function App() {
   const [projects, setProjects] = React.useState<ProjectRecord[]>([]);
   const [projectListStatus, setProjectListStatus] = React.useState<ProjectListStatus>("idle");
@@ -532,7 +606,7 @@ function App() {
   const [showSetupWorkspace, setShowSetupWorkspace] = React.useState(true);
   const [hasAutoCollapsedSetup, setHasAutoCollapsedSetup] = React.useState(false);
   const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");
-  const [workspaceView, setWorkspaceView] = React.useState<WorkspaceView>("analysis");
+  const [currentSection, setCurrentSection] = React.useState<AppSection>(readSectionFromUrl());
   const [apiAvailability, setApiAvailability] = React.useState<ApiAvailability>("checking");
   const [isPublicDemoMode, setIsPublicDemoMode] = React.useState(false);
   const [isLoadingProjectState, setIsLoadingProjectState] = React.useState(false);
@@ -556,6 +630,7 @@ function App() {
   const projectListRequestRef = React.useRef(0);
   const projectStateRequestRef = React.useRef(0);
   const scanRequestRef = React.useRef(0);
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const projectStateAbortRef = React.useRef<AbortController | null>(null);
   const scanAbortRef = React.useRef<AbortController | null>(null);
 
@@ -566,6 +641,7 @@ function App() {
     const handlePopState = () => {
       if (isPublicDemoMode && apiAvailability !== "online") return;
       setSelectedProjectId(readProjectIdFromUrl());
+      setCurrentSection(readSectionFromUrl());
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -573,7 +649,7 @@ function App() {
 
   React.useEffect(() => {
     if (!selectedProjectId) {
-      syncProjectIdToUrl("", "replace");
+      syncAppStateToUrl("", currentSection, "replace");
       cancelProjectRequests();
       resetProjectScanFlowState();
       setHistory([]);
@@ -588,7 +664,7 @@ function App() {
       return;
     }
     if (isPublicDemoMode && isPublicDemoProject(selectedProjectId)) {
-      syncProjectIdToUrl(selectedProjectId, "replace");
+      syncAppStateToUrl(selectedProjectId, currentSection, "replace");
       setHistory(demoWorkspace.scans as unknown as ScanRecord[]);
       setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
       setPolicyCount(demoWorkspace.policies.length);
@@ -598,9 +674,9 @@ function App() {
       }
       return;
     }
-    syncProjectIdToUrl(selectedProjectId, "replace");
+    syncAppStateToUrl(selectedProjectId, currentSection, "replace");
     void loadSelectedProjectState(selectedProjectId);
-  }, [apiAvailability, isPublicDemoMode, selectedProjectId]);
+  }, [apiAvailability, currentSection, isPublicDemoMode, selectedProjectId]);
 
   React.useEffect(() => {
     void loadAIStatus();
@@ -617,8 +693,15 @@ function App() {
   }, [apiAvailability, isPublicDemoMode]);
 
   React.useEffect(() => {
-    if (workspaceView === "research") void loadResearchRecords();
-  }, [workspaceView]);
+    if (currentSection === "evaluation") void loadResearchRecords();
+  }, [currentSection]);
+
+  React.useEffect(() => {
+    const handleResize = () => setSidebarCollapsed(window.innerWidth < 1100);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const aggregatedEdges = React.useMemo(
     () => (displayGraph ? aggregateEdges(displayGraph.edges) : []),
@@ -696,7 +779,7 @@ function App() {
     setSelectedProjectId(projectId);
     setShowCreateProjectForm(false);
     setShowSetupWorkspace(true);
-    syncProjectIdToUrl(projectId, historyMode);
+    syncAppStateToUrl(projectId, currentSection, historyMode);
   }
 
   async function loadProjects(options?: {
@@ -720,7 +803,7 @@ function App() {
       if (resolvedProjectId !== selectedProjectId) {
         updateSelectedProject(resolvedProjectId, options?.historyMode ?? "replace");
       } else if (!resolvedProjectId) {
-        syncProjectIdToUrl("", options?.historyMode ?? "replace");
+        syncAppStateToUrl("", currentSection, options?.historyMode ?? "replace");
       }
     } catch (caught) {
       if (requestId !== projectListRequestRef.current || isAbortError(caught)) return;
@@ -1199,7 +1282,7 @@ function App() {
       setResearchRecords(records);
       setSelectedResearchRecordId((current) => current || records[0]?.id || "");
     } catch (caught) {
-      if (workspaceView === "research") setError(messageFor(caught, "Could not load research records"));
+      if (currentSection === "evaluation") setError(messageFor(caught, "Could not load research records"));
     } finally {
       setIsLoadingResearchRecords(false);
     }
@@ -1223,7 +1306,7 @@ function App() {
       });
       setResearchRecords((current) => [record, ...current.filter((item) => item.id !== record.id)]);
       setSelectedResearchRecordId(record.id);
-      setWorkspaceView("research");
+      setCurrentSection("evaluation");
     } catch (caught) {
       setError(messageFor(caught, "Could not create research record from scan"));
     } finally {
@@ -1452,8 +1535,6 @@ function App() {
   ];
   const pendingWorkflowSteps = workflowSteps.filter((step) => !step.done);
   const activeWorkflowStep = workflowSteps.find((step) => step.active) ?? pendingWorkflowSteps[0] ?? workflowSteps[workflowSteps.length - 1];
-  const activeSetupStepIndex = Math.max(0, workflowSteps.findIndex((step) => step.id === activeSetupStepId));
-  const activeSetupStep = workflowSteps[activeSetupStepIndex] ?? workflowSteps[0];
 
   React.useEffect(() => {
     if (!workflowSteps.some((step) => step.id === activeSetupStepId)) {
@@ -1466,9 +1547,27 @@ function App() {
     setShowSetupWorkspace(true);
   }
 
+  function focusWorkflowStep(stepId: WorkflowStep["id"]) {
+    openSetupStep(stepId);
+    if (stepId === "review") {
+      navigateToSection("services");
+      return;
+    }
+    if (stepId === "policies") {
+      navigateToSection("policies");
+      return;
+    }
+    navigateToSection("scan");
+  }
+
+  function navigateToSection(section: AppSection, historyMode: "push" | "replace" = "push") {
+    setCurrentSection(section);
+    syncAppStateToUrl(selectedProjectId, section, historyMode);
+  }
+
   function openDoc(slug: string) {
     setSelectedDocSlug(slug);
-    setWorkspaceView("docs");
+    navigateToSection("docs");
   }
 
   function openCreateProjectFlow() {
@@ -1476,7 +1575,7 @@ function App() {
     setHasAutoCollapsedSetup(false);
     setActiveSetupStepId("project");
     setShowCreateProjectForm(true);
-    setWorkspaceView("analysis");
+    navigateToSection("scan");
   }
 
   function handleTopProjectSelection(nextValue: string) {
@@ -1531,543 +1630,646 @@ function App() {
 
   const backendUnavailable = apiAvailability === "offline";
   const usingEmbeddedDemo = isPublicDemoMode && backendUnavailable;
+  const navigationItems = appNavigation.flatMap((group) => group.items.map((item) => ({ ...item, group: group.group })));
+  const currentSectionMeta = navigationItems.find((item) => item.id === currentSection) ?? navigationItems[0];
+  const sectionNeedsProject = sectionsRequiringProject.has(currentSection);
+  const sourceLabel = sourceLocation.trim() ? sourceLocation.trim() : "Manual service paths";
+  const activeScanDateLabel = activeScan ? formatDate(activeScan.completed_at ?? activeScan.created_at) : "No scan yet";
 
-  return (
-    <main>
-      <section className="toolbar">
-        <div>
-          <div className="eyebrow">Guided Architecture Scan Workflow</div>
-          <h1>MESA</h1>
-          <p>Move from project setup to source review, service discovery, governance, and architecture results.</p>
+  function renderProjectSelectionPanel() {
+    return (
+      <section className="panelBlock">
+        <div className="panelHeader compact">
+          <h2>Project Selection</h2>
+          <span>{projects.length} available</span>
         </div>
-        <div className="toolbarActions">
-          <div className="workspaceTabs">
-            <button
-              type="button"
-              className={workspaceView === "analysis" ? "toolbarTab active" : "toolbarTab"}
-              onClick={() => setWorkspaceView("analysis")}
-            >
-              Analysis
-            </button>
-            <button
-              type="button"
-              className={workspaceView === "docs" ? "toolbarTab active" : "toolbarTab"}
-              onClick={() => setWorkspaceView("docs")}
-            >
-              Documentation
-            </button>
-            <button
-              type="button"
-              className={workspaceView === "research" ? "toolbarTab active" : "toolbarTab"}
-              onClick={() => setWorkspaceView("research")}
-            >
-              Research Evaluation
-            </button>
-          </div>
-          <div className="toolbarProjectShell">
-            <label className="toolbarProjectPicker">
-              <span>Project</span>
-              <select
-                value={selectedProjectId}
-                onChange={(event) => handleTopProjectSelection(event.target.value)}
-                disabled={projectListStatus === "loading" && !isPublicDemoMode}
-              >
-                <option value="">Select project</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-                {!isPublicDemoMode ? <option value="__create_new__">+ Create New Project</option> : null}
-              </select>
-            </label>
-            <div className="toolbarProjectMeta">
-              <strong>
-                {isLoadingProjectState
-                  ? "Loading project..."
-                  : selectedProject
-                    ? selectedProject.name
-                    : "No project selected"}
-              </strong>
-              <small>
-                {projectListStatus === "loading"
-                  ? "Refreshing project list"
-                  : `${projects.length} available project${projects.length === 1 ? "" : "s"}`}
-              </small>
-            </div>
-          </div>
-          <button onClick={runScan} disabled={isScanning || !selectedProject || workspaceView !== "analysis" || usingEmbeddedDemo}>
-            {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
-          </button>
-        </div>
-      </section>
-
-      <PublicDemoBanner
-        apiAvailability={apiAvailability}
-        isPublicDemoMode={isPublicDemoMode}
-        usingEmbeddedDemo={usingEmbeddedDemo}
-        onActivateDemo={() => activatePublicDemo()}
-        onLeaveDemo={() => leavePublicDemo()}
-        onOpenDoc={openDoc}
-      />
-
-      {workspaceView === "analysis" ? (
-        <>
-      <section className="workflowHero">
-        <div className="topControlGrid">
-          <section className="workflowTrackPanel">
-            <div className="workflowSummary">
-              <div>
-                <div className="eyebrow">Next Action</div>
-                <h2>Guided Scan Flow</h2>
-                <p>{nextAction}</p>
-                <div className="docLinks">
-                  <DocLinkButton label="Evaluator quick start" onClick={() => openDoc("evaluator-quick-start")} />
-                  <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
-                </div>
+        <div className="projectStepLayout">
+          <section className="projectSelectionPanel">
+            <div className="projectChoiceHeader">
+              <div className="stepHintCard compact">
+                Select an existing project to restore its scan flow, or create a new project to start fresh.
               </div>
-              <div className="workflowActions">
-                <div className="workflowStatus">
-                  <strong>{workflowSteps.filter((step) => step.done).length}/{workflowSteps.length}</strong>
-                  <span>steps ready</span>
-                </div>
-                <button
-                  type="button"
-                  className="workflowToggle"
-                  onClick={() => setShowSetupWorkspace((current) => !current)}
-                >
-                  {showSetupWorkspace ? "Hide setup workspace" : "Show setup workspace"}
-                </button>
-              </div>
-            </div>
-            <div className="workflowFlow">
-              {workflowSteps.map((step, index) => (
-                <button
-                  key={step.id}
-                  type="button"
-                  className={`workflowNode ${step.done ? "done" : ""} ${step.id === activeSetupStepId ? "current" : ""} ${step.active ? "active" : ""} ${step.optional ? "optional" : ""}`}
-                  onClick={() => openSetupStep(step.id)}
-                >
-                  <small>Step {index + 1}</small>
-                  <strong>{step.label}</strong>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="interpretationPanel">
-            <div className="interpretationIntro">
-              <div className="eyebrow">Result Interpretation</div>
-              <h2>Choose how to read this scan</h2>
-              <p>
-                Switch between a guided plain-language view and a deeper research-oriented explanation without changing
-                the underlying detector results.
-              </p>
-              <div className="docLinks">
-                <DocLinkButton label="Findings guide" onClick={() => openDoc("findings-guide")} />
-              </div>
-            </div>
-            <div className="modeToggle" role="tablist" aria-label="Interpretation mode">
               <button
                 type="button"
-                className={interpretationMode === "beginner" ? "modeButton active" : "modeButton"}
-                onClick={() => setInterpretationMode("beginner")}
+                className={showCreateProjectForm ? "secondaryButton activeInlineButton" : "secondaryButton"}
+                onClick={() => setShowCreateProjectForm((current) => !current)}
               >
-                <small>Recommended</small>
-                <strong>Beginner</strong>
-                <span>Plain language explanations, impact, and the best first action.</span>
-              </button>
-              <button
-                type="button"
-                className={interpretationMode === "research" ? "modeButton active" : "modeButton"}
-                onClick={() => setInterpretationMode("research")}
-              >
-                <small>Detailed</small>
-                <strong>Research</strong>
-                <span>Detector labels, richer evidence detail, and technical context.</span>
+                {showCreateProjectForm ? "Hide Create Project" : "Create New Project"}
               </button>
             </div>
-          </section>
-        </div>
-      </section>
-
-      <section className="dashboardShell">
-        {showSetupWorkspace ? (
-          <section className="setupWorkspace">
-            <div className="setupWorkspaceHeader">
-              <div>
-                <div className="eyebrow">Setup Workspace</div>
-                <h2>{hasCompletedScan ? "Update project inputs when you need to rescan" : "Move through the setup steps in order"}</h2>
-                <p>
-                  {hasCompletedScan
-                    ? "Your existing results stay available below. Reopen this area only when you want to change sources, services, policies, or run a fresh scan."
-                    : "Use these cards from left to right to create a project, choose a source, review services, add policies, and run the scan."}
-                </p>
-              </div>
-              <div className="setupWorkspaceStatus">
-                <strong>{`Step ${activeSetupStepIndex + 1}. ${activeSetupStep.label}`}</strong>
-                <span>{activeSetupStep.description}</span>
-              </div>
-            </div>
-
-            <div className="setupStepNav">
-              <button
-                type="button"
-                className="secondaryButton"
-                onClick={() => openSetupStep(workflowSteps[Math.max(0, activeSetupStepIndex - 1)].id)}
-                disabled={activeSetupStepIndex === 0}
-              >
-                Previous step
-              </button>
-              <span>{`${activeSetupStepIndex + 1} of ${workflowSteps.length}`}</span>
-              <button
-                type="button"
-                onClick={() => openSetupStep(workflowSteps[Math.min(workflowSteps.length - 1, activeSetupStepIndex + 1)].id)}
-                disabled={activeSetupStepIndex === workflowSteps.length - 1}
-              >
-                Next step
-              </button>
-            </div>
-
-            <div className="sideRail singleStep">
-              {activeSetupStepId === "project" ? (
-                <section className="panelBlock">
-            <div className="panelHeader compact">
-              <h2>Step 1. Project</h2>
-              <span>{projects.length} available</span>
-            </div>
-            <div className="projectStepLayout">
-              <section className="projectSelectionPanel">
-                <div className="projectChoiceHeader">
-                  <div className="stepHintCard compact">
-                    Select an existing project to restore its scan flow, or create a new project to start fresh.
-                  </div>
-                  <button
-                    type="button"
-                    className={showCreateProjectForm ? "secondaryButton activeInlineButton" : "secondaryButton"}
-                    onClick={() => setShowCreateProjectForm((current) => !current)}
-                  >
-                    {showCreateProjectForm ? "Hide Create Project" : "Create New Project"}
-                  </button>
-                </div>
-                <label htmlFor="projectSelect">Select existing project</label>
-                <select
-                  id="projectSelect"
-                  value={selectedProjectId}
-                  onChange={(event) => updateSelectedProject(event.target.value, "push")}
-                  disabled={isCreating || projectListStatus === "loading"}
-                >
-                  <option value="">Choose a project</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>{project.name}</option>
-                  ))}
-                </select>
-                {selectedProject ? (
-                  <div className="selectedProjectSummary">
-                    <strong>Selected</strong>
-                    <span>{selectedProject.name}</span>
-                    <small>{selectedProject.description || "Saved project ready to restore and rescan."}</small>
-                  </div>
-                ) : null}
-                {projectListStatus === "loading" ? <p className="hint">Loading existing projects...</p> : null}
-                {projectListStatus === "error" && projectListError ? <div className="error">{projectListError}</div> : null}
-                {projectListStatus === "ready" && projects.length === 0 ? (
-                  <div className="stepHintCard">
-                    No projects exist yet. Create a project to start a fresh scan workflow.
-                  </div>
-                ) : null}
-                {projects.length > 0 ? (
-                  <div className="projectQuickList">
-                    {projects.map((project) => (
-                      <button
-                        key={project.id}
-                        type="button"
-                        className={selectedProjectId === project.id ? "projectQuickButton active" : "projectQuickButton"}
-                        onClick={() => updateSelectedProject(project.id, "push")}
-                      >
-                        <strong>{project.name}</strong>
-                        <small>{project.description || "Open saved setup and scan history"}</small>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </section>
-              {showCreateProjectForm ? (
-                <section className="projectCreatePanel">
-                  <div className="panelHeader compact">
-                    <h3>Create New Project</h3>
-                    <span>Fresh setup</span>
-                  </div>
-                  <label htmlFor="projectName">Project name</label>
-                  <input id="projectName" value={projectName} onChange={(event) => setProjectName(event.target.value)} />
-                  <label htmlFor="projectDescription">Description</label>
-                  <input id="projectDescription" value={projectDescription} onChange={(event) => setProjectDescription(event.target.value)} />
-                  <button className="fullButton" onClick={createProject} disabled={isCreating || !projectName.trim()}>
-                    {isCreating ? "Creating..." : "Create Project"}
-                  </button>
-                </section>
-              ) : null}
-            </div>
-                </section>
-              ) : null}
-
-              {activeSetupStepId === "source" ? (
-                <section className="panelBlock">
-            <div className="panelHeader compact">
-              <h2>Step 2. Source</h2>
-              <span>{sourceLocation.trim() ? sourceType : "Manual mode"}</span>
-            </div>
-            <label htmlFor="sourceType">Repository source type</label>
+            <label htmlFor="scanProjectSelect">Select existing project</label>
             <select
-              id="sourceType"
-              value={sourceType}
-              onChange={(event) => {
-                setSourceType(event.target.value);
-                setRepoPreview(null);
-                setSelectedDiscoveryPaths([]);
-              }}
+              id="scanProjectSelect"
+              value={selectedProjectId}
+              onChange={(event) => updateSelectedProject(event.target.value, "push")}
+              disabled={isCreating || projectListStatus === "loading"}
             >
-              <option value="LOCAL_PATH">Local path</option>
-              <option value="ARCHIVE_PATH">Archive path</option>
-              <option value="GITHUB_URL">GitHub URL</option>
+              <option value="">Choose a project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>{project.name}</option>
+              ))}
             </select>
-            <label htmlFor="sourceLocation">Repository source</label>
+            {selectedProject ? (
+              <div className="selectedProjectSummary">
+                <strong>Selected</strong>
+                <span>{selectedProject.name}</span>
+                <small>{selectedProject.description || "Saved project ready to restore and rescan."}</small>
+              </div>
+            ) : null}
+            {projectListStatus === "loading" ? <p className="hint">Loading existing projects...</p> : null}
+            {projectListStatus === "error" && projectListError ? <div className="error">{projectListError}</div> : null}
+            {projectListStatus === "ready" && projects.length === 0 ? (
+              <div className="stepHintCard">
+                No projects exist yet. Create a project to start a fresh scan workflow.
+              </div>
+            ) : null}
+            {projects.length > 0 ? (
+              <div className="projectQuickList">
+                {projects.map((project) => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    className={selectedProjectId === project.id ? "projectQuickButton active" : "projectQuickButton"}
+                    onClick={() => updateSelectedProject(project.id, "push")}
+                  >
+                    <strong>{project.name}</strong>
+                    <small>{project.description || "Open saved setup and scan history"}</small>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </section>
+          {showCreateProjectForm ? (
+            <section className="projectCreatePanel">
+              <div className="panelHeader compact">
+                <h3>Create New Project</h3>
+                <span>Fresh setup</span>
+              </div>
+              <label htmlFor="projectName">Project name</label>
+              <input id="projectName" value={projectName} onChange={(event) => setProjectName(event.target.value)} />
+              <label htmlFor="projectDescription">Description</label>
+              <input id="projectDescription" value={projectDescription} onChange={(event) => setProjectDescription(event.target.value)} />
+              <button className="fullButton" onClick={createProject} disabled={isCreating || !projectName.trim()}>
+                {isCreating ? "Creating..." : "Create Project"}
+              </button>
+            </section>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
+
+  function renderSourceConfigurationPanel() {
+    return (
+      <section className="panelBlock">
+        <div className="panelHeader compact">
+          <h2>Source Configuration</h2>
+          <span>{sourceLocation.trim() ? sourceType : "Manual mode"}</span>
+        </div>
+        <label htmlFor="sourceType">Repository source type</label>
+        <select
+          id="sourceType"
+          value={sourceType}
+          onChange={(event) => {
+            setSourceType(event.target.value);
+            setRepoPreview(null);
+            setSelectedDiscoveryPaths([]);
+          }}
+        >
+          <option value="LOCAL_PATH">Local path</option>
+          <option value="ARCHIVE_PATH">Archive path</option>
+          <option value="GITHUB_URL">GitHub URL</option>
+        </select>
+        <label htmlFor="sourceLocation">Repository source</label>
+        <input
+          id="sourceLocation"
+          placeholder={
+            sourceType === "GITHUB_URL"
+              ? "https://github.com/example-org/example-repo"
+              : "/workspace/tests/fixtures/chatty"
+          }
+          value={sourceLocation}
+          onChange={(event) => {
+            setSourceLocation(event.target.value);
+            setRepoPreview(null);
+            setSelectedDiscoveryPaths([]);
+          }}
+        />
+        {sourceType === "GITHUB_URL" ? (
+          <>
+            <label htmlFor="sourceRef">Branch or ref</label>
             <input
-              id="sourceLocation"
-              placeholder={
-                sourceType === "GITHUB_URL"
-                  ? "https://github.com/example-org/example-repo"
-                  : "/workspace/tests/fixtures/chatty"
-              }
-              value={sourceLocation}
+              id="sourceRef"
+              placeholder="main"
+              value={sourceRef}
               onChange={(event) => {
-                setSourceLocation(event.target.value);
+                setSourceRef(event.target.value);
                 setRepoPreview(null);
                 setSelectedDiscoveryPaths([]);
               }}
             />
-            {sourceType === "GITHUB_URL" ? (
-              <>
-                <label htmlFor="sourceRef">Branch or ref</label>
-                <input
-                  id="sourceRef"
-                  placeholder="main"
-                  value={sourceRef}
-                  onChange={(event) => {
-                    setSourceRef(event.target.value);
-                    setRepoPreview(null);
-                    setSelectedDiscoveryPaths([]);
-                  }}
-                />
-              </>
-            ) : null}
-            <button className="fullButton" onClick={previewRepositorySource} disabled={isPreviewingRepo}>
-              {isPreviewingRepo ? "Previewing..." : "Preview Discovery"}
-            </button>
-            <p className="hint">
-              Preview shows likely services with confidence and reasons. Leave this empty to keep using manual service paths only.
-            </p>
-            {!repoPreview && sourceLocation.trim() ? (
-              <div className="stepHintCard">
-                Preview discovery to unlock the service review step and confirm what MESA will analyze.
-              </div>
-            ) : null}
-                </section>
-              ) : null}
+          </>
+        ) : null}
+        <div className="panelButtonRow">
+          <button className="secondaryButton" onClick={previewRepositorySource} disabled={isPreviewingRepo}>
+            {isPreviewingRepo ? "Previewing..." : "Preview Discovery"}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateToSection("services")}
+            disabled={!repoPreview && manualServicePaths.length === 0}
+          >
+            Review Services
+          </button>
+        </div>
+        <p className="hint">
+          Preview shows likely services with confidence and reasons. Leave this empty to keep using manual service paths only.
+        </p>
+        {!repoPreview && sourceLocation.trim() ? (
+          <div className="stepHintCard">
+            Preview discovery to unlock the service review step and confirm what MESA will analyze.
+          </div>
+        ) : null}
+      </section>
+    );
+  }
 
-              {activeSetupStepId === "review" ? (
-                <section className="panelBlock">
+  function renderServicesPanel() {
+    return (
+      <section className="panelBlock">
+        <div className="panelHeader compact">
+          <h2>Service Review</h2>
+          <span>{repoPreview ? `${selectedDiscoveryPaths.length} selected` : `${manualServicePaths.length} manual paths`}</span>
+        </div>
+        {repoPreview ? (
+          <div className="discoveryPanel discoveryPanelStandalone">
             <div className="panelHeader compact">
-              <h2>Step 3. Review Services</h2>
-              <span>{repoPreview ? `${selectedDiscoveryPaths.length} selected` : `${manualServicePaths.length} manual paths`}</span>
+              <h3>Discovered Services</h3>
+              <span>{repoPreview.discovered_services.length} candidates</span>
             </div>
-            {repoPreview ? (
-              <div className="discoveryPanel discoveryPanelStandalone">
-                <div className="panelHeader compact">
-                  <h3>Discovered Services</h3>
-                  <span>{repoPreview.discovered_services.length} candidates</span>
-                </div>
-                <div className="discoveryMeta">
-                  <span>{repoPreview.file_count} files previewed</span>
-                  <span>{selectedDiscoveryPaths.length} selected</span>
-                </div>
-                {repoPreview.warnings.length > 0 ? (
-                  <div className="warningList">
-                    {repoPreview.warnings.map((warning) => <small key={warning}>{warning}</small>)}
-                  </div>
-                ) : null}
-                {repoPreview.discovered_services.length === 0 ? (
-                  <div className="emptyInline">No service candidates detected from this source preview.</div>
-                ) : (
-                  <div className="discoveryList">
-                    {repoPreview.discovered_services.map((candidate) => {
-                      const selected = selectedDiscoveryPaths.includes(candidate.relative_path);
-                      return (
-                        <article key={candidate.relative_path} className={`discoveryCard ${selected ? "selected" : ""}`}>
-                          <label className="discoveryToggle">
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={() => toggleDiscoveredService(candidate.relative_path)}
-                            />
-                            <span>{candidate.service_name}</span>
-                          </label>
-                          <div className="discoveryStats">
-                            <strong>{Math.round(candidate.confidence * 100)}%</strong>
-                            <span>{candidate.language}</span>
-                            <small>{candidate.relative_path}</small>
-                          </div>
-                          <div className="signalTags">
-                            {candidate.manifests.map((manifest) => <code key={manifest}>{manifest}</code>)}
-                            {candidate.entrypoints.map((entrypoint) => <code key={entrypoint}>{entrypoint}</code>)}
-                          </div>
-                          <ul className="reasonList">
-                            {candidate.reasons.map((reason) => <li key={reason}>{reason}</li>)}
-                          </ul>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-                <button className="fullButton secondaryButton" onClick={applyDiscoveredServices} disabled={selectedDiscoveryPaths.length === 0}>
-                  Apply Selected Services
-                </button>
+            <div className="discoveryMeta">
+              <span>{repoPreview.file_count} files previewed</span>
+              <span>{selectedDiscoveryPaths.length} selected</span>
+            </div>
+            {repoPreview.warnings.length > 0 ? (
+              <div className="warningList">
+                {repoPreview.warnings.map((warning) => <small key={warning}>{warning}</small>)}
               </div>
+            ) : null}
+            {repoPreview.discovered_services.length === 0 ? (
+              <div className="emptyInline">No service candidates detected from this source preview.</div>
             ) : (
-              <div className="stepHintCard">
-                No repository preview is active. You can still continue with manual service paths below.
+              <div className="discoveryList">
+                {repoPreview.discovered_services.map((candidate) => {
+                  const selected = selectedDiscoveryPaths.includes(candidate.relative_path);
+                  return (
+                    <article key={candidate.relative_path} className={`discoveryCard ${selected ? "selected" : ""}`}>
+                      <label className="discoveryToggle">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleDiscoveredService(candidate.relative_path)}
+                        />
+                        <span>{candidate.service_name}</span>
+                      </label>
+                      <div className="discoveryStats">
+                        <strong>{Math.round(candidate.confidence * 100)}%</strong>
+                        <span>{candidate.language}</span>
+                        <small>{candidate.relative_path}</small>
+                      </div>
+                      <div className="signalTags">
+                        {candidate.manifests.map((manifest) => <code key={manifest}>{manifest}</code>)}
+                        {candidate.entrypoints.map((entrypoint) => <code key={entrypoint}>{entrypoint}</code>)}
+                      </div>
+                      <ul className="reasonList">
+                        {candidate.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                      </ul>
+                    </article>
+                  );
+                })}
               </div>
             )}
-            <label htmlFor="paths">Service paths</label>
-            <textarea id="paths" value={paths} onChange={(event) => setPaths(event.target.value)} />
-            <p className="hint">Manual fallback: use one service directory per line. Repository discovery can fill this automatically.</p>
-            {error ? <div className="error">{error}</div> : null}
-                </section>
-              ) : null}
+            <button className="fullButton secondaryButton" onClick={applyDiscoveredServices} disabled={selectedDiscoveryPaths.length === 0}>
+              Apply Selected Services
+            </button>
+          </div>
+        ) : (
+          <div className="stepHintCard">
+            No repository preview is active. You can still continue with manual service paths below.
+          </div>
+        )}
+        <label htmlFor="paths">Service paths</label>
+        <textarea id="paths" value={paths} onChange={(event) => setPaths(event.target.value)} />
+        <p className="hint">Manual fallback: use one service directory per line. Repository discovery can fill this automatically.</p>
+      </section>
+    );
+  }
 
-              {activeSetupStepId === "policies" ? (
-                <section className="panelBlock policyEditor">
-            <div className="panelHeader compact">
-              <h2>Step 4. Governance Policies</h2>
-              <span>{policyCount} active optional rules</span>
+  function renderPoliciesPanel() {
+    return (
+      <section className="panelBlock policyEditor">
+        <div className="panelHeader compact">
+          <h2>Governance Policies</h2>
+          <span>{policyCount} active optional rules</span>
+        </div>
+        <label htmlFor="policyText">Policy YAML</label>
+        <textarea id="policyText" value={policyText} onChange={(event) => setPolicyText(event.target.value)} />
+        <p className="hint">Policies run during project scans and violations appear as findings.</p>
+        <div className="panelButtonRow">
+          <button
+            type="button"
+            className="secondaryButton"
+            onClick={() => void requestAIExplanation("POLICY_WRITING_ASSISTANCE", { question: "Draft governance policy YAML for this project." })}
+            disabled={isExplaining || !selectedProject || !activeScan}
+          >
+            {isExplaining ? "Drafting..." : "Draft Policies With AI"}
+          </button>
+          <button type="button" onClick={() => navigateToSection("ai")} disabled={!activeScan}>
+            Open AI Explainer
+          </button>
+        </div>
+        <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProject}>
+          {isSavingPolicies ? "Saving..." : "Save Policies"}
+        </button>
+      </section>
+    );
+  }
+
+  function renderRunScanPanel() {
+    return (
+      <section className="panelBlock runStepCard">
+        <div className="panelHeader compact">
+          <h2>Run Scan</h2>
+          <span>{repoPreview ? "Repository-backed" : "Manual paths"}</span>
+        </div>
+        <p className="hint">Run the current selection to generate findings, scores, history, and graph evidence.</p>
+        <button onClick={runScan} disabled={isScanning || !selectedProject || usingEmbeddedDemo}>
+          {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
+        </button>
+      </section>
+    );
+  }
+
+  function renderInterpretationCard() {
+    return (
+      <section className="interpretationPanel">
+        <div className="interpretationIntro">
+          <div className="eyebrow">Result Interpretation</div>
+          <h2>Choose how to read this scan</h2>
+          <p>
+            Switch between a guided plain-language view and a deeper research-oriented explanation without changing
+            the underlying detector results.
+          </p>
+          <div className="docLinks">
+            <DocLinkButton label="Findings guide" onClick={() => openDoc("findings-guide")} />
+          </div>
+        </div>
+        <div className="modeToggle" role="tablist" aria-label="Interpretation mode">
+          <button
+            type="button"
+            className={interpretationMode === "beginner" ? "modeButton active" : "modeButton"}
+            onClick={() => setInterpretationMode("beginner")}
+          >
+            <small>Recommended</small>
+            <strong>Beginner</strong>
+            <span>Plain language explanations, impact, and the best first action.</span>
+          </button>
+          <button
+            type="button"
+            className={interpretationMode === "research" ? "modeButton active" : "modeButton"}
+            onClick={() => setInterpretationMode("research")}
+          >
+            <small>Detailed</small>
+            <strong>Research</strong>
+            <span>Detector labels, richer evidence detail, and technical context.</span>
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  function renderHistoryPanel() {
+    return (
+      <section className="historyPanel">
+        <div className="panelHeader compact">
+          <h2>Scan History</h2>
+          <span>{history.length} scans</span>
+        </div>
+        <button
+          type="button"
+          className="fullButton secondaryButton"
+          onClick={() => void createResearchRecordFromScan(activeScan?.id)}
+          disabled={!activeScan || isSavingResearchRecord || usingEmbeddedDemo}
+        >
+          {isSavingResearchRecord ? "Saving Record..." : "Create Research Record"}
+        </button>
+        <div className="scanList">
+          {history.length === 0 ? <div className="emptyInline">No persistent scans yet.</div> : null}
+          {history.map((scan) => (
+            <button
+              key={scan.id}
+              className={`scanItem ${activeScan?.id === scan.id ? "active" : ""}`}
+              onClick={() => void loadScan(scan.id)}
+              disabled={isLoadingScan}
+            >
+              <strong>{scan.finding_count} findings</strong>
+              <span>{scan.service_count} services</span>
+              <small>{formatDate(scan.completed_at ?? scan.created_at)}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  function renderGraphPanel() {
+    return (
+      <section className="graphPanel dashboardGraph">
+        <div className="graphHeader">
+          <div>
+            <h2>Architecture Graph</h2>
+            <p>{activeScan ? `Scan ${shortId(activeScan.id)} - ${displayGraph?.source === "digital-twin" ? "Digital Twin" : "Report Graph"}` : "Run or select a scan to build the graph"}</p>
+          </div>
+          <div className="legend">
+            <span><i className="serviceDot" /> Service</span>
+            <span><i className="apiDot" /> API</span>
+            <span><i className="databaseDot" /> Database</span>
+            <span><i className="riskLine" /> Risk</span>
+          </div>
+        </div>
+        {result ? <div ref={graphRef} className="graph" /> : <div className="emptyState">No scan selected.</div>}
+        <GraphInspector selection={selectedGraphElement} />
+      </section>
+    );
+  }
+
+  function renderOverviewWorkspace() {
+    if (!selectedProject) {
+      return (
+        <div className="workspaceStack">
+          <section className="workspaceIntroCard">
+            <div>
+              <div className="eyebrow">Start Here</div>
+              <h2>Create or select a project</h2>
+              <p>Choose an existing project to restore its saved scan state, or create a new one to start a clean analysis workflow.</p>
             </div>
-            <label htmlFor="policyText">Policy YAML</label>
-            <textarea id="policyText" value={policyText} onChange={(event) => setPolicyText(event.target.value)} />
-            <p className="hint">Policies run during project scans and violations appear as findings.</p>
-            <div className="panelButtonRow">
+            <div className="docLinks">
+              <DocLinkButton label="Evaluator quick start" onClick={() => openDoc("evaluator-quick-start")} />
+              <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
+            </div>
+          </section>
+          {renderProjectSelectionPanel()}
+        </div>
+      );
+    }
+
+    return (
+      <div className="workspaceStack">
+        <section className="workspaceOverviewGrid">
+          <article className="workspaceInfoCard">
+            <div className="eyebrow">Project</div>
+            <h2>{selectedProject.name}</h2>
+            <p>{selectedProject.description || "Project state is available globally across every workspace."}</p>
+            <div className="infoList">
+              <span><strong>Source</strong><code>{sourceLabel}</code></span>
+              <span><strong>Services</strong><code>{String(result?.summary.service_count ?? manualServicePaths.length ?? 0)}</code></span>
+              <span><strong>Last scan</strong><code>{activeScanDateLabel}</code></span>
+            </div>
+          </article>
+          <article className="workspaceInfoCard emphasis">
+            <div className="eyebrow">Next Action</div>
+            <h2>{nextAction}</h2>
+            <p>Use the dedicated workspaces to move straight into scan setup, findings review, graph analysis, or AI assistance.</p>
+            <div className="workspaceActionGrid">
+              <button type="button" className="secondaryButton" onClick={() => navigateToSection("scan")}>Open Scan</button>
+              <button type="button" onClick={() => navigateToSection("findings")} disabled={!result}>View Findings</button>
+              <button type="button" onClick={() => navigateToSection("graph")} disabled={!result}>Open Graph</button>
+              <button type="button" onClick={() => navigateToSection("ai")} disabled={!activeScan}>Ask AI</button>
+            </div>
+          </article>
+        </section>
+
+        <section className="summaryStrip">
+          <Metric
+            label="Findings"
+            value={result?.summary.finding_count ?? 0}
+            detail={result ? `${filteredFindings.length} visible with current filters` : "Run a scan to populate results"}
+            kind="number"
+          />
+          <Metric
+            label="Services"
+            value={result?.summary.service_count ?? 0}
+            detail={result ? "Microservices included in this scan" : "No source analyzed yet"}
+            kind="number"
+          />
+          <Metric
+            label="System Health"
+            value={systemScore ? Math.round(systemScore.score) : "--"}
+            tone={systemScore ? gradeTone(systemScore.grade) : ""}
+            detail={systemScore ? `${systemScore.grade} overall architecture quality` : "Available after a completed scan"}
+            kind="number"
+          />
+          <Metric
+            label="Highest Risk"
+            value={highestSeverity}
+            tone={highestSeverity.toLowerCase()}
+            detail={highestSeverity === "None" ? "No active findings yet" : "Strongest severity currently detected"}
+            kind="status"
+          />
+          <Metric
+            label="Hotspot Service"
+            value={hotspot?.service ?? "--"}
+            tone={hotspot ? hotspot.tone : ""}
+            detail={hotspot?.detail ?? "Most concentrated risk area in the scan"}
+            kind="service"
+            featured
+          />
+          <Metric
+            label="Focus First"
+            value={urgentFinding ? summaryFindingTitle(urgentFinding) : "No urgent issue"}
+            tone={urgentFinding ? urgentFinding.severity.toLowerCase() : ""}
+            detail={urgentFinding ? compactMetricDetail(recommendationPreview(urgentFinding), 28) : "Run a scan to generate prioritized guidance"}
+            kind="summary"
+            featured
+            wide
+            detailLines={5}
+            expandableDetail={Boolean(urgentFinding)}
+            fullDetail={urgentFinding ? recommendationPreview(urgentFinding) : undefined}
+          />
+        </section>
+
+        <section className="workspaceTwoColumn">
+          {renderHistoryPanel()}
+          {renderInterpretationCard()}
+        </section>
+      </div>
+    );
+  }
+
+  function renderScanWorkspace() {
+    return (
+      <div className="workspaceStack">
+        <section className="workflowTrackPanel workspaceIntroCard">
+          <div className="workflowSummary">
+            <div>
+              <div className="eyebrow">Guided Scan Flow</div>
+              <h2>{nextAction}</h2>
+              <p>Keep project selection, source configuration, and scan execution in one focused workspace instead of a long scrolling page.</p>
+              <div className="docLinks">
+                <DocLinkButton label="Evaluator quick start" onClick={() => openDoc("evaluator-quick-start")} />
+                <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
+              </div>
+            </div>
+            <div className="workflowActions">
+              <div className="workflowStatus">
+                <strong>{workflowSteps.filter((step) => step.done).length}/{workflowSteps.length}</strong>
+                <span>steps ready</span>
+              </div>
               <button
                 type="button"
-                className="secondaryButton"
-                onClick={() => void requestAIExplanation("POLICY_WRITING_ASSISTANCE", { question: "Draft governance policy YAML for this project." })}
-                disabled={isExplaining || !selectedProject || !activeScan}
+                className="workflowToggle"
+                onClick={() => setShowSetupWorkspace((current) => !current)}
               >
-                {isExplaining ? "Drafting..." : "Draft Policies With AI"}
+                {showSetupWorkspace ? "Hide workflow cards" : "Show workflow cards"}
               </button>
             </div>
-            <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProject}>
-              {isSavingPolicies ? "Saving..." : "Save Policies"}
-            </button>
-                </section>
-              ) : null}
+          </div>
+          <div className="workflowFlow">
+            {workflowSteps.map((step, index) => (
+              <button
+                key={step.id}
+                type="button"
+                className={`workflowNode ${step.done ? "done" : ""} ${step.id === activeSetupStepId ? "current" : ""} ${step.active ? "active" : ""} ${step.optional ? "optional" : ""}`}
+                onClick={() => focusWorkflowStep(step.id)}
+              >
+                <small>Step {index + 1}</small>
+                <strong>{step.label}</strong>
+              </button>
+            ))}
+          </div>
+        </section>
 
-              {activeSetupStepId === "scan" ? (
-                <section className="panelBlock runStepCard">
-            <div className="panelHeader compact">
-              <h2>Step 5. Run Scan</h2>
-              <span>{repoPreview ? "Repository-backed" : "Manual paths"}</span>
+        {showSetupWorkspace ? (
+          <section className="workspaceSplit workspaceSplitWide">
+            <div className="workspaceStack">
+              {renderProjectSelectionPanel()}
+              {renderSourceConfigurationPanel()}
             </div>
-            <p className="hint">Run the current selection to generate findings, scores, history, and graph evidence.</p>
-            <button onClick={runScan} disabled={isScanning || !selectedProject}>
-              {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
-            </button>
-                </section>
-              ) : null}
+            <div className="workspaceStack">
+              {renderRunScanPanel()}
+              {renderInterpretationCard()}
             </div>
           </section>
         ) : null}
+      </div>
+    );
+  }
 
-        <section className="mainDeck">
-          <section className="overviewRow">
-            <section className="summaryStrip">
-              <Metric
-                label="Findings"
-                value={result?.summary.finding_count ?? 0}
-                detail={result ? `${filteredFindings.length} visible with current filters` : "Run a scan to populate results"}
-                kind="number"
-              />
-              <Metric
-                label="Services"
-                value={result?.summary.service_count ?? 0}
-                detail={result ? "Microservices included in this scan" : "No source analyzed yet"}
-                kind="number"
-              />
-              <Metric
-                label="System Health"
-                value={systemScore ? Math.round(systemScore.score) : "--"}
-                tone={systemScore ? gradeTone(systemScore.grade) : ""}
-                detail={systemScore ? `${systemScore.grade} overall architecture quality` : "Available after a completed scan"}
-                kind="number"
-              />
-              <Metric
-                label="Highest Risk"
-                value={highestSeverity}
-                tone={highestSeverity.toLowerCase()}
-                detail={highestSeverity === "None" ? "No active findings yet" : "Strongest severity currently detected"}
-                kind="status"
-              />
-              <Metric
-                label="Hotspot Service"
-                value={hotspot?.service ?? "--"}
-                tone={hotspot ? hotspot.tone : ""}
-                detail={hotspot?.detail ?? "Most concentrated risk area in the scan"}
-                kind="service"
-                featured
-              />
-              <Metric
-                label="Focus First"
-                value={urgentFinding ? summaryFindingTitle(urgentFinding) : "No urgent issue"}
-                tone={urgentFinding ? urgentFinding.severity.toLowerCase() : ""}
-                detail={urgentFinding ? compactMetricDetail(recommendationPreview(urgentFinding), 28) : "Run a scan to generate prioritized guidance"}
-                kind="summary"
-                featured
-                wide
-                detailLines={5}
-                expandableDetail={Boolean(urgentFinding)}
-                fullDetail={urgentFinding ? recommendationPreview(urgentFinding) : undefined}
-              />
-            </section>
+  function renderServicesWorkspace() {
+    if (!selectedProject) {
+      return renderProjectRequiredState();
+    }
+    return (
+      <div className="workspaceStack">
+        <section className="workspaceInfoCard">
+          <div className="eyebrow">Service Discovery</div>
+          <h2>Review service candidates before the scan</h2>
+          <p>Keep the selected services tight so the scan reflects the actual architecture boundary you want to analyze.</p>
+          <div className="infoList">
+            <span><strong>Source</strong><code>{sourceLabel}</code></span>
+            <span><strong>Selected</strong><code>{String(selectedDiscoveryPaths.length || manualServicePaths.length)}</code></span>
+          </div>
+        </section>
+        {renderServicesPanel()}
+      </div>
+    );
+  }
 
-            <section className="historyPanel">
-              <div className="panelHeader compact">
-                <h2>Scan History</h2>
-                <span>{history.length} scans</span>
-              </div>
-              <button
-                type="button"
-                className="fullButton secondaryButton"
-                onClick={() => void createResearchRecordFromScan(activeScan?.id)}
-                disabled={!activeScan || isSavingResearchRecord || usingEmbeddedDemo}
-              >
-                {isSavingResearchRecord ? "Saving Record..." : "Create Research Record"}
-              </button>
-              <div className="scanList">
-                {history.length === 0 ? <div className="emptyInline">No persistent scans yet.</div> : null}
-                {history.map((scan) => (
-                  <button
-                    key={scan.id}
-                    className={`scanItem ${activeScan?.id === scan.id ? "active" : ""}`}
-                    onClick={() => void loadScan(scan.id)}
-                    disabled={isLoadingScan}
-                  >
-                    <strong>{scan.finding_count} findings</strong>
-                    <span>{scan.service_count} services</span>
-                    <small>{formatDate(scan.completed_at ?? scan.created_at)}</small>
-                  </button>
-                ))}
-              </div>
-            </section>
-          </section>
+  function renderFindingsWorkspace() {
+    if (!selectedProject) {
+      return renderProjectRequiredState();
+    }
+    return (
+      <FindingsDashboard
+        findings={result?.findings ?? []}
+        filteredFindings={filteredFindings}
+        filters={filters}
+        filterOptions={filterOptions}
+        interpretationMode={interpretationMode}
+        onFilterChange={setFilters}
+        onOpenDoc={openDoc}
+        onSelectFinding={setSelectedFinding}
+        onAskAI={(finding) => {
+          setAiQuestion(`Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`);
+          void requestAIExplanation("FINDING_EXPLANATION", {
+            question: `Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`,
+            findingId: finding.id
+          });
+        }}
+      />
+    );
+  }
 
+  function renderGraphWorkspace() {
+    if (!selectedProject) {
+      return renderProjectRequiredState();
+    }
+    return (
+      <section className="contentGrid workspaceGraphGrid">
+        {renderGraphPanel()}
+        <HealthScoreView
+          systemScore={systemScore ?? null}
+          serviceScores={serviceScores}
+          onOpenDoc={openDoc}
+        />
+      </section>
+    );
+  }
+
+  function renderProjectRequiredState() {
+    return (
+      <section className="workspaceEmptyState">
+        <div className="eyebrow">Project Required</div>
+        <h2>Select a project to continue</h2>
+        <p>This workspace depends on the globally selected project. Choose one from the header or open the scan workspace to create a new project.</p>
+        <div className="workspaceActionGrid">
+          <button type="button" onClick={() => navigateToSection("scan")}>Open Scan Workspace</button>
+          <button type="button" className="secondaryButton" onClick={openCreateProjectFlow}>Create Project</button>
+        </div>
+      </section>
+    );
+  }
+
+  function renderSectionContent() {
+    if (sectionNeedsProject && !selectedProject && currentSection !== "scan" && currentSection !== "overview") {
+      return renderProjectRequiredState();
+    }
+
+    switch (currentSection) {
+      case "overview":
+        return renderOverviewWorkspace();
+      case "scan":
+        return renderScanWorkspace();
+      case "services":
+        return renderServicesWorkspace();
+      case "findings":
+        return renderFindingsWorkspace();
+      case "graph":
+        return renderGraphWorkspace();
+      case "history":
+        return renderHistoryPanel();
+      case "evolution":
+        return <EvolutionPanel reports={evolution} />;
+      case "roadmap":
+        return (
+          <RemediationRoadmapPanel
+            roadmap={roadmap}
+            isLoading={isLoadingRoadmap}
+            onOpenDoc={openDoc}
+          />
+        );
+      case "ai":
+        return (
           <AIExplainerPanel
             activeScan={activeScan}
             compareBaseScan={compareBaseScan}
@@ -2086,59 +2288,176 @@ function App() {
             onRefreshStatus={() => void loadAIStatus()}
             onOpenDoc={openDoc}
           />
-
-          <EvolutionPanel reports={evolution} />
-
-          <RemediationRoadmapPanel
-            roadmap={roadmap}
-            isLoading={isLoadingRoadmap}
-            onOpenDoc={openDoc}
+        );
+      case "evaluation":
+        return (
+          <ResearchEvaluationPanel
+            records={researchRecords}
+            selectedRecordId={selectedResearchRecordId}
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            history={history}
+            activeScan={activeScan}
+            isLoading={isLoadingResearchRecords}
+            isSaving={isSavingResearchRecord}
+            isExporting={isExportingResearchRecords}
+            onSelectRecord={setSelectedResearchRecordId}
+            onSelectProject={(projectId) => updateSelectedProject(projectId, "push")}
+            onSelectScan={(scanId) => void loadScan(scanId, { projectId: selectedProjectId })}
+            onCreateFromScan={(scanId) => void createResearchRecordFromScan(scanId)}
+            onRefresh={() => void loadResearchRecords()}
+            onUpdate={(record, patch) => void updateResearchRecord(record, patch)}
+            onDelete={(recordId) => void deleteResearchRecord(recordId)}
+            onExport={(format) => void exportResearchRecords(format)}
           />
+        );
+      case "policies":
+        return selectedProject ? renderPoliciesPanel() : renderProjectRequiredState();
+      case "docs":
+        return (
+          <DocumentationPortal
+            selectedDocSlug={selectedDocSlug}
+            docsQuery={docsQuery}
+            docsCategory={docsCategory}
+            onChangeQuery={setDocsQuery}
+            onChangeCategory={setDocsCategory}
+            onSelectDoc={setSelectedDocSlug}
+            onBackToAnalysis={() => navigateToSection("overview")}
+          />
+        );
+      default:
+        return renderOverviewWorkspace();
+    }
+  }
 
-          <section className="contentGrid">
-            <section className="graphPanel dashboardGraph">
-              <div className="graphHeader">
-                <div>
-                  <h2>Architecture Graph</h2>
-                  <p>{activeScan ? `Scan ${shortId(activeScan.id)} - ${displayGraph?.source === "digital-twin" ? "Digital Twin" : "Report Graph"}` : "Run or select a scan to build the graph"}</p>
-                </div>
-                <div className="legend">
-                  <span><i className="serviceDot" /> Service</span>
-                  <span><i className="apiDot" /> API</span>
-                  <span><i className="databaseDot" /> Database</span>
-                  <span><i className="riskLine" /> Risk</span>
-                </div>
+  return (
+    <main className="appShell">
+      <aside className={sidebarCollapsed ? "appSidebar collapsed" : "appSidebar"}>
+        <div className="appSidebarTop">
+          <div className="appIdentity">
+            <div className="eyebrow">Architecture Analyzer</div>
+            <h1>MESA</h1>
+            {!sidebarCollapsed ? <p>Structured project selection, scanning, findings analysis, and research evidence in one workspace.</p> : null}
+          </div>
+          <button
+            type="button"
+            className="sidebarToggle"
+            onClick={() => setSidebarCollapsed((current) => !current)}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? ">" : "<"}
+          </button>
+        </div>
+
+        <nav className="sidebarNav" aria-label="Workspace sections">
+          {appNavigation.map((group) => (
+            <section key={group.group} className="sidebarGroup">
+              {!sidebarCollapsed ? <h2>{group.group}</h2> : null}
+              <div className="sidebarGroupItems">
+                {group.items.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={item.id === currentSection ? "sidebarItem active" : "sidebarItem"}
+                    onClick={() => navigateToSection(item.id)}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <strong>{item.label}</strong>
+                    {!sidebarCollapsed ? <span>{item.description}</span> : null}
+                  </button>
+                ))}
               </div>
-              {result ? <div ref={graphRef} className="graph" /> : <div className="emptyState">No scan selected.</div>}
-              <GraphInspector selection={selectedGraphElement} />
             </section>
+          ))}
+        </nav>
+      </aside>
 
-            <HealthScoreView
-              systemScore={systemScore ?? null}
-              serviceScores={serviceScores}
-              onOpenDoc={openDoc}
-            />
-          </section>
-        </section>
+      <div className="appFrame">
+        <header className="appHeader">
+          <div className="appHeaderIntro">
+            <div className="eyebrow">{currentSectionMeta.group}</div>
+            <h2>{currentSectionMeta.label}</h2>
+            <p>{currentSectionMeta.description}</p>
+          </div>
 
-        <FindingsDashboard
-          findings={result?.findings ?? []}
-          filteredFindings={filteredFindings}
-          filters={filters}
-          filterOptions={filterOptions}
-          interpretationMode={interpretationMode}
-          onFilterChange={setFilters}
+          <div className="appHeaderActions">
+            <div className="toolbarProjectShell headerProjectShell">
+              <div className="toolbarProjectMeta">
+                <strong>
+                  {isLoadingProjectState
+                    ? "Loading project..."
+                    : selectedProject
+                      ? selectedProject.name
+                      : "No project selected"}
+                </strong>
+                <small>
+                  {projectListStatus === "loading"
+                    ? "Refreshing project list"
+                    : `${projects.length} available project${projects.length === 1 ? "" : "s"}`}
+                </small>
+              </div>
+              <label className="toolbarProjectPicker">
+                <span>Project</span>
+                <select
+                  value={selectedProjectId}
+                  onChange={(event) => handleTopProjectSelection(event.target.value)}
+                  disabled={projectListStatus === "loading" && !isPublicDemoMode}
+                >
+                  <option value="">Select project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                  {!isPublicDemoMode ? <option value="__create_new__">+ Create New Project</option> : null}
+                </select>
+              </label>
+            </div>
+
+            {!isPublicDemoMode ? (
+              <button type="button" className="secondaryButton" onClick={openCreateProjectFlow}>
+                New Project
+              </button>
+            ) : null}
+            <button onClick={runScan} disabled={isScanning || !selectedProject || usingEmbeddedDemo}>
+              {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
+            </button>
+          </div>
+        </header>
+
+        <PublicDemoBanner
+          apiAvailability={apiAvailability}
+          isPublicDemoMode={isPublicDemoMode}
+          usingEmbeddedDemo={usingEmbeddedDemo}
+          onActivateDemo={() => activatePublicDemo()}
+          onLeaveDemo={() => leavePublicDemo()}
           onOpenDoc={openDoc}
-          onSelectFinding={setSelectedFinding}
-          onAskAI={(finding) => {
-            setAiQuestion(`Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`);
-            void requestAIExplanation("FINDING_EXPLANATION", {
-              question: `Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`,
-              findingId: finding.id
-            });
-          }}
         />
-      </section>
+
+        {error ? <div className="error workspaceError">{error}</div> : null}
+
+        <section className="workspaceFrame">
+          <div className="workspaceFrameHeader">
+            <div>
+              <div className="eyebrow">Current Workspace</div>
+              <h2>{currentSectionMeta.label}</h2>
+              <p>
+                {selectedProject
+                  ? `${selectedProject.name} is currently active. Switch projects from the header without leaving this workspace.`
+                  : "Choose a project from the header or create a new one to start a saved scan workflow."}
+              </p>
+            </div>
+            <div className="workspaceContextMeta">
+              <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
+              <code>{sectionNeedsProject ? sourceLabel : "Reference workspace"}</code>
+            </div>
+          </div>
+
+          <div className="workspaceBody">
+            {renderSectionContent()}
+          </div>
+        </section>
+      </div>
 
       {selectedFinding ? (
         <FindingDrawer
@@ -2154,38 +2473,6 @@ function App() {
           onClose={() => setSelectedFinding(null)}
         />
       ) : null}
-        </>
-      ) : workspaceView === "research" ? (
-        <ResearchEvaluationPanel
-          records={researchRecords}
-          selectedRecordId={selectedResearchRecordId}
-          projects={projects}
-          selectedProjectId={selectedProjectId}
-          history={history}
-          activeScan={activeScan}
-          isLoading={isLoadingResearchRecords}
-          isSaving={isSavingResearchRecord}
-          isExporting={isExportingResearchRecords}
-          onSelectRecord={setSelectedResearchRecordId}
-          onSelectProject={setSelectedProjectId}
-          onSelectScan={(scanId) => void loadScan(scanId, { projectId: selectedProjectId })}
-          onCreateFromScan={(scanId) => void createResearchRecordFromScan(scanId)}
-          onRefresh={() => void loadResearchRecords()}
-          onUpdate={(record, patch) => void updateResearchRecord(record, patch)}
-          onDelete={(recordId) => void deleteResearchRecord(recordId)}
-          onExport={(format) => void exportResearchRecords(format)}
-        />
-      ) : (
-        <DocumentationPortal
-          selectedDocSlug={selectedDocSlug}
-          docsQuery={docsQuery}
-          docsCategory={docsCategory}
-          onChangeQuery={setDocsQuery}
-          onChangeCategory={setDocsCategory}
-          onSelectDoc={setSelectedDocSlug}
-          onBackToAnalysis={() => setWorkspaceView("analysis")}
-        />
-      )}
     </main>
   );
 }
@@ -4916,12 +5203,41 @@ function readProjectIdFromUrl() {
   return params.get("project") ?? "";
 }
 
-function syncProjectIdToUrl(projectId: string, historyMode: "push" | "replace" = "replace") {
+function readSectionFromUrl(): AppSection {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get("section");
+  const knownSections = new Set<AppSection>([
+    "overview",
+    "scan",
+    "services",
+    "findings",
+    "graph",
+    "history",
+    "evolution",
+    "roadmap",
+    "ai",
+    "evaluation",
+    "policies",
+    "docs"
+  ]);
+  return value && knownSections.has(value as AppSection) ? (value as AppSection) : "overview";
+}
+
+function syncAppStateToUrl(
+  projectId: string,
+  section: AppSection,
+  historyMode: "push" | "replace" = "replace"
+) {
   const url = new URL(window.location.href);
   if (projectId) {
     url.searchParams.set("project", projectId);
   } else {
     url.searchParams.delete("project");
+  }
+  if (section !== "overview") {
+    url.searchParams.set("section", section);
+  } else {
+    url.searchParams.delete("section");
   }
   window.history[historyMode === "push" ? "pushState" : "replaceState"]({}, "", url);
 }
