@@ -487,6 +487,11 @@ class ResearchEvaluationRecordBase(BaseModel):
     suitable_for_report: bool = False
 
 
+class ResearchEvaluationAccuracyMode(str, Enum):
+    GROUND_TRUTH = "GROUND_TRUTH"
+    MANUAL_VALIDATION_REQUIRED = "MANUAL_VALIDATION_REQUIRED"
+
+
 class ResearchEvaluationRecordCreate(ResearchEvaluationRecordBase):
     pass
 
@@ -508,6 +513,16 @@ class ResearchEvaluationRecord(ResearchEvaluationRecordBase):
     f1_score: float | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class ResearchEvaluationDraft(ResearchEvaluationRecordBase):
+    project_id: str
+    accuracy_mode: ResearchEvaluationAccuracyMode = ResearchEvaluationAccuracyMode.MANUAL_VALIDATION_REQUIRED
+    matched_benchmark_id: str | None = None
+    matched_benchmark_name: str | None = None
+    precision: float | None = None
+    recall: float | None = None
+    f1_score: float | None = None
 
 
 class ScanRecord(BaseModel):

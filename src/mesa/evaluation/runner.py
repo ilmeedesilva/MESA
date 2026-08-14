@@ -15,6 +15,7 @@ from mesa.discovery import discover_service_candidates
 from mesa.models import AIExplainerIntent, AIExplainerRequest, Finding, FindingType
 
 LabelKey = tuple[str, tuple[str, ...]]
+DEFAULT_BENCHMARK_PATH = Path(__file__).resolve().parents[3] / "benchmarks" / "ground_truth.yml"
 
 
 def evaluate_benchmark(
@@ -130,6 +131,49 @@ def export_evaluation(report: dict[str, Any], output_dir: str | Path) -> dict[st
 
     markdown_path.write_text(_markdown_summary(report), encoding="utf-8")
     return {"json": str(json_path), "csv": str(csv_path), "markdown": str(markdown_path)}
+
+
+def find_matching_ground_truth_system(
+    service_paths: list[str],
+    benchmark_path: str | Path | None = None,
+) -> dict[str, Any] | None:
+    path = Path(benchmark_path).resolve() if benchmark_path else DEFAULT_BENCHMARK_PATH
+    if not path.exists():
+        return None
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    requested = {_normalized_path(item) for item in service_paths}
+    if not requested:
+        return None
+
+    for system in data.get("systems", []):
+        expected_paths = {
+            _normalized_path((path.parent / relative_path).resolve())
+            for relative_path in system.get("service_paths", [])
+        }
+        if expected_paths == requested:
+            return {
+                "benchmark": data.get("benchmark", path.stem),
+                "matching": data.get("matching", "type_and_service_set"),
+                "system_id": system.get("id"),
+                "system_name": system.get("name", system.get("id")),
+                "ground_truth": list(system.get("ground_truth", [])),
+            }
+    return None
+
+
+def evaluate_findings_against_ground_truth(
+    findings: list[Finding],
+    ground_truth: list[dict[str, Any]],
+) -> dict[str, Any]:
+    expected = [_label_from_truth(item) for item in ground_truth]
+    predicted = [_label_from_finding(finding) for finding in findings]
+    metrics, false_positives, false_negatives = _compare(expected, predicted)
+    return {
+        "metrics": metrics,
+        "ground_truth": [_label_to_dict(label) for label in expected],
+        "false_positives": [_label_to_dict(label) for label in false_positives],
+        "false_negatives": [_label_to_dict(label) for label in false_negatives],
+    }
 
 
 def _evaluate_system(base_dir: Path, system: dict[str, Any], chatty_threshold: int) -> dict[str, Any]:
@@ -482,6 +526,10 @@ def _safe_divide(numerator: float, denominator: float) -> float:
     if denominator == 0:
         return 1.0
     return numerator / denominator
+
+
+def _normalized_path(value: str | Path) -> str:
+    return str(Path(value).resolve())
 
 
 def _expand_delta(counter: Counter[LabelKey]) -> list[LabelKey]:

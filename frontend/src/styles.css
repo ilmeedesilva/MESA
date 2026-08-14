@@ -1163,7 +1163,8 @@ aside {
 
 .researchHero,
 .researchExportBar,
-.researchTablePanel {
+.researchTablePanel,
+.researchCreatePanel {
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 16px 18px;
@@ -1206,6 +1207,101 @@ aside {
   gap: 12px;
 }
 
+.researchCreatePanel,
+.researchEditor {
+  display: grid;
+  gap: 14px;
+}
+
+.researchCreateGrid,
+.researchDraftGrid,
+.researchEditorSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.researchCreateGrid label,
+.researchDraftMetric,
+.researchEditorSummary > div {
+  display: grid;
+  gap: 6px;
+}
+
+.researchCreateGrid span,
+.researchEditorLabel,
+.researchDraftMetric span,
+.fieldStatus {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.researchDraftCard {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
+}
+
+.researchDraftHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.researchDraftHeader small,
+.researchEditorSummary small,
+.researchDraftNotes {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.researchDraftMetric {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.researchDraftMetric.good {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.researchDraftMetric.warn {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.researchStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.researchStatusBadge.good {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.researchStatusBadge.neutral {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
 .researchTableWrap {
   overflow: auto;
 }
@@ -1241,11 +1337,6 @@ aside {
   background: #eff6ff;
 }
 
-.researchEditor {
-  display: grid;
-  gap: 12px;
-}
-
 .researchFormGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(160px, 1fr));
@@ -1265,6 +1356,12 @@ aside {
   font-weight: 800;
 }
 
+.fieldStatus {
+  margin-left: 8px;
+  font-style: normal;
+  color: #1d4ed8;
+}
+
 .researchMetricPreview {
   padding: 10px 12px;
   border-radius: 10px;
@@ -1274,6 +1371,12 @@ aside {
 .researchMetricPreview span {
   color: #475569;
   font-size: 12px;
+}
+
+.researchMetricPreview em {
+  color: #64748b;
+  font-size: 11px;
+  font-style: normal;
 }
 
 .researchEditor textarea {
@@ -1292,6 +1395,22 @@ aside {
   background: #fee2e2;
   color: #991b1b;
   font-weight: 700;
+}
+
+@media (max-width: 980px) {
+  .researchSummaryGrid,
+  .researchCreateGrid,
+  .researchDraftGrid,
+  .researchEditorSummary,
+  .researchFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .researchHero,
+  .researchExportBar,
+  .researchDraftHeader {
+    flex-direction: column;
+  }
 }
 
 .discoveryPanel {

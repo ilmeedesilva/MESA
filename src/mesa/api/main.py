@@ -18,7 +18,7 @@ from mesa.analysis.explainer import (
 )
 from mesa.analysis.fitness_gate import evaluate_architecture_gate
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
-from mesa.analysis.research_records import export_records, record_create_from_scan
+from mesa.analysis.research_records import export_records, record_create_from_scan, record_draft_from_scan
 from mesa.analysis.roadmap import build_remediation_roadmap
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
@@ -41,6 +41,7 @@ from mesa.models import (
     ProjectCreate,
     ProjectRecord,
     ProjectSetup,
+    ResearchEvaluationDraft,
     ResearchEvaluationRecord,
     ResearchEvaluationRecordCreate,
     ResearchEvaluationRecordUpdate,
@@ -138,6 +139,17 @@ def create_research_record(
     return get_repository(request).create_research_record(payload)
 
 
+@app.get("/research-records/draft/{scan_id}", response_model=ResearchEvaluationDraft)
+def get_research_record_draft(scan_id: str, request: Request) -> ResearchEvaluationDraft:
+    repository = get_repository(request)
+    scan = repository.get_scan(scan_id)
+    result = repository.get_scan_result(scan_id)
+    if scan is None or result is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    project_setup = repository.get_project_setup(scan.project_id)
+    return record_draft_from_scan(scan, result, project_setup)
+
+
 @app.get("/research-records/export")
 def export_research_records(request: Request, format: str = "csv"):
     export_format = format.lower()
@@ -190,7 +202,8 @@ def create_research_record_from_scan(scan_id: str, request: Request) -> Research
     result = repository.get_scan_result(scan_id)
     if scan is None or result is None:
         raise HTTPException(status_code=404, detail="Scan not found")
-    return repository.create_research_record(record_create_from_scan(scan, result))
+    project_setup = repository.get_project_setup(scan.project_id)
+    return repository.create_research_record(record_create_from_scan(scan, result, project_setup))
 
 
 @app.post("/projects", response_model=ProjectRecord, status_code=201)
