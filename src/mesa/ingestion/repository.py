@@ -21,6 +21,14 @@ _MANIFEST_FILENAMES = {
     "Dockerfile",
     "docker-compose.yml",
     "docker-compose.yaml",
+    "compose.yml",
+    "compose.yaml",
+    "openapi.yaml",
+    "openapi.yml",
+    "openapi.json",
+    "swagger.yaml",
+    "swagger.yml",
+    "swagger.json",
 }
 _ARCHIVE_SUFFIXES = {".zip", ".tar", ".gz", ".tgz", ".bz2", ".xz"}
 _MAX_PREVIEW_FILES = 5000
@@ -65,6 +73,7 @@ def preview_repository(request: RepoScanPreviewRequest) -> RepoScanPreview:
         )
     if not candidate_paths:
         warnings.append("No likely service roots were detected in preview.")
+    warnings.extend(_service_discovery_warnings(discovered_services))
 
     return RepoScanPreview(
         source=prepared.metadata,
@@ -76,6 +85,35 @@ def preview_repository(request: RepoScanPreviewRequest) -> RepoScanPreview:
         discovered_services=discovered_services,
         warnings=warnings,
     )
+
+
+def _service_discovery_warnings(discovered_services) -> list[str]:
+    warnings: list[str] = []
+    if not discovered_services:
+        return warnings
+    unknown_languages = [
+        candidate.relative_path
+        for candidate in discovered_services
+        if candidate.language in {"unknown", "api-spec"}
+    ]
+    if unknown_languages:
+        warnings.append(
+            "Some discovered services have unclear implementation language: "
+            + ", ".join(unknown_languages[:5])
+            + ("." if len(unknown_languages) <= 5 else ", ...")
+        )
+    low_confidence = [
+        candidate.relative_path
+        for candidate in discovered_services
+        if candidate.confidence < 0.45
+    ]
+    if low_confidence:
+        warnings.append(
+            "Some service candidates are low-confidence and should be reviewed before scanning: "
+            + ", ".join(low_confidence[:5])
+            + ("." if len(low_confidence) <= 5 else ", ...")
+        )
+    return warnings
 
 
 def resolve_service_paths(prepared: PreparedRepository, request: RepoScanRunRequest) -> list[str]:

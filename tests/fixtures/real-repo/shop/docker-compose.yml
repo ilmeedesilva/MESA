@@ -1,0 +1,17 @@
+services:
+  frontend:
+    build:
+      context: ./frontend-service
+    ports:
+      - "8080:8080"
+    environment:
+      CATALOG_URL: http://catalog-service:8081/products
+  catalog:
+    build: ./catalog-service
+    ports:
+      - "8081:8081"
+  inventory:
+    build:
+      context: ./inventory-api
+    environment:
+      DATABASE_URL: postgres://inventory-db/inventory

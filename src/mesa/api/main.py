@@ -1,17 +1,34 @@
 from __future__ import annotations
 
+import json
 import os
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from mesa import __version__
 from mesa.analysis import analyze_services
 from mesa.analysis.evolution import compare_scan_results
+from mesa.analysis.explainer import (
+    ai_status,
+    explain_with_grounded_context,
+    grounded_response_for_request,
+    stream_answer_text,
+)
+from mesa.analysis.fitness_gate import evaluate_architecture_gate
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
+from mesa.analysis.research_records import export_records, record_create_from_scan, record_draft_from_scan
+from mesa.analysis.roadmap import build_remediation_roadmap
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
 from mesa.models import (
+    AIExplainerStatus,
+    AIExplainerRequest,
+    AIExplainerResponse,
+    ArchitectureFitnessGateRequest,
+    ArchitectureFitnessGateResult,
+    ArchitectureGateThresholds,
     AnalysisRequest,
     AnalysisResult,
     EvolutionReport,
@@ -23,6 +40,12 @@ from mesa.models import (
     PersistedScanResult,
     ProjectCreate,
     ProjectRecord,
+    ProjectSetup,
+    ResearchEvaluationDraft,
+    ResearchEvaluationRecord,
+    ResearchEvaluationRecordCreate,
+    ResearchEvaluationRecordUpdate,
+    RemediationRoadmap,
     RepoScanPreview,
     RepoScanPreviewRequest,
     RepoScanRunRequest,
@@ -104,9 +127,93 @@ def preview_repo_scan(payload: RepoScanPreviewRequest) -> RepoScanPreview:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
 
+@app.get("/research-records", response_model=list[ResearchEvaluationRecord])
+def list_research_records(request: Request) -> list[ResearchEvaluationRecord]:
+    return get_repository(request).list_research_records()
+
+
+@app.post("/research-records", response_model=ResearchEvaluationRecord, status_code=201)
+def create_research_record(
+    payload: ResearchEvaluationRecordCreate, request: Request
+) -> ResearchEvaluationRecord:
+    return get_repository(request).create_research_record(payload)
+
+
+@app.get("/research-records/draft/{scan_id}", response_model=ResearchEvaluationDraft)
+def get_research_record_draft(scan_id: str, request: Request) -> ResearchEvaluationDraft:
+    repository = get_repository(request)
+    scan = repository.get_scan(scan_id)
+    result = repository.get_scan_result(scan_id)
+    if scan is None or result is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    project_setup = repository.get_project_setup(scan.project_id)
+    return record_draft_from_scan(scan, result, project_setup)
+
+
+@app.get("/research-records/export")
+def export_research_records(request: Request, format: str = "csv"):
+    export_format = format.lower()
+    repository = get_repository(request)
+    records = repository.list_research_records()
+    try:
+        content = export_records(records, export_format)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    if export_format == "json":
+        return json.loads(content)
+    media_type = "text/csv" if export_format == "csv" else "text/markdown"
+    filename = f"mesa-research-records.{ 'csv' if export_format == 'csv' else 'md' }"
+    return PlainTextResponse(
+        content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/research-records/{record_id}", response_model=ResearchEvaluationRecord)
+def get_research_record(record_id: str, request: Request) -> ResearchEvaluationRecord:
+    record = get_repository(request).get_research_record(record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Research record not found")
+    return record
+
+
+@app.put("/research-records/{record_id}", response_model=ResearchEvaluationRecord)
+def update_research_record(
+    record_id: str, payload: ResearchEvaluationRecordUpdate, request: Request
+) -> ResearchEvaluationRecord:
+    record = get_repository(request).update_research_record(record_id, payload)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Research record not found")
+    return record
+
+
+@app.delete("/research-records/{record_id}", status_code=204)
+def delete_research_record(record_id: str, request: Request) -> None:
+    deleted = get_repository(request).delete_research_record(record_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Research record not found")
+
+
+@app.post("/research-records/from-scan/{scan_id}", response_model=ResearchEvaluationRecord, status_code=201)
+def create_research_record_from_scan(scan_id: str, request: Request) -> ResearchEvaluationRecord:
+    repository = get_repository(request)
+    scan = repository.get_scan(scan_id)
+    result = repository.get_scan_result(scan_id)
+    if scan is None or result is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    project_setup = repository.get_project_setup(scan.project_id)
+    return repository.create_research_record(record_create_from_scan(scan, result, project_setup))
+
+
 @app.post("/projects", response_model=ProjectRecord, status_code=201)
 def create_project(payload: ProjectCreate, request: Request) -> ProjectRecord:
     return get_repository(request).create_project(payload)
+
+
+@app.get("/projects", response_model=list[ProjectRecord])
+def list_projects(request: Request) -> list[ProjectRecord]:
+    return get_repository(request).list_projects()
 
 
 @app.get("/projects/{project_id}", response_model=ProjectRecord)
@@ -115,6 +222,22 @@ def get_project(project_id: str, request: Request) -> ProjectRecord:
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
+
+
+@app.get("/projects/{project_id}/setup", response_model=ProjectSetup | None)
+def get_project_setup(project_id: str, request: Request) -> ProjectSetup | None:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return repository.get_project_setup(project_id)
+
+
+@app.put("/projects/{project_id}/setup", response_model=ProjectSetup)
+def update_project_setup(project_id: str, payload: ProjectSetup, request: Request) -> ProjectSetup:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return repository.upsert_project_setup(project_id, payload)
 
 
 
@@ -167,7 +290,16 @@ def run_project_scan(project_id: str, payload: RunScanRequest, request: Request)
     repository = get_repository(request)
     if repository.get_project(project_id) is None:
         raise HTTPException(status_code=404, detail="Project not found")
+    repository.upsert_project_setup(
+        project_id,
+        ProjectSetup(
+            selected_service_paths=list(payload.service_paths),
+            manual_service_paths=list(payload.service_paths),
+            chatty_threshold=payload.chatty_threshold,
+        ),
+    )
     result = analyze_services(payload.service_paths, payload.chatty_threshold)
+    result.summary["selected_service_paths"] = list(payload.service_paths)
     policies = repository.list_policies(project_id)
     policy_findings = evaluate_policies(result, policies)
     if policy_findings:
@@ -197,7 +329,20 @@ def run_project_repo_scan(
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
+    repository.upsert_project_setup(
+        project_id,
+        ProjectSetup(
+            source_type=payload.source_type,
+            source_location=payload.location,
+            source_ref=payload.ref,
+            selected_service_paths=list(payload.service_paths),
+            manual_service_paths=list(payload.service_paths),
+            chatty_threshold=payload.chatty_threshold,
+        ),
+    )
+
     result = analyze_services(service_paths, payload.chatty_threshold)
+    result.summary["selected_service_paths"] = list(payload.service_paths)
     policies = repository.list_policies(project_id)
     policy_findings = evaluate_policies(result, policies)
     if policy_findings:
@@ -300,6 +445,77 @@ def get_scan_scores(scan_id: str, request: Request) -> list[HealthScore]:
     return repository.list_scores(scan_id)
 
 
+@app.get("/scans/{scan_id}/roadmap", response_model=RemediationRoadmap)
+def get_scan_remediation_roadmap(scan_id: str, request: Request) -> RemediationRoadmap:
+    repository = get_repository(request)
+    if repository.get_scan(scan_id) is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    result = repository.get_scan_result(scan_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Scan report not found")
+    return build_remediation_roadmap(scan_id, result)
+
+
+@app.get("/scans/{scan_id}/gate", response_model=ArchitectureFitnessGateResult)
+def get_scan_architecture_gate(
+    scan_id: str,
+    request: Request,
+    minimum_health_score: float = 75.0,
+    maximum_critical_findings: int = 0,
+    baseline_scan_id: str | None = None,
+) -> ArchitectureFitnessGateResult:
+    thresholds = ArchitectureGateThresholds(
+        minimum_health_score=minimum_health_score,
+        maximum_critical_findings=maximum_critical_findings,
+    )
+    return _evaluate_scan_gate(scan_id, request, thresholds, baseline_scan_id)
+
+
+@app.post("/scans/{scan_id}/gate", response_model=ArchitectureFitnessGateResult)
+def post_scan_architecture_gate(
+    scan_id: str, payload: ArchitectureFitnessGateRequest, request: Request
+) -> ArchitectureFitnessGateResult:
+    return _evaluate_scan_gate(scan_id, request, payload.thresholds, payload.baseline_scan_id)
+
+
+@app.post("/ai/explainer", response_model=AIExplainerResponse)
+def explain_scan_results(payload: AIExplainerRequest, request: Request) -> AIExplainerResponse:
+    result, scores, policies, comparison = _load_ai_context(payload, request)
+    return explain_with_grounded_context(
+        payload,
+        result=result,
+        scores=scores,
+        policies=policies,
+        comparison=comparison,
+    )
+
+
+@app.get("/ai/explainer/status", response_model=AIExplainerStatus)
+def get_ai_explainer_status(probe: bool = True) -> AIExplainerStatus:
+    return ai_status(probe=probe)
+
+
+@app.post("/ai/explainer/stream")
+def explain_scan_results_stream(payload: AIExplainerRequest, request: Request) -> StreamingResponse:
+    result, scores, policies, comparison = _load_ai_context(payload, request)
+    grounded_response = grounded_response_for_request(
+        payload,
+        intent=payload.intent if payload.intent.value != "AUTO" else None,
+        result=result,
+        scores=scores,
+        policies=policies,
+        comparison=comparison,
+    )
+
+    def event_stream():
+        final_response, chunks = stream_answer_text(payload, grounded_response)
+        for chunk in chunks:
+            yield _sse_event("delta", {"text": chunk})
+        yield _sse_event("done", final_response.model_dump(mode="json"))
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 @app.get("/scans/{scan_id}/graph")
 def get_scan_architecture_graph(scan_id: str, request: Request) -> dict:
     repository = get_repository(request)
@@ -367,3 +583,87 @@ def _count_by(items: list, attr: str) -> dict[str, int]:
         key = value.value if hasattr(value, "value") else str(value)
         counts[key] = counts.get(key, 0) + 1
     return counts
+
+
+def _evaluate_scan_gate(
+    scan_id: str,
+    request: Request,
+    thresholds: ArchitectureGateThresholds,
+    baseline_scan_id: str | None,
+) -> ArchitectureFitnessGateResult:
+    repository = get_repository(request)
+    if repository.get_scan(scan_id) is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    result = repository.get_scan_result(scan_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Scan report not found")
+
+    baseline = None
+    if baseline_scan_id:
+        if repository.get_scan(baseline_scan_id) is None:
+            raise HTTPException(status_code=404, detail="Baseline scan not found")
+        baseline = repository.get_scan_result(baseline_scan_id)
+        if baseline is None:
+            raise HTTPException(status_code=404, detail="Baseline scan report not found")
+
+    return evaluate_architecture_gate(
+        result,
+        thresholds=thresholds,
+        baseline=baseline,
+        baseline_scan_id=baseline_scan_id,
+    )
+
+
+def _load_ai_context(
+    payload: AIExplainerRequest, request: Request
+) -> tuple[AnalysisResult | None, list[HealthScore], list[PolicyRecord], EvolutionReport | None]:
+    repository = get_repository(request)
+
+    scan_id = payload.scan_id or payload.target_scan_id
+    result: AnalysisResult | None = None
+    scores: list[HealthScore] = []
+    project_id = payload.project_id
+
+    if scan_id:
+        scan = repository.get_scan(scan_id)
+        if scan is None:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        result = repository.get_scan_result(scan_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Scan report not found")
+        scores = repository.list_scores(scan_id)
+        project_id = project_id or scan.project_id
+
+    policies = []
+    if project_id:
+        project = repository.get_project(project_id)
+        if project is None:
+            raise HTTPException(status_code=404, detail="Project not found")
+        policies = repository.list_policies(project_id)
+
+    comparison = None
+    if payload.base_scan_id and payload.target_scan_id:
+        base_scan = repository.get_scan(payload.base_scan_id)
+        target_scan = repository.get_scan(payload.target_scan_id)
+        if base_scan is None or target_scan is None:
+            raise HTTPException(status_code=404, detail="Comparison scan not found")
+        base_result = repository.get_scan_result(payload.base_scan_id)
+        target_result = repository.get_scan_result(payload.target_scan_id)
+        if base_result is None or target_result is None:
+            raise HTTPException(status_code=404, detail="Comparison scan report not found")
+        comparison = compare_scan_results(
+            project_id or target_scan.project_id,
+            payload.base_scan_id,
+            base_result,
+            payload.target_scan_id,
+            target_result,
+        )
+        if payload.target_scan_id == scan_id:
+            result = target_result
+            scores = repository.list_scores(payload.target_scan_id)
+
+    return result, scores, policies, comparison
+
+
+def _sse_event(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"

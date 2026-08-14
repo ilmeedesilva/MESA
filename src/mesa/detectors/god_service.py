@@ -6,6 +6,7 @@ from typing import Any
 import networkx as nx
 
 from mesa.detectors.base import Detector
+from mesa.detectors.evidence import evidence_chain_item
 from mesa.models import Finding, FindingType, Severity
 
 HIGH_RISK_THRESHOLD = 70.0
@@ -66,12 +67,16 @@ class GodServiceDetector(Detector):
         for index, score in enumerate(score_god_services(graph), start=1):
             if score.score < self.high_risk_threshold:
                 continue
+            confidence = min(0.95, 0.62 + score.score / 300)
+            strongest_contributions = sorted(
+                score.contributions.items(), key=lambda item: item[1], reverse=True
+            )[:3]
             findings.append(
                 Finding(
                     id=f"MESA-GODS-{index:03d}",
                     type=FindingType.GOD_SERVICE,
                     severity=score.severity,
-                    confidence=min(0.95, 0.62 + score.score / 300),
+                    confidence=confidence,
                     services=[score.service],
                     description=(
                         f"{score.service} has a God Service risk score of {score.score:.1f}/100. "
@@ -89,6 +94,43 @@ class GodServiceDetector(Detector):
                         }
                     ],
                     recommendation=score.recommendation,
+                    detector_name="GodServiceDetector",
+                    rule_id="god-service.weighted-responsibility-score",
+                    evidence_chain=[
+                        evidence_chain_item(
+                            "measure_service_metrics",
+                            "Measured service breadth, dependencies, centrality, files, domains, and linked findings.",
+                            data=score.metrics,
+                        ),
+                        evidence_chain_item(
+                            "calculate_weighted_score",
+                            f"Calculated weighted God Service score {score.score:.1f}/100.",
+                            data={
+                                "score": score.score,
+                                "threshold": self.high_risk_threshold,
+                                "top_contributions": dict(strongest_contributions),
+                            },
+                        ),
+                        evidence_chain_item(
+                            "classify_hotspot",
+                            "Score met the high-risk threshold for a concentrated service responsibility hotspot.",
+                            data={"severity": score.severity.value, "confidence": confidence},
+                        ),
+                    ],
+                    confidence_reason=(
+                        f"Confidence is based on a weighted score of {score.score:.1f}/100 "
+                        f"against a high-risk threshold of {self.high_risk_threshold:.1f}."
+                    ),
+                    limitations=[
+                        "The score is a static architecture risk signal, not proof that the service is currently failing.",
+                        "Large services can be acceptable when they intentionally represent one cohesive bounded context.",
+                    ],
+                    source_files=[],
+                    related_services=[score.service],
+                    why_valid=(
+                        f"MESA combined multiple static signals for {score.service}; the strongest "
+                        f"drivers were {', '.join(name for name, _ in strongest_contributions)}."
+                    ),
                 )
             )
         return findings

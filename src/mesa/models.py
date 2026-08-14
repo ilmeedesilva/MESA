@@ -131,6 +131,13 @@ class FindingRecommendation(BaseModel):
     source: str = "rule-based"
 
 
+class EvidenceChainItem(BaseModel):
+    step: str
+    description: str
+    source: SourceLocation | None = None
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
 class Finding(BaseModel):
     id: str
     type: FindingType
@@ -141,6 +148,14 @@ class Finding(BaseModel):
     evidence: list[dict[str, Any]]
     recommendation: str
     recommendations: list[FindingRecommendation] = Field(default_factory=list)
+    detector_name: str = "Unknown detector"
+    rule_id: str = "unknown-rule"
+    evidence_chain: list[EvidenceChainItem] = Field(default_factory=list)
+    confidence_reason: str = ""
+    limitations: list[str] = Field(default_factory=list)
+    source_files: list[str] = Field(default_factory=list)
+    related_services: list[str] = Field(default_factory=list)
+    why_valid: str = ""
 
 
 class AnalysisRequest(BaseModel):
@@ -203,6 +218,190 @@ class AnalysisResult(BaseModel):
     summary: dict[str, Any]
 
 
+class ArchitectureGateStatus(str, Enum):
+    PASSED = "passed"
+    FAILED = "failed"
+
+
+class ArchitectureGateThresholds(BaseModel):
+    minimum_health_score: float = Field(default=75.0, ge=0.0, le=100.0)
+    maximum_critical_findings: int = Field(default=0, ge=0)
+    allow_new_cyclic_dependencies: bool = False
+    allow_governance_violations: bool = False
+    allow_new_high_risk_coupling: bool = False
+
+
+class ArchitectureGateRuleResult(BaseModel):
+    rule_id: str
+    passed: bool
+    message: str
+    observed_value: Any = None
+    threshold: Any = None
+    related_findings: list[str] = Field(default_factory=list)
+
+
+class ArchitectureFitnessGateResult(BaseModel):
+    status: ArchitectureGateStatus
+    health_score: float | None = None
+    threshold: float
+    failed_rules: list[str] = Field(default_factory=list)
+    rules: list[ArchitectureGateRuleResult] = Field(default_factory=list)
+    thresholds: ArchitectureGateThresholds = Field(default_factory=ArchitectureGateThresholds)
+    baseline_scan_id: str | None = None
+    source: str = "mesa-architecture-fitness-gate"
+
+
+class ArchitectureFitnessGateRequest(BaseModel):
+    thresholds: ArchitectureGateThresholds = Field(default_factory=ArchitectureGateThresholds)
+    baseline_scan_id: str | None = None
+
+
+class AIExplainerIntent(str, Enum):
+    AUTO = "AUTO"
+    SCAN_SUMMARY = "SCAN_SUMMARY"
+    FINDING_EXPLANATION = "FINDING_EXPLANATION"
+    PRIORITIZE_FIXES = "PRIORITIZE_FIXES"
+    HEALTH_SCORE_EXPLANATION = "HEALTH_SCORE_EXPLANATION"
+    COMPARE_SCANS = "COMPARE_SCANS"
+    GOVERNANCE_POLICY_HELP = "GOVERNANCE_POLICY_HELP"
+    POLICY_WRITING_ASSISTANCE = "POLICY_WRITING_ASSISTANCE"
+    DOC_QA = "DOC_QA"
+
+
+class AIExplainerConfidence(str, Enum):
+    LOW = "LOW"
+    MODERATE = "MODERATE"
+    HIGH = "HIGH"
+
+
+class AIExplainerEvidence(BaseModel):
+    kind: str
+    label: str
+    pointer: str
+    snippet: str
+
+
+class AIExplainerRequest(BaseModel):
+    intent: AIExplainerIntent = AIExplainerIntent.AUTO
+    question: str = ""
+    project_id: str | None = None
+    scan_id: str | None = None
+    finding_id: str | None = None
+    score_target: str | None = None
+    service_name: str | None = None
+    base_scan_id: str | None = None
+    target_scan_id: str | None = None
+    doc_query: str | None = None
+
+
+class AIExplainerResponse(BaseModel):
+    intent: AIExplainerIntent
+    title: str
+    answer: str
+    evidence: list[AIExplainerEvidence] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+    policy_document: str | None = None
+    confidence: AIExplainerConfidence = AIExplainerConfidence.MODERATE
+    grounded: bool = True
+    source: str = "mesa-grounded-explainer"
+
+
+class AIConnectionState(str, Enum):
+    GROUNDED_ONLY = "GROUNDED_ONLY"
+    MISSING_API_KEY = "MISSING_API_KEY"
+    PLACEHOLDER_API_KEY = "PLACEHOLDER_API_KEY"
+    INVALID_API_KEY = "INVALID_API_KEY"
+    MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE"
+    ACCESS_DENIED = "ACCESS_DENIED"
+    CONNECTION_ERROR = "CONNECTION_ERROR"
+    READY = "READY"
+
+
+class AIExplainerStatus(BaseModel):
+    mode: str
+    state: AIConnectionState
+    live_enabled: bool
+    api_key_configured: bool
+    api_key_hint: str | None = None
+    model: str
+    base_url: str
+    message: str
+
+
+class RoadmapBucket(str, Enum):
+    QUICK_WIN = "quick_win"
+    MEDIUM_TERM = "medium_term"
+    HIGH_EFFORT = "high_effort"
+
+
+class RefactoringPlaybookPhase(BaseModel):
+    title: str
+    objective: str
+    steps: list[str] = Field(default_factory=list)
+    verification_checks: list[str] = Field(default_factory=list)
+
+
+class RefactoringPlaybook(BaseModel):
+    problem_summary: str
+    impact: str
+    recommended_strategy: str
+    phases: list[RefactoringPlaybookPhase] = Field(default_factory=list)
+    verification_checks: list[str] = Field(default_factory=list)
+    rollback_plan: list[str] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    estimated_effort: str
+    related_services: list[str] = Field(default_factory=list)
+    related_findings: list[str] = Field(default_factory=list)
+    source: str = "mesa-rule-based-playbook"
+
+
+class RoadmapAction(BaseModel):
+    id: str
+    title: str
+    bucket: RoadmapBucket
+    priority_rank: int = Field(ge=1)
+    priority_score: float = Field(ge=0.0, le=100.0)
+    summary: str
+    rationale: str
+    expected_benefit: str
+    suggested_order_reason: str
+    estimated_difficulty: str
+    affected_services: list[str] = Field(default_factory=list)
+    related_findings: list[str] = Field(default_factory=list)
+    related_finding_types: list[FindingType] = Field(default_factory=list)
+    dependencies: list[str] = Field(default_factory=list)
+    metrics: dict[str, Any] = Field(default_factory=dict)
+    playbook: RefactoringPlaybook | None = None
+
+
+class RoadmapDependency(BaseModel):
+    action_id: str
+    depends_on: str
+    reason: str
+
+
+class RoadmapPlanStep(BaseModel):
+    order: int = Field(ge=1)
+    action_id: str
+    title: str
+    bucket: RoadmapBucket
+    why_now: str
+
+
+class RemediationRoadmap(BaseModel):
+    scan_id: str
+    generated_from_finding_count: int = 0
+    system_health_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    summary: str
+    quick_wins: list[RoadmapAction] = Field(default_factory=list)
+    medium_term_changes: list[RoadmapAction] = Field(default_factory=list)
+    high_effort_refactors: list[RoadmapAction] = Field(default_factory=list)
+    suggested_order: list[RoadmapPlanStep] = Field(default_factory=list)
+    dependencies: list[RoadmapDependency] = Field(default_factory=list)
+
+
 class ProjectCreate(BaseModel):
     name: str
     description: str | None = None
@@ -215,6 +414,17 @@ class ProjectRecord(BaseModel):
     description: str | None = None
     root_path: str | None = None
     created_at: str | None = None
+
+
+class ProjectSetup(BaseModel):
+    source_type: RepoSourceType | None = None
+    source_location: str | None = None
+    source_ref: str | None = None
+    selected_service_paths: list[str] = Field(default_factory=list)
+    manual_service_paths: list[str] = Field(default_factory=list)
+    chatty_threshold: int = 3
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class PolicyCreate(BaseModel):
@@ -250,6 +460,69 @@ class RunScanRequest(BaseModel):
 class RepoScanRunRequest(RepoScanPreviewRequest):
     service_paths: list[str] = Field(default_factory=list)
     chatty_threshold: int = 3
+
+
+class ResearchEvaluationRecordBase(BaseModel):
+    scan_id: str | None = None
+    repo_name: str
+    repo_url: str | None = None
+    commit_ref: str | None = None
+    scan_date: str | None = None
+    project_type: str | None = None
+    expected_services: int | None = Field(default=None, ge=0)
+    detected_services: int = Field(default=0, ge=0)
+    expected_patterns: str | None = None
+    detected_patterns: str | None = None
+    total_findings: int = Field(default=0, ge=0)
+    critical_findings: int = Field(default=0, ge=0)
+    high_findings: int = Field(default=0, ge=0)
+    medium_findings: int = Field(default=0, ge=0)
+    low_findings: int = Field(default=0, ge=0)
+    true_positives: int | None = Field(default=None, ge=0)
+    false_positives: int | None = Field(default=None, ge=0)
+    false_negatives: int | None = Field(default=None, ge=0)
+    notes: str | None = None
+    limitations: str | None = None
+    research_relevance: str | None = None
+    suitable_for_report: bool = False
+
+
+class ResearchEvaluationAccuracyMode(str, Enum):
+    GROUND_TRUTH = "GROUND_TRUTH"
+    MANUAL_VALIDATION_REQUIRED = "MANUAL_VALIDATION_REQUIRED"
+
+
+class ResearchEvaluationRecordCreate(ResearchEvaluationRecordBase):
+    pass
+
+
+class ResearchEvaluationRecordUpdate(ResearchEvaluationRecordBase):
+    repo_name: str | None = None
+    detected_services: int | None = Field(default=None, ge=0)
+    total_findings: int | None = Field(default=None, ge=0)
+    critical_findings: int | None = Field(default=None, ge=0)
+    high_findings: int | None = Field(default=None, ge=0)
+    medium_findings: int | None = Field(default=None, ge=0)
+    low_findings: int | None = Field(default=None, ge=0)
+
+
+class ResearchEvaluationRecord(ResearchEvaluationRecordBase):
+    id: str
+    precision: float | None = None
+    recall: float | None = None
+    f1_score: float | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class ResearchEvaluationDraft(ResearchEvaluationRecordBase):
+    project_id: str
+    accuracy_mode: ResearchEvaluationAccuracyMode = ResearchEvaluationAccuracyMode.MANUAL_VALIDATION_REQUIRED
+    matched_benchmark_id: str | None = None
+    matched_benchmark_name: str | None = None
+    precision: float | None = None
+    recall: float | None = None
+    f1_score: float | None = None
 
 
 class ScanRecord(BaseModel):

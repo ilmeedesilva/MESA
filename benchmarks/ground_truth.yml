@@ -8,6 +8,22 @@ systems:
     service_paths:
       - ../tests/fixtures/clean/order-service
       - ../tests/fixtures/clean/user-service
+    service_discovery:
+      root: ../tests/fixtures/clean
+      expected_candidates: [order-service, user-service]
+    explanation_checks:
+      - id: clean-scan-summary
+        intent: SCAN_SUMMARY
+        question: Summarize this scan simply.
+        required_evidence_kinds: [scan]
+        expected_phrases: [services]
+        min_suggestions: 1
+        min_follow_up_questions: 1
+        min_limitations: 1
+    evaluator_notes:
+      - Clean fixtures are useful to confirm MESA does not invent findings in a simple baseline.
+    known_limitations:
+      - This system is synthetic and smaller than a real service repository.
     ground_truth: []
 
   - id: chatty-services
@@ -16,6 +32,31 @@ systems:
     service_paths:
       - ../tests/fixtures/chatty/order-service
       - ../tests/fixtures/chatty/user-service
+    service_discovery:
+      root: ../tests/fixtures/chatty
+      expected_candidates: [order-service, user-service]
+    explanation_checks:
+      - id: chatty-priority
+        intent: PRIORITIZE_FIXES
+        question: Explain simply what should be solved first.
+        required_evidence_kinds: [finding]
+        expected_phrases: [first]
+        min_suggestions: 2
+        min_follow_up_questions: 1
+        min_limitations: 1
+      - id: chatty-finding
+        intent: FINDING_EXPLANATION
+        question: Explain simply why this should be reviewed.
+        finding_type: CHATTY_SERVICE
+        services: [order-service, user-service]
+        required_evidence_kinds: [finding]
+        min_suggestions: 2
+        min_follow_up_questions: 1
+        min_limitations: 1
+    evaluator_notes:
+      - Chatty services are still inferred from static call-site count, not real runtime traffic.
+    known_limitations:
+      - Repeated hard-coded findings are counted by occurrence rather than by unique endpoint family.
     ground_truth:
       - type: CHATTY_SERVICE
         services: [order-service, user-service]
@@ -32,6 +73,28 @@ systems:
     service_paths:
       - ../tests/fixtures/cycle/order-service
       - ../tests/fixtures/cycle/payment-service
+    service_discovery:
+      root: ../tests/fixtures/cycle
+      expected_candidates: [order-service, payment-service]
+    explanation_checks:
+      - id: cycle-priority
+        intent: PRIORITIZE_FIXES
+        question: What should I fix first here?
+        required_evidence_kinds: [finding]
+        expected_phrases: [first]
+        min_suggestions: 2
+        min_follow_up_questions: 1
+        min_limitations: 1
+      - id: cycle-health
+        intent: HEALTH_SCORE_EXPLANATION
+        question: Explain the health score.
+        score_target: system:system
+        required_evidence_kinds: [score, dimension]
+        min_suggestions: 2
+        min_follow_up_questions: 1
+        min_limitations: 1
+    evaluator_notes:
+      - Two-service cycles are especially useful for evaluator demos because the cause is easy to explain.
     ground_truth:
       - type: CYCLIC_DEPENDENCY
         services: [order-service, payment-service]
@@ -46,6 +109,20 @@ systems:
     service_paths:
       - ../tests/fixtures/shared-db/order-service
       - ../tests/fixtures/shared-db/payment-service
+    service_discovery:
+      root: ../tests/fixtures/shared-db
+      expected_candidates: [order-service, payment-service]
+    explanation_checks:
+      - id: shared-db-summary
+        intent: SCAN_SUMMARY
+        question: Summarize the main architecture issues.
+        required_evidence_kinds: [scan, finding]
+        expected_phrases: [main]
+        min_suggestions: 1
+        min_follow_up_questions: 1
+        min_limitations: 1
+    known_limitations:
+      - Shared database evidence is static and does not measure runtime transaction coupling.
     ground_truth:
       - type: SHARED_DATABASE
         services: [order-service, payment-service]
@@ -60,6 +137,21 @@ systems:
     service_paths:
       - ../tests/fixtures/hardcoded/order-service
       - ../tests/fixtures/hardcoded/billing-service
+    service_discovery:
+      root: ../tests/fixtures/hardcoded
+      expected_candidates: [billing-service, clean-service, order-service]
+    explanation_checks:
+      - id: hardcoded-finding
+        intent: FINDING_EXPLANATION
+        question: Explain simply why this hard-coded dependency matters.
+        finding_type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [billing-service]
+        required_evidence_kinds: [finding, evidence]
+        min_suggestions: 2
+        min_follow_up_questions: 1
+        min_limitations: 1
+    evaluator_notes:
+      - Discovery may surface utility-style directories alongside service directories in mixed roots.
     ground_truth:
       - type: HARD_CODED_SERVICE_DEPENDENCY
         services: [billing-service]
@@ -85,6 +177,30 @@ systems:
       - ../tests/fixtures/god/user-service
       - ../tests/fixtures/god/payment-service
       - ../tests/fixtures/god/notification-service
+    service_discovery:
+      root: ../tests/fixtures/god
+      expected_candidates: [billing-service, inventory-service, notification-service, order-service, payment-service, platform-service, small-service, user-service]
+    explanation_checks:
+      - id: god-priority
+        intent: PRIORITIZE_FIXES
+        question: Explain simply what should be solved first.
+        required_evidence_kinds: [finding]
+        expected_phrases: [first]
+        min_suggestions: 3
+        min_follow_up_questions: 1
+        min_limitations: 1
+      - id: god-health
+        intent: HEALTH_SCORE_EXPLANATION
+        question: Why is the health score low?
+        score_target: system:system
+        required_evidence_kinds: [score, dimension]
+        min_suggestions: 2
+        min_follow_up_questions: 1
+        min_limitations: 1
+    evaluator_notes:
+      - This fixture behaves like a concentrated hotspot and is useful for roadmap, health, and priority evaluation together.
+    known_limitations:
+      - It is still a synthetic benchmark even though it combines multiple anti-pattern signals.
     ground_truth:
       - type: CYCLIC_DEPENDENCY
         services: [billing-service, platform-service]
@@ -133,6 +249,20 @@ systems:
       - ../tests/fixtures/god/user-service
       - ../tests/fixtures/god/payment-service
       - ../tests/fixtures/god/notification-service
+    service_discovery:
+      root: ../tests/fixtures/god
+      expected_candidates: [billing-service, inventory-service, notification-service, order-service, payment-service, platform-service, small-service, user-service]
+    explanation_checks:
+      - id: distributed-summary
+        intent: SCAN_SUMMARY
+        question: Summarize this scan.
+        required_evidence_kinds: [scan, finding]
+        expected_phrases: [services]
+        min_suggestions: 2
+        min_follow_up_questions: 1
+        min_limitations: 1
+    evaluator_notes:
+      - This benchmark is a useful stand-in for distributed monolith symptoms, but it is not a real production repository.
     ground_truth:
       - type: CYCLIC_DEPENDENCY
         services: [billing-service, platform-service]
