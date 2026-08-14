@@ -1,5 +1,6 @@
 services:
   api:
+    platform: ${MESA_DOCKER_PLATFORM:-linux/arm64}
     build: .
     ports:
       - "8000:8000"
@@ -22,6 +23,7 @@ services:
       - neo4j
 
   frontend:
+    platform: ${MESA_DOCKER_PLATFORM:-linux/arm64}
     build:
       context: .
       dockerfile: frontend/Dockerfile
@@ -31,6 +33,7 @@ services:
       - api
 
   postgres:
+    platform: ${MESA_DOCKER_PLATFORM:-linux/arm64}
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: mesa
@@ -42,6 +45,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
   neo4j:
+    platform: ${MESA_DOCKER_PLATFORM:-linux/arm64}
     image: neo4j:5-community
     environment:
       NEO4J_AUTH: neo4j/mesa-password

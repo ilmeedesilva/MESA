@@ -116,6 +116,13 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS idx_policies_project_id ON policies(project_id);
 
+CREATE TABLE IF NOT EXISTS project_setups (
+    project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS research_evaluation_records (
     id TEXT PRIMARY KEY,
     scan_id TEXT REFERENCES scans(id) ON DELETE SET NULL,
@@ -150,6 +157,7 @@ CREATE TABLE IF NOT EXISTS research_evaluation_records (
 CREATE INDEX IF NOT EXISTS idx_research_evaluation_records_scan_id ON research_evaluation_records(scan_id);
 
 CREATE INDEX IF NOT EXISTS idx_scans_project_id ON scans(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_setups_project_id ON project_setups(project_id);
 CREATE INDEX IF NOT EXISTS idx_findings_scan_id ON findings(scan_id);
 CREATE INDEX IF NOT EXISTS idx_services_scan_id ON services(scan_id);
 CREATE INDEX IF NOT EXISTS idx_dependencies_scan_id ON dependencies(scan_id);

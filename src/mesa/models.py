@@ -416,6 +416,17 @@ class ProjectRecord(BaseModel):
     created_at: str | None = None
 
 
+class ProjectSetup(BaseModel):
+    source_type: RepoSourceType | None = None
+    source_location: str | None = None
+    source_ref: str | None = None
+    selected_service_paths: list[str] = Field(default_factory=list)
+    manual_service_paths: list[str] = Field(default_factory=list)
+    chatty_threshold: int = 3
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
 class PolicyCreate(BaseModel):
     id: str | None = None
     name: str

@@ -170,6 +170,17 @@ type ProjectRecord = {
   created_at?: string | null;
 };
 
+type ProjectSetup = {
+  source_type?: string | null;
+  source_location?: string | null;
+  source_ref?: string | null;
+  selected_service_paths: string[];
+  manual_service_paths: string[];
+  chatty_threshold: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 type PolicyRecord = {
   id: string;
   project_id: string;
@@ -327,6 +338,7 @@ type WorkflowStep = {
 type InterpretationMode = "beginner" | "research";
 type WorkspaceView = "analysis" | "research" | "docs";
 type ApiAvailability = "checking" | "online" | "offline";
+type ProjectListStatus = "idle" | "loading" | "ready" | "error";
 type AIExplainerIntent =
   | "AUTO"
   | "SCAN_SUMMARY"
@@ -419,8 +431,6 @@ const defaultPaths = [
   "/workspace/tests/fixtures/god/notification-service"
 ].join("\n");
 
-const projectStorageKey = "mesa.projects";
-
 const defaultPolicyDocument = `policies:
   - id: no-cycles
     name: No cyclic dependencies
@@ -444,10 +454,13 @@ const severityRank: Record<string, number> = {
 };
 
 function App() {
-  const [projects, setProjects] = React.useState<ProjectRecord[]>(loadStoredProjects);
-  const [selectedProjectId, setSelectedProjectId] = React.useState(() => projects[0]?.id ?? "");
+  const [projects, setProjects] = React.useState<ProjectRecord[]>([]);
+  const [projectListStatus, setProjectListStatus] = React.useState<ProjectListStatus>("idle");
+  const [projectListError, setProjectListError] = React.useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = React.useState("");
   const [projectName, setProjectName] = React.useState("MESA Demo Project");
   const [projectDescription, setProjectDescription] = React.useState("Static architecture analysis demo");
+  const [showCreateProjectForm, setShowCreateProjectForm] = React.useState(false);
   const [paths, setPaths] = React.useState(defaultPaths);
   const [sourceType, setSourceType] = React.useState("LOCAL_PATH");
   const [sourceLocation, setSourceLocation] = React.useState("");
@@ -484,6 +497,7 @@ function App() {
   const [workspaceView, setWorkspaceView] = React.useState<WorkspaceView>("analysis");
   const [apiAvailability, setApiAvailability] = React.useState<ApiAvailability>("checking");
   const [isPublicDemoMode, setIsPublicDemoMode] = React.useState(false);
+  const [isLoadingProjectState, setIsLoadingProjectState] = React.useState(false);
   const [aiQuestion, setAiQuestion] = React.useState("");
   const [aiResponse, setAiResponse] = React.useState<AIExplainerResponse | null>(null);
   const [isExplaining, setIsExplaining] = React.useState(false);
@@ -500,17 +514,30 @@ function App() {
     minConfidence: 0
   });
   const graphRef = React.useRef<HTMLDivElement | null>(null);
+  const initialProjectIdRef = React.useRef(readProjectIdFromUrl());
+  const projectListRequestRef = React.useRef(0);
+  const projectStateRequestRef = React.useRef(0);
+  const scanRequestRef = React.useRef(0);
+  const projectStateAbortRef = React.useRef<AbortController | null>(null);
+  const scanAbortRef = React.useRef<AbortController | null>(null);
 
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
   const manualServicePaths = React.useMemo(() => servicePathsFromText(paths), [paths]);
 
   React.useEffect(() => {
-    if (isPublicDemoMode) return;
-    localStorage.setItem(projectStorageKey, JSON.stringify(projects));
-  }, [isPublicDemoMode, projects]);
+    const handlePopState = () => {
+      if (isPublicDemoMode && apiAvailability !== "online") return;
+      setSelectedProjectId(readProjectIdFromUrl());
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [apiAvailability, isPublicDemoMode]);
 
   React.useEffect(() => {
     if (!selectedProjectId) {
+      syncProjectIdToUrl("", "replace");
+      cancelProjectRequests();
+      resetProjectScanFlowState();
       setHistory([]);
       setEvolution([]);
       setPolicyCount(0);
@@ -522,7 +549,8 @@ function App() {
       setScores([]);
       return;
     }
-    if (isPublicDemoProject(selectedProjectId)) {
+    if (isPublicDemoMode && isPublicDemoProject(selectedProjectId)) {
+      syncProjectIdToUrl(selectedProjectId, "replace");
       setHistory(demoWorkspace.scans as unknown as ScanRecord[]);
       setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
       setPolicyCount(demoWorkspace.policies.length);
@@ -532,9 +560,9 @@ function App() {
       }
       return;
     }
-    void loadHistory(selectedProjectId);
-    void loadPolicies(selectedProjectId);
-  }, [activeScan, selectedProjectId]);
+    syncProjectIdToUrl(selectedProjectId, "replace");
+    void loadSelectedProjectState(selectedProjectId);
+  }, [apiAvailability, isPublicDemoMode, selectedProjectId]);
 
   React.useEffect(() => {
     void loadAIStatus();
@@ -544,6 +572,11 @@ function App() {
   React.useEffect(() => {
     void probeApiAvailability();
   }, []);
+
+  React.useEffect(() => {
+    if (apiAvailability !== "online" || isPublicDemoMode) return;
+    void loadProjects();
+  }, [apiAvailability, isPublicDemoMode]);
 
   React.useEffect(() => {
     if (workspaceView === "research") void loadResearchRecords();
@@ -588,6 +621,220 @@ function App() {
     return () => cy.destroy();
   }, [aggregatedEdges, displayGraph, result, scores]);
 
+  function cancelProjectRequests() {
+    projectStateAbortRef.current?.abort();
+    scanAbortRef.current?.abort();
+  }
+
+  function resetProjectScanFlowState() {
+    setSourceType("LOCAL_PATH");
+    setSourceLocation("");
+    setSourceRef("main");
+    setRepoPreview(null);
+    setSelectedDiscoveryPaths([]);
+    setPaths(defaultPaths);
+    setHistory([]);
+    setEvolution([]);
+    setRoadmap(null);
+    setPolicyCount(0);
+    setPolicyText(defaultPolicyDocument);
+    setActiveScan(null);
+    setResult(null);
+    setDisplayGraph(null);
+    setScores([]);
+    setSelectedFinding(null);
+    setSelectedGraphElement(null);
+    setAiQuestion("");
+    setAiResponse(null);
+    setStreamingAnswer("");
+    setError(null);
+    setShowSetupWorkspace(true);
+    setHasAutoCollapsedSetup(false);
+    setActiveSetupStepId("project");
+    setShowCreateProjectForm(false);
+  }
+
+  function updateSelectedProject(projectId: string, historyMode: "push" | "replace" = "push") {
+    setSelectedProjectId(projectId);
+    setShowCreateProjectForm(false);
+    setShowSetupWorkspace(true);
+    syncProjectIdToUrl(projectId, historyMode);
+  }
+
+  async function loadProjects(options?: {
+    preferredProjectId?: string;
+    preserveCurrentSelection?: boolean;
+    historyMode?: "push" | "replace";
+  }) {
+    const requestId = projectListRequestRef.current + 1;
+    projectListRequestRef.current = requestId;
+    setProjectListStatus("loading");
+    setProjectListError(null);
+    try {
+      const nextProjects = await api<ProjectRecord[]>("/api/projects");
+      if (requestId !== projectListRequestRef.current) return;
+      setProjects(nextProjects);
+      setProjectListStatus("ready");
+      const preferredProjectId = options?.preferredProjectId ?? initialProjectIdRef.current;
+      const keepCurrentSelection = options?.preserveCurrentSelection !== false ? selectedProjectId : "";
+      const resolvedProjectId = resolveProjectSelection(nextProjects, keepCurrentSelection, preferredProjectId);
+      initialProjectIdRef.current = "";
+      if (resolvedProjectId !== selectedProjectId) {
+        updateSelectedProject(resolvedProjectId, options?.historyMode ?? "replace");
+      } else if (!resolvedProjectId) {
+        syncProjectIdToUrl("", options?.historyMode ?? "replace");
+      }
+    } catch (caught) {
+      if (requestId !== projectListRequestRef.current || isAbortError(caught)) return;
+      setProjectListStatus("error");
+      if (caught instanceof ApiError && caught.status === 405) {
+        setProjectListError(
+          "The frontend is newer than the running API. Rebuild/restart the API service so `GET /projects` is available."
+        );
+      } else {
+        setProjectListError(messageFor(caught, "Could not load projects"));
+      }
+      setProjects([]);
+      updateSelectedProject("", "replace");
+    }
+  }
+
+  async function recoverFromUnavailableProject(projectId: string) {
+    if (selectedProjectId !== projectId) return;
+    setError("The selected project is no longer available. MESA switched to another available project.");
+    await loadProjects({ preserveCurrentSelection: false, historyMode: "replace" });
+  }
+
+  async function fetchProjectBundle(projectId: string, signal: AbortSignal) {
+    const [scans, policies, evolutionReports, setup] = await Promise.all([
+      api<ScanRecord[]>(`/api/projects/${projectId}/scans`, { signal }),
+      api<PolicyRecord[]>(`/api/projects/${projectId}/policies`, { signal }),
+      api<EvolutionReport[]>(`/api/projects/${projectId}/evolution`, { signal }),
+      api<ProjectSetup | null>(`/api/projects/${projectId}/setup`, { signal })
+    ]);
+    return { scans, policies, evolutionReports, setup };
+  }
+
+  function applyProjectSetup(setup: ProjectSetup | null) {
+    if (!setup) {
+      setSourceType("LOCAL_PATH");
+      setSourceLocation("");
+      setSourceRef("main");
+      setRepoPreview(null);
+      setSelectedDiscoveryPaths([]);
+      setPaths(defaultPaths);
+      setActiveSetupStepId("source");
+      return;
+    }
+
+    const resolvedSourceType = setup.source_type ?? "LOCAL_PATH";
+    const resolvedSourceLocation = setup.source_location ?? "";
+    const selectedServices = setup.selected_service_paths ?? [];
+    const manualServices = setup.manual_service_paths ?? [];
+
+    setSourceType(resolvedSourceType);
+    setSourceLocation(resolvedSourceLocation);
+    setSourceRef(setup.source_ref ?? "main");
+    setSelectedDiscoveryPaths(selectedServices);
+    setPaths((manualServices.length > 0 ? manualServices : selectedServices).join("\n"));
+    setRepoPreview(null);
+    setActiveSetupStepId(
+      selectedServices.length > 0 || manualServices.length > 0
+        ? "review"
+        : resolvedSourceLocation
+          ? "source"
+          : "project"
+    );
+  }
+
+  async function loadSelectedProjectState(projectId: string) {
+    if (!projectId) return;
+    const requestId = projectStateRequestRef.current + 1;
+    projectStateRequestRef.current = requestId;
+    projectStateAbortRef.current?.abort();
+    scanAbortRef.current?.abort();
+    const controller = new AbortController();
+    projectStateAbortRef.current = controller;
+
+    resetProjectScanFlowState();
+    setIsLoadingProjectState(true);
+
+    try {
+      const { scans, policies, evolutionReports, setup } = await fetchProjectBundle(projectId, controller.signal);
+      if (requestId !== projectStateRequestRef.current || selectedProjectId !== projectId) return;
+      applyProjectSetup(setup);
+      setHistory(scans);
+      setEvolution(evolutionReports);
+      setPolicyCount(policies.length);
+      setPolicyText(policies.length > 0 ? policyDocumentFromRecords(policies) : defaultPolicyDocument);
+
+      if (setup?.source_type && setup.source_location) {
+        void restoreRepositoryPreview(setup, projectId, requestId);
+      }
+
+      if (scans.length > 0) {
+        await loadScan(scans[0].id, { projectId, historyMode: "replace" });
+      }
+    } catch (caught) {
+      if (requestId !== projectStateRequestRef.current || isAbortError(caught)) return;
+      if (isNotFoundError(caught)) {
+        await recoverFromUnavailableProject(projectId);
+        return;
+      }
+      setError(messageFor(caught, "Could not load the selected project"));
+    } finally {
+      if (requestId === projectStateRequestRef.current) {
+        setIsLoadingProjectState(false);
+      }
+    }
+  }
+
+  async function refreshCurrentProjectCollections(projectId: string) {
+    if (!projectId || isPublicDemoProject(projectId)) return;
+    const controller = new AbortController();
+    try {
+      const { scans, policies, evolutionReports, setup } = await fetchProjectBundle(projectId, controller.signal);
+      if (selectedProjectId !== projectId) return;
+      applyProjectSetup(setup);
+      setHistory(scans);
+      setEvolution(evolutionReports);
+      setPolicyCount(policies.length);
+      setPolicyText(policies.length > 0 ? policyDocumentFromRecords(policies) : defaultPolicyDocument);
+    } catch (caught) {
+      if (isAbortError(caught)) return;
+      if (isNotFoundError(caught)) {
+        await recoverFromUnavailableProject(projectId);
+      }
+    }
+  }
+
+  async function restoreRepositoryPreview(setup: ProjectSetup, projectId: string, requestId: number) {
+    if (!setup.source_type || !setup.source_location) return;
+    try {
+      const preview = await api<RepoScanPreview>("/api/repo-scans/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source_type: setup.source_type,
+          location: setup.source_location,
+          ref: setup.source_type === "GITHUB_URL" ? setup.source_ref || undefined : undefined
+        })
+      });
+      if (requestId !== projectStateRequestRef.current || selectedProjectId !== projectId) return;
+      setRepoPreview(preview);
+      setSelectedDiscoveryPaths(
+        setup.selected_service_paths.length > 0
+          ? setup.selected_service_paths
+          : preview.discovered_services
+              .filter((candidate) => candidate.selected_by_default)
+              .map((candidate) => candidate.relative_path)
+      );
+    } catch {
+      if (requestId !== projectStateRequestRef.current || selectedProjectId !== projectId) return;
+      setRepoPreview(null);
+    }
+  }
+
   async function createProject() {
     setIsPublicDemoMode(false);
     setError(null);
@@ -599,7 +846,10 @@ function App() {
         body: JSON.stringify({ name: projectName, description: projectDescription })
       });
       setProjects((current) => [project, ...current.filter((item) => item.id !== project.id)]);
-      setSelectedProjectId(project.id);
+      setProjectListStatus("ready");
+      setProjectListError(null);
+      resetProjectScanFlowState();
+      updateSelectedProject(project.id, "push");
     } catch (caught) {
       setError(messageFor(caught, "Project creation failed"));
     } finally {
@@ -612,22 +862,23 @@ function App() {
       setError("Public demo mode is using embedded example results. Start the full backend stack to run live scans.");
       return;
     }
-    if (!selectedProjectId) {
+    if (!selectedProject) {
       setError("Create or select a project before running a scan.");
       return;
     }
-    if (sourceLocation.trim() && !repoPreview) {
-      setError("Preview the repository source before running a repository-backed scan.");
+    if (sourceLocation.trim() && selectedDiscoveryPaths.length === 0 && repoPreview?.discovered_services?.length) {
+      setError("Select at least one discovered service before running a repository-backed scan.");
       return;
     }
-    if (repoPreview && repoPreview.discovered_services.length > 0 && selectedDiscoveryPaths.length === 0) {
-      setError("Select at least one discovered service before running a repository-backed scan.");
+    if (!sourceLocation.trim() && manualServicePaths.length === 0) {
+      setError("Enter manual service paths or choose a repository source before running a scan.");
       return;
     }
     setError(null);
     setIsScanning(true);
     try {
-      const payload = repoPreview
+      const useRepositorySource = Boolean(sourceLocation.trim());
+      const payload = useRepositorySource
         ? await api<PersistedScanResult>(`/api/projects/${selectedProjectId}/repo-scans`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -654,7 +905,7 @@ function App() {
       setStreamingAnswer("");
       await loadDigitalTwinGraph(payload.scan.id, payload.result, nextScores);
       await loadRoadmap(payload.scan.id);
-      await loadHistory(selectedProjectId, payload.scan.id);
+      await refreshCurrentProjectCollections(selectedProjectId);
       await loadResearchRecords();
     } catch (caught) {
       setError(messageFor(caught, "Scan failed"));
@@ -685,11 +936,12 @@ function App() {
         })
       });
       setRepoPreview(preview);
-      setSelectedDiscoveryPaths(
+      const selectedPaths = (
         preview.discovered_services
           .filter((candidate) => candidate.selected_by_default)
           .map((candidate) => candidate.relative_path)
       );
+      setSelectedDiscoveryPaths(selectedPaths);
     } catch (caught) {
       setRepoPreview(null);
       setSelectedDiscoveryPaths([]);
@@ -774,7 +1026,7 @@ function App() {
       setError("Policy saving is disabled in public demo mode because the backend is not connected.");
       return;
     }
-    if (!selectedProjectId) {
+    if (!selectedProject) {
       setError("Create or select a project before saving policies.");
       return;
     }
@@ -795,7 +1047,10 @@ function App() {
     }
   }
 
-  async function loadScan(scanId: string) {
+  async function loadScan(
+    scanId: string,
+    options?: { projectId?: string; historyMode?: "push" | "replace"; signal?: AbortSignal }
+  ) {
     if (isDemoScan(scanId)) {
       const payload = demoPersistedScan(scanId);
       const nextScores = flattenScores(payload.result.summary.health_scores);
@@ -810,10 +1065,18 @@ function App() {
       setStreamingAnswer("");
       return;
     }
+    const requestId = scanRequestRef.current + 1;
+    scanRequestRef.current = requestId;
+    scanAbortRef.current?.abort();
+    const controller = options?.signal ? null : new AbortController();
+    scanAbortRef.current = controller;
+    const signal = options?.signal ?? controller?.signal;
     setError(null);
     setIsLoadingScan(true);
     try {
-      const payload = await api<PersistedScanResult>(`/api/scans/${scanId}`);
+      const payload = await api<PersistedScanResult>(`/api/scans/${scanId}`, signal ? { signal } : undefined);
+      if (requestId !== scanRequestRef.current) return;
+      if (options?.projectId && selectedProjectId !== options.projectId) return;
       setActiveScan(payload.scan);
       setResult(payload.result);
       let nextScores = flattenScores(payload.result.summary.health_scores);
@@ -824,34 +1087,49 @@ function App() {
       setAiResponse(null);
       setStreamingAnswer("");
       try {
-        nextScores = await api<HealthScore[]>(`/api/scans/${scanId}/scores`);
+        nextScores = await api<HealthScore[]>(`/api/scans/${scanId}/scores`, signal ? { signal } : undefined);
+        if (requestId !== scanRequestRef.current) return;
         setScores(nextScores);
       } catch {
         setScores(nextScores);
       }
-      await loadRoadmap(scanId);
-      await loadDigitalTwinGraph(scanId, payload.result, nextScores);
+      await loadRoadmap(scanId, requestId);
+      await loadDigitalTwinGraph(scanId, payload.result, nextScores, requestId);
     } catch (caught) {
+      if (isAbortError(caught)) return;
+      if (options?.projectId && isNotFoundError(caught)) {
+        await recoverFromUnavailableProject(options.projectId);
+        return;
+      }
       setError(messageFor(caught, "Could not load scan"));
     } finally {
-      setIsLoadingScan(false);
+      if (requestId === scanRequestRef.current) {
+        setIsLoadingScan(false);
+      }
     }
   }
 
-  async function loadDigitalTwinGraph(scanId: string, scanResult: AnalysisResult, currentScores: HealthScore[]) {
+  async function loadDigitalTwinGraph(
+    scanId: string,
+    scanResult: AnalysisResult,
+    currentScores: HealthScore[],
+    requestId?: number
+  ) {
     if (isDemoScan(scanId)) {
       setDisplayGraph(graphFromReport(scanResult, currentScores));
       return;
     }
     try {
       const twin = await api<DigitalTwinGraph>(`/api/scans/${scanId}/graph`);
+      if (requestId && requestId !== scanRequestRef.current) return;
       setDisplayGraph(graphFromDigitalTwin(twin, scanResult, currentScores));
     } catch {
+      if (requestId && requestId !== scanRequestRef.current) return;
       setDisplayGraph(graphFromReport(scanResult, currentScores));
     }
   }
 
-  async function loadRoadmap(scanId: string) {
+  async function loadRoadmap(scanId: string, requestId?: number) {
     if (isDemoScan(scanId)) {
       setRoadmap(demoWorkspace.roadmaps[scanId as keyof typeof demoWorkspace.roadmaps] as unknown as RemediationRoadmap);
       setIsLoadingRoadmap(false);
@@ -859,11 +1137,16 @@ function App() {
     }
     setIsLoadingRoadmap(true);
     try {
-      setRoadmap(await api<RemediationRoadmap>(`/api/scans/${scanId}/roadmap`));
+      const nextRoadmap = await api<RemediationRoadmap>(`/api/scans/${scanId}/roadmap`);
+      if (requestId && requestId !== scanRequestRef.current) return;
+      setRoadmap(nextRoadmap);
     } catch {
+      if (requestId && requestId !== scanRequestRef.current) return;
       setRoadmap(null);
     } finally {
-      setIsLoadingRoadmap(false);
+      if (!requestId || requestId === scanRequestRef.current) {
+        setIsLoadingRoadmap(false);
+      }
     }
   }
 
@@ -1008,7 +1291,7 @@ function App() {
       const payload = {
         intent,
         question: options?.question ?? aiQuestion,
-        project_id: selectedProjectId || undefined,
+        project_id: selectedProject?.id,
         scan_id: activeScan?.id,
         finding_id: options?.findingId,
         base_scan_id: options?.baseScanId,
@@ -1067,7 +1350,7 @@ function App() {
   const urgentFinding = getMostUrgentFinding(result?.findings ?? []);
   const hotspot = getHotspotService(result?.findings ?? [], serviceScores);
   const compareBaseScan = activeScan ? comparisonBaseScan(history, activeScan.id) : null;
-  const hasProject = Boolean(selectedProjectId);
+  const hasProject = Boolean(selectedProject);
   const hasSourceConfigured = Boolean(sourceLocation.trim()) || manualServicePaths.length > 0;
   const hasRepoPreview = Boolean(repoPreview);
   const hasServiceSelection = repoPreview ? selectedDiscoveryPaths.length > 0 : manualServicePaths.length > 0;
@@ -1149,6 +1432,22 @@ function App() {
     setWorkspaceView("docs");
   }
 
+  function openCreateProjectFlow() {
+    setShowSetupWorkspace(true);
+    setHasAutoCollapsedSetup(false);
+    setActiveSetupStepId("project");
+    setShowCreateProjectForm(true);
+    setWorkspaceView("analysis");
+  }
+
+  function handleTopProjectSelection(nextValue: string) {
+    if (nextValue === "__create_new__") {
+      openCreateProjectFlow();
+      return;
+    }
+    updateSelectedProject(nextValue, "push");
+  }
+
   async function probeApiAvailability() {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 2500);
@@ -1167,9 +1466,12 @@ function App() {
   }
 
   function activatePublicDemo(scanId = demoWorkspace.scans[0].id) {
+    cancelProjectRequests();
     setIsPublicDemoMode(true);
+    setProjectListStatus("ready");
+    setProjectListError(null);
     setProjects([demoWorkspace.project as unknown as ProjectRecord]);
-    setSelectedProjectId(demoWorkspace.project.id);
+    updateSelectedProject(demoWorkspace.project.id, "replace");
     setHistory(demoWorkspace.scans as unknown as ScanRecord[]);
     setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
     setPolicyCount(demoWorkspace.policies.length);
@@ -1181,21 +1483,11 @@ function App() {
   }
 
   function leavePublicDemo() {
+    cancelProjectRequests();
     setIsPublicDemoMode(false);
-    setProjects(loadStoredProjects());
-    setSelectedProjectId(loadStoredProjects()[0]?.id ?? "");
-    setHistory([]);
-    setEvolution([]);
-    setPolicyCount(0);
-    setPolicyText(defaultPolicyDocument);
-    setActiveScan(null);
-    setResult(null);
-    setRoadmap(null);
-    setDisplayGraph(null);
-    setScores([]);
-    setAiResponse(null);
-    setStreamingAnswer("");
-    setError(null);
+    setProjects([]);
+    updateSelectedProject("", "replace");
+    resetProjectScanFlowState();
   }
 
   const backendUnavailable = apiAvailability === "offline";
@@ -1233,8 +1525,39 @@ function App() {
               Research Evaluation
             </button>
           </div>
-          <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
-          <button onClick={runScan} disabled={isScanning || !selectedProjectId || workspaceView !== "analysis" || usingEmbeddedDemo}>
+          <div className="toolbarProjectShell">
+            <label className="toolbarProjectPicker">
+              <span>Project</span>
+              <select
+                value={selectedProjectId}
+                onChange={(event) => handleTopProjectSelection(event.target.value)}
+                disabled={projectListStatus === "loading" && !isPublicDemoMode}
+              >
+                <option value="">Select project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+                {!isPublicDemoMode ? <option value="__create_new__">+ Create New Project</option> : null}
+              </select>
+            </label>
+            <div className="toolbarProjectMeta">
+              <strong>
+                {isLoadingProjectState
+                  ? "Loading project..."
+                  : selectedProject
+                    ? selectedProject.name
+                    : "No project selected"}
+              </strong>
+              <small>
+                {projectListStatus === "loading"
+                  ? "Refreshing project list"
+                  : `${projects.length} available project${projects.length === 1 ? "" : "s"}`}
+              </small>
+            </div>
+          </div>
+          <button onClick={runScan} disabled={isScanning || !selectedProject || workspaceView !== "analysis" || usingEmbeddedDemo}>
             {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
           </button>
         </div>
@@ -1372,22 +1695,80 @@ function App() {
                 <section className="panelBlock">
             <div className="panelHeader compact">
               <h2>Step 1. Project</h2>
-              <span>{projects.length} saved</span>
+              <span>{projects.length} available</span>
             </div>
-            <label htmlFor="projectName">Project name</label>
-            <input id="projectName" value={projectName} onChange={(event) => setProjectName(event.target.value)} />
-            <label htmlFor="projectDescription">Description</label>
-            <input id="projectDescription" value={projectDescription} onChange={(event) => setProjectDescription(event.target.value)} />
-            <button className="fullButton" onClick={createProject} disabled={isCreating || !projectName.trim()}>
-              {isCreating ? "Creating..." : "Create Project"}
-            </button>
-            <label htmlFor="projectSelect">Select project</label>
-            <select id="projectSelect" value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
-              <option value="">Choose a project</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>{project.name}</option>
-              ))}
-            </select>
+            <div className="projectStepLayout">
+              <section className="projectSelectionPanel">
+                <div className="projectChoiceHeader">
+                  <div className="stepHintCard compact">
+                    Select an existing project to restore its scan flow, or create a new project to start fresh.
+                  </div>
+                  <button
+                    type="button"
+                    className={showCreateProjectForm ? "secondaryButton activeInlineButton" : "secondaryButton"}
+                    onClick={() => setShowCreateProjectForm((current) => !current)}
+                  >
+                    {showCreateProjectForm ? "Hide Create Project" : "Create New Project"}
+                  </button>
+                </div>
+                <label htmlFor="projectSelect">Select existing project</label>
+                <select
+                  id="projectSelect"
+                  value={selectedProjectId}
+                  onChange={(event) => updateSelectedProject(event.target.value, "push")}
+                  disabled={isCreating || projectListStatus === "loading"}
+                >
+                  <option value="">Choose a project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>{project.name}</option>
+                  ))}
+                </select>
+                {selectedProject ? (
+                  <div className="selectedProjectSummary">
+                    <strong>Selected</strong>
+                    <span>{selectedProject.name}</span>
+                    <small>{selectedProject.description || "Saved project ready to restore and rescan."}</small>
+                  </div>
+                ) : null}
+                {projectListStatus === "loading" ? <p className="hint">Loading existing projects...</p> : null}
+                {projectListStatus === "error" && projectListError ? <div className="error">{projectListError}</div> : null}
+                {projectListStatus === "ready" && projects.length === 0 ? (
+                  <div className="stepHintCard">
+                    No projects exist yet. Create a project to start a fresh scan workflow.
+                  </div>
+                ) : null}
+                {projects.length > 0 ? (
+                  <div className="projectQuickList">
+                    {projects.map((project) => (
+                      <button
+                        key={project.id}
+                        type="button"
+                        className={selectedProjectId === project.id ? "projectQuickButton active" : "projectQuickButton"}
+                        onClick={() => updateSelectedProject(project.id, "push")}
+                      >
+                        <strong>{project.name}</strong>
+                        <small>{project.description || "Open saved setup and scan history"}</small>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+              {showCreateProjectForm ? (
+                <section className="projectCreatePanel">
+                  <div className="panelHeader compact">
+                    <h3>Create New Project</h3>
+                    <span>Fresh setup</span>
+                  </div>
+                  <label htmlFor="projectName">Project name</label>
+                  <input id="projectName" value={projectName} onChange={(event) => setProjectName(event.target.value)} />
+                  <label htmlFor="projectDescription">Description</label>
+                  <input id="projectDescription" value={projectDescription} onChange={(event) => setProjectDescription(event.target.value)} />
+                  <button className="fullButton" onClick={createProject} disabled={isCreating || !projectName.trim()}>
+                    {isCreating ? "Creating..." : "Create Project"}
+                  </button>
+                </section>
+              ) : null}
+            </div>
                 </section>
               ) : null}
 
@@ -1539,12 +1920,12 @@ function App() {
                 type="button"
                 className="secondaryButton"
                 onClick={() => void requestAIExplanation("POLICY_WRITING_ASSISTANCE", { question: "Draft governance policy YAML for this project." })}
-                disabled={isExplaining || !selectedProjectId || !activeScan}
+                disabled={isExplaining || !selectedProject || !activeScan}
               >
                 {isExplaining ? "Drafting..." : "Draft Policies With AI"}
               </button>
             </div>
-            <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProjectId}>
+            <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProject}>
               {isSavingPolicies ? "Saving..." : "Save Policies"}
             </button>
                 </section>
@@ -1557,7 +1938,7 @@ function App() {
               <span>{repoPreview ? "Repository-backed" : "Manual paths"}</span>
             </div>
             <p className="hint">Run the current selection to generate findings, scores, history, and graph evidence.</p>
-            <button onClick={runScan} disabled={isScanning || !selectedProjectId}>
+            <button onClick={runScan} disabled={isScanning || !selectedProject}>
               {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
             </button>
                 </section>
@@ -4029,10 +4410,38 @@ function aiAnswerProvider(source?: string) {
   return { label: "Answered by MESA", tone: "neutral" };
 }
 
+class ApiError extends Error {
+  status: number;
+  detail: string;
+
+  constructor(status: number, message?: string) {
+    super(message ?? `API returned ${status}`);
+    this.status = status;
+    this.detail = message ?? `API returned ${status}`;
+  }
+}
+
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, init);
-  if (!response.ok) throw new Error(`API returned ${response.status}`);
+  if (!response.ok) {
+    const detail = await readApiErrorDetail(response);
+    throw new ApiError(response.status, detail || `API returned ${response.status}`);
+  }
   return (await response.json()) as T;
+}
+
+async function readApiErrorDetail(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    try {
+      const payload = await response.json() as { detail?: unknown };
+      if (typeof payload.detail === "string") return payload.detail;
+      return JSON.stringify(payload);
+    } catch {
+      return `API returned ${response.status}`;
+    }
+  }
+  return await response.text();
 }
 
 async function streamAIResponse(
@@ -4166,13 +4575,37 @@ function downloadTextFile(filename: string, content: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-function loadStoredProjects(): ProjectRecord[] {
-  try {
-    const stored = localStorage.getItem(projectStorageKey);
-    return stored ? (JSON.parse(stored) as ProjectRecord[]) : [];
-  } catch {
-    return [];
+function readProjectIdFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("project") ?? "";
+}
+
+function syncProjectIdToUrl(projectId: string, historyMode: "push" | "replace" = "replace") {
+  const url = new URL(window.location.href);
+  if (projectId) {
+    url.searchParams.set("project", projectId);
+  } else {
+    url.searchParams.delete("project");
   }
+  window.history[historyMode === "push" ? "pushState" : "replaceState"]({}, "", url);
+}
+
+function resolveProjectSelection(projects: ProjectRecord[], currentProjectId: string, preferredProjectId = "") {
+  if (currentProjectId && projects.some((project) => project.id === currentProjectId)) {
+    return currentProjectId;
+  }
+  if (preferredProjectId && projects.some((project) => project.id === preferredProjectId)) {
+    return preferredProjectId;
+  }
+  return projects[0]?.id ?? "";
+}
+
+function isAbortError(caught: unknown) {
+  return caught instanceof DOMException && caught.name === "AbortError";
+}
+
+function isNotFoundError(caught: unknown) {
+  return caught instanceof ApiError && caught.status === 404;
 }
 
 function flattenScores(scores?: AnalysisResult["summary"]["health_scores"]): HealthScore[] {

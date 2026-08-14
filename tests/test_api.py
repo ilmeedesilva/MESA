@@ -4,7 +4,9 @@ import shutil
 from fastapi.testclient import TestClient
 
 from mesa.api.main import app
+from mesa.analysis import analyze_services
 from mesa.analysis import explainer as explainer_module
+from mesa.models import ProjectCreate, RepoSourceMetadata
 from mesa.storage import InMemoryPersistenceRepository
 
 ROOT = Path(__file__).parent / "fixtures"
@@ -177,6 +179,170 @@ def test_project_scan_persistence_endpoints() -> None:
     assert gate["status"] in {"passed", "failed"}
     assert gate["threshold"] == 75.0
     assert len(gate["rules"]) == 5
+
+    del app.state.persistence_repository
+
+
+def test_list_projects_returns_created_projects_in_newest_first_order() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    first = client.post("/projects", json={"name": "First Project"})
+    second = client.post("/projects", json={"name": "Second Project"})
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+    response = client.get("/projects")
+    assert response.status_code == 200
+    projects = response.json()
+    assert [project["name"] for project in projects[:2]] == ["Second Project", "First Project"]
+
+    del app.state.persistence_repository
+
+
+def test_project_setup_can_be_saved_and_loaded() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Configured Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    save_response = client.put(
+        f"/projects/{project_id}/setup",
+        json={
+            "source_type": "GITHUB_URL",
+            "source_location": "https://github.com/example-org/example-repo",
+            "source_ref": "main",
+            "selected_service_paths": ["service-a", "service-b"],
+            "manual_service_paths": ["service-a", "service-b"],
+            "chatty_threshold": 3,
+        },
+    )
+    assert save_response.status_code == 200
+    saved = save_response.json()
+    assert saved["source_type"] == "GITHUB_URL"
+    assert saved["selected_service_paths"] == ["service-a", "service-b"]
+
+    get_response = client.get(f"/projects/{project_id}/setup")
+    assert get_response.status_code == 200
+    loaded = get_response.json()
+    assert loaded["source_location"] == "https://github.com/example-org/example-repo"
+    assert loaded["manual_service_paths"] == ["service-a", "service-b"]
+
+    del app.state.persistence_repository
+
+
+def test_project_setup_returns_null_when_no_configuration_exists() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Empty Setup Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    setup_response = client.get(f"/projects/{project_id}/setup")
+    assert setup_response.status_code == 200
+    assert setup_response.json() is None
+
+    del app.state.persistence_repository
+
+
+def test_project_setup_can_be_derived_from_existing_scan_when_no_setup_row_exists() -> None:
+    repository = InMemoryPersistenceRepository()
+    project = repository.create_project(ProjectCreate(name="Legacy Project"))
+    result = analyze_services(
+        [
+            str(ROOT / "chatty" / "order-service"),
+            str(ROOT / "chatty" / "user-service"),
+        ]
+    )
+    result.summary["repository_source"] = {
+        "source_type": "LOCAL_PATH",
+        "source_path": str(ROOT / "chatty"),
+        "workspace_path": str(ROOT / "chatty"),
+    }
+    repository.save_scan_result(
+        project.id,
+        result,
+        RepoSourceMetadata(
+            source_type="LOCAL_PATH",
+            source_label="chatty",
+            source_path=str(ROOT / "chatty"),
+            workspace_path=str(ROOT / "chatty"),
+        ),
+    )
+
+    app.state.persistence_repository = repository
+    client = TestClient(app)
+
+    setup_response = client.get(f"/projects/{project.id}/setup")
+    assert setup_response.status_code == 200
+    setup = setup_response.json()
+    assert setup["source_type"] == "LOCAL_PATH"
+    assert setup["source_location"] == str(ROOT / "chatty")
+    assert "order-service" in setup["selected_service_paths"]
+    assert len(setup["manual_service_paths"]) == 2
+
+    del app.state.persistence_repository
+
+
+def test_project_scan_updates_saved_manual_project_setup() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Manual Setup Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+
+    setup_response = client.get(f"/projects/{project_id}/setup")
+    assert setup_response.status_code == 200
+    setup = setup_response.json()
+    assert setup["source_type"] is None
+    assert setup["manual_service_paths"] == [
+        str(ROOT / "chatty" / "order-service"),
+        str(ROOT / "chatty" / "user-service"),
+    ]
+
+    del app.state.persistence_repository
+
+
+def test_project_repo_scan_updates_saved_repository_setup() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Repo Setup Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/repo-scans",
+        json={
+            "source_type": "LOCAL_PATH",
+            "location": str(ROOT / "chatty"),
+            "service_paths": ["order-service", "user-service"],
+        },
+    )
+    assert scan_response.status_code == 201
+
+    setup_response = client.get(f"/projects/{project_id}/setup")
+    assert setup_response.status_code == 200
+    setup = setup_response.json()
+    assert setup["source_type"] == "LOCAL_PATH"
+    assert setup["source_location"] == str(ROOT / "chatty")
+    assert setup["selected_service_paths"] == ["order-service", "user-service"]
 
     del app.state.persistence_repository
 
