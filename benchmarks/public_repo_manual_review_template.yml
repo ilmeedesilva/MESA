@@ -1,0 +1,35 @@
+benchmark: mesa-phase-i-public-repo-manual-review
+version: 1
+matching: type_and_service_set
+notes:
+  - Use this template for manually reviewed public repository evaluation.
+  - Clone or archive the public repository locally first, then replace the placeholder paths below.
+systems:
+  - id: sample-public-repo
+    name: Sample public repository
+    category: public real-world repository
+    repo_url: https://github.com/example-org/example-microservices
+    manual_review_status: pending
+    service_paths:
+      - /absolute/path/to/local/repo/services/service-a
+      - /absolute/path/to/local/repo/services/service-b
+    service_discovery:
+      root: /absolute/path/to/local/repo
+      expected_candidates:
+        - services/service-a
+        - services/service-b
+    explanation_checks:
+      - id: public-summary
+        intent: SCAN_SUMMARY
+        question: Summarize this scan simply.
+        required_evidence_kinds: [scan, finding]
+        min_suggestions: 1
+        min_follow_up_questions: 1
+        min_limitations: 1
+    evaluator_notes:
+      - Record what an evaluator found useful or confusing here.
+    known_limitations:
+      - Record important threats to validity for this repository here.
+    ground_truth:
+      - type: CHATTY_SERVICE
+        services: [service-a, service-b]

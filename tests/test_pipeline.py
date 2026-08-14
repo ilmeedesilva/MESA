@@ -240,6 +240,45 @@ def test_findings_include_evidence_grounded_structured_recommendations() -> None
         assert recommendation.source.startswith("rule-based")
 
 
+def test_findings_include_evidence_confidence_ledger() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "god" / "platform-service"),
+            str(ROOT / "god" / "order-service"),
+            str(ROOT / "god" / "billing-service"),
+            str(ROOT / "god" / "inventory-service"),
+            str(ROOT / "god" / "user-service"),
+            str(ROOT / "god" / "payment-service"),
+            str(ROOT / "god" / "notification-service"),
+        ]
+    )
+
+    assert result.findings
+    for finding in result.findings:
+        assert finding.detector_name
+        assert finding.rule_id
+        assert finding.evidence_chain
+        assert finding.confidence_reason
+        assert finding.limitations
+        assert finding.related_services == finding.services
+        assert finding.why_valid
+        assert 0 <= finding.confidence <= 1
+
+    hardcoded_result = analyze_services(
+        [
+            str(ROOT / "hardcoded" / "order-service"),
+            str(ROOT / "hardcoded" / "billing-service"),
+        ]
+    )
+    hardcoded = next(
+        finding
+        for finding in hardcoded_result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    )
+    assert hardcoded.source_files
+    assert hardcoded.evidence_chain[0].source is not None
+
+
 def test_recommendations_work_without_llm_configuration(monkeypatch) -> None:
     monkeypatch.delenv("MESA_LLM_RECOMMENDATIONS", raising=False)
     result = analyze_services([str(ROOT / "hardcoded" / "order-service")])
@@ -265,3 +304,34 @@ def test_health_score_calculation_is_deterministic() -> None:
     second = analyze_services(service_paths).summary["health_scores"]
 
     assert first == second
+
+
+def test_extracts_real_repo_style_service_facts() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "real-repo" / "shop" / "frontend-service"),
+            str(ROOT / "real-repo" / "shop" / "catalog-service"),
+            str(ROOT / "real-repo" / "shop" / "inventory-api"),
+        ]
+    )
+    services = {service.name: service for service in result.services}
+
+    frontend = services["frontend-service"]
+    assert frontend.language == "typescript"
+    assert any(endpoint.path == "/home" and endpoint.method == "GET" for endpoint in frontend.endpoints)
+    assert any(call.target_hint == "catalog-service" for call in frontend.calls)
+    assert any(library.name == "express" for library in frontend.libraries)
+
+    catalog = services["catalog-service"]
+    assert catalog.language == "java"
+    assert any(endpoint.path == "/products" and endpoint.method == "GET" for endpoint in catalog.endpoints)
+    assert any(endpoint.path == "/products" and endpoint.method == "POST" for endpoint in catalog.endpoints)
+    assert any(
+        library.name == "org.springframework.boot:spring-boot-starter-web"
+        for library in catalog.libraries
+    )
+    assert catalog.databases
+
+    inventory = services["inventory-api"]
+    assert any(endpoint.path == "/inventory" for endpoint in inventory.endpoints)
+    assert inventory.databases

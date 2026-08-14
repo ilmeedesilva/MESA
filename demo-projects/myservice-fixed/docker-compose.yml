@@ -1,0 +1,9 @@
+services:
+  order-service:
+    build: ./order-service
+  payment-service:
+    build: ./payment-service
+  user-service:
+    build: ./user-service
+  platform-service:
+    build: ./platform-service

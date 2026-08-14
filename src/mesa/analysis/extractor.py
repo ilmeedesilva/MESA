@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import ipaddress
+import json
 import re
 from pathlib import Path
 from urllib.parse import urlparse
@@ -65,6 +66,29 @@ DB_PATTERN = re.compile(
     r"(?::(?P<port>\d+))?"
     r"/(?P<database>[A-Za-z0-9_.-]+)"
 )
+JS_ROUTE_PATTERN = re.compile(
+    r"(?:app|router|server)\s*\.\s*(?P<method>get|post|put|patch|delete|head|options)\s*"
+    r"\(\s*[`'\"](?P<path>/[^`'\"]*)[`'\"]",
+    re.IGNORECASE,
+)
+NEST_ROUTE_PATTERN = re.compile(
+    r"@(?P<method>Get|Post|Put|Patch|Delete|Head|Options)\s*\(\s*(?:[`'\"](?P<path>/[^`'\"]*)[`'\"])?",
+)
+JS_CALL_PATTERN = re.compile(
+    r"(?:fetch|axios\.(?P<axios_method>get|post|put|patch|delete)|request)\s*"
+    r"\(\s*[`'\"](?P<url>https?://[^`'\"\s)]+)[`'\"]",
+    re.IGNORECASE,
+)
+SPRING_MAPPING_PATTERN = re.compile(
+    r"@(?P<method>GetMapping|PostMapping|PutMapping|PatchMapping|DeleteMapping|RequestMapping)"
+    r"\s*\((?P<args>[^)]*)\)",
+    re.MULTILINE,
+)
+SPRING_URL_CALL_PATTERN = re.compile(
+    r"\.(?:getForObject|postForObject|exchange|execute|getForEntity|postForEntity)\s*"
+    r"\(\s*\"(?P<url>https?://[^\"\\\s)]+)\"",
+    re.IGNORECASE,
+)
 
 
 def extract_service_facts(service_path: str | Path) -> ServiceFacts:
@@ -80,6 +104,16 @@ def extract_service_facts(service_path: str | Path) -> ServiceFacts:
             _extract_python_file(file_path, facts)
         if file_path.name == "requirements.txt":
             _extract_requirements(file_path, facts)
+        if file_path.name == "package.json":
+            _extract_package_json(file_path, facts)
+        if file_path.name == "pom.xml":
+            _extract_pom_xml(file_path, facts)
+        if file_path.suffix in {".js", ".jsx", ".ts", ".tsx"}:
+            _extract_javascript_file(file_path, facts)
+        if file_path.suffix == ".java":
+            _extract_java_file(file_path, facts)
+        if _is_openapi_file(file_path):
+            _extract_openapi_file(file_path, facts)
         if _is_analyzed_text_file(file_path):
             _extract_hard_coded_dependencies(file_path, facts)
         if file_path.name.startswith(".env") or file_path.suffix in {".yml", ".yaml", ".properties"}:
@@ -154,6 +188,51 @@ def _extract_requirements(file_path: Path, facts: ServiceFacts) -> None:
         )
 
 
+def _extract_package_json(file_path: Path, facts: ServiceFacts) -> None:
+    try:
+        data = json.loads(file_path.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return
+    dependencies = {}
+    for section in ["dependencies", "devDependencies"]:
+        section_data = data.get(section)
+        if isinstance(section_data, dict):
+            dependencies.update(section_data)
+    for name, version in sorted(dependencies.items()):
+        if not isinstance(name, str):
+            continue
+        facts.libraries.append(
+            LibraryUsage(
+                service_name=facts.name,
+                name=name,
+                version=str(version) if version is not None else None,
+                source=SourceLocation(file_path=str(file_path), line_number=None),
+            )
+        )
+
+
+def _extract_pom_xml(file_path: Path, facts: ServiceFacts) -> None:
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return
+    for match in re.finditer(
+        r"<dependency>.*?<groupId>(?P<group>[^<]+)</groupId>.*?<artifactId>(?P<artifact>[^<]+)</artifactId>(?:.*?<version>(?P<version>[^<]+)</version>)?.*?</dependency>",
+        content,
+        re.DOTALL,
+    ):
+        facts.libraries.append(
+            LibraryUsage(
+                service_name=facts.name,
+                name=f"{match.group('group')}:{match.group('artifact')}",
+                version=match.group("version"),
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+
+
 def _is_ignored(file_path: Path) -> bool:
     ignored = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build"}
     return any(part in ignored for part in file_path.parts)
@@ -183,6 +262,114 @@ def _extract_python_file(file_path: Path, facts: ServiceFacts) -> None:
                 facts.calls.append(call)
 
     _extract_text_config(file_path, facts, text=source, include_urls=False, include_environment=False)
+
+
+def _extract_javascript_file(file_path: Path, facts: ServiceFacts) -> None:
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return
+
+    for match in JS_ROUTE_PATTERN.finditer(content):
+        facts.endpoints.append(
+            Endpoint(
+                service_name=facts.name,
+                method=match.group("method").upper(),
+                path=match.group("path"),
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+    for match in NEST_ROUTE_PATTERN.finditer(content):
+        method = match.group("method").upper().replace("DELETE", "DELETE")
+        path = match.group("path") or "/"
+        facts.endpoints.append(
+            Endpoint(
+                service_name=facts.name,
+                method=method,
+                path=path,
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+    for match in JS_CALL_PATTERN.finditer(content):
+        url = match.group("url")
+        facts.calls.append(
+            ServiceCall(
+                caller=facts.name,
+                target_hint=target_hint_from_url(url),
+                url=url,
+                method=(match.group("axios_method") or "UNKNOWN").upper(),
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+
+    _extract_text_config(file_path, facts, text=content, include_urls=False, include_environment=False)
+
+
+def _extract_java_file(file_path: Path, facts: ServiceFacts) -> None:
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return
+
+    for match in SPRING_MAPPING_PATTERN.finditer(content):
+        path = _spring_path_from_args(match.group("args"))
+        facts.endpoints.append(
+            Endpoint(
+                service_name=facts.name,
+                method=_spring_method(match.group("method")),
+                path=path,
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+    for match in SPRING_URL_CALL_PATTERN.finditer(content):
+        url = match.group("url")
+        facts.calls.append(
+            ServiceCall(
+                caller=facts.name,
+                target_hint=target_hint_from_url(url),
+                url=url,
+                method="UNKNOWN",
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+
+    _extract_text_config(file_path, facts, text=content, include_urls=False, include_environment=False)
+
+
+def _extract_openapi_file(file_path: Path, facts: ServiceFacts) -> None:
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return
+    for match in re.finditer(r"^\s{2,}(?P<path>/[A-Za-z0-9_./{}-]+):\s*$", content, re.MULTILINE):
+        path = match.group("path")
+        block = content[match.end(): match.end() + 400]
+        methods = [
+            method.upper()
+            for method in HTTP_METHODS
+            if re.search(rf"^\s{{4,}}{method}:\s*$", block, re.MULTILINE | re.IGNORECASE)
+        ] or ["UNKNOWN"]
+        for method in methods:
+            facts.endpoints.append(
+                Endpoint(
+                    service_name=facts.name,
+                    method=method,
+                    path=path,
+                    source=SourceLocation(
+                        file_path=str(file_path), line_number=_line_for(content, match.start())
+                    ),
+                )
+            )
 
 
 def _extract_python_endpoints(
@@ -252,6 +439,31 @@ def _first_string_arg(node: ast.Call) -> str | None:
     if isinstance(first, ast.Constant) and isinstance(first.value, str):
         return first.value
     return None
+
+
+def _spring_path_from_args(args: str) -> str:
+    match = re.search(r"(?:value\s*=\s*)?[\"'](?P<path>/[^\"']*)[\"']", args)
+    return match.group("path") if match else "/"
+
+
+def _spring_method(mapping: str) -> str:
+    mapping = mapping.lower()
+    if mapping.startswith("get"):
+        return "GET"
+    if mapping.startswith("post"):
+        return "POST"
+    if mapping.startswith("put"):
+        return "PUT"
+    if mapping.startswith("patch"):
+        return "PATCH"
+    if mapping.startswith("delete"):
+        return "DELETE"
+    return "UNKNOWN"
+
+
+def _is_openapi_file(file_path: Path) -> bool:
+    lowered = file_path.name.lower()
+    return lowered.startswith("openapi.") or lowered.startswith("swagger.")
 
 
 def _extract_text_config(

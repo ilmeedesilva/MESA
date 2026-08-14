@@ -4,6 +4,9 @@ import shutil
 from fastapi.testclient import TestClient
 
 from mesa.api.main import app
+from mesa.analysis import analyze_services
+from mesa.analysis import explainer as explainer_module
+from mesa.models import ProjectCreate, RepoSourceMetadata
 from mesa.storage import InMemoryPersistenceRepository
 
 ROOT = Path(__file__).parent / "fixtures"
@@ -29,6 +32,13 @@ def test_analyze_endpoint() -> None:
     )
     assert response.status_code == 200
     assert response.json()["summary"]["finding_count"] >= 1
+    finding = response.json()["findings"][0]
+    assert finding["detector_name"]
+    assert finding["rule_id"]
+    assert finding["evidence_chain"]
+    assert finding["confidence_reason"]
+    assert finding["limitations"]
+    assert finding["why_valid"]
 
 
 def test_repo_scan_preview_for_local_path() -> None:
@@ -156,6 +166,389 @@ def test_project_scan_persistence_endpoints() -> None:
     assert any(score["scope"] == "service" for score in scores)
     assert all(0 <= score["score"] <= 100 for score in scores)
 
+    roadmap_response = client.get(f"/scans/{scan_id}/roadmap")
+    assert roadmap_response.status_code == 200
+    roadmap = roadmap_response.json()
+    assert roadmap["generated_from_finding_count"] >= 1
+    assert roadmap["summary"]
+    assert roadmap["suggested_order"]
+
+    gate_response = client.get(f"/scans/{scan_id}/gate")
+    assert gate_response.status_code == 200
+    gate = gate_response.json()
+    assert gate["status"] in {"passed", "failed"}
+    assert gate["threshold"] == 75.0
+    assert len(gate["rules"]) == 5
+
+    del app.state.persistence_repository
+
+
+def test_list_projects_returns_created_projects_in_newest_first_order() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    first = client.post("/projects", json={"name": "First Project"})
+    second = client.post("/projects", json={"name": "Second Project"})
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+    response = client.get("/projects")
+    assert response.status_code == 200
+    projects = response.json()
+    assert [project["name"] for project in projects[:2]] == ["Second Project", "First Project"]
+
+    del app.state.persistence_repository
+
+
+def test_project_setup_can_be_saved_and_loaded() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Configured Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    save_response = client.put(
+        f"/projects/{project_id}/setup",
+        json={
+            "source_type": "GITHUB_URL",
+            "source_location": "https://github.com/example-org/example-repo",
+            "source_ref": "main",
+            "selected_service_paths": ["service-a", "service-b"],
+            "manual_service_paths": ["service-a", "service-b"],
+            "chatty_threshold": 3,
+        },
+    )
+    assert save_response.status_code == 200
+    saved = save_response.json()
+    assert saved["source_type"] == "GITHUB_URL"
+    assert saved["selected_service_paths"] == ["service-a", "service-b"]
+
+    get_response = client.get(f"/projects/{project_id}/setup")
+    assert get_response.status_code == 200
+    loaded = get_response.json()
+    assert loaded["source_location"] == "https://github.com/example-org/example-repo"
+    assert loaded["manual_service_paths"] == ["service-a", "service-b"]
+
+    del app.state.persistence_repository
+
+
+def test_project_setup_returns_null_when_no_configuration_exists() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Empty Setup Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    setup_response = client.get(f"/projects/{project_id}/setup")
+    assert setup_response.status_code == 200
+    assert setup_response.json() is None
+
+    del app.state.persistence_repository
+
+
+def test_project_setup_can_be_derived_from_existing_scan_when_no_setup_row_exists() -> None:
+    repository = InMemoryPersistenceRepository()
+    project = repository.create_project(ProjectCreate(name="Legacy Project"))
+    result = analyze_services(
+        [
+            str(ROOT / "chatty" / "order-service"),
+            str(ROOT / "chatty" / "user-service"),
+        ]
+    )
+    result.summary["repository_source"] = {
+        "source_type": "LOCAL_PATH",
+        "source_path": str(ROOT / "chatty"),
+        "workspace_path": str(ROOT / "chatty"),
+    }
+    repository.save_scan_result(
+        project.id,
+        result,
+        RepoSourceMetadata(
+            source_type="LOCAL_PATH",
+            source_label="chatty",
+            source_path=str(ROOT / "chatty"),
+            workspace_path=str(ROOT / "chatty"),
+        ),
+    )
+
+    app.state.persistence_repository = repository
+    client = TestClient(app)
+
+    setup_response = client.get(f"/projects/{project.id}/setup")
+    assert setup_response.status_code == 200
+    setup = setup_response.json()
+    assert setup["source_type"] == "LOCAL_PATH"
+    assert setup["source_location"] == str(ROOT / "chatty")
+    assert "order-service" in setup["selected_service_paths"]
+    assert len(setup["manual_service_paths"]) == 2
+
+    del app.state.persistence_repository
+
+
+def test_project_scan_updates_saved_manual_project_setup() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Manual Setup Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+
+    setup_response = client.get(f"/projects/{project_id}/setup")
+    assert setup_response.status_code == 200
+    setup = setup_response.json()
+    assert setup["source_type"] is None
+    assert setup["manual_service_paths"] == [
+        str(ROOT / "chatty" / "order-service"),
+        str(ROOT / "chatty" / "user-service"),
+    ]
+
+    del app.state.persistence_repository
+
+
+def test_project_repo_scan_updates_saved_repository_setup() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Repo Setup Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/repo-scans",
+        json={
+            "source_type": "LOCAL_PATH",
+            "location": str(ROOT / "chatty"),
+            "service_paths": ["order-service", "user-service"],
+        },
+    )
+    assert scan_response.status_code == 201
+
+    setup_response = client.get(f"/projects/{project_id}/setup")
+    assert setup_response.status_code == 200
+    setup = setup_response.json()
+    assert setup["source_type"] == "LOCAL_PATH"
+    assert setup["source_location"] == str(ROOT / "chatty")
+    assert setup["selected_service_paths"] == ["order-service", "user-service"]
+
+    del app.state.persistence_repository
+
+
+def test_scan_architecture_gate_supports_custom_thresholds() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Gate Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    default_response = client.get(f"/scans/{scan_id}/gate")
+    assert default_response.status_code == 200
+    default_gate = default_response.json()
+    assert default_gate["status"] == "failed"
+    assert "cyclic_dependency_detected" in default_gate["failed_rules"]
+
+    relaxed_response = client.post(
+        f"/scans/{scan_id}/gate",
+        json={
+            "thresholds": {
+                "minimum_health_score": 0,
+                "maximum_critical_findings": 10,
+                "allow_new_cyclic_dependencies": True,
+                "allow_governance_violations": True,
+                "allow_new_high_risk_coupling": True,
+            }
+        },
+    )
+    assert relaxed_response.status_code == 200
+    relaxed_gate = relaxed_response.json()
+    assert relaxed_gate["status"] == "passed"
+    assert relaxed_gate["failed_rules"] == []
+
+    del app.state.persistence_repository
+
+
+def test_research_evaluation_records_crud_from_scan_and_exports() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Research Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/repo-scans",
+        json={
+            "source_type": "LOCAL_PATH",
+            "location": str(ROOT / "real-repo" / "shop"),
+            "service_paths": ["frontend-service", "catalog-service", "inventory-api"],
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    create_response = client.post(f"/research-records/from-scan/{scan_id}")
+    assert create_response.status_code == 201
+    record = create_response.json()
+    record_id = record["id"]
+    assert record["scan_id"] == scan_id
+    assert record["repo_name"] == "shop"
+    assert record["expected_services"] == 3
+    assert record["detected_services"] == 3
+    assert record["total_findings"] >= 0
+    assert record["true_positives"] is None
+    assert record["false_positives"] is None
+    assert record["false_negatives"] is None
+    assert record["precision"] is None
+    assert "no matching ground-truth findings were available" in record["notes"]
+
+    update_response = client.put(
+        f"/research-records/{record_id}",
+        json={
+            **record,
+            "expected_services": 3,
+            "true_positives": 4,
+            "false_positives": 1,
+            "false_negatives": 1,
+            "notes": "Manual validation complete.",
+            "limitations": "Small fixture repository.",
+            "research_relevance": "Demonstrates real-repo style extraction.",
+            "suitable_for_report": True,
+        },
+    )
+    assert update_response.status_code == 200
+    updated = update_response.json()
+    assert updated["precision"] == 0.8
+    assert updated["recall"] == 0.8
+    assert updated["f1_score"] == 0.8
+    assert updated["suitable_for_report"] is True
+
+    list_response = client.get("/research-records")
+    assert list_response.status_code == 200
+    assert list_response.json()[0]["id"] == record_id
+
+    csv_response = client.get("/research-records/export", params={"format": "csv"})
+    assert csv_response.status_code == 200
+    assert "repo_name,commit_ref" in csv_response.text
+    assert "shop" in csv_response.text
+
+    markdown_response = client.get("/research-records/export", params={"format": "markdown"})
+    assert markdown_response.status_code == 200
+    assert "| repo_name | commit_ref |" in markdown_response.text
+
+    json_response = client.get("/research-records/export", params={"format": "json"})
+    assert json_response.status_code == 200
+    assert json_response.json()[0]["id"] == record_id
+
+    delete_response = client.delete(f"/research-records/{record_id}")
+    assert delete_response.status_code == 204
+    assert client.get(f"/research-records/{record_id}").status_code == 404
+
+    del app.state.persistence_repository
+
+
+def test_research_evaluation_draft_uses_selected_scan_and_project_setup() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Draft Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    draft_response = client.get(f"/research-records/draft/{scan_id}")
+    assert draft_response.status_code == 200
+    draft = draft_response.json()
+
+    assert draft["project_id"] == project_id
+    assert draft["scan_id"] == scan_id
+    assert draft["expected_services"] == 2
+    assert draft["detected_services"] == 2
+    assert draft["total_findings"] == 4
+    assert draft["accuracy_mode"] == "GROUND_TRUTH"
+    assert draft["matched_benchmark_id"] == "chatty-services"
+    assert draft["true_positives"] == 4
+    assert draft["false_positives"] == 0
+    assert draft["false_negatives"] == 0
+    assert draft["precision"] == 1.0
+    assert draft["recall"] == 1.0
+    assert draft["f1_score"] == 1.0
+
+    del app.state.persistence_repository
+
+
+def test_research_evaluation_draft_leaves_accuracy_blank_without_ground_truth() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Draft Real Repo"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/repo-scans",
+        json={
+            "source_type": "LOCAL_PATH",
+            "location": str(ROOT / "real-repo" / "shop"),
+            "service_paths": ["frontend-service", "catalog-service", "inventory-api"],
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    draft_response = client.get(f"/research-records/draft/{scan_id}")
+    assert draft_response.status_code == 200
+    draft = draft_response.json()
+
+    assert draft["project_id"] == project_id
+    assert draft["expected_services"] == 3
+    assert draft["detected_services"] == 3
+    assert draft["accuracy_mode"] == "MANUAL_VALIDATION_REQUIRED"
+    assert draft["matched_benchmark_id"] is None
+    assert draft["true_positives"] is None
+    assert draft["false_positives"] is None
+    assert draft["false_negatives"] is None
+    assert draft["precision"] is None
+    assert draft["recall"] is None
+    assert draft["f1_score"] is None
+    assert "no matching ground-truth findings were available" in draft["notes"]
+
     del app.state.persistence_repository
 
 
@@ -213,6 +606,86 @@ def test_project_evolution_timeline_compares_consecutive_snapshots() -> None:
     comparison = compare_response.json()
     assert comparison["architecture_change_summary"]["summary"]
     assert comparison["score_trend"]["system_delta"] is not None
+
+    del app.state.persistence_repository
+
+
+def test_scan_roadmap_groups_actions_and_dependencies() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Roadmap Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    policy_document = """
+policies:
+  - id: no-cycles
+    name: No cyclic dependencies
+    rule: dependency_cycle_count == 0
+    severity: critical
+  - id: no-hardcoded-service-urls
+    name: No hard-coded service URLs
+    rule: hard_coded_service_url_count == 0
+    severity: high
+"""
+    import_response = client.post(
+        f"/projects/{project_id}/policies/import",
+        json={"content": policy_document},
+    )
+    assert import_response.status_code == 200
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+                str(ROOT / "hardcoded" / "billing-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    roadmap_response = client.get(f"/scans/{scan_id}/roadmap")
+    assert roadmap_response.status_code == 200
+    roadmap = roadmap_response.json()
+
+    assert roadmap["quick_wins"]
+    assert roadmap["medium_term_changes"]
+    assert roadmap["high_effort_refactors"]
+    assert len(roadmap["suggested_order"]) == (
+        len(roadmap["quick_wins"])
+        + len(roadmap["medium_term_changes"])
+        + len(roadmap["high_effort_refactors"])
+    )
+    assert roadmap["dependencies"]
+    assert any(
+        "GOVERNANCE_POLICY_VIOLATION" in action["related_finding_types"]
+        for action in roadmap["medium_term_changes"]
+    )
+    assert any(
+        action["title"].lower().startswith("break the dependency cycle")
+        for action in roadmap["high_effort_refactors"]
+    )
+    all_actions = (
+        roadmap["quick_wins"]
+        + roadmap["medium_term_changes"]
+        + roadmap["high_effort_refactors"]
+    )
+    assert all(action["playbook"] for action in all_actions)
+    for action in all_actions:
+        playbook = action["playbook"]
+        assert playbook["problem_summary"] == action["summary"]
+        assert playbook["recommended_strategy"]
+        assert playbook["estimated_effort"]
+        assert len(playbook["phases"]) == 3
+        assert playbook["verification_checks"]
+        assert playbook["rollback_plan"]
+        assert playbook["risks"]
+        assert playbook["related_findings"] == action["related_findings"]
+        assert playbook["related_services"] == action["affected_services"]
 
     del app.state.persistence_repository
 
@@ -324,6 +797,50 @@ policies:
     del app.state.persistence_repository
 
 
+def test_policy_import_allows_same_policy_ids_in_different_projects() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    first_project = client.post("/projects", json={"name": "First Governance Project"})
+    second_project = client.post("/projects", json={"name": "Second Governance Project"})
+    assert first_project.status_code == 201
+    assert second_project.status_code == 201
+
+    first_project_id = first_project.json()["id"]
+    second_project_id = second_project.json()["id"]
+
+    policy_document = """
+policies:
+  - id: no-cycles
+    name: No cyclic dependencies
+    rule: dependency_cycle_count == 0
+    severity: critical
+"""
+
+    first_import = client.post(
+        f"/projects/{first_project_id}/policies/import",
+        json={"content": policy_document},
+    )
+    second_import = client.post(
+        f"/projects/{second_project_id}/policies/import",
+        json={"content": policy_document},
+    )
+
+    assert first_import.status_code == 200
+    assert second_import.status_code == 200
+    assert first_import.json()[0]["id"] == "no-cycles"
+    assert second_import.json()[0]["id"] == "no-cycles"
+
+    first_policies = client.get(f"/projects/{first_project_id}/policies")
+    second_policies = client.get(f"/projects/{second_project_id}/policies")
+    assert first_policies.status_code == 200
+    assert second_policies.status_code == 200
+    assert first_policies.json()[0]["project_id"] == first_project_id
+    assert second_policies.json()[0]["project_id"] == second_project_id
+
+    del app.state.persistence_repository
+
+
 def test_project_scan_writes_architecture_graph_and_exposes_queries() -> None:
     app.state.persistence_repository = InMemoryPersistenceRepository()
     fake_store = FakeArchitectureStore()
@@ -423,3 +940,276 @@ def test_health_scores_appear_in_api_response() -> None:
     assert health["service"]
     assert health["domain"]
     assert any(score["target"] == "platform-service" for score in health["service"])
+
+
+def test_ai_explainer_summarizes_scan_with_grounded_evidence() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Explainer Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    explainer_response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "SCAN_SUMMARY",
+            "project_id": project_id,
+            "scan_id": scan_id,
+            "question": "Summarize this scan.",
+        },
+    )
+    assert explainer_response.status_code == 200
+    payload = explainer_response.json()
+    assert payload["intent"] == "SCAN_SUMMARY"
+    assert payload["grounded"] is True
+    assert payload["evidence"]
+    assert "services" in payload["answer"].lower()
+
+    del app.state.persistence_repository
+
+
+def test_ai_explainer_searches_docs_without_scan_context() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "DOC_QA",
+            "question": "How do I scan a public repository?",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "DOC_QA"
+    assert payload["evidence"]
+    assert any(item["kind"] == "doc" for item in payload["evidence"])
+
+
+def test_ai_explainer_compares_two_scans() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Explainer Compare Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    first_scan = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    second_scan = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+            ]
+        },
+    )
+    assert first_scan.status_code == 201
+    assert second_scan.status_code == 201
+
+    response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "COMPARE_SCANS",
+            "project_id": project_id,
+            "base_scan_id": first_scan.json()["scan"]["id"],
+            "target_scan_id": second_scan.json()["scan"]["id"],
+            "question": "What changed between these two scans?",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "COMPARE_SCANS"
+    assert payload["evidence"]
+    assert "changed" in payload["answer"].lower() or "new risks" in payload["answer"].lower()
+
+    del app.state.persistence_repository
+
+
+def test_ai_explainer_uses_live_hybrid_path_when_enabled(monkeypatch) -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Hybrid AI Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    monkeypatch.setenv("MESA_AI_MODE", "hybrid")
+    monkeypatch.setenv("MESA_OPENAI_API_KEY", "test-key")
+
+    def fake_openai_response(payload, grounded_response, api_key):
+        assert payload.scan_id == scan_id
+        assert api_key == "test-key"
+        return grounded_response.model_copy(
+            update={
+                "title": "Live hybrid explanation",
+                "answer": "This answer came from the live hybrid AI path.",
+                "source": "openai-hybrid:test-model",
+            }
+        )
+
+    monkeypatch.setattr(explainer_module, "_call_openai_responses_api", fake_openai_response)
+
+    response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "SCAN_SUMMARY",
+            "project_id": project_id,
+            "scan_id": scan_id,
+            "question": "Summarize this scan with the live AI path.",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["title"] == "Live hybrid explanation"
+    assert payload["source"] == "openai-hybrid:test-model"
+    assert "live hybrid ai path" in payload["answer"].lower()
+
+    del app.state.persistence_repository
+
+
+def test_ai_explainer_stream_returns_done_payload() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Stream Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    response = client.post(
+        "/ai/explainer/stream",
+        json={
+            "intent": "AUTO",
+            "project_id": project_id,
+            "scan_id": scan_id,
+            "question": "Explain simply what should be solved first.",
+        },
+    )
+
+    assert response.status_code == 200
+    text = response.text
+    assert "event: delta" in text
+    assert "event: done" in text
+    assert "PRIORITIZE_FIXES" in text
+
+    del app.state.persistence_repository
+
+
+def test_ai_explainer_can_generate_policy_draft() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Policy Draft Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "cycle" / "order-service"),
+                str(ROOT / "cycle" / "payment-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    response = client.post(
+        "/ai/explainer",
+        json={
+            "intent": "POLICY_WRITING_ASSISTANCE",
+            "project_id": project_id,
+            "scan_id": scan_id,
+            "question": "Draft governance policy YAML for this project.",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "POLICY_WRITING_ASSISTANCE"
+    assert payload["policy_document"]
+    assert "policies:" in payload["policy_document"]
+
+    del app.state.persistence_repository
+
+
+def test_ai_status_reports_placeholder_key(monkeypatch) -> None:
+    client = TestClient(app)
+    monkeypatch.setenv("MESA_AI_MODE", "hybrid")
+    monkeypatch.setenv("MESA_OPENAI_API_KEY", "your_api_key_here")
+
+    response = client.get("/ai/explainer/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["state"] == "PLACEHOLDER_API_KEY"
+    assert payload["live_enabled"] is True
+
+
+def test_ai_status_reports_invalid_key_from_probe(monkeypatch) -> None:
+    client = TestClient(app)
+    monkeypatch.setenv("MESA_AI_MODE", "hybrid")
+    monkeypatch.setenv("MESA_OPENAI_API_KEY", "sk-test123456")
+
+    monkeypatch.setattr(
+        explainer_module,
+        "_probe_openai_status",
+        lambda api_key, base_url, model: (
+            explainer_module.AIConnectionState.INVALID_API_KEY,
+            "OpenAI rejected the configured API key.",
+        ),
+    )
+
+    response = client.get("/ai/explainer/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["state"] == "INVALID_API_KEY"
+    assert "rejected" in payload["message"].lower()
