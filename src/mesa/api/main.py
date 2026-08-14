@@ -40,6 +40,7 @@ from mesa.models import (
     PersistedScanResult,
     ProjectCreate,
     ProjectRecord,
+    ProjectSetup,
     ResearchEvaluationRecord,
     ResearchEvaluationRecordCreate,
     ResearchEvaluationRecordUpdate,
@@ -197,12 +198,33 @@ def create_project(payload: ProjectCreate, request: Request) -> ProjectRecord:
     return get_repository(request).create_project(payload)
 
 
+@app.get("/projects", response_model=list[ProjectRecord])
+def list_projects(request: Request) -> list[ProjectRecord]:
+    return get_repository(request).list_projects()
+
+
 @app.get("/projects/{project_id}", response_model=ProjectRecord)
 def get_project(project_id: str, request: Request) -> ProjectRecord:
     project = get_repository(request).get_project(project_id)
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
+
+
+@app.get("/projects/{project_id}/setup", response_model=ProjectSetup | None)
+def get_project_setup(project_id: str, request: Request) -> ProjectSetup | None:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return repository.get_project_setup(project_id)
+
+
+@app.put("/projects/{project_id}/setup", response_model=ProjectSetup)
+def update_project_setup(project_id: str, payload: ProjectSetup, request: Request) -> ProjectSetup:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return repository.upsert_project_setup(project_id, payload)
 
 
 
@@ -255,7 +277,16 @@ def run_project_scan(project_id: str, payload: RunScanRequest, request: Request)
     repository = get_repository(request)
     if repository.get_project(project_id) is None:
         raise HTTPException(status_code=404, detail="Project not found")
+    repository.upsert_project_setup(
+        project_id,
+        ProjectSetup(
+            selected_service_paths=list(payload.service_paths),
+            manual_service_paths=list(payload.service_paths),
+            chatty_threshold=payload.chatty_threshold,
+        ),
+    )
     result = analyze_services(payload.service_paths, payload.chatty_threshold)
+    result.summary["selected_service_paths"] = list(payload.service_paths)
     policies = repository.list_policies(project_id)
     policy_findings = evaluate_policies(result, policies)
     if policy_findings:
@@ -285,7 +316,20 @@ def run_project_repo_scan(
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
+    repository.upsert_project_setup(
+        project_id,
+        ProjectSetup(
+            source_type=payload.source_type,
+            source_location=payload.location,
+            source_ref=payload.ref,
+            selected_service_paths=list(payload.service_paths),
+            manual_service_paths=list(payload.service_paths),
+            chatty_threshold=payload.chatty_threshold,
+        ),
+    )
+
     result = analyze_services(service_paths, payload.chatty_threshold)
+    result.summary["selected_service_paths"] = list(payload.service_paths)
     policies = repository.list_policies(project_id)
     policy_findings = evaluate_policies(result, policies)
     if policy_findings:

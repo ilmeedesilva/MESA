@@ -79,8 +79,11 @@ GitHub repository:
 ## Projects and Scans
 
 ```text
+GET /projects
 POST /projects
 GET /projects/{project_id}
+GET /projects/{project_id}/setup
+PUT /projects/{project_id}/setup
 POST /projects/{project_id}/scans
 POST /projects/{project_id}/repo-scans
 GET /projects/{project_id}/scans

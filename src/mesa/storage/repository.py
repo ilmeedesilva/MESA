@@ -20,6 +20,7 @@ from mesa.models import (
     PolicyRecord,
     ProjectCreate,
     ProjectRecord,
+    ProjectSetup,
     ResearchEvaluationRecord,
     ResearchEvaluationRecordCreate,
     ResearchEvaluationRecordUpdate,
@@ -27,6 +28,47 @@ from mesa.models import (
     ScanRecord,
     SnapshotRecord,
 )
+
+
+def _project_setup_from_scan_result(
+    scan: ScanRecord | None,
+    result: AnalysisResult | None,
+) -> ProjectSetup | None:
+    if scan is None or result is None:
+        return None
+
+    repository_source = result.summary.get("repository_source", {}) if isinstance(result.summary, dict) else {}
+    source_type = repository_source.get("source_type") or (scan.source_type.value if scan.source_type else None)
+    source_location = (
+        repository_source.get("source_path")
+        or repository_source.get("repo_url")
+        or repository_source.get("workspace_path")
+    )
+    source_ref = repository_source.get("repo_ref") or scan.repo_ref
+    manual_service_paths = [service.root_path for service in result.services if service.root_path]
+    selected_service_paths = list(result.summary.get("selected_service_paths", []))
+    workspace_path = repository_source.get("workspace_path")
+    if not selected_service_paths and workspace_path:
+        try:
+            workspace_root = Path(workspace_path)
+            selected_service_paths = [
+                str(Path(service.root_path).relative_to(workspace_root))
+                for service in result.services
+                if service.root_path
+            ]
+        except ValueError:
+            selected_service_paths = manual_service_paths
+
+    return ProjectSetup(
+        source_type=source_type,
+        source_location=source_location,
+        source_ref=source_ref,
+        selected_service_paths=selected_service_paths,
+        manual_service_paths=manual_service_paths,
+        chatty_threshold=3,
+        created_at=scan.created_at,
+        updated_at=scan.completed_at or scan.created_at,
+    )
 
 
 class PersistenceRepository(Protocol):
@@ -48,7 +90,16 @@ class PersistenceRepository(Protocol):
     def create_project(self, data: ProjectCreate) -> ProjectRecord:
         ...
 
+    def list_projects(self) -> list[ProjectRecord]:
+        ...
+
     def get_project(self, project_id: str) -> ProjectRecord | None:
+        ...
+
+    def get_project_setup(self, project_id: str) -> ProjectSetup | None:
+        ...
+
+    def upsert_project_setup(self, project_id: str, data: ProjectSetup) -> ProjectSetup:
         ...
 
     def save_scan_result(
@@ -113,6 +164,7 @@ class InMemoryPersistenceRepository:
         self.scans: dict[str, ScanRecord] = {}
         self.results: dict[str, AnalysisResult] = {}
         self.snapshots: dict[str, SnapshotRecord] = {}
+        self.project_setups: dict[str, ProjectSetup] = {}
         self.policies: dict[tuple[str, str], PolicyRecord] = {}
         self.research_records: dict[str, ResearchEvaluationRecord] = {}
 
@@ -143,6 +195,38 @@ class InMemoryPersistenceRepository:
 
     def get_project(self, project_id: str) -> ProjectRecord | None:
         return self.projects.get(project_id)
+
+    def list_projects(self) -> list[ProjectRecord]:
+        return sorted(
+            self.projects.values(),
+            key=lambda project: project.created_at or "",
+            reverse=True,
+        )
+
+    def get_project_setup(self, project_id: str) -> ProjectSetup | None:
+        setup = self.project_setups.get(project_id)
+        if setup is not None:
+            return setup
+        latest_scan = self.list_scans(project_id)[0] if self.list_scans(project_id) else None
+        derived = _project_setup_from_scan_result(latest_scan, self.get_scan_result(latest_scan.id) if latest_scan else None)
+        if derived is not None:
+            self.project_setups[project_id] = derived
+        return derived
+
+    def upsert_project_setup(self, project_id: str, data: ProjectSetup) -> ProjectSetup:
+        existing = self.project_setups.get(project_id)
+        setup = ProjectSetup(
+            source_type=data.source_type,
+            source_location=data.source_location,
+            source_ref=data.source_ref,
+            selected_service_paths=list(data.selected_service_paths),
+            manual_service_paths=list(data.manual_service_paths),
+            chatty_threshold=data.chatty_threshold,
+            created_at=existing.created_at if existing else _now_iso(),
+            updated_at=_now_iso(),
+        )
+        self.project_setups[project_id] = setup
+        return setup
 
     def save_scan_result(
         self,
@@ -347,6 +431,58 @@ class PostgresPersistenceRepository:
                 (project_id,),
             ).fetchone()
         return ProjectRecord(**row) if row else None
+
+    def list_projects(self) -> list[ProjectRecord]:
+        with self._connect(row_factory=dict_row) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, name, description, root_path, created_at::text
+                FROM projects
+                ORDER BY created_at DESC, name ASC
+                """
+            ).fetchall()
+        return [ProjectRecord(**row) for row in rows]
+
+    def get_project_setup(self, project_id: str) -> ProjectSetup | None:
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                SELECT config, created_at::text, updated_at::text
+                FROM project_setups
+                WHERE project_id = %s
+                """,
+                (project_id,),
+            ).fetchone()
+        if row:
+            payload = dict(row["config"])
+            payload["created_at"] = row["created_at"]
+            payload["updated_at"] = row["updated_at"]
+            return ProjectSetup(**payload)
+
+        scans = self.list_scans(project_id)
+        latest_scan = scans[0] if scans else None
+        derived = _project_setup_from_scan_result(latest_scan, self.get_scan_result(latest_scan.id) if latest_scan else None)
+        if derived is not None:
+            return self.upsert_project_setup(project_id, derived)
+        return None
+
+    def upsert_project_setup(self, project_id: str, data: ProjectSetup) -> ProjectSetup:
+        payload = data.model_dump(mode="json", exclude={"created_at", "updated_at"})
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                INSERT INTO project_setups (project_id, config)
+                VALUES (%s, %s)
+                ON CONFLICT (project_id)
+                DO UPDATE SET config = EXCLUDED.config, updated_at = now()
+                RETURNING config, created_at::text, updated_at::text
+                """,
+                (project_id, Jsonb(payload)),
+            ).fetchone()
+        response = dict(row["config"])
+        response["created_at"] = row["created_at"]
+        response["updated_at"] = row["updated_at"]
+        return ProjectSetup(**response)
 
     def save_scan_result(
         self,

@@ -115,6 +115,60 @@ label {
   gap: 12px;
 }
 
+.toolbarProjectShell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #ffffff, #f8fbff);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
+}
+
+.toolbarProjectPicker {
+  display: grid;
+  gap: 4px;
+  min-width: 250px;
+  margin: 0;
+}
+
+.toolbarProjectPicker span {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.toolbarProjectPicker select {
+  min-width: 250px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(148, 163, 184, 0.08);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.toolbarProjectMeta {
+  display: grid;
+  gap: 2px;
+  min-width: 170px;
+}
+
+.toolbarProjectMeta strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.toolbarProjectMeta small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .workspaceTabs {
   display: inline-flex;
   padding: 4px;
@@ -1282,6 +1336,111 @@ aside {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;
   line-height: 1.45;
+}
+
+.stepHintCard.compact {
+  margin-top: 0;
+}
+
+.projectChoiceHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.projectStepLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.projectSelectionPanel,
+.projectCreatePanel {
+  min-width: 0;
+}
+
+.activeInlineButton {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.selectedProjectSummary {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #eff6ff, #ffffff);
+}
+
+.selectedProjectSummary strong {
+  color: #1d4ed8;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.selectedProjectSummary span {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.selectedProjectSummary small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.projectQuickList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.projectQuickButton {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+  box-shadow: 0 8px 18px rgba(148, 163, 184, 0.08);
+}
+
+.projectQuickButton strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.projectQuickButton small {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.projectQuickButton.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.projectCreatePanel {
+  padding: 14px 16px 16px;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f8fbff, #ffffff);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
+}
+
+.projectCreatePanel h3 {
+  font-size: 15px;
 }
 
 .discoveryList {
@@ -2954,6 +3113,10 @@ meter {
     grid-template-columns: 1fr;
   }
 
+  .projectStepLayout {
+    grid-template-columns: 1fr;
+  }
+
   .sideRail {
     grid-template-columns: 1fr 1fr;
   }
@@ -2999,6 +3162,19 @@ meter {
   .publicDemoBanner {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .toolbarProjectShell,
+  .projectChoiceHeader {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .toolbarProjectPicker,
+  .toolbarProjectPicker select,
+  .toolbarProjectMeta {
+    min-width: 0;
+    width: 100%;
   }
 
   .workflowActions,
