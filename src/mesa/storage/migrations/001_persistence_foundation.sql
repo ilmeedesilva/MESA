@@ -100,6 +100,20 @@ CREATE TABLE IF NOT EXISTS policies (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'policies_pkey'
+          AND conrelid = 'policies'::regclass
+          AND pg_get_constraintdef(oid) = 'PRIMARY KEY (id)'
+    ) THEN
+        ALTER TABLE policies DROP CONSTRAINT policies_pkey;
+        ALTER TABLE policies ADD PRIMARY KEY (project_id, id);
+    END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_policies_project_id ON policies(project_id);
 
 CREATE TABLE IF NOT EXISTS research_evaluation_records (

@@ -113,7 +113,7 @@ class InMemoryPersistenceRepository:
         self.scans: dict[str, ScanRecord] = {}
         self.results: dict[str, AnalysisResult] = {}
         self.snapshots: dict[str, SnapshotRecord] = {}
-        self.policies: dict[str, PolicyRecord] = {}
+        self.policies: dict[tuple[str, str], PolicyRecord] = {}
         self.research_records: dict[str, ResearchEvaluationRecord] = {}
 
     def _connect(self, **kwargs):
@@ -214,12 +214,13 @@ class InMemoryPersistenceRepository:
             created_at=_now_iso(),
             updated_at=_now_iso(),
         )
-        self.policies[policy.id] = policy
+        self.policies[(project_id, policy.id)] = policy
         return policy
 
     def update_policy(self, project_id: str, policy_id: str, data: PolicyCreate) -> PolicyRecord | None:
-        existing = self.policies.get(policy_id)
-        if existing is None or existing.project_id != project_id:
+        key = (project_id, policy_id)
+        existing = self.policies.get(key)
+        if existing is None:
             return None
         updated = existing.model_copy(
             update={
@@ -231,7 +232,7 @@ class InMemoryPersistenceRepository:
                 "updated_at": _now_iso(),
             }
         )
-        self.policies[policy_id] = updated
+        self.policies[key] = updated
         return updated
 
     def list_policies(self, project_id: str) -> list[PolicyRecord]:
