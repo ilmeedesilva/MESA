@@ -377,7 +377,6 @@ type InterpretationMode = "beginner" | "research";
 type AppSection =
   | "overview"
   | "scan"
-  | "services"
   | "findings"
   | "graph"
   | "history"
@@ -385,7 +384,6 @@ type AppSection =
   | "roadmap"
   | "ai"
   | "evaluation"
-  | "policies"
   | "docs";
 type ApiAvailability = "checking" | "online" | "offline";
 type ProjectListStatus = "idle" | "loading" | "ready" | "error";
@@ -514,7 +512,6 @@ const appNavigation = [
     group: "Analysis",
     items: [
       { id: "scan", label: "Scan", description: "Configure sources and run scans" },
-      { id: "services", label: "Services", description: "Review discovered and selected services" },
       { id: "findings", label: "Findings", description: "Inspect findings and filters" },
       { id: "graph", label: "Graph", description: "Explore architecture and health" },
       { id: "ai", label: "AI Explainer", description: "Ask grounded questions about the scan" }
@@ -535,12 +532,6 @@ const appNavigation = [
     ]
   },
   {
-    group: "Configuration",
-    items: [
-      { id: "policies", label: "Policies", description: "Governance rules and policy YAML" }
-    ]
-  },
-  {
     group: "Reference",
     items: [
       { id: "docs", label: "Documentation", description: "Guides and methodology" }
@@ -554,15 +545,13 @@ const appNavigation = [
 const sectionsRequiringProject = new Set<AppSection>([
   "overview",
   "scan",
-  "services",
   "findings",
   "graph",
   "history",
   "evolution",
   "roadmap",
   "ai",
-  "evaluation",
-  "policies"
+  "evaluation"
 ]);
 
 function App() {
@@ -631,6 +620,7 @@ function App() {
   const projectStateRequestRef = React.useRef(0);
   const scanRequestRef = React.useRef(0);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const sidebarToggleIntentRef = React.useRef<"auto" | "manual">("auto");
   const projectStateAbortRef = React.useRef<AbortController | null>(null);
   const scanAbortRef = React.useRef<AbortController | null>(null);
 
@@ -697,7 +687,17 @@ function App() {
   }, [currentSection]);
 
   React.useEffect(() => {
-    const handleResize = () => setSidebarCollapsed(window.innerWidth < 1100);
+    const handleResize = () => {
+      const shouldCollapse = window.innerWidth < 1360;
+      if (window.innerWidth < 1180) {
+        setSidebarCollapsed(false);
+        sidebarToggleIntentRef.current = "auto";
+        return;
+      }
+      if (sidebarToggleIntentRef.current === "auto") {
+        setSidebarCollapsed(shouldCollapse);
+      }
+    };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -1535,6 +1535,8 @@ function App() {
   ];
   const pendingWorkflowSteps = workflowSteps.filter((step) => !step.done);
   const activeWorkflowStep = workflowSteps.find((step) => step.active) ?? pendingWorkflowSteps[0] ?? workflowSteps[workflowSteps.length - 1];
+  const activeSetupStepIndex = Math.max(0, workflowSteps.findIndex((step) => step.id === activeSetupStepId));
+  const activeSetupStep = workflowSteps[activeSetupStepIndex] ?? workflowSteps[0];
 
   React.useEffect(() => {
     if (!workflowSteps.some((step) => step.id === activeSetupStepId)) {
@@ -1549,14 +1551,6 @@ function App() {
 
   function focusWorkflowStep(stepId: WorkflowStep["id"]) {
     openSetupStep(stepId);
-    if (stepId === "review") {
-      navigateToSection("services");
-      return;
-    }
-    if (stepId === "policies") {
-      navigateToSection("policies");
-      return;
-    }
     navigateToSection("scan");
   }
 
@@ -1643,7 +1637,7 @@ function App() {
           <h2>Project Selection</h2>
           <span>{projects.length} available</span>
         </div>
-        <div className="projectStepLayout">
+        <div className={showCreateProjectForm ? "projectStepLayout withCreatePanel" : "projectStepLayout"}>
           <section className="projectSelectionPanel">
             <div className="projectChoiceHeader">
               <div className="stepHintCard compact">
@@ -1657,25 +1651,29 @@ function App() {
                 {showCreateProjectForm ? "Hide Create Project" : "Create New Project"}
               </button>
             </div>
-            <label htmlFor="scanProjectSelect">Select existing project</label>
-            <select
-              id="scanProjectSelect"
-              value={selectedProjectId}
-              onChange={(event) => updateSelectedProject(event.target.value, "push")}
-              disabled={isCreating || projectListStatus === "loading"}
-            >
-              <option value="">Choose a project</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>{project.name}</option>
-              ))}
-            </select>
-            {selectedProject ? (
-              <div className="selectedProjectSummary">
-                <strong>Selected</strong>
-                <span>{selectedProject.name}</span>
-                <small>{selectedProject.description || "Saved project ready to restore and rescan."}</small>
+            <div className="projectSelectionControls">
+              <div className="projectSelectionField">
+                <label htmlFor="scanProjectSelect">Select existing project</label>
+                <select
+                  id="scanProjectSelect"
+                  value={selectedProjectId}
+                  onChange={(event) => updateSelectedProject(event.target.value, "push")}
+                  disabled={isCreating || projectListStatus === "loading"}
+                >
+                  <option value="">Choose a project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>{project.name}</option>
+                  ))}
+                </select>
               </div>
-            ) : null}
+              {selectedProject ? (
+                <div className="selectedProjectSummary">
+                  <strong>Selected</strong>
+                  <span>{selectedProject.name}</span>
+                  <small>{selectedProject.description || "Saved project ready to restore and rescan."}</small>
+                </div>
+              ) : null}
+            </div>
             {projectListStatus === "loading" ? <p className="hint">Loading existing projects...</p> : null}
             {projectListStatus === "error" && projectListError ? <div className="error">{projectListError}</div> : null}
             {projectListStatus === "ready" && projects.length === 0 ? (
@@ -1770,13 +1768,13 @@ function App() {
             />
           </>
         ) : null}
-        <div className="panelButtonRow">
+        <div className="panelButtonRow sourceActionRow">
           <button className="secondaryButton" onClick={previewRepositorySource} disabled={isPreviewingRepo}>
             {isPreviewingRepo ? "Previewing..." : "Preview Discovery"}
           </button>
           <button
             type="button"
-            onClick={() => navigateToSection("services")}
+            onClick={() => focusWorkflowStep("review")}
             disabled={!repoPreview && manualServicePaths.length === 0}
           >
             Review Services
@@ -1852,6 +1850,9 @@ function App() {
             <button className="fullButton secondaryButton" onClick={applyDiscoveredServices} disabled={selectedDiscoveryPaths.length === 0}>
               Apply Selected Services
             </button>
+            <button type="button" className="fullButton" onClick={() => focusWorkflowStep("policies")} disabled={selectedDiscoveryPaths.length === 0}>
+              Continue to Policies
+            </button>
           </div>
         ) : (
           <div className="stepHintCard">
@@ -1861,6 +1862,14 @@ function App() {
         <label htmlFor="paths">Service paths</label>
         <textarea id="paths" value={paths} onChange={(event) => setPaths(event.target.value)} />
         <p className="hint">Manual fallback: use one service directory per line. Repository discovery can fill this automatically.</p>
+        <div className="panelButtonRow">
+          <button type="button" onClick={() => focusWorkflowStep("source")}>
+            Back to Source
+          </button>
+          <button type="button" className="secondaryButton" onClick={() => focusWorkflowStep("policies")} disabled={manualServicePaths.length === 0 && selectedDiscoveryPaths.length === 0}>
+            Continue
+          </button>
+        </div>
       </section>
     );
   }
@@ -1884,8 +1893,8 @@ function App() {
           >
             {isExplaining ? "Drafting..." : "Draft Policies With AI"}
           </button>
-          <button type="button" onClick={() => navigateToSection("ai")} disabled={!activeScan}>
-            Open AI Explainer
+          <button type="button" onClick={() => focusWorkflowStep("scan")} disabled={!selectedProject}>
+            Go to Run Scan
           </button>
         </div>
         <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProject}>
@@ -1902,23 +1911,45 @@ function App() {
           <h2>Run Scan</h2>
           <span>{repoPreview ? "Repository-backed" : "Manual paths"}</span>
         </div>
+        <div className="scanReadinessGrid">
+          <div className="scanReadinessItem">
+            <span>Project</span>
+            <strong>{selectedProject?.name ?? "Not selected"}</strong>
+          </div>
+          <div className="scanReadinessItem">
+            <span>Source</span>
+            <strong>{sourceLocation.trim() ? sourceType : "Manual service list"}</strong>
+          </div>
+          <div className="scanReadinessItem">
+            <span>Services</span>
+            <strong>{String(selectedDiscoveryPaths.length || manualServicePaths.length || 0)}</strong>
+          </div>
+          <div className="scanReadinessItem">
+            <span>Policies</span>
+            <strong>{policyCount > 0 ? `${policyCount} saved` : "Optional"}</strong>
+          </div>
+        </div>
         <p className="hint">Run the current selection to generate findings, scores, history, and graph evidence.</p>
-        <button onClick={runScan} disabled={isScanning || !selectedProject || usingEmbeddedDemo}>
-          {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
-        </button>
+        <div className="panelButtonRow">
+          <button type="button" className="secondaryButton" onClick={() => focusWorkflowStep("policies")} disabled={!selectedProject}>
+            Back to Policies
+          </button>
+          <button onClick={runScan} disabled={isScanning || !selectedProject || usingEmbeddedDemo}>
+            {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
+          </button>
+        </div>
       </section>
     );
   }
 
   function renderInterpretationCard() {
     return (
-      <section className="interpretationPanel">
+      <section className="interpretationPanel globalInterpretationPanel">
         <div className="interpretationIntro">
-          <div className="eyebrow">Result Interpretation</div>
-          <h2>Choose how to read this scan</h2>
+          <div className="eyebrow">Global Interpretation Mode</div>
+          <h2>Choose how MESA explains results everywhere</h2>
           <p>
-            Switch between a guided plain-language view and a deeper research-oriented explanation without changing
-            the underlying detector results.
+            Switch between a guided plain-language view and a deeper research-oriented explanation. This applies across findings, drawers, AI prompts, and scan workspaces.
           </p>
           <div className="docLinks">
             <DocLinkButton label="Findings guide" onClick={() => openDoc("findings-guide")} />
@@ -2098,15 +2129,22 @@ function App() {
           />
         </section>
 
-        <section className="workspaceTwoColumn">
+        <section className="workspaceSingleColumn">
           {renderHistoryPanel()}
-          {renderInterpretationCard()}
         </section>
       </div>
     );
   }
 
   function renderScanWorkspace() {
+    const stepContent = (() => {
+      if (activeSetupStepId === "project") return renderProjectSelectionPanel();
+      if (activeSetupStepId === "source") return renderSourceConfigurationPanel();
+      if (activeSetupStepId === "review") return renderServicesPanel();
+      if (activeSetupStepId === "policies") return renderPoliciesPanel();
+      return renderRunScanPanel();
+    })();
+
     return (
       <div className="workspaceStack">
         <section className="workflowTrackPanel workspaceIntroCard">
@@ -2134,53 +2172,51 @@ function App() {
               </button>
             </div>
           </div>
-          <div className="workflowFlow">
-            {workflowSteps.map((step, index) => (
-              <button
-                key={step.id}
-                type="button"
-                className={`workflowNode ${step.done ? "done" : ""} ${step.id === activeSetupStepId ? "current" : ""} ${step.active ? "active" : ""} ${step.optional ? "optional" : ""}`}
-                onClick={() => focusWorkflowStep(step.id)}
-              >
-                <small>Step {index + 1}</small>
-                <strong>{step.label}</strong>
-              </button>
-            ))}
-          </div>
         </section>
 
         {showSetupWorkspace ? (
-          <section className="workspaceSplit workspaceSplitWide">
+          <section className="workspaceSplit workspaceSplitWide scanWorkspaceLayout">
             <div className="workspaceStack">
-              {renderProjectSelectionPanel()}
-              {renderSourceConfigurationPanel()}
+              <section className="stepWorkspaceCard">
+                <div className="stepWorkspaceHeader">
+                  <div>
+                    <div className="eyebrow">Step Workspace</div>
+                    <h2>{activeSetupStep.label}</h2>
+                    <p>{activeSetupStep.description}</p>
+                  </div>
+                  <div className="stepWorkspaceMeta">
+                    <strong>{`Step ${activeSetupStepIndex + 1} of ${workflowSteps.length}`}</strong>
+                    <span>{activeSetupStep.optional ? "Optional" : "Required"}</span>
+                  </div>
+                </div>
+                {stepContent}
+              </section>
             </div>
             <div className="workspaceStack">
-              {renderRunScanPanel()}
-              {renderInterpretationCard()}
+              <section className="workspaceInfoCard scanChecklistCard">
+                <div className="eyebrow">Workflow Snapshot</div>
+                <h2>Keep everything in one scan workspace</h2>
+                <p>
+                  This flow now stays inside the scan tab. Move step by step here without being redirected into extra sections.
+                </p>
+                <div className="scanChecklist">
+                  {workflowSteps.map((step, index) => (
+                    <button
+                      key={step.id}
+                      type="button"
+                      className={`scanChecklistItem ${step.id === activeSetupStepId ? "active" : ""} ${step.done ? "done" : ""}`}
+                      onClick={() => focusWorkflowStep(step.id)}
+                    >
+                      <span>{`0${index + 1}`.slice(-2)}</span>
+                      <strong>{step.label}</strong>
+                      <small>{step.done ? "Ready" : step.optional ? "Optional" : "Pending"}</small>
+                    </button>
+                  ))}
+                </div>
+              </section>
             </div>
           </section>
         ) : null}
-      </div>
-    );
-  }
-
-  function renderServicesWorkspace() {
-    if (!selectedProject) {
-      return renderProjectRequiredState();
-    }
-    return (
-      <div className="workspaceStack">
-        <section className="workspaceInfoCard">
-          <div className="eyebrow">Service Discovery</div>
-          <h2>Review service candidates before the scan</h2>
-          <p>Keep the selected services tight so the scan reflects the actual architecture boundary you want to analyze.</p>
-          <div className="infoList">
-            <span><strong>Source</strong><code>{sourceLabel}</code></span>
-            <span><strong>Selected</strong><code>{String(selectedDiscoveryPaths.length || manualServicePaths.length)}</code></span>
-          </div>
-        </section>
-        {renderServicesPanel()}
       </div>
     );
   }
@@ -2250,8 +2286,6 @@ function App() {
         return renderOverviewWorkspace();
       case "scan":
         return renderScanWorkspace();
-      case "services":
-        return renderServicesWorkspace();
       case "findings":
         return renderFindingsWorkspace();
       case "graph":
@@ -2311,8 +2345,6 @@ function App() {
             onExport={(format) => void exportResearchRecords(format)}
           />
         );
-      case "policies":
-        return selectedProject ? renderPoliciesPanel() : renderProjectRequiredState();
       case "docs":
         return (
           <DocumentationPortal
@@ -2331,21 +2363,32 @@ function App() {
   }
 
   return (
-    <main className="appShell">
+    <main className={sidebarCollapsed ? "appShell sidebarCollapsed" : "appShell"}>
       <aside className={sidebarCollapsed ? "appSidebar collapsed" : "appSidebar"}>
         <div className="appSidebarTop">
           <div className="appIdentity">
-            <div className="eyebrow">Architecture Analyzer</div>
-            <h1>MESA</h1>
-            {!sidebarCollapsed ? <p>Structured project selection, scanning, findings analysis, and research evidence in one workspace.</p> : null}
+            {sidebarCollapsed ? (
+              <div className="appIdentityMark" aria-label="MESA">
+                M
+              </div>
+            ) : (
+              <>
+                <div className="eyebrow">Architecture Analyzer</div>
+                <h1>MESA</h1>
+                <p>Structured project selection, scanning, findings analysis, and research evidence in one workspace.</p>
+              </>
+            )}
           </div>
           <button
             type="button"
             className="sidebarToggle"
-            onClick={() => setSidebarCollapsed((current) => !current)}
+            onClick={() => {
+              sidebarToggleIntentRef.current = "manual";
+              setSidebarCollapsed((current) => !current);
+            }}
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {sidebarCollapsed ? ">" : "<"}
+            <span>{sidebarCollapsed ? ">" : "<"}</span>
           </button>
         </div>
 
@@ -2370,6 +2413,45 @@ function App() {
             </section>
           ))}
         </nav>
+
+        <section className={sidebarCollapsed ? "sidebarFooterAction collapsed" : "sidebarFooterAction"}>
+          {!sidebarCollapsed ? (
+            <>
+              <div>
+                <div className="eyebrow">Demo Workspace</div>
+                <p>{isPublicDemoMode ? "You are browsing the embedded evaluator demo." : "Load the embedded public demo when you want a safe example project."}</p>
+              </div>
+              <button
+                type="button"
+                className={isPublicDemoMode ? "secondaryButton sidebarDemoButton" : "sidebarDemoButton"}
+                onClick={() => {
+                  if (isPublicDemoMode) {
+                    leavePublicDemo();
+                    return;
+                  }
+                  activatePublicDemo();
+                }}
+              >
+                {isPublicDemoMode ? "Return to Live Workspace" : "Load Demo Workspace"}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className={isPublicDemoMode ? "secondaryButton sidebarDemoButton compact" : "sidebarDemoButton compact"}
+              onClick={() => {
+                if (isPublicDemoMode) {
+                  leavePublicDemo();
+                  return;
+                }
+                activatePublicDemo();
+              }}
+              title={isPublicDemoMode ? "Return to live workspace" : "Load demo workspace"}
+            >
+              Demo
+            </button>
+          )}
+        </section>
       </aside>
 
       <div className="appFrame">
@@ -2419,9 +2501,6 @@ function App() {
                 New Project
               </button>
             ) : null}
-            <button onClick={runScan} disabled={isScanning || !selectedProject || usingEmbeddedDemo}>
-              {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
-            </button>
           </div>
         </header>
 
@@ -2429,10 +2508,12 @@ function App() {
           apiAvailability={apiAvailability}
           isPublicDemoMode={isPublicDemoMode}
           usingEmbeddedDemo={usingEmbeddedDemo}
-          onActivateDemo={() => activatePublicDemo()}
-          onLeaveDemo={() => leavePublicDemo()}
           onOpenDoc={openDoc}
         />
+
+        <section className="globalControlBar">
+          {renderInterpretationCard()}
+        </section>
 
         {error ? <div className="error workspaceError">{error}</div> : null}
 
@@ -3000,15 +3081,11 @@ function PublicDemoBanner({
   apiAvailability,
   isPublicDemoMode,
   usingEmbeddedDemo,
-  onActivateDemo,
-  onLeaveDemo,
   onOpenDoc
 }: {
   apiAvailability: ApiAvailability;
   isPublicDemoMode: boolean;
   usingEmbeddedDemo: boolean;
-  onActivateDemo: () => void;
-  onLeaveDemo: () => void;
   onOpenDoc: (slug: string) => void;
 }) {
   if (apiAvailability === "checking") {
@@ -3046,17 +3123,6 @@ function PublicDemoBanner({
       <div>
         <strong>Live workspace is available</strong>
         <span>{isPublicDemoMode ? "The embedded demo workspace is loaded even though the live backend is available." : "You can analyze your own repositories normally, or switch to the embedded public demo examples at any time."}</span>
-      </div>
-      <div className="publicDemoActions">
-        {isPublicDemoMode ? (
-          <button type="button" className="workflowToggle" onClick={onLeaveDemo}>
-            Return to live workspace
-          </button>
-        ) : (
-          <button type="button" className="workflowToggle" onClick={onActivateDemo}>
-            Load demo workspace
-          </button>
-        )}
       </div>
     </section>
   );
@@ -5206,10 +5272,10 @@ function readProjectIdFromUrl() {
 function readSectionFromUrl(): AppSection {
   const params = new URLSearchParams(window.location.search);
   const value = params.get("section");
+  if (value === "services" || value === "policies") return "scan";
   const knownSections = new Set<AppSection>([
     "overview",
     "scan",
-    "services",
     "findings",
     "graph",
     "history",
@@ -5217,7 +5283,6 @@ function readSectionFromUrl(): AppSection {
     "roadmap",
     "ai",
     "evaluation",
-    "policies",
     "docs"
   ]);
   return value && knownSections.has(value as AppSection) ? (value as AppSection) : "overview";
