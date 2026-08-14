@@ -421,11 +421,11 @@ def test_research_evaluation_records_crud_from_scan_and_exports() -> None:
     assert record["expected_services"] == 3
     assert record["detected_services"] == 3
     assert record["total_findings"] >= 0
-    assert record["true_positives"] == record["total_findings"]
-    assert record["false_positives"] == 0
-    assert record["false_negatives"] == 0
-    assert record["precision"] == 1.0 if record["total_findings"] > 0 else record["precision"] is None
-    assert "Draft accuracy fields" in record["notes"]
+    assert record["true_positives"] is None
+    assert record["false_positives"] is None
+    assert record["false_negatives"] is None
+    assert record["precision"] is None
+    assert "no matching ground-truth findings were available" in record["notes"]
 
     update_response = client.put(
         f"/research-records/{record_id}",
@@ -468,6 +468,86 @@ def test_research_evaluation_records_crud_from_scan_and_exports() -> None:
     delete_response = client.delete(f"/research-records/{record_id}")
     assert delete_response.status_code == 204
     assert client.get(f"/research-records/{record_id}").status_code == 404
+
+    del app.state.persistence_repository
+
+
+def test_research_evaluation_draft_uses_selected_scan_and_project_setup() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Draft Project"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/scans",
+        json={
+            "service_paths": [
+                str(ROOT / "chatty" / "order-service"),
+                str(ROOT / "chatty" / "user-service"),
+            ]
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    draft_response = client.get(f"/research-records/draft/{scan_id}")
+    assert draft_response.status_code == 200
+    draft = draft_response.json()
+
+    assert draft["project_id"] == project_id
+    assert draft["scan_id"] == scan_id
+    assert draft["expected_services"] == 2
+    assert draft["detected_services"] == 2
+    assert draft["total_findings"] == 4
+    assert draft["accuracy_mode"] == "GROUND_TRUTH"
+    assert draft["matched_benchmark_id"] == "chatty-services"
+    assert draft["true_positives"] == 4
+    assert draft["false_positives"] == 0
+    assert draft["false_negatives"] == 0
+    assert draft["precision"] == 1.0
+    assert draft["recall"] == 1.0
+    assert draft["f1_score"] == 1.0
+
+    del app.state.persistence_repository
+
+
+def test_research_evaluation_draft_leaves_accuracy_blank_without_ground_truth() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    project_response = client.post("/projects", json={"name": "Draft Real Repo"})
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    scan_response = client.post(
+        f"/projects/{project_id}/repo-scans",
+        json={
+            "source_type": "LOCAL_PATH",
+            "location": str(ROOT / "real-repo" / "shop"),
+            "service_paths": ["frontend-service", "catalog-service", "inventory-api"],
+        },
+    )
+    assert scan_response.status_code == 201
+    scan_id = scan_response.json()["scan"]["id"]
+
+    draft_response = client.get(f"/research-records/draft/{scan_id}")
+    assert draft_response.status_code == 200
+    draft = draft_response.json()
+
+    assert draft["project_id"] == project_id
+    assert draft["expected_services"] == 3
+    assert draft["detected_services"] == 3
+    assert draft["accuracy_mode"] == "MANUAL_VALIDATION_REQUIRED"
+    assert draft["matched_benchmark_id"] is None
+    assert draft["true_positives"] is None
+    assert draft["false_positives"] is None
+    assert draft["false_negatives"] is None
+    assert draft["precision"] is None
+    assert draft["recall"] is None
+    assert draft["f1_score"] is None
+    assert "no matching ground-truth findings were available" in draft["notes"]
 
     del app.state.persistence_repository
 
