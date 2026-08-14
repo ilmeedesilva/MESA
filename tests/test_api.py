@@ -551,6 +551,50 @@ policies:
     del app.state.persistence_repository
 
 
+def test_policy_import_allows_same_policy_ids_in_different_projects() -> None:
+    app.state.persistence_repository = InMemoryPersistenceRepository()
+    client = TestClient(app)
+
+    first_project = client.post("/projects", json={"name": "First Governance Project"})
+    second_project = client.post("/projects", json={"name": "Second Governance Project"})
+    assert first_project.status_code == 201
+    assert second_project.status_code == 201
+
+    first_project_id = first_project.json()["id"]
+    second_project_id = second_project.json()["id"]
+
+    policy_document = """
+policies:
+  - id: no-cycles
+    name: No cyclic dependencies
+    rule: dependency_cycle_count == 0
+    severity: critical
+"""
+
+    first_import = client.post(
+        f"/projects/{first_project_id}/policies/import",
+        json={"content": policy_document},
+    )
+    second_import = client.post(
+        f"/projects/{second_project_id}/policies/import",
+        json={"content": policy_document},
+    )
+
+    assert first_import.status_code == 200
+    assert second_import.status_code == 200
+    assert first_import.json()[0]["id"] == "no-cycles"
+    assert second_import.json()[0]["id"] == "no-cycles"
+
+    first_policies = client.get(f"/projects/{first_project_id}/policies")
+    second_policies = client.get(f"/projects/{second_project_id}/policies")
+    assert first_policies.status_code == 200
+    assert second_policies.status_code == 200
+    assert first_policies.json()[0]["project_id"] == first_project_id
+    assert second_policies.json()[0]["project_id"] == second_project_id
+
+    del app.state.persistence_repository
+
+
 def test_project_scan_writes_architecture_graph_and_exposes_queries() -> None:
     app.state.persistence_repository = InMemoryPersistenceRepository()
     fake_store = FakeArchitectureStore()
