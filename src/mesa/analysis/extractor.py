@@ -31,7 +31,7 @@ SERVICE_HOST_PATTERN = re.compile(
     r"^[a-z0-9][a-z0-9-]*(?:-service|-svc|service)(?:\..*)?$", re.IGNORECASE
 )
 ANALYZED_TEXT_SUFFIXES = {
-    ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".yml", ".yaml",
+    ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".go", ".yml", ".yaml",
     ".properties", ".json", ".xml",
 }
 ANALYZED_TEXT_FILENAMES = {
@@ -89,6 +89,19 @@ SPRING_URL_CALL_PATTERN = re.compile(
     r"\(\s*\"(?P<url>https?://[^\"\\\s)]+)\"",
     re.IGNORECASE,
 )
+GO_HANDLEFUNC_PATTERN = re.compile(
+    r"\b(?:\w+\.)?HandleFunc\s*\(\s*\"(?P<path>/[^\"]*)\"",
+)
+GO_ROUTE_PATTERN = re.compile(
+    r"\b\w+\.(?P<method>GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s*\(\s*\"(?P<path>/[^\"]*)\"",
+)
+GO_HTTP_CALL_PATTERN = re.compile(
+    r"\bhttp\.(?P<method>Get|Post|Head|PostForm)\s*\(\s*\"(?P<url>https?://[^\"\s)]+)\"",
+)
+GO_GRPC_DIAL_PATTERN = re.compile(
+    r"\bgrpc\.(?:Dial|NewClient|DialContext)\s*\(\s*(?:ctx\s*,\s*)?"
+    r"\"(?P<host>[A-Za-z][A-Za-z0-9_.-]*)(?::(?P<port>\d+))?\"",
+)
 
 
 _HOSTED_CONFIG_STEM_SUFFIXES = ("-docker", "-prod", "-production", "-local", "-dev", "-staging")
@@ -120,6 +133,8 @@ def extract_service_facts(
             _extract_javascript_file(file_path, facts)
         if file_path.suffix == ".java":
             _extract_java_file(file_path, facts)
+        if file_path.suffix == ".go":
+            _extract_go_file(file_path, facts)
         if _is_openapi_file(file_path):
             _extract_openapi_file(file_path, facts)
         if _is_analyzed_text_file(file_path):
@@ -187,6 +202,8 @@ def detect_language(root: Path) -> str:
         return "java"
     if any(root.rglob("*.js")) or any(root.rglob("*.ts")):
         return "typescript"
+    if any(root.rglob("*.go")):
+        return "go"
     return "unknown"
 
 
@@ -362,6 +379,66 @@ def _extract_java_file(file_path: Path, facts: ServiceFacts) -> None:
                 target_hint=target_hint_from_url(url),
                 url=url,
                 method="UNKNOWN",
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+
+    _extract_text_config(file_path, facts, text=content, include_urls=False, include_environment=False)
+
+
+def _extract_go_file(file_path: Path, facts: ServiceFacts) -> None:
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return
+
+    for match in GO_HANDLEFUNC_PATTERN.finditer(content):
+        facts.endpoints.append(
+            Endpoint(
+                service_name=facts.name,
+                method="ANY",
+                path=match.group("path"),
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+    for match in GO_ROUTE_PATTERN.finditer(content):
+        facts.endpoints.append(
+            Endpoint(
+                service_name=facts.name,
+                method=match.group("method").upper(),
+                path=match.group("path"),
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+    for match in GO_HTTP_CALL_PATTERN.finditer(content):
+        url = match.group("url")
+        facts.calls.append(
+            ServiceCall(
+                caller=facts.name,
+                target_hint=target_hint_from_url(url),
+                url=url,
+                method=match.group("method").upper(),
+                source=SourceLocation(
+                    file_path=str(file_path), line_number=_line_for(content, match.start())
+                ),
+            )
+        )
+    for match in GO_GRPC_DIAL_PATTERN.finditer(content):
+        host = match.group("host")
+        port = match.group("port")
+        raw_target = f"{host}:{port}" if port else host
+        facts.calls.append(
+            ServiceCall(
+                caller=facts.name,
+                target_hint=target_hint_from_url(f"http://{host}"),
+                url=f"grpc://{raw_target}",
+                method="GRPC",
                 source=SourceLocation(
                     file_path=str(file_path), line_number=_line_for(content, match.start())
                 ),
