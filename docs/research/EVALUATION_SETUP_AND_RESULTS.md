@@ -15,6 +15,7 @@ Ground truth is stored in `benchmarks/ground_truth.yml`.
 | hard-coded-dependencies | Hard-coded service URLs/IPs. |
 | god-service | Central platform service with multiple risks. |
 | distributed-monolith | Composite static symptoms of distributed monolith risk. |
+| recall-stress-test | 8 services, 5 anti-pattern types deliberately interleaved in one scan (see `docs/architecture/PHASE_19_RECALL_STRESS_TEST.md`). Unlike the systems above, which mostly isolate one pattern each, this tests whether co-occurring patterns interfere with or mask each other. |
 
 ## Metrics
 
@@ -36,7 +37,7 @@ PYTHONPATH=src python3 -m mesa.cli evaluate benchmarks/ground_truth.yml --output
 | Recall | 1.0000 |
 | F1-score | 1.0000 |
 
-These values reflect deterministic seeded synthetic fixtures. They demonstrate that MESA can reproduce known labels in controlled examples. They should not be interpreted as proof of general real-world accuracy — see the real-repository results below for that.
+These values reflect deterministic seeded synthetic fixtures, including `recall-stress-test`, which specifically checks that 5 co-occurring anti-pattern types (cyclic dependency, chatty service, shared database, God Service, hard-coded dependency) across 8 services in one scan do not interfere with or mask each other — MESA found all 26 expected findings with zero false positives/negatives. They demonstrate that MESA can reproduce known labels in controlled examples, including harder multi-pattern ones, not just isolated single-pattern fixtures. They should not be interpreted as proof of general real-world accuracy — see the real-repository results below for that.
 
 ## Exported Results
 

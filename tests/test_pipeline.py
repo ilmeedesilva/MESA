@@ -428,3 +428,45 @@ def test_extracts_real_repo_style_service_facts() -> None:
     inventory = services["inventory-api"]
     assert any(endpoint.path == "/inventory" for endpoint in inventory.endpoints)
     assert inventory.databases
+
+
+def test_recall_stress_fixture_finds_every_interleaved_anti_pattern() -> None:
+    root = ROOT / "recall-stress"
+    services = [
+        "checkout-service",
+        "billing-gateway-service",
+        "fulfillment-service",
+        "alert-service",
+        "profile-service",
+        "ledger-service",
+        "legacy-bridge-service",
+        "platform-hub-service",
+    ]
+    result = analyze_services([str(root / name) for name in services], chatty_threshold=3)
+
+    finding_types = {finding.type for finding in result.findings}
+    assert finding_types == {
+        FindingType.CHATTY_SERVICE,
+        FindingType.CYCLIC_DEPENDENCY,
+        FindingType.SHARED_DATABASE,
+        FindingType.GOD_SERVICE,
+        FindingType.HARD_CODED_SERVICE_DEPENDENCY,
+    }
+
+    cyclic = next(f for f in result.findings if f.type == FindingType.CYCLIC_DEPENDENCY)
+    assert set(cyclic.services) == {"checkout-service", "billing-gateway-service", "fulfillment-service"}
+
+    chatty = next(f for f in result.findings if f.type == FindingType.CHATTY_SERVICE)
+    assert set(chatty.services) == {"alert-service", "profile-service"}
+
+    shared_db = next(f for f in result.findings if f.type == FindingType.SHARED_DATABASE)
+    assert set(shared_db.services) == {"checkout-service", "billing-gateway-service", "ledger-service"}
+
+    god_finding = next(f for f in result.findings if f.type == FindingType.GOD_SERVICE)
+    assert god_finding.services == ["platform-hub-service"]
+    god_score = next(
+        score for score in result.summary["god_service_scores"] if score["service"] == "platform-hub-service"
+    )
+    assert god_score["score"] >= 70.0
+
+    assert result.summary["finding_count"] == 26
