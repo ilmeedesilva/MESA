@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
 
@@ -50,6 +50,7 @@ from mesa.models import (
     RepoScanPreviewRequest,
     RepoScanRunRequest,
     RunScanRequest,
+    ScanJobRecord,
     ScanRecord,
     SnapshotRecord,
 )
@@ -313,21 +314,14 @@ def run_project_scan(project_id: str, payload: RunScanRequest, request: Request)
     return PersistedScanResult(scan=scan, result=result)
 
 
-@app.post("/projects/{project_id}/repo-scans", response_model=PersistedScanResult, status_code=201)
-def run_project_repo_scan(
+def _run_repo_scan(
+    repository: PersistenceRepository,
+    architecture_store,
     project_id: str,
     payload: RepoScanRunRequest,
-    request: Request,
 ) -> PersistedScanResult:
-    repository = get_repository(request)
-    if repository.get_project(project_id) is None:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    try:
-        prepared = prepare_repository(payload)
-        service_paths = resolve_service_paths(prepared, payload)
-    except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+    prepared = prepare_repository(payload)
+    service_paths = resolve_service_paths(prepared, payload)
 
     repository.upsert_project_setup(
         project_id,
@@ -351,10 +345,73 @@ def run_project_repo_scan(
         _refresh_finding_summary(result)
     result.summary["repository_source"] = prepared.metadata.model_dump(mode="json")
     scan = repository.save_scan_result(project_id, result, source_metadata=prepared.metadata)
-    architecture_store = get_architecture_store(request)
     if architecture_store is not None:
         architecture_store.save_scan_graph(project_id, scan.id, result)
     return PersistedScanResult(scan=scan, result=result)
+
+
+@app.post("/projects/{project_id}/repo-scans", response_model=PersistedScanResult, status_code=201)
+def run_project_repo_scan(
+    project_id: str,
+    payload: RepoScanRunRequest,
+    request: Request,
+) -> PersistedScanResult:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    try:
+        return _run_repo_scan(repository, get_architecture_store(request), project_id, payload)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+def _execute_repo_scan_job(
+    repository: PersistenceRepository,
+    architecture_store,
+    job_id: str,
+    project_id: str,
+    payload: RepoScanRunRequest,
+) -> None:
+    repository.mark_scan_job_running(job_id)
+    try:
+        persisted = _run_repo_scan(repository, architecture_store, project_id, payload)
+    except Exception as error:  # noqa: BLE001 - job failures must be recorded, not raised
+        repository.fail_scan_job(job_id, str(error))
+        return
+    repository.complete_scan_job(job_id, persisted.scan.id)
+
+
+@app.post("/projects/{project_id}/repo-scans/async", response_model=ScanJobRecord, status_code=202)
+def run_project_repo_scan_async(
+    project_id: str,
+    payload: RepoScanRunRequest,
+    background_tasks: BackgroundTasks,
+    request: Request,
+) -> ScanJobRecord:
+    repository = get_repository(request)
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    job = repository.create_scan_job(project_id)
+    background_tasks.add_task(
+        _execute_repo_scan_job,
+        repository,
+        get_architecture_store(request),
+        job.id,
+        project_id,
+        payload,
+    )
+    return job
+
+
+@app.get("/scan-jobs/{job_id}", response_model=ScanJobRecord)
+def get_scan_job(job_id: str, request: Request) -> ScanJobRecord:
+    repository = get_repository(request)
+    job = repository.get_scan_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Scan job not found")
+    return job
 
 
 @app.get("/projects/{project_id}/scans", response_model=list[ScanRecord])
