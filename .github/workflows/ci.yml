@@ -14,8 +14,10 @@ jobs:
           python-version: "3.12"
       - name: Install backend
         run: pip install -e ".[dev]"
+      - name: Lint backend
+        run: ruff check src tests
       - name: Test backend
-        run: pytest
+        run: pytest --cov=mesa --cov-report=term-missing
 
   frontend:
     runs-on: ubuntu-latest
