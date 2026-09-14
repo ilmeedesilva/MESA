@@ -1271,3 +1271,68 @@ def test_ai_status_reports_invalid_key_from_probe(monkeypatch) -> None:
     payload = response.json()
     assert payload["state"] == "INVALID_API_KEY"
     assert "rejected" in payload["message"].lower()
+
+
+def test_list_benchmarks_endpoint_excludes_template() -> None:
+    client = TestClient(app)
+
+    response = client.get("/benchmarks")
+
+    assert response.status_code == 200
+    payload = response.json()
+    ids = {item["id"] for item in payload}
+    assert "ground_truth" in ids
+    assert "public_repo_manual_review_template" not in ids
+
+
+def test_run_benchmark_evaluation_endpoint_returns_metrics() -> None:
+    client = TestClient(app)
+
+    response = client.post("/benchmarks/ground_truth/evaluate")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["overall"]["precision"] >= 0.9
+    assert "chatty-services" in {system["id"] for system in payload["systems"]}
+
+
+def test_run_benchmark_evaluation_endpoint_404s_for_unknown_benchmark() -> None:
+    client = TestClient(app)
+
+    response = client.post("/benchmarks/does-not-exist/evaluate")
+
+    assert response.status_code == 404
+
+
+def test_run_benchmark_evaluation_endpoint_404s_for_unlisted_template() -> None:
+    client = TestClient(app)
+
+    response = client.post("/benchmarks/public_repo_manual_review_template/evaluate")
+
+    assert response.status_code == 404
+
+
+def test_run_benchmark_evaluation_endpoint_400s_for_missing_local_source(tmp_path, monkeypatch) -> None:
+    from mesa.evaluation import runner as evaluation_runner_module
+
+    benchmarks_dir = tmp_path / "benchmarks"
+    benchmarks_dir.mkdir()
+    (benchmarks_dir / "real_repo_missing.yml").write_text(
+        """
+benchmark: missing
+systems:
+  - id: missing-system
+    name: Missing system
+    service_paths:
+      - definitely/does/not/exist
+    ground_truth: []
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(evaluation_runner_module, "BENCHMARKS_DIR", benchmarks_dir)
+
+    client = TestClient(app)
+    response = client.post("/benchmarks/real_repo_missing/evaluate")
+
+    assert response.status_code == 400
+    assert "do not exist locally" in response.json()["detail"]

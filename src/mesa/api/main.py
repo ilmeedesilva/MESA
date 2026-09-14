@@ -21,6 +21,12 @@ from mesa.analysis.governance import evaluate_policies, parse_policy_document
 from mesa.analysis.research_records import export_records, record_create_from_scan, record_draft_from_scan
 from mesa.analysis.roadmap import build_remediation_roadmap
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
+from mesa.evaluation import (
+    evaluate_benchmark,
+    list_available_benchmarks,
+    missing_benchmark_service_paths,
+    resolve_benchmark_path,
+)
 from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
 from mesa.models import (
     AIExplainerStatus,
@@ -625,6 +631,37 @@ def get_scan_high_risk_clusters(
     return require_architecture_store(request).find_high_risk_dependency_clusters(
         scan_id, degree_threshold
     )
+
+
+@app.get("/benchmarks")
+def list_benchmarks() -> list[dict]:
+    return list_available_benchmarks()
+
+
+@app.post("/benchmarks/{benchmark_id}/evaluate")
+def run_benchmark_evaluation(benchmark_id: str, chatty_threshold: int = 3) -> dict:
+    path = resolve_benchmark_path(benchmark_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Benchmark not found")
+
+    missing_paths = missing_benchmark_service_paths(path)
+    if missing_paths:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Benchmark '{benchmark_id}' references {len(missing_paths)} service path(s) "
+                f"that do not exist locally, e.g. {missing_paths[0]}. Real-repository benchmarks "
+                "require their local source copy under benchmarks/real-repos/ "
+                "(see benchmarks/real-repos/README.md)."
+            ),
+        )
+
+    try:
+        return evaluate_benchmark(path, chatty_threshold=chatty_threshold)
+    except (OSError, ValueError) as error:
+        raise HTTPException(
+            status_code=400, detail=f"Could not evaluate benchmark '{benchmark_id}': {error}"
+        ) from error
 
 
 def _refresh_finding_summary(result: AnalysisResult) -> None:

@@ -1,0 +1,6 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service-route
+          uri: http://localhost:${server.port}

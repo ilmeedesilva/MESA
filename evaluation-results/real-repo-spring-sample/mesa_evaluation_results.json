@@ -1,0 +1,1856 @@
+{
+  "benchmark": "mesa-phase-7-real-repo-spring-sample",
+  "version": 1,
+  "matching": "type_and_service_set",
+  "overall": {
+    "true_positives": 24,
+    "false_positives": 2,
+    "false_negatives": 0,
+    "precision": 0.9231,
+    "recall": 1.0,
+    "f1_score": 0.96
+  },
+  "by_type": {
+    "CHATTY_SERVICE": {
+      "true_positives": 0,
+      "false_positives": 1,
+      "false_negatives": 0,
+      "precision": 0.0,
+      "recall": 1.0,
+      "f1_score": 0.0
+    },
+    "CYCLIC_DEPENDENCY": {
+      "true_positives": 0,
+      "false_positives": 1,
+      "false_negatives": 0,
+      "precision": 0.0,
+      "recall": 1.0,
+      "f1_score": 0.0
+    },
+    "HARD_CODED_SERVICE_DEPENDENCY": {
+      "true_positives": 24,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    }
+  },
+  "systems": [
+    {
+      "id": "spring-sample",
+      "name": "Spring Boot microservices sample (piomin/sample-spring-microservices-new)",
+      "category": "real-world public repository",
+      "service_paths": [
+        "real-repos/spring-sample/config-service",
+        "real-repos/spring-sample/department-service",
+        "real-repos/spring-sample/discovery-service",
+        "real-repos/spring-sample/employee-service",
+        "real-repos/spring-sample/gateway-service",
+        "real-repos/spring-sample/organization-service"
+      ],
+      "expected_count": 24,
+      "predicted_count": 26,
+      "metrics": {
+        "true_positives": 24,
+        "false_positives": 2,
+        "false_negatives": 0,
+        "precision": 0.9231,
+        "recall": 1.0,
+        "f1_score": 0.96
+      },
+      "ground_truth": [
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "department-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "department-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "discovery-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "discovery-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "employee-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "employee-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "organization-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "organization-service"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "config-service",
+            "discovery-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "config-service",
+            "discovery-service"
+          ]
+        }
+      ],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CHAT-001",
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "config-service",
+            "discovery-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.6833333333333333
+        },
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "config-service",
+            "discovery-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.81
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.81
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.81
+        },
+        {
+          "id": "MESA-HCDD-007",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-008",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-009",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-010",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.81
+        },
+        {
+          "id": "MESA-HCDD-011",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-012",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "department-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-013",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "department-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-014",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "discovery-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-015",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "discovery-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-016",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "employee-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-017",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "employee-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-018",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-019",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-020",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-021",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-022",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-023",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "organization-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-024",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "organization-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        }
+      ]
+    }
+  ],
+  "detector": {
+    "overall": {
+      "true_positives": 24,
+      "false_positives": 2,
+      "false_negatives": 0,
+      "precision": 0.9231,
+      "recall": 1.0,
+      "f1_score": 0.96
+    },
+    "by_type": {
+      "CHATTY_SERVICE": {
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 0,
+        "precision": 0.0,
+        "recall": 1.0,
+        "f1_score": 0.0
+      },
+      "CYCLIC_DEPENDENCY": {
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 0,
+        "precision": 0.0,
+        "recall": 1.0,
+        "f1_score": 0.0
+      },
+      "HARD_CODED_SERVICE_DEPENDENCY": {
+        "true_positives": 24,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      }
+    },
+    "systems": [
+      {
+        "id": "spring-sample",
+        "name": "Spring Boot microservices sample (piomin/sample-spring-microservices-new)",
+        "category": "real-world public repository",
+        "service_paths": [
+          "real-repos/spring-sample/config-service",
+          "real-repos/spring-sample/department-service",
+          "real-repos/spring-sample/discovery-service",
+          "real-repos/spring-sample/employee-service",
+          "real-repos/spring-sample/gateway-service",
+          "real-repos/spring-sample/organization-service"
+        ],
+        "expected_count": 24,
+        "predicted_count": 26,
+        "metrics": {
+          "true_positives": 24,
+          "false_positives": 2,
+          "false_negatives": 0,
+          "precision": 0.9231,
+          "recall": 1.0,
+          "f1_score": 0.96
+        },
+        "ground_truth": [
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "department-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "department-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "discovery-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "discovery-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "employee-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "employee-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "organization-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "organization-service"
+            ]
+          }
+        ],
+        "false_positives": [
+          {
+            "type": "CHATTY_SERVICE",
+            "services": [
+              "config-service",
+              "discovery-service"
+            ]
+          },
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "config-service",
+              "discovery-service"
+            ]
+          }
+        ],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "services": [
+              "config-service",
+              "discovery-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.6833333333333333
+          },
+          {
+            "id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "config-service",
+              "discovery-service"
+            ],
+            "severity": "CRITICAL",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.81
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.81
+          },
+          {
+            "id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.81
+          },
+          {
+            "id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.81
+          },
+          {
+            "id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "config-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "department-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          },
+          {
+            "id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "department-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.8500000000000001
+          },
+          {
+            "id": "MESA-HCDD-014",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "discovery-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          },
+          {
+            "id": "MESA-HCDD-015",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "discovery-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.8500000000000001
+          },
+          {
+            "id": "MESA-HCDD-016",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "employee-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          },
+          {
+            "id": "MESA-HCDD-017",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "employee-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.8500000000000001
+          },
+          {
+            "id": "MESA-HCDD-018",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          },
+          {
+            "id": "MESA-HCDD-019",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-020",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.8800000000000001
+          },
+          {
+            "id": "MESA-HCDD-021",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.8500000000000001
+          },
+          {
+            "id": "MESA-HCDD-022",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "gateway-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.8500000000000001
+          },
+          {
+            "id": "MESA-HCDD-023",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "organization-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.78
+          },
+          {
+            "id": "MESA-HCDD-024",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "organization-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.8500000000000001
+          }
+        ]
+      }
+    ]
+  },
+  "discovery": {
+    "overall": {
+      "system_count": 1,
+      "precision": 0.75,
+      "recall": 1.0,
+      "f1_score": 0.8571
+    },
+    "systems": [
+      {
+        "system_id": "spring-sample",
+        "root": "real-repos/spring-sample",
+        "expected_candidates": [
+          "config-service",
+          "department-service",
+          "discovery-service",
+          "employee-service",
+          "gateway-service",
+          "organization-service"
+        ],
+        "predicted_candidates": [
+          ".",
+          "config-service",
+          "config-service/src/main/resources/config",
+          "department-service",
+          "discovery-service",
+          "employee-service",
+          "gateway-service",
+          "organization-service"
+        ],
+        "false_positives": [
+          ".",
+          "config-service/src/main/resources/config"
+        ],
+        "false_negatives": [],
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1_score": 0.8571
+      }
+    ]
+  },
+  "explanations": {
+    "overall": {
+      "system_count": 0,
+      "helpfulness_score": null,
+      "grounding_score": null,
+      "coverage_score": null
+    },
+    "systems": []
+  },
+  "recommendations": {
+    "overall": {
+      "system_count": 1,
+      "usefulness_score": 0.9923,
+      "structured_coverage": 1.0,
+      "step_quality_score": 1.0
+    },
+    "systems": [
+      {
+        "system_id": "spring-sample",
+        "finding_count": 26,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9923,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-014",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-015",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-016",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-017",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-018",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-019",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-020",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-021",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-022",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-023",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-024",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    ]
+  },
+  "evaluation_notes": {
+    "systems_with_notes": [
+      {
+        "id": "spring-sample",
+        "notes": [
+          "config-service is a Spring Cloud Config Server: it hosts one YAML file per other service (gateway-service.yml, discovery-service.yml, etc.) containing that service's own Eureka registration address. MESA's static extractor reads every YAML file under a service's directory as if its contents were that service's own configuration, so it read discovery-service's Eureka URL out of a file config-service merely serves to discovery-service at runtime, not a URL config-service itself calls.",
+          "That misattribution produced a CHATTY_SERVICE finding (config-service -> discovery-service, 4 static call sites) and a CYCLIC_DEPENDENCY finding (config-service -> discovery-service -> config-service). Both are treated as false positives in this benchmark's ground truth (i.e. deliberately omitted, so any occurrence MESA predicts counts against precision) with a documented root cause: MESA's per-file static extraction has no concept of 'config server hosts this file for another service' versus 'this service's own runtime configuration', which is a real, current limitation rather than a one-off scan artifact.",
+          "The same config-server pattern also inflates config-service's God Service score (54.5, MEDIUM severity) via its linked_findings and file_volume contributions, though the score stayed under the threshold that would emit an actual GOD_SERVICE finding, so it is not part of this benchmark's labeled ground truth.",
+          "The remaining HARD_CODED_SERVICE_DEPENDENCY findings (department/discovery/employee/gateway/organization services hard-coding config-service:8088 and localhost:8088; config-service and gateway-service hard-coding discovery-service:8061/eureka, localhost:8061/eureka, and the placeholder-port gateway route) are labeled true positives: the addresses are genuinely embedded in source/config. Note, however, that Config Server and Eureka bootstrap addresses are a somewhat unavoidable chicken-and-egg case (a service needs a fixed address to find the config/discovery infrastructure before dynamic discovery is available), so 'hard-coded' here is not automatically equivalent to 'avoidable production risk' the way it would be for two ordinary business services calling each other directly."
+        ],
+        "limitations": [
+          "Service discovery over-triggered on 2 non-service paths in addition to the 6 real services: config-service/src/main/resources/config (a nested resource directory inside config-service, picked up on its own service port configuration evidence) and the repository root itself (picked up on the top-level docker-compose.yml). Discovery precision on this repository is 6/8 = 0.75 even though recall is 6/6 = 1.0.",
+          "The config-server misattribution described above (chatty/cyclic false positives, inflated God Service score) is the most significant finding from this repository: it shows MESA's static, per-file extraction approach does not distinguish a Config Server's hosted templates from its own runtime behavior, which will recur on any real Spring Cloud Config-based system, not just this one."
+        ]
+      }
+    ],
+    "track_summary": {
+      "detector_quality_is_separate_from_explanation_quality": true,
+      "discovery_evaluated_separately": true,
+      "explanations_evaluated_separately": false
+    }
+  },
+  "phase_i_systems": [
+    {
+      "id": "spring-sample",
+      "name": "Spring Boot microservices sample (piomin/sample-spring-microservices-new)",
+      "category": "real-world public repository",
+      "service_paths": [
+        "real-repos/spring-sample/config-service",
+        "real-repos/spring-sample/department-service",
+        "real-repos/spring-sample/discovery-service",
+        "real-repos/spring-sample/employee-service",
+        "real-repos/spring-sample/gateway-service",
+        "real-repos/spring-sample/organization-service"
+      ],
+      "expected_count": 24,
+      "predicted_count": 26,
+      "metrics": {
+        "true_positives": 24,
+        "false_positives": 2,
+        "false_negatives": 0,
+        "precision": 0.9231,
+        "recall": 1.0,
+        "f1_score": 0.96
+      },
+      "ground_truth": [
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "department-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "department-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "discovery-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "discovery-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "employee-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "employee-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "organization-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "organization-service"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "config-service",
+            "discovery-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "config-service",
+            "discovery-service"
+          ]
+        }
+      ],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CHAT-001",
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "config-service",
+            "discovery-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.6833333333333333
+        },
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "config-service",
+            "discovery-service"
+          ],
+          "severity": "CRITICAL",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.81
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.81
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.81
+        },
+        {
+          "id": "MESA-HCDD-007",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-008",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-009",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-010",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.81
+        },
+        {
+          "id": "MESA-HCDD-011",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "config-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-012",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "department-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-013",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "department-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-014",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "discovery-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-015",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "discovery-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-016",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "employee-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-017",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "employee-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-018",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-019",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-020",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.8800000000000001
+        },
+        {
+          "id": "MESA-HCDD-021",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-022",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "gateway-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        },
+        {
+          "id": "MESA-HCDD-023",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "organization-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.78
+        },
+        {
+          "id": "MESA-HCDD-024",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "organization-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.8500000000000001
+        }
+      ],
+      "evaluator_notes": [
+        "config-service is a Spring Cloud Config Server: it hosts one YAML file per other service (gateway-service.yml, discovery-service.yml, etc.) containing that service's own Eureka registration address. MESA's static extractor reads every YAML file under a service's directory as if its contents were that service's own configuration, so it read discovery-service's Eureka URL out of a file config-service merely serves to discovery-service at runtime, not a URL config-service itself calls.",
+        "That misattribution produced a CHATTY_SERVICE finding (config-service -> discovery-service, 4 static call sites) and a CYCLIC_DEPENDENCY finding (config-service -> discovery-service -> config-service). Both are treated as false positives in this benchmark's ground truth (i.e. deliberately omitted, so any occurrence MESA predicts counts against precision) with a documented root cause: MESA's per-file static extraction has no concept of 'config server hosts this file for another service' versus 'this service's own runtime configuration', which is a real, current limitation rather than a one-off scan artifact.",
+        "The same config-server pattern also inflates config-service's God Service score (54.5, MEDIUM severity) via its linked_findings and file_volume contributions, though the score stayed under the threshold that would emit an actual GOD_SERVICE finding, so it is not part of this benchmark's labeled ground truth.",
+        "The remaining HARD_CODED_SERVICE_DEPENDENCY findings (department/discovery/employee/gateway/organization services hard-coding config-service:8088 and localhost:8088; config-service and gateway-service hard-coding discovery-service:8061/eureka, localhost:8061/eureka, and the placeholder-port gateway route) are labeled true positives: the addresses are genuinely embedded in source/config. Note, however, that Config Server and Eureka bootstrap addresses are a somewhat unavoidable chicken-and-egg case (a service needs a fixed address to find the config/discovery infrastructure before dynamic discovery is available), so 'hard-coded' here is not automatically equivalent to 'avoidable production risk' the way it would be for two ordinary business services calling each other directly."
+      ],
+      "known_limitations": [
+        "Service discovery over-triggered on 2 non-service paths in addition to the 6 real services: config-service/src/main/resources/config (a nested resource directory inside config-service, picked up on its own service port configuration evidence) and the repository root itself (picked up on the top-level docker-compose.yml). Discovery precision on this repository is 6/8 = 0.75 even though recall is 6/6 = 1.0.",
+        "The config-server misattribution described above (chatty/cyclic false positives, inflated God Service score) is the most significant finding from this repository: it shows MESA's static, per-file extraction approach does not distinguish a Config Server's hosted templates from its own runtime behavior, which will recur on any real Spring Cloud Config-based system, not just this one."
+      ],
+      "discovery": {
+        "system_id": "spring-sample",
+        "root": "real-repos/spring-sample",
+        "expected_candidates": [
+          "config-service",
+          "department-service",
+          "discovery-service",
+          "employee-service",
+          "gateway-service",
+          "organization-service"
+        ],
+        "predicted_candidates": [
+          ".",
+          "config-service",
+          "config-service/src/main/resources/config",
+          "department-service",
+          "discovery-service",
+          "employee-service",
+          "gateway-service",
+          "organization-service"
+        ],
+        "false_positives": [
+          ".",
+          "config-service/src/main/resources/config"
+        ],
+        "false_negatives": [],
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1_score": 0.8571
+      },
+      "recommendations": {
+        "system_id": "spring-sample",
+        "finding_count": 26,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9923,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-014",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-015",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-016",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-017",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-018",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-019",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-020",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-021",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-022",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-023",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-024",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    }
+  ]
+}

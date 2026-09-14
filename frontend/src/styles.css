@@ -2997,6 +2997,77 @@ aside {
   line-height: 1.45;
 }
 
+.benchmarksControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.benchmarksControls select {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.benchmarksResults {
+  display: grid;
+  gap: 20px;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.benchmarksMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.benchmarksMetrics div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.benchmarksMetrics strong {
+  display: block;
+  color: #2563eb;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.benchmarksMetrics span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.benchmarksNotes {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.benchmarksNoteCard {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fafc;
+  overflow-wrap: break-word;
+}
+
+.benchmarksNoteCard p {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .evolutionTimeline {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
