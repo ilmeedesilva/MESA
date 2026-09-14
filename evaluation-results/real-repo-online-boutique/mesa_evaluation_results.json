@@ -1,0 +1,427 @@
+{
+  "benchmark": "mesa-phase-7-real-repo-online-boutique",
+  "version": 1,
+  "matching": "type_and_service_set",
+  "overall": {
+    "true_positives": 2,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0
+  },
+  "by_type": {
+    "HARD_CODED_SERVICE_DEPENDENCY": {
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    }
+  },
+  "systems": [
+    {
+      "id": "online-boutique",
+      "name": "Online Boutique (GoogleCloudPlatform/microservices-demo)",
+      "category": "real-world public repository",
+      "service_paths": [
+        "real-repos/online-boutique/src/adservice",
+        "real-repos/online-boutique/src/cartservice",
+        "real-repos/online-boutique/src/checkoutservice",
+        "real-repos/online-boutique/src/currencyservice",
+        "real-repos/online-boutique/src/emailservice",
+        "real-repos/online-boutique/src/frontend",
+        "real-repos/online-boutique/src/loadgenerator",
+        "real-repos/online-boutique/src/paymentservice",
+        "real-repos/online-boutique/src/productcatalogservice",
+        "real-repos/online-boutique/src/recommendationservice",
+        "real-repos/online-boutique/src/shippingservice",
+        "real-repos/online-boutique/src/shoppingassistantservice"
+      ],
+      "expected_count": 2,
+      "predicted_count": 2,
+      "metrics": {
+        "true_positives": 2,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "emailservice"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "recommendationservice"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "emailservice"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "recommendationservice"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        }
+      ]
+    }
+  ],
+  "detector": {
+    "overall": {
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
+    "by_type": {
+      "HARD_CODED_SERVICE_DEPENDENCY": {
+        "true_positives": 2,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      }
+    },
+    "systems": [
+      {
+        "id": "online-boutique",
+        "name": "Online Boutique (GoogleCloudPlatform/microservices-demo)",
+        "category": "real-world public repository",
+        "service_paths": [
+          "real-repos/online-boutique/src/adservice",
+          "real-repos/online-boutique/src/cartservice",
+          "real-repos/online-boutique/src/checkoutservice",
+          "real-repos/online-boutique/src/currencyservice",
+          "real-repos/online-boutique/src/emailservice",
+          "real-repos/online-boutique/src/frontend",
+          "real-repos/online-boutique/src/loadgenerator",
+          "real-repos/online-boutique/src/paymentservice",
+          "real-repos/online-boutique/src/productcatalogservice",
+          "real-repos/online-boutique/src/recommendationservice",
+          "real-repos/online-boutique/src/shippingservice",
+          "real-repos/online-boutique/src/shoppingassistantservice"
+        ],
+        "expected_count": 2,
+        "predicted_count": 2,
+        "metrics": {
+          "true_positives": 2,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "emailservice"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "recommendationservice"
+            ]
+          }
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "emailservice"
+            ],
+            "severity": "HIGH",
+            "confidence": 0.95
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "recommendationservice"
+            ],
+            "severity": "HIGH",
+            "confidence": 0.95
+          }
+        ]
+      }
+    ]
+  },
+  "discovery": {
+    "overall": {
+      "system_count": 1,
+      "precision": 1.0,
+      "recall": 0.8333,
+      "f1_score": 0.9091
+    },
+    "systems": [
+      {
+        "system_id": "online-boutique",
+        "root": "real-repos/online-boutique/src",
+        "expected_candidates": [
+          "adservice",
+          "cartservice",
+          "checkoutservice",
+          "currencyservice",
+          "emailservice",
+          "frontend",
+          "loadgenerator",
+          "paymentservice",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice",
+          "shoppingassistantservice"
+        ],
+        "predicted_candidates": [
+          "adservice",
+          "checkoutservice",
+          "currencyservice",
+          "emailservice",
+          "loadgenerator",
+          "paymentservice",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice",
+          "shoppingassistantservice"
+        ],
+        "false_positives": [],
+        "false_negatives": [
+          "cartservice",
+          "frontend"
+        ],
+        "precision": 1.0,
+        "recall": 0.8333,
+        "f1_score": 0.9091
+      }
+    ]
+  },
+  "explanations": {
+    "overall": {
+      "system_count": 0,
+      "helpfulness_score": null,
+      "grounding_score": null,
+      "coverage_score": null
+    },
+    "systems": []
+  },
+  "recommendations": {
+    "overall": {
+      "system_count": 1,
+      "usefulness_score": 1.0,
+      "structured_coverage": 1.0,
+      "step_quality_score": 1.0
+    },
+    "systems": [
+      {
+        "system_id": "online-boutique",
+        "finding_count": 2,
+        "structured_coverage": 1.0,
+        "usefulness_score": 1.0,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    ]
+  },
+  "evaluation_notes": {
+    "systems_with_notes": [
+      {
+        "id": "online-boutique",
+        "notes": [
+          "Real inter-service traffic in this system is almost entirely gRPC calls made from Go services (frontend, checkoutservice, productcatalogservice, shippingservice) and a C# service (cartservice) to each other and to the Python/Node services. MESA's static extractor only parses Python, JavaScript/TypeScript, and Java source for call/endpoint evidence, so these real calls are invisible to it.",
+          "The 2 HARD_CODED_SERVICE_DEPENDENCY findings (emailservice, recommendationservice) both flag the same literal address: localhost:4317, the OpenTelemetry Collector's gRPC endpoint. This is a standard local observability sidecar address, not a cross-service architectural coupling risk in the sense the finding's remediation guidance implies. Labeled here as a true positive because the address is genuinely hard-coded per the detector's literal definition, but this nuance should not be lost in reporting.",
+          "adservice is a Java/Gradle service; MESA's service-discovery language voting reported it as language=unknown because it only recognizes pom.xml as a Java manifest signal, not build.gradle. The separate extraction-time language detector (used during analysis, not discovery) does correctly resolve it to Java via a *.java file scan. This is a minor internal inconsistency between the two language-detection code paths, not a functional defect in this evaluation."
+        ],
+        "limitations": [
+          "Service discovery missed 2 of 12 real services entirely: frontend (Go) and cartservice (C#). Neither has a manifest filename MESA's discovery heuristic recognizes (go.mod, .csproj/.sln are not in its manifest list), and a bare Dockerfile alone does not clear the 0.24 minimum-confidence cutoff, so both were dropped rather than merely deprioritized. This is a real false-negative pattern for unsupported-language services that only have a Dockerfile as a signal.",
+          "Zero CHATTY_SERVICE, CYCLIC_DEPENDENCY, SHARED_DATABASE, and GOD_SERVICE findings on this system should not be read as 'MESA confirmed this architecture is clean.' It reflects what fraction of the system's real logic MESA can parse (Python/JS/TS/Java), not an assessment of the full polyglot system, most of which (6 of 12 services) is Go or C#.",
+          "This is Google's own reference 'well-architected' demo application, so even within the parseable subset, a near-zero true anti-pattern count is expected and does not by itself demonstrate detector precision or recall under realistic anti-pattern conditions."
+        ]
+      }
+    ],
+    "track_summary": {
+      "detector_quality_is_separate_from_explanation_quality": true,
+      "discovery_evaluated_separately": true,
+      "explanations_evaluated_separately": false
+    }
+  },
+  "phase_i_systems": [
+    {
+      "id": "online-boutique",
+      "name": "Online Boutique (GoogleCloudPlatform/microservices-demo)",
+      "category": "real-world public repository",
+      "service_paths": [
+        "real-repos/online-boutique/src/adservice",
+        "real-repos/online-boutique/src/cartservice",
+        "real-repos/online-boutique/src/checkoutservice",
+        "real-repos/online-boutique/src/currencyservice",
+        "real-repos/online-boutique/src/emailservice",
+        "real-repos/online-boutique/src/frontend",
+        "real-repos/online-boutique/src/loadgenerator",
+        "real-repos/online-boutique/src/paymentservice",
+        "real-repos/online-boutique/src/productcatalogservice",
+        "real-repos/online-boutique/src/recommendationservice",
+        "real-repos/online-boutique/src/shippingservice",
+        "real-repos/online-boutique/src/shoppingassistantservice"
+      ],
+      "expected_count": 2,
+      "predicted_count": 2,
+      "metrics": {
+        "true_positives": 2,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "emailservice"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "recommendationservice"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "emailservice"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "recommendationservice"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        }
+      ],
+      "evaluator_notes": [
+        "Real inter-service traffic in this system is almost entirely gRPC calls made from Go services (frontend, checkoutservice, productcatalogservice, shippingservice) and a C# service (cartservice) to each other and to the Python/Node services. MESA's static extractor only parses Python, JavaScript/TypeScript, and Java source for call/endpoint evidence, so these real calls are invisible to it.",
+        "The 2 HARD_CODED_SERVICE_DEPENDENCY findings (emailservice, recommendationservice) both flag the same literal address: localhost:4317, the OpenTelemetry Collector's gRPC endpoint. This is a standard local observability sidecar address, not a cross-service architectural coupling risk in the sense the finding's remediation guidance implies. Labeled here as a true positive because the address is genuinely hard-coded per the detector's literal definition, but this nuance should not be lost in reporting.",
+        "adservice is a Java/Gradle service; MESA's service-discovery language voting reported it as language=unknown because it only recognizes pom.xml as a Java manifest signal, not build.gradle. The separate extraction-time language detector (used during analysis, not discovery) does correctly resolve it to Java via a *.java file scan. This is a minor internal inconsistency between the two language-detection code paths, not a functional defect in this evaluation."
+      ],
+      "known_limitations": [
+        "Service discovery missed 2 of 12 real services entirely: frontend (Go) and cartservice (C#). Neither has a manifest filename MESA's discovery heuristic recognizes (go.mod, .csproj/.sln are not in its manifest list), and a bare Dockerfile alone does not clear the 0.24 minimum-confidence cutoff, so both were dropped rather than merely deprioritized. This is a real false-negative pattern for unsupported-language services that only have a Dockerfile as a signal.",
+        "Zero CHATTY_SERVICE, CYCLIC_DEPENDENCY, SHARED_DATABASE, and GOD_SERVICE findings on this system should not be read as 'MESA confirmed this architecture is clean.' It reflects what fraction of the system's real logic MESA can parse (Python/JS/TS/Java), not an assessment of the full polyglot system, most of which (6 of 12 services) is Go or C#.",
+        "This is Google's own reference 'well-architected' demo application, so even within the parseable subset, a near-zero true anti-pattern count is expected and does not by itself demonstrate detector precision or recall under realistic anti-pattern conditions."
+      ],
+      "discovery": {
+        "system_id": "online-boutique",
+        "root": "real-repos/online-boutique/src",
+        "expected_candidates": [
+          "adservice",
+          "cartservice",
+          "checkoutservice",
+          "currencyservice",
+          "emailservice",
+          "frontend",
+          "loadgenerator",
+          "paymentservice",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice",
+          "shoppingassistantservice"
+        ],
+        "predicted_candidates": [
+          "adservice",
+          "checkoutservice",
+          "currencyservice",
+          "emailservice",
+          "loadgenerator",
+          "paymentservice",
+          "productcatalogservice",
+          "recommendationservice",
+          "shippingservice",
+          "shoppingassistantservice"
+        ],
+        "false_positives": [],
+        "false_negatives": [
+          "cartservice",
+          "frontend"
+        ],
+        "precision": 1.0,
+        "recall": 0.8333,
+        "f1_score": 0.9091
+      },
+      "recommendations": {
+        "system_id": "online-boutique",
+        "finding_count": 2,
+        "structured_coverage": 1.0,
+        "usefulness_score": 1.0,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    }
+  ]
+}

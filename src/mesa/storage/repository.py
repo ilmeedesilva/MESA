@@ -25,6 +25,8 @@ from mesa.models import (
     ResearchEvaluationRecordCreate,
     ResearchEvaluationRecordUpdate,
     RepoSourceMetadata,
+    ScanJobRecord,
+    ScanJobStatus,
     ScanRecord,
     SnapshotRecord,
 )
@@ -119,6 +121,21 @@ class PersistenceRepository(Protocol):
     def list_scans(self, project_id: str) -> list[ScanRecord]:
         ...
 
+    def create_scan_job(self, project_id: str) -> ScanJobRecord:
+        ...
+
+    def get_scan_job(self, job_id: str) -> ScanJobRecord | None:
+        ...
+
+    def mark_scan_job_running(self, job_id: str) -> ScanJobRecord | None:
+        ...
+
+    def complete_scan_job(self, job_id: str, scan_id: str) -> ScanJobRecord | None:
+        ...
+
+    def fail_scan_job(self, job_id: str, error_message: str) -> ScanJobRecord | None:
+        ...
+
     def list_findings(self, scan_id: str) -> list[Finding]:
         ...
 
@@ -167,6 +184,7 @@ class InMemoryPersistenceRepository:
         self.project_setups: dict[str, ProjectSetup] = {}
         self.policies: dict[tuple[str, str], PolicyRecord] = {}
         self.research_records: dict[str, ResearchEvaluationRecord] = {}
+        self.scan_jobs: dict[str, ScanJobRecord] = {}
 
     def _connect(self, **kwargs):
         last_error: Exception | None = None
@@ -284,6 +302,57 @@ class InMemoryPersistenceRepository:
     def list_snapshots(self, project_id: str) -> list[SnapshotRecord]:
         snapshots = [snapshot for snapshot in self.snapshots.values() if snapshot.project_id == project_id]
         return sorted(snapshots, key=lambda snapshot: snapshot.created_at or "", reverse=True)
+
+    def create_scan_job(self, project_id: str) -> ScanJobRecord:
+        job = ScanJobRecord(
+            id=str(uuid4()),
+            project_id=project_id,
+            status=ScanJobStatus.QUEUED,
+            created_at=_now_iso(),
+        )
+        self.scan_jobs[job.id] = job
+        return job
+
+    def get_scan_job(self, job_id: str) -> ScanJobRecord | None:
+        return self.scan_jobs.get(job_id)
+
+    def mark_scan_job_running(self, job_id: str) -> ScanJobRecord | None:
+        existing = self.scan_jobs.get(job_id)
+        if existing is None:
+            return None
+        updated = existing.model_copy(
+            update={"status": ScanJobStatus.RUNNING, "started_at": _now_iso()}
+        )
+        self.scan_jobs[job_id] = updated
+        return updated
+
+    def complete_scan_job(self, job_id: str, scan_id: str) -> ScanJobRecord | None:
+        existing = self.scan_jobs.get(job_id)
+        if existing is None:
+            return None
+        updated = existing.model_copy(
+            update={
+                "status": ScanJobStatus.COMPLETED,
+                "scan_id": scan_id,
+                "completed_at": _now_iso(),
+            }
+        )
+        self.scan_jobs[job_id] = updated
+        return updated
+
+    def fail_scan_job(self, job_id: str, error_message: str) -> ScanJobRecord | None:
+        existing = self.scan_jobs.get(job_id)
+        if existing is None:
+            return None
+        updated = existing.model_copy(
+            update={
+                "status": ScanJobStatus.FAILED,
+                "error_message": error_message,
+                "completed_at": _now_iso(),
+            }
+        )
+        self.scan_jobs[job_id] = updated
+        return updated
 
     def create_policy(self, project_id: str, data: PolicyCreate) -> PolicyRecord:
         policy_id = data.id or str(uuid4())
@@ -403,9 +472,10 @@ class PostgresPersistenceRepository:
         raise RuntimeError("Could not connect to PostgreSQL")
 
     def initialize(self) -> None:
-        migration = (Path(__file__).parent / "migrations" / "001_persistence_foundation.sql").read_text(encoding="utf-8")
+        migrations_dir = Path(__file__).parent / "migrations"
         with self._connect() as connection:
-            connection.execute(migration)
+            for migration_path in sorted(migrations_dir.glob("*.sql")):
+                connection.execute(migration_path.read_text(encoding="utf-8"))
 
     def create_project(self, data: ProjectCreate) -> ProjectRecord:
         project_id = str(uuid4())
@@ -663,6 +733,75 @@ class PostgresPersistenceRepository:
                 (project_id,),
             ).fetchall()
         return [SnapshotRecord(**row) for row in rows]
+
+    def create_scan_job(self, project_id: str) -> ScanJobRecord:
+        job_id = str(uuid4())
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                INSERT INTO scan_jobs (id, project_id, status)
+                VALUES (%s, %s, 'QUEUED')
+                RETURNING id, project_id, status, scan_id, error_message,
+                          created_at::text, started_at::text, completed_at::text
+                """,
+                (job_id, project_id),
+            ).fetchone()
+        return ScanJobRecord(**row)
+
+    def get_scan_job(self, job_id: str) -> ScanJobRecord | None:
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                SELECT id, project_id, status, scan_id, error_message,
+                       created_at::text, started_at::text, completed_at::text
+                FROM scan_jobs
+                WHERE id = %s
+                """,
+                (job_id,),
+            ).fetchone()
+        return ScanJobRecord(**row) if row else None
+
+    def mark_scan_job_running(self, job_id: str) -> ScanJobRecord | None:
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                UPDATE scan_jobs
+                SET status = 'RUNNING', started_at = now()
+                WHERE id = %s
+                RETURNING id, project_id, status, scan_id, error_message,
+                          created_at::text, started_at::text, completed_at::text
+                """,
+                (job_id,),
+            ).fetchone()
+        return ScanJobRecord(**row) if row else None
+
+    def complete_scan_job(self, job_id: str, scan_id: str) -> ScanJobRecord | None:
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                UPDATE scan_jobs
+                SET status = 'COMPLETED', scan_id = %s, completed_at = now()
+                WHERE id = %s
+                RETURNING id, project_id, status, scan_id, error_message,
+                          created_at::text, started_at::text, completed_at::text
+                """,
+                (scan_id, job_id),
+            ).fetchone()
+        return ScanJobRecord(**row) if row else None
+
+    def fail_scan_job(self, job_id: str, error_message: str) -> ScanJobRecord | None:
+        with self._connect(row_factory=dict_row) as connection:
+            row = connection.execute(
+                """
+                UPDATE scan_jobs
+                SET status = 'FAILED', error_message = %s, completed_at = now()
+                WHERE id = %s
+                RETURNING id, project_id, status, scan_id, error_message,
+                          created_at::text, started_at::text, completed_at::text
+                """,
+                (error_message, job_id),
+            ).fetchone()
+        return ScanJobRecord(**row) if row else None
 
     def create_policy(self, project_id: str, data: PolicyCreate) -> PolicyRecord:
         policy_id = data.id or str(uuid4())

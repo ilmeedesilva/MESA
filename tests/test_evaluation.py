@@ -1,6 +1,12 @@
 from pathlib import Path
 
-from mesa.evaluation import evaluate_benchmark, export_evaluation
+from mesa.evaluation import (
+    evaluate_benchmark,
+    export_evaluation,
+    list_available_benchmarks,
+    missing_benchmark_service_paths,
+    resolve_benchmark_path,
+)
 
 ROOT = Path(__file__).parent.parent
 
@@ -50,3 +56,44 @@ def test_evaluation_runner_exports_csv_and_json(tmp_path: Path) -> None:
     assert "precision" in csv_path.read_text(encoding="utf-8")
     assert "mesa-phase-11-synthetic-benchmarks" in json_path.read_text(encoding="utf-8")
     assert "Service Discovery Quality" in markdown_path.read_text(encoding="utf-8")
+
+
+def test_list_available_benchmarks_includes_known_files_and_excludes_template() -> None:
+    listings = list_available_benchmarks()
+    ids = {item["id"] for item in listings}
+
+    assert "ground_truth" in ids
+    assert "public_repo_manual_review_template" not in ids
+    ground_truth = next(item for item in listings if item["id"] == "ground_truth")
+    assert ground_truth["system_count"] > 0
+    assert "clean-architecture" in ground_truth["system_ids"]
+
+
+def test_resolve_benchmark_path_rejects_unlisted_and_traversal_ids() -> None:
+    assert resolve_benchmark_path("ground_truth") == (ROOT / "benchmarks" / "ground_truth.yml").resolve()
+    assert resolve_benchmark_path("public_repo_manual_review_template") is None
+    assert resolve_benchmark_path("../pyproject") is None
+    assert resolve_benchmark_path("does-not-exist") is None
+    assert resolve_benchmark_path("../../etc/passwd") is None
+
+
+def test_missing_benchmark_service_paths_reports_unresolvable_paths(tmp_path: Path) -> None:
+    benchmark_path = tmp_path / "broken.yml"
+    benchmark_path.write_text(
+        """
+benchmark: broken
+systems:
+  - id: broken-system
+    name: Broken system
+    service_paths:
+      - definitely/does/not/exist
+    ground_truth: []
+""",
+        encoding="utf-8",
+    )
+
+    missing = missing_benchmark_service_paths(benchmark_path)
+
+    assert len(missing) == 1
+    assert missing[0].endswith("definitely/does/not/exist")
+    assert missing_benchmark_service_paths(ROOT / "benchmarks" / "ground_truth.yml") == []

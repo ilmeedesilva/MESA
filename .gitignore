@@ -12,3 +12,6 @@ frontend/dist/
 .DS_Store
 .env
 !demo-projects/**/.env
+
+benchmarks/real-repos/*
+!benchmarks/real-repos/README.md

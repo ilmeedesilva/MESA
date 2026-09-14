@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import shutil
 
@@ -6,7 +7,13 @@ from fastapi.testclient import TestClient
 from mesa.api.main import app
 from mesa.analysis import analyze_services
 from mesa.analysis import explainer as explainer_module
-from mesa.models import ProjectCreate, RepoSourceMetadata
+from mesa.models import (
+    AIExplainerIntent,
+    AIExplainerRequest,
+    AIExplainerResponse,
+    ProjectCreate,
+    RepoSourceMetadata,
+)
 from mesa.storage import InMemoryPersistenceRepository
 
 ROOT = Path(__file__).parent / "fixtures"
@@ -1102,6 +1109,57 @@ def test_ai_explainer_uses_live_hybrid_path_when_enabled(monkeypatch) -> None:
     del app.state.persistence_repository
 
 
+def test_call_openai_responses_api_parses_structured_output(monkeypatch) -> None:
+    structured_output = {
+        "title": "Live explanation title",
+        "answer": "Live explanation answer grounded in scan evidence.",
+        "suggestions": ["Reduce direct calls between order-service and user-service."],
+        "follow_up_questions": ["Which endpoints are called most often?"],
+        "limitations": ["Static evidence only; no runtime traffic volume."],
+        "confidence": "HIGH",
+    }
+
+    class _FakeHTTPResponse:
+        def __init__(self, body: bytes) -> None:
+            self._body = body
+
+        def read(self) -> bytes:
+            return self._body
+
+        def __enter__(self) -> "_FakeHTTPResponse":
+            return self
+
+        def __exit__(self, *exc_info: object) -> bool:
+            return False
+
+    def fake_urlopen(request, timeout=None):
+        envelope = json.dumps({"output_text": json.dumps(structured_output)}).encode("utf-8")
+        return _FakeHTTPResponse(envelope)
+
+    monkeypatch.setattr(explainer_module.urllib_request, "urlopen", fake_urlopen)
+    monkeypatch.setenv("MESA_OPENAI_MODEL", "test-model")
+
+    grounded_response = AIExplainerResponse(
+        intent=AIExplainerIntent.SCAN_SUMMARY,
+        title="Grounded title",
+        answer="Grounded answer.",
+        limitations=["Existing grounded limitation."],
+    )
+    payload = AIExplainerRequest(intent=AIExplainerIntent.SCAN_SUMMARY, question="Summarize this scan.")
+
+    result = explainer_module._call_openai_responses_api(payload, grounded_response, "test-key")
+
+    assert result is not None
+    assert result.title == "Live explanation title"
+    assert result.answer == "Live explanation answer grounded in scan evidence."
+    assert result.suggestions == structured_output["suggestions"]
+    assert result.follow_up_questions == structured_output["follow_up_questions"]
+    assert "Existing grounded limitation." in result.limitations
+    assert "Static evidence only; no runtime traffic volume." in result.limitations
+    assert result.confidence.value == "HIGH"
+    assert result.source == "openai-hybrid:test-model"
+
+
 def test_ai_explainer_stream_returns_done_payload() -> None:
     app.state.persistence_repository = InMemoryPersistenceRepository()
     client = TestClient(app)
@@ -1213,3 +1271,68 @@ def test_ai_status_reports_invalid_key_from_probe(monkeypatch) -> None:
     payload = response.json()
     assert payload["state"] == "INVALID_API_KEY"
     assert "rejected" in payload["message"].lower()
+
+
+def test_list_benchmarks_endpoint_excludes_template() -> None:
+    client = TestClient(app)
+
+    response = client.get("/benchmarks")
+
+    assert response.status_code == 200
+    payload = response.json()
+    ids = {item["id"] for item in payload}
+    assert "ground_truth" in ids
+    assert "public_repo_manual_review_template" not in ids
+
+
+def test_run_benchmark_evaluation_endpoint_returns_metrics() -> None:
+    client = TestClient(app)
+
+    response = client.post("/benchmarks/ground_truth/evaluate")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["overall"]["precision"] >= 0.9
+    assert "chatty-services" in {system["id"] for system in payload["systems"]}
+
+
+def test_run_benchmark_evaluation_endpoint_404s_for_unknown_benchmark() -> None:
+    client = TestClient(app)
+
+    response = client.post("/benchmarks/does-not-exist/evaluate")
+
+    assert response.status_code == 404
+
+
+def test_run_benchmark_evaluation_endpoint_404s_for_unlisted_template() -> None:
+    client = TestClient(app)
+
+    response = client.post("/benchmarks/public_repo_manual_review_template/evaluate")
+
+    assert response.status_code == 404
+
+
+def test_run_benchmark_evaluation_endpoint_400s_for_missing_local_source(tmp_path, monkeypatch) -> None:
+    from mesa.evaluation import runner as evaluation_runner_module
+
+    benchmarks_dir = tmp_path / "benchmarks"
+    benchmarks_dir.mkdir()
+    (benchmarks_dir / "real_repo_missing.yml").write_text(
+        """
+benchmark: missing
+systems:
+  - id: missing-system
+    name: Missing system
+    service_paths:
+      - definitely/does/not/exist
+    ground_truth: []
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(evaluation_runner_module, "BENCHMARKS_DIR", benchmarks_dir)
+
+    client = TestClient(app)
+    response = client.post("/benchmarks/real_repo_missing/evaluate")
+
+    assert response.status_code == 400
+    assert "do not exist locally" in response.json()["detail"]

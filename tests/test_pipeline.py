@@ -117,6 +117,20 @@ def test_hard_coded_dependency_detector_avoids_external_urls() -> None:
     )
 
 
+def test_hard_coded_dependency_detector_handles_unresolved_placeholder_ports() -> None:
+    result = analyze_services([str(ROOT / "hardcoded" / "gateway-service")])
+
+    findings = [
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert findings
+    evidence = [item for finding in findings for item in finding.evidence]
+    values = {item["value"] for item in evidence}
+    assert "http://localhost:${server.port" in values
+
+
 
 def test_god_service_scoring_thresholds() -> None:
     graph = build_graph(

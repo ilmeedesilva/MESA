@@ -556,6 +556,11 @@ def _extract_hard_coded_dependencies(file_path: Path, facts: ServiceFacts) -> No
         classification = _classify_hard_coded_host(host)
         if classification is None:
             continue
+        try:
+            port = parsed.port
+        except ValueError:
+            # e.g. a Spring-style placeholder port such as "${server.port}"
+            port = None
         line_number = _line_for(content, match.start())
         seen.add((url, line_number))
         facts.hard_coded_dependencies.append(
@@ -563,7 +568,7 @@ def _extract_hard_coded_dependencies(file_path: Path, facts: ServiceFacts) -> No
                 service_name=facts.name,
                 value=url,
                 host=host,
-                port=parsed.port,
+                port=port,
                 scheme=parsed.scheme,
                 file_type=file_type,
                 context=_context_for(content, match.start()),
