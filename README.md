@@ -26,7 +26,7 @@ Current vertical slice:
 - CLI workflow for reproducible research evaluation.
 - Static extraction for Python services, environment/config files, and simple HTTP call evidence.
 - NetworkX graph model plus Neo4j architecture graph persistence for persistent scans.
-- Initial detectors for Chatty Services, Cyclic Dependencies, and Shared Database.
+- Detectors for Chatty Services, Cyclic Dependencies, Shared Database, God Service, and Hard-Coded Service Dependencies.
 - React + TypeScript frontend scaffold with Cytoscape.js.
 
 ## Quick Start

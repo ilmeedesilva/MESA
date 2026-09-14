@@ -12,7 +12,7 @@ from mesa.analysis import analyze_services
 from mesa.analysis.explainer import grounded_response_for_request
 from mesa.analysis.health import flatten_health_scores
 from mesa.discovery import discover_service_candidates
-from mesa.models import AIExplainerIntent, AIExplainerRequest, Finding, FindingType
+from mesa.models import AIExplainerIntent, AIExplainerRequest, Finding
 
 LabelKey = tuple[str, tuple[str, ...]]
 DEFAULT_BENCHMARK_PATH = Path(__file__).resolve().parents[3] / "benchmarks" / "ground_truth.yml"
@@ -562,7 +562,7 @@ def _markdown_summary(report: dict[str, Any]) -> str:
     recommendations = report["recommendations"]["overall"]
 
     lines = [
-        f"# MESA Evaluation Summary",
+        "# MESA Evaluation Summary",
         "",
         f"Benchmark: `{report['benchmark']}`",
         "",
