@@ -127,6 +127,8 @@ This is exported as:
 PYTHONPATH=src python3 -m mesa.cli evaluate benchmarks/ground_truth.yml --output-dir evaluation-results
 ```
 
+The CLI is the only way to export CSV/JSON/Markdown files to disk. To run an evaluation interactively without a terminal, use the API/UI path added in Phase 16 (`docs/architecture/PHASE_16_BENCHMARK_EVALUATION_API_AND_UI.md`): `GET /benchmarks` lists the available files, `POST /benchmarks/{id}/evaluate` runs one and returns the report as JSON, and the frontend's `Benchmarks` nav item wraps both.
+
 ## Exported Outputs
 
 The runner now exports:

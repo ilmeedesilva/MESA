@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 import tarfile
+import time
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,6 +35,9 @@ _MANIFEST_FILENAMES = {
 _ARCHIVE_SUFFIXES = {".zip", ".tar", ".gz", ".tgz", ".bz2", ".xz"}
 _MAX_PREVIEW_FILES = 5000
 _MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
+_MAX_EXTRACTED_BYTES = 1024 * 1024 * 1024
+_MAX_EXTRACTED_FILES = 20000
+_DEFAULT_CACHE_TTL_HOURS = 24
 
 
 class RepositoryPreparationError(ValueError):
@@ -217,7 +222,19 @@ def _workspace_cache_root() -> Path:
     else:
         root = Path(gettempdir()).resolve() / "mesa-repo-cache"
     root.mkdir(parents=True, exist_ok=True)
+    _sweep_stale_workspaces(root)
     return root
+
+
+def _sweep_stale_workspaces(root: Path) -> None:
+    ttl_hours = float(os.getenv("MESA_REPO_CACHE_TTL_HOURS", str(_DEFAULT_CACHE_TTL_HOURS)))
+    cutoff = time.time() - (ttl_hours * 3600)
+    for entry in root.iterdir():
+        try:
+            if entry.is_dir() and entry.stat().st_mtime < cutoff:
+                shutil.rmtree(entry, ignore_errors=True)
+        except OSError:
+            continue
 
 
 def _parse_github_repo(location: str) -> tuple[str, str]:
@@ -255,21 +272,49 @@ def _extract_archive(archive_path: Path, destination: Path) -> None:
     try:
         if zipfile.is_zipfile(archive_path):
             with zipfile.ZipFile(archive_path) as archive:
-                for member in archive.infolist():
+                members = archive.infolist()
+                _check_extraction_limits(
+                    member_count=len(members),
+                    total_bytes=sum(member.file_size for member in members),
+                )
+                for member in members:
                     member_path = destination / member.filename
                     _ensure_within_destination(destination, member_path)
                 archive.extractall(destination)
             return
         if tarfile.is_tarfile(archive_path):
             with tarfile.open(archive_path) as archive:
-                for member in archive.getmembers():
+                members = archive.getmembers()
+                _check_extraction_limits(
+                    member_count=len(members),
+                    total_bytes=sum(member.size for member in members),
+                )
+                for member in members:
+                    if member.issym() or member.islnk() or member.isdev():
+                        raise RepositoryPreparationError(
+                            f"Archive contains an unsupported member type: {member.name}"
+                        )
                     member_path = destination / member.name
                     _ensure_within_destination(destination, member_path)
                 archive.extractall(destination)
             return
+    except RepositoryPreparationError:
+        raise
     except Exception as error:
         raise RepositoryPreparationError(f"Could not extract archive: {error}") from error
     raise RepositoryPreparationError("Unsupported archive format")
+
+
+def _check_extraction_limits(*, member_count: int, total_bytes: int) -> None:
+    if member_count > _MAX_EXTRACTED_FILES:
+        raise RepositoryPreparationError(
+            f"Archive contains {member_count} files, exceeding the {_MAX_EXTRACTED_FILES} file limit"
+        )
+    if total_bytes > _MAX_EXTRACTED_BYTES:
+        raise RepositoryPreparationError(
+            f"Archive would extract to {total_bytes // (1024 * 1024)} MB, "
+            f"exceeding the {_MAX_EXTRACTED_BYTES // (1024 * 1024)} MB limit"
+        )
 
 
 def _normalize_extracted_root(workspace_root: Path) -> Path:

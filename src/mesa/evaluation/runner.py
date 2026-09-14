@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 import csv
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 import yaml
@@ -12,10 +13,78 @@ from mesa.analysis import analyze_services
 from mesa.analysis.explainer import grounded_response_for_request
 from mesa.analysis.health import flatten_health_scores
 from mesa.discovery import discover_service_candidates
-from mesa.models import AIExplainerIntent, AIExplainerRequest, Finding, FindingType
+from mesa.models import AIExplainerIntent, AIExplainerRequest, Finding
 
 LabelKey = tuple[str, tuple[str, ...]]
-DEFAULT_BENCHMARK_PATH = Path(__file__).resolve().parents[3] / "benchmarks" / "ground_truth.yml"
+BENCHMARKS_DIR = Path(__file__).resolve().parents[3] / "benchmarks"
+DEFAULT_BENCHMARK_PATH = BENCHMARKS_DIR / "ground_truth.yml"
+_LISTABLE_BENCHMARK_PATTERNS = ("ground_truth.yml", "real_repo_*.yml")
+_BENCHMARK_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def list_available_benchmarks() -> list[dict[str, Any]]:
+    """List benchmark YAML files safe to expose/run over the API.
+
+    Restricted to known naming conventions (not every *.yml under
+    benchmarks/) so unreviewed templates are not offered for evaluation.
+    """
+    paths: set[Path] = set()
+    if BENCHMARKS_DIR.is_dir():
+        for pattern in _LISTABLE_BENCHMARK_PATTERNS:
+            paths.update(BENCHMARKS_DIR.glob(pattern))
+
+    listings = []
+    for path in sorted(paths):
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError:
+            continue
+        systems = data.get("systems", [])
+        listings.append(
+            {
+                "id": path.stem,
+                "benchmark": data.get("benchmark", path.stem),
+                "version": data.get("version", 1),
+                "system_count": len(systems),
+                "system_ids": [system.get("id") for system in systems if system.get("id")],
+            }
+        )
+    return listings
+
+
+def resolve_benchmark_path(benchmark_id: str) -> Path | None:
+    """Resolve a benchmark id to a file strictly inside BENCHMARKS_DIR, or None."""
+    if not _BENCHMARK_ID_PATTERN.match(benchmark_id):
+        return None
+    candidate = (BENCHMARKS_DIR / f"{benchmark_id}.yml").resolve()
+    if candidate.parent != BENCHMARKS_DIR.resolve():
+        return None
+    if not candidate.is_file():
+        return None
+    if not any(candidate.match(pattern) for pattern in _LISTABLE_BENCHMARK_PATTERNS):
+        return None
+    return candidate
+
+
+def missing_benchmark_service_paths(benchmark_path: str | Path) -> list[str]:
+    """Return service_paths referenced by a benchmark file that do not exist on disk.
+
+    Real-repository benchmarks reference a local, gitignored source copy
+    (see benchmarks/real-repos/README.md) that may not be present on every
+    machine. analyze_services() degrades silently on a missing path (it
+    scans zero files rather than erroring), which would otherwise make a
+    misconfigured benchmark look like a low-recall result instead of a
+    setup problem. Callers should check this before evaluating.
+    """
+    path = Path(benchmark_path).resolve()
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    missing: list[str] = []
+    for system in data.get("systems", []):
+        for relative_path in system.get("service_paths", []):
+            resolved = (path.parent / relative_path).resolve()
+            if not resolved.is_dir():
+                missing.append(str(resolved))
+    return missing
 
 
 def evaluate_benchmark(
@@ -562,7 +631,7 @@ def _markdown_summary(report: dict[str, Any]) -> str:
     recommendations = report["recommendations"]["overall"]
 
     lines = [
-        f"# MESA Evaluation Summary",
+        "# MESA Evaluation Summary",
         "",
         f"Benchmark: `{report['benchmark']}`",
         "",

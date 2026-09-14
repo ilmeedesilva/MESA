@@ -546,6 +546,24 @@ class PersistedScanResult(BaseModel):
     result: AnalysisResult
 
 
+class ScanJobStatus(str, Enum):
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class ScanJobRecord(BaseModel):
+    id: str
+    project_id: str
+    status: ScanJobStatus = ScanJobStatus.QUEUED
+    scan_id: str | None = None
+    error_message: str | None = None
+    created_at: str | None = None
+    started_at: str | None = None
+    completed_at: str | None = None
+
+
 class SnapshotRecord(BaseModel):
     id: str
     project_id: str
