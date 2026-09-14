@@ -3,6 +3,7 @@ from pathlib import Path
 from mesa.analysis import analyze_services
 from mesa.analysis.extractor import _stem_matches_other_service
 from mesa.detectors.god_service import score_god_services
+from mesa.discovery import discover_service_candidates
 from mesa.graph.builder import build_graph
 from mesa.models import FindingType, ServiceFacts
 from mesa.storage.neo4j_store import _service_dependencies
@@ -470,3 +471,36 @@ def test_recall_stress_fixture_finds_every_interleaved_anti_pattern() -> None:
     assert god_score["score"] >= 70.0
 
     assert result.summary["finding_count"] == 26
+
+
+def test_go_extraction_detects_endpoints_calls_and_cross_service_cycle() -> None:
+    root = ROOT / "go-services"
+    result = analyze_services(
+        [str(root / "orders-service"), str(root / "inventory-service")], chatty_threshold=3
+    )
+    services = {service.name: service for service in result.services}
+
+    orders = services["orders-service"]
+    assert orders.language == "go"
+    assert any(endpoint.path == "/orders" for endpoint in orders.endpoints)
+    assert any(call.target_hint == "inventory-service" for call in orders.calls)
+
+    inventory = services["inventory-service"]
+    assert inventory.language == "go"
+    assert any(endpoint.path == "/items" and endpoint.method == "GET" for endpoint in inventory.endpoints)
+    assert any(call.target_hint == "orders-service" and call.method == "GRPC" for call in inventory.calls)
+
+    finding_types = {finding.type for finding in result.findings}
+    assert FindingType.CYCLIC_DEPENDENCY in finding_types
+    assert FindingType.HARD_CODED_SERVICE_DEPENDENCY in finding_types
+
+
+def test_go_mod_manifest_is_discoverable_and_selects_go_language() -> None:
+    candidates = discover_service_candidates(ROOT / "go-services")
+    by_path = {candidate.relative_path: candidate for candidate in candidates}
+
+    assert "orders-service" in by_path
+    assert "inventory-service" in by_path
+    assert by_path["orders-service"].language == "go"
+    assert by_path["orders-service"].confidence >= 0.24
+    assert any("go.mod" in reason for reason in by_path["orders-service"].reasons)

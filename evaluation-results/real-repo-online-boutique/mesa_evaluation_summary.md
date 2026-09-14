@@ -12,8 +12,8 @@ Benchmark: `mesa-phase-7-real-repo-online-boutique`
 
 - Systems evaluated: `1`
 - Precision: `1.0`
-- Recall: `0.8333`
-- F1: `0.9091`
+- Recall: `0.9167`
+- F1: `0.9565`
 
 ## Explanation Quality
 

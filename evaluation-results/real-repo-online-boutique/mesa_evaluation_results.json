@@ -178,8 +178,8 @@
     "overall": {
       "system_count": 1,
       "precision": 1.0,
-      "recall": 0.8333,
-      "f1_score": 0.9091
+      "recall": 0.9167,
+      "f1_score": 0.9565
     },
     "systems": [
       {
@@ -204,6 +204,7 @@
           "checkoutservice",
           "currencyservice",
           "emailservice",
+          "frontend",
           "loadgenerator",
           "paymentservice",
           "productcatalogservice",
@@ -213,12 +214,11 @@
         ],
         "false_positives": [],
         "false_negatives": [
-          "cartservice",
-          "frontend"
+          "cartservice"
         ],
         "precision": 1.0,
-        "recall": 0.8333,
-        "f1_score": 0.9091
+        "recall": 0.9167,
+        "f1_score": 0.9565
       }
     ]
   },
@@ -383,6 +383,7 @@
           "checkoutservice",
           "currencyservice",
           "emailservice",
+          "frontend",
           "loadgenerator",
           "paymentservice",
           "productcatalogservice",
@@ -392,12 +393,11 @@
         ],
         "false_positives": [],
         "false_negatives": [
-          "cartservice",
-          "frontend"
+          "cartservice"
         ],
         "precision": 1.0,
-        "recall": 0.8333,
-        "f1_score": 0.9091
+        "recall": 0.9167,
+        "f1_score": 0.9565
       },
       "recommendations": {
         "system_id": "online-boutique",
