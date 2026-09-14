@@ -397,6 +397,28 @@ def _call_openai_responses_api(
     except urllib_error.URLError as error:
         raise RuntimeError(str(error.reason)) from error
 
+    structured_text = _extract_output_text(payload_json)
+    if not structured_text:
+        return None
+
+    parsed = json.loads(structured_text)
+    return grounded_response.model_copy(
+        update={
+            "title": parsed["title"],
+            "answer": parsed["answer"],
+            "suggestions": parsed["suggestions"][:5],
+            "follow_up_questions": parsed["follow_up_questions"][:4],
+            "limitations": _merge_lists(
+                grounded_response.limitations, parsed["limitations"], limit=5
+            ),
+            "policy_document": parsed.get(
+                "policy_document", grounded_response.policy_document
+            ),
+            "confidence": AIExplainerConfidence(parsed["confidence"]),
+            "source": f"openai-hybrid:{model}",
+        }
+    )
+
 
 def _probe_openai_status(
     api_key: str, base_url: str, model: str
@@ -442,28 +464,6 @@ def _probe_openai_status(
     return (
         AIConnectionState.CONNECTION_ERROR,
         "OpenAI probe did not return a usable result.",
-    )
-
-    structured_text = _extract_output_text(payload_json)
-    if not structured_text:
-        return None
-
-    parsed = json.loads(structured_text)
-    return grounded_response.model_copy(
-        update={
-            "title": parsed["title"],
-            "answer": parsed["answer"],
-            "suggestions": parsed["suggestions"][:5],
-            "follow_up_questions": parsed["follow_up_questions"][:4],
-            "limitations": _merge_lists(
-                grounded_response.limitations, parsed["limitations"], limit=5
-            ),
-            "policy_document": parsed.get(
-                "policy_document", grounded_response.policy_document
-            ),
-            "confidence": AIExplainerConfidence(parsed["confidence"]),
-            "source": f"openai-hybrid:{model}",
-        }
     )
 
 

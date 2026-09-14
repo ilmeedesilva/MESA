@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import shutil
 
@@ -6,7 +7,13 @@ from fastapi.testclient import TestClient
 from mesa.api.main import app
 from mesa.analysis import analyze_services
 from mesa.analysis import explainer as explainer_module
-from mesa.models import ProjectCreate, RepoSourceMetadata
+from mesa.models import (
+    AIExplainerIntent,
+    AIExplainerRequest,
+    AIExplainerResponse,
+    ProjectCreate,
+    RepoSourceMetadata,
+)
 from mesa.storage import InMemoryPersistenceRepository
 
 ROOT = Path(__file__).parent / "fixtures"
@@ -1100,6 +1107,57 @@ def test_ai_explainer_uses_live_hybrid_path_when_enabled(monkeypatch) -> None:
     assert "live hybrid ai path" in payload["answer"].lower()
 
     del app.state.persistence_repository
+
+
+def test_call_openai_responses_api_parses_structured_output(monkeypatch) -> None:
+    structured_output = {
+        "title": "Live explanation title",
+        "answer": "Live explanation answer grounded in scan evidence.",
+        "suggestions": ["Reduce direct calls between order-service and user-service."],
+        "follow_up_questions": ["Which endpoints are called most often?"],
+        "limitations": ["Static evidence only; no runtime traffic volume."],
+        "confidence": "HIGH",
+    }
+
+    class _FakeHTTPResponse:
+        def __init__(self, body: bytes) -> None:
+            self._body = body
+
+        def read(self) -> bytes:
+            return self._body
+
+        def __enter__(self) -> "_FakeHTTPResponse":
+            return self
+
+        def __exit__(self, *exc_info: object) -> bool:
+            return False
+
+    def fake_urlopen(request, timeout=None):
+        envelope = json.dumps({"output_text": json.dumps(structured_output)}).encode("utf-8")
+        return _FakeHTTPResponse(envelope)
+
+    monkeypatch.setattr(explainer_module.urllib_request, "urlopen", fake_urlopen)
+    monkeypatch.setenv("MESA_OPENAI_MODEL", "test-model")
+
+    grounded_response = AIExplainerResponse(
+        intent=AIExplainerIntent.SCAN_SUMMARY,
+        title="Grounded title",
+        answer="Grounded answer.",
+        limitations=["Existing grounded limitation."],
+    )
+    payload = AIExplainerRequest(intent=AIExplainerIntent.SCAN_SUMMARY, question="Summarize this scan.")
+
+    result = explainer_module._call_openai_responses_api(payload, grounded_response, "test-key")
+
+    assert result is not None
+    assert result.title == "Live explanation title"
+    assert result.answer == "Live explanation answer grounded in scan evidence."
+    assert result.suggestions == structured_output["suggestions"]
+    assert result.follow_up_questions == structured_output["follow_up_questions"]
+    assert "Existing grounded limitation." in result.limitations
+    assert "Static evidence only; no runtime traffic volume." in result.limitations
+    assert result.confidence.value == "HIGH"
+    assert result.source == "openai-hybrid:test-model"
 
 
 def test_ai_explainer_stream_returns_done_payload() -> None:
