@@ -481,6 +481,92 @@ label {
   min-width: 0;
 }
 
+.workspaceBodyWithRail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 260px);
+  gap: 16px;
+  align-items: start;
+}
+
+.workspacePrimaryContent {
+  min-width: 0;
+}
+
+.globalScanRail {
+  min-width: 0;
+}
+
+.globalScanRailCard {
+  display: grid;
+  gap: 12px;
+  position: sticky;
+  top: 18px;
+  padding: 14px;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff, #f8fbff);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
+}
+
+.globalScanRailCard .panelHeader {
+  margin-bottom: 0;
+}
+
+.railLinkButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1d4ed8;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.railLinkButton:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  color: #1e40af;
+}
+
+.globalScanRailList {
+  display: grid;
+  gap: 8px;
+}
+
+.globalScanItem {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: none;
+  text-align: left;
+}
+
+.globalScanItem strong,
+.globalScanItem span,
+.globalScanItem small {
+  display: block;
+}
+
+.globalScanItem strong {
+  color: #0f172a;
+  font-size: 12px;
+}
+
+.globalScanItem span,
+.globalScanItem small {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.globalScanItem.active {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
 .workspaceStack {
   display: grid;
   gap: 16px;
@@ -4146,12 +4232,17 @@ meter {
   .sideRail,
   .dashboardShell,
   .contentGrid,
+  .workspaceBodyWithRail,
   .evolutionSummary,
   .roadmapGrid,
   .roadmapStats,
   .workflowFlow,
   .workflowStrip {
     grid-template-columns: 1fr;
+  }
+
+  .globalScanRailCard {
+    position: static;
   }
 
   .aiExplainerHeader,

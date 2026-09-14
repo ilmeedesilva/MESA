@@ -638,8 +638,11 @@ function App() {
   }, [apiAvailability, isPublicDemoMode]);
 
   React.useEffect(() => {
+    syncAppStateToUrl(selectedProjectId, currentSection, "replace");
+  }, [currentSection, selectedProjectId]);
+
+  React.useEffect(() => {
     if (!selectedProjectId) {
-      syncAppStateToUrl("", currentSection, "replace");
       cancelProjectRequests();
       resetProjectScanFlowState();
       setHistory([]);
@@ -654,7 +657,6 @@ function App() {
       return;
     }
     if (isPublicDemoMode && isPublicDemoProject(selectedProjectId)) {
-      syncAppStateToUrl(selectedProjectId, currentSection, "replace");
       setHistory(demoWorkspace.scans as unknown as ScanRecord[]);
       setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
       setPolicyCount(demoWorkspace.policies.length);
@@ -664,9 +666,8 @@ function App() {
       }
       return;
     }
-    syncAppStateToUrl(selectedProjectId, currentSection, "replace");
     void loadSelectedProjectState(selectedProjectId);
-  }, [apiAvailability, currentSection, isPublicDemoMode, selectedProjectId]);
+  }, [apiAvailability, isPublicDemoMode, selectedProjectId]);
 
   React.useEffect(() => {
     void loadAIStatus();
@@ -894,7 +895,15 @@ function App() {
       }
 
       if (scans.length > 0) {
-        await loadScan(scans[0].id, { projectId, historyMode: "replace" });
+        const preferredScanId =
+          activeScan && activeScan.project_id === projectId
+            ? activeScan.id
+            : undefined;
+        const nextScan =
+          (preferredScanId
+            ? scans.find((scan) => scan.id === preferredScanId)
+            : undefined) ?? scans[0];
+        await loadScan(nextScan.id, { projectId, historyMode: "replace" });
       }
     } catch (caught) {
       if (requestId !== projectStateRequestRef.current || isAbortError(caught)) return;
@@ -921,6 +930,17 @@ function App() {
       setEvolution(evolutionReports);
       setPolicyCount(policies.length);
       setPolicyText(policies.length > 0 ? policyDocumentFromRecords(policies) : defaultPolicyDocument);
+      if (scans.length === 0) {
+        setActiveScan(null);
+        setResult(null);
+        setDisplayGraph(null);
+        setScores([]);
+        setRoadmap(null);
+        return;
+      }
+      if (activeScan?.project_id === projectId && scans.every((scan) => scan.id !== activeScan.id)) {
+        await loadScan(scans[0].id, { projectId, historyMode: "replace" });
+      }
     } catch (caught) {
       if (isAbortError(caught)) return;
       if (isNotFoundError(caught)) {
@@ -1243,7 +1263,9 @@ function App() {
     try {
       const twin = await api<DigitalTwinGraph>(`/api/scans/${scanId}/graph`);
       if (requestId && requestId !== scanRequestRef.current) return;
-      setDisplayGraph(graphFromDigitalTwin(twin, scanResult, currentScores));
+      const reportGraph = graphFromReport(scanResult, currentScores);
+      const twinGraph = graphFromDigitalTwin(twin, scanResult, currentScores);
+      setDisplayGraph(preferredGraph(reportGraph, twinGraph));
     } catch {
       if (requestId && requestId !== scanRequestRef.current) return;
       setDisplayGraph(graphFromReport(scanResult, currentScores));
@@ -1557,6 +1579,15 @@ function App() {
   function navigateToSection(section: AppSection, historyMode: "push" | "replace" = "push") {
     setCurrentSection(section);
     syncAppStateToUrl(selectedProjectId, section, historyMode);
+  }
+
+  function askAIAboutFinding(finding: Finding, question: string) {
+    setAiQuestion(question);
+    navigateToSection("ai");
+    void requestAIExplanation("FINDING_EXPLANATION", {
+      question,
+      findingId: finding.id
+    });
   }
 
   function openDoc(slug: string) {
@@ -2236,11 +2267,10 @@ function App() {
         onOpenDoc={openDoc}
         onSelectFinding={setSelectedFinding}
         onAskAI={(finding) => {
-          setAiQuestion(`Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`);
-          void requestAIExplanation("FINDING_EXPLANATION", {
-            question: `Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`,
-            findingId: finding.id
-          });
+          askAIAboutFinding(
+            finding,
+            `Explain simply why ${plainLanguageFindingTitle(finding).toLowerCase()} should be reviewed.`
+          );
         }}
       />
     );
@@ -2259,6 +2289,39 @@ function App() {
           onOpenDoc={openDoc}
         />
       </section>
+    );
+  }
+
+  function renderGlobalScanHistoryRail() {
+    if (!selectedProject || history.length === 0 || currentSection === "history" || currentSection === "docs") {
+      return null;
+    }
+    return (
+      <aside className="globalScanRail">
+        <section className="globalScanRailCard">
+          <div className="panelHeader compact">
+            <h3>Recent Scans</h3>
+            <button type="button" className="railLinkButton" onClick={() => navigateToSection("history")}>
+              Full history
+            </button>
+          </div>
+          <div className="globalScanRailList">
+            {history.slice(0, 6).map((scan) => (
+              <button
+                key={scan.id}
+                type="button"
+                className={activeScan?.id === scan.id ? "globalScanItem active" : "globalScanItem"}
+                onClick={() => void loadScan(scan.id, { projectId: selectedProjectId })}
+                disabled={isLoadingScan}
+              >
+                <strong>{shortId(scan.id)}</strong>
+                <span>{scan.finding_count} findings</span>
+                <small>{formatDate(scan.completed_at ?? scan.created_at)}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+      </aside>
     );
   }
 
@@ -2361,6 +2424,8 @@ function App() {
         return renderOverviewWorkspace();
     }
   }
+
+  const globalScanHistoryRail = renderGlobalScanHistoryRail();
 
   return (
     <main className={sidebarCollapsed ? "appShell sidebarCollapsed" : "appShell"}>
@@ -2534,8 +2599,11 @@ function App() {
             </div>
           </div>
 
-          <div className="workspaceBody">
-            {renderSectionContent()}
+          <div className={globalScanHistoryRail ? "workspaceBody workspaceBodyWithRail" : "workspaceBody"}>
+            <div className="workspacePrimaryContent">
+              {renderSectionContent()}
+            </div>
+            {globalScanHistoryRail}
           </div>
         </section>
       </div>
@@ -2545,11 +2613,10 @@ function App() {
           finding={selectedFinding}
           interpretationMode={interpretationMode}
           onAskAI={() => {
-            setAiQuestion(`Explain simply what to solve first about ${plainLanguageFindingTitle(selectedFinding).toLowerCase()}.`);
-            void requestAIExplanation("FINDING_EXPLANATION", {
-              question: `Explain simply what to solve first about ${plainLanguageFindingTitle(selectedFinding).toLowerCase()}.`,
-              findingId: selectedFinding.id
-            });
+            askAIAboutFinding(
+              selectedFinding,
+              `Explain simply what to solve first about ${plainLanguageFindingTitle(selectedFinding).toLowerCase()}.`
+            );
           }}
           onClose={() => setSelectedFinding(null)}
         />
@@ -4691,6 +4758,23 @@ function graphFromDigitalTwin(twin: DigitalTwinGraph, result: AnalysisResult, sc
       }
     }, result.findings, nodeById));
   return { source: "digital-twin", nodes, edges };
+}
+
+function isRenderableGraph(graph: DisplayGraph) {
+  if (graph.nodes.length === 0) return false;
+  return graph.nodes.some((node) => ["service", "api", "database"].includes(node.type ?? "service"));
+}
+
+function preferredGraph(reportGraph: DisplayGraph, twinGraph: DisplayGraph) {
+  if (!isRenderableGraph(twinGraph)) return reportGraph;
+  return graphRichnessScore(twinGraph) >= graphRichnessScore(reportGraph) ? twinGraph : reportGraph;
+}
+
+function graphRichnessScore(graph: DisplayGraph) {
+  const importantNodes = graph.nodes.filter((node) =>
+    ["service", "api", "database"].includes(node.type ?? "service")
+  ).length;
+  return importantNodes * 10 + graph.edges.length;
 }
 
 function nodeFromDigitalTwin(
