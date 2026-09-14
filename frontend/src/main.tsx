@@ -212,6 +212,17 @@ type PersistedScanResult = {
   result: AnalysisResult;
 };
 
+type ScanJobRecord = {
+  id: string;
+  project_id: string;
+  status: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED";
+  scan_id?: string | null;
+  error_message?: string | null;
+  created_at?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+};
+
 type EvolutionReport = {
   project_id: string;
   base_scan_id: string;
@@ -1020,16 +1031,22 @@ function App() {
     try {
       const useRepositorySource = Boolean(sourceLocation.trim());
       const payload = useRepositorySource
-        ? await api<PersistedScanResult>(`/api/projects/${selectedProjectId}/repo-scans`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              source_type: sourceType,
-              location: sourceLocation,
-              ref: sourceType === "GITHUB_URL" ? sourceRef.trim() || undefined : undefined,
-              service_paths: selectedDiscoveryPaths
-            })
-          })
+        ? await (async () => {
+            const job = await api<ScanJobRecord>(
+              `/api/projects/${selectedProjectId}/repo-scans/async`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  source_type: sourceType,
+                  location: sourceLocation,
+                  ref: sourceType === "GITHUB_URL" ? sourceRef.trim() || undefined : undefined,
+                  service_paths: selectedDiscoveryPaths
+                })
+              }
+            );
+            return pollScanJob(job.id);
+          })()
         : await api<PersistedScanResult>(`/api/projects/${selectedProjectId}/scans`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -5201,6 +5218,22 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(response.status, detail || `API returned ${response.status}`);
   }
   return (await response.json()) as T;
+}
+
+async function pollScanJob(jobId: string): Promise<PersistedScanResult> {
+  const pollIntervalMs = 1000;
+  const maxAttempts = 300;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const job = await api<ScanJobRecord>(`/api/scan-jobs/${jobId}`);
+    if (job.status === "COMPLETED" && job.scan_id) {
+      return api<PersistedScanResult>(`/api/scans/${job.scan_id}`);
+    }
+    if (job.status === "FAILED") {
+      throw new Error(job.error_message || "Repository scan failed.");
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, pollIntervalMs));
+  }
+  throw new Error("Repository scan is taking longer than expected. Check back later.");
 }
 
 async function readApiErrorDetail(response: Response) {
