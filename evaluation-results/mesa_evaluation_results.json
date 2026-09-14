@@ -3,7 +3,7 @@
   "version": 1,
   "matching": "type_and_service_set",
   "overall": {
-    "true_positives": 50,
+    "true_positives": 76,
     "false_positives": 0,
     "false_negatives": 0,
     "precision": 1.0,
@@ -12,22 +12,6 @@
   },
   "by_type": {
     "CHATTY_SERVICE": {
-      "true_positives": 1,
-      "false_positives": 0,
-      "false_negatives": 0,
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1_score": 1.0
-    },
-    "CYCLIC_DEPENDENCY": {
-      "true_positives": 7,
-      "false_positives": 0,
-      "false_negatives": 0,
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1_score": 1.0
-    },
-    "GOD_SERVICE": {
       "true_positives": 2,
       "false_positives": 0,
       "false_negatives": 0,
@@ -35,8 +19,24 @@
       "recall": 1.0,
       "f1_score": 1.0
     },
+    "CYCLIC_DEPENDENCY": {
+      "true_positives": 8,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
+    "GOD_SERVICE": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
     "HARD_CODED_SERVICE_DEPENDENCY": {
-      "true_positives": 39,
+      "true_positives": 61,
       "false_positives": 0,
       "false_negatives": 0,
       "precision": 1.0,
@@ -44,7 +44,7 @@
       "f1_score": 1.0
     },
     "SHARED_DATABASE": {
-      "true_positives": 1,
+      "true_positives": 2,
       "false_positives": 0,
       "false_negatives": 0,
       "precision": 1.0,
@@ -559,7 +559,7 @@
           "id": "MESA-CYCL-001",
           "type": "CYCLIC_DEPENDENCY",
           "services": [
-            "inventory-service",
+            "order-service",
             "platform-service"
           ],
           "severity": "CRITICAL",
@@ -569,7 +569,7 @@
           "id": "MESA-CYCL-002",
           "type": "CYCLIC_DEPENDENCY",
           "services": [
-            "order-service",
+            "inventory-service",
             "platform-service"
           ],
           "severity": "CRITICAL",
@@ -850,7 +850,7 @@
           "id": "MESA-CYCL-001",
           "type": "CYCLIC_DEPENDENCY",
           "services": [
-            "inventory-service",
+            "order-service",
             "platform-service"
           ],
           "severity": "CRITICAL",
@@ -860,7 +860,7 @@
           "id": "MESA-CYCL-002",
           "type": "CYCLIC_DEPENDENCY",
           "services": [
-            "order-service",
+            "inventory-service",
             "platform-service"
           ],
           "severity": "CRITICAL",
@@ -1003,11 +1003,442 @@
           "confidence": 0.925
         }
       ]
+    },
+    {
+      "id": "recall-stress-test",
+      "name": "Recall stress test",
+      "category": "recall stress test",
+      "service_paths": [
+        "../tests/fixtures/recall-stress/checkout-service",
+        "../tests/fixtures/recall-stress/billing-gateway-service",
+        "../tests/fixtures/recall-stress/fulfillment-service",
+        "../tests/fixtures/recall-stress/alert-service",
+        "../tests/fixtures/recall-stress/profile-service",
+        "../tests/fixtures/recall-stress/ledger-service",
+        "../tests/fixtures/recall-stress/legacy-bridge-service",
+        "../tests/fixtures/recall-stress/platform-hub-service"
+      ],
+      "expected_count": 26,
+      "predicted_count": 26,
+      "metrics": {
+        "true_positives": 26,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "alert-service",
+            "profile-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-gateway-service",
+            "checkout-service",
+            "fulfillment-service"
+          ]
+        },
+        {
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "checkout-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "checkout-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "fulfillment-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "ledger-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "legacy-bridge-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "legacy-bridge-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "SHARED_DATABASE",
+          "services": [
+            "billing-gateway-service",
+            "checkout-service",
+            "ledger-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CHAT-001",
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "alert-service",
+            "profile-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.6833333333333333
+        },
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-gateway-service",
+            "checkout-service",
+            "fulfillment-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-SHDB-001",
+          "type": "SHARED_DATABASE",
+          "services": [
+            "billing-gateway-service",
+            "checkout-service",
+            "ledger-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-gateway-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-gateway-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-007",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "checkout-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-008",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "checkout-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-009",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "fulfillment-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-010",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "ledger-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-011",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "legacy-bridge-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        },
+        {
+          "id": "MESA-HCDD-012",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "legacy-bridge-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        },
+        {
+          "id": "MESA-HCDD-013",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-014",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-015",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-016",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-017",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-018",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-019",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-020",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-021",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-022",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-GODS-001",
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.8533333333333333
+        }
+      ]
     }
   ],
   "detector": {
     "overall": {
-      "true_positives": 50,
+      "true_positives": 76,
       "false_positives": 0,
       "false_negatives": 0,
       "precision": 1.0,
@@ -1016,22 +1447,6 @@
     },
     "by_type": {
       "CHATTY_SERVICE": {
-        "true_positives": 1,
-        "false_positives": 0,
-        "false_negatives": 0,
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1_score": 1.0
-      },
-      "CYCLIC_DEPENDENCY": {
-        "true_positives": 7,
-        "false_positives": 0,
-        "false_negatives": 0,
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1_score": 1.0
-      },
-      "GOD_SERVICE": {
         "true_positives": 2,
         "false_positives": 0,
         "false_negatives": 0,
@@ -1039,8 +1454,24 @@
         "recall": 1.0,
         "f1_score": 1.0
       },
+      "CYCLIC_DEPENDENCY": {
+        "true_positives": 8,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "GOD_SERVICE": {
+        "true_positives": 3,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
       "HARD_CODED_SERVICE_DEPENDENCY": {
-        "true_positives": 39,
+        "true_positives": 61,
         "false_positives": 0,
         "false_negatives": 0,
         "precision": 1.0,
@@ -1048,7 +1479,7 @@
         "f1_score": 1.0
       },
       "SHARED_DATABASE": {
-        "true_positives": 1,
+        "true_positives": 2,
         "false_positives": 0,
         "false_negatives": 0,
         "precision": 1.0,
@@ -1563,7 +1994,7 @@
             "id": "MESA-CYCL-001",
             "type": "CYCLIC_DEPENDENCY",
             "services": [
-              "inventory-service",
+              "order-service",
               "platform-service"
             ],
             "severity": "CRITICAL",
@@ -1573,7 +2004,7 @@
             "id": "MESA-CYCL-002",
             "type": "CYCLIC_DEPENDENCY",
             "services": [
-              "order-service",
+              "inventory-service",
               "platform-service"
             ],
             "severity": "CRITICAL",
@@ -1854,7 +2285,7 @@
             "id": "MESA-CYCL-001",
             "type": "CYCLIC_DEPENDENCY",
             "services": [
-              "inventory-service",
+              "order-service",
               "platform-service"
             ],
             "severity": "CRITICAL",
@@ -1864,7 +2295,7 @@
             "id": "MESA-CYCL-002",
             "type": "CYCLIC_DEPENDENCY",
             "services": [
-              "order-service",
+              "inventory-service",
               "platform-service"
             ],
             "severity": "CRITICAL",
@@ -2007,15 +2438,446 @@
             "confidence": 0.925
           }
         ]
+      },
+      {
+        "id": "recall-stress-test",
+        "name": "Recall stress test",
+        "category": "recall stress test",
+        "service_paths": [
+          "../tests/fixtures/recall-stress/checkout-service",
+          "../tests/fixtures/recall-stress/billing-gateway-service",
+          "../tests/fixtures/recall-stress/fulfillment-service",
+          "../tests/fixtures/recall-stress/alert-service",
+          "../tests/fixtures/recall-stress/profile-service",
+          "../tests/fixtures/recall-stress/ledger-service",
+          "../tests/fixtures/recall-stress/legacy-bridge-service",
+          "../tests/fixtures/recall-stress/platform-hub-service"
+        ],
+        "expected_count": 26,
+        "predicted_count": 26,
+        "metrics": {
+          "true_positives": 26,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "ground_truth": [
+          {
+            "type": "CHATTY_SERVICE",
+            "services": [
+              "alert-service",
+              "profile-service"
+            ]
+          },
+          {
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "billing-gateway-service",
+              "checkout-service",
+              "fulfillment-service"
+            ]
+          },
+          {
+            "type": "GOD_SERVICE",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "alert-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "alert-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "alert-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "alert-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-gateway-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-gateway-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "checkout-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "checkout-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "fulfillment-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "ledger-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "legacy-bridge-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "legacy-bridge-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ]
+          },
+          {
+            "type": "SHARED_DATABASE",
+            "services": [
+              "billing-gateway-service",
+              "checkout-service",
+              "ledger-service"
+            ]
+          }
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "predicted_findings": [
+          {
+            "id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "services": [
+              "alert-service",
+              "profile-service"
+            ],
+            "severity": "LOW",
+            "confidence": 0.6833333333333333
+          },
+          {
+            "id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "services": [
+              "billing-gateway-service",
+              "checkout-service",
+              "fulfillment-service"
+            ],
+            "severity": "HIGH",
+            "confidence": 0.9
+          },
+          {
+            "id": "MESA-SHDB-001",
+            "type": "SHARED_DATABASE",
+            "services": [
+              "billing-gateway-service",
+              "checkout-service",
+              "ledger-service"
+            ],
+            "severity": "HIGH",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "alert-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "alert-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "alert-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "alert-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-gateway-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "billing-gateway-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "checkout-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "checkout-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "fulfillment-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "ledger-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "legacy-bridge-service"
+            ],
+            "severity": "HIGH",
+            "confidence": 0.95
+          },
+          {
+            "id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "legacy-bridge-service"
+            ],
+            "severity": "HIGH",
+            "confidence": 0.95
+          },
+          {
+            "id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-014",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-015",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-016",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-017",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-018",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-019",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-020",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-021",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-HCDD-022",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "MEDIUM",
+            "confidence": 0.88
+          },
+          {
+            "id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "services": [
+              "platform-hub-service"
+            ],
+            "severity": "HIGH",
+            "confidence": 0.8533333333333333
+          }
+        ]
       }
     ]
   },
   "discovery": {
     "overall": {
-      "system_count": 7,
-      "precision": 1.0,
-      "recall": 0.9524,
-      "f1_score": 0.9714
+      "system_count": 8,
+      "precision": 0.9688,
+      "recall": 1.0,
+      "f1_score": 0.9821
     },
     "systems": [
       {
@@ -2095,16 +2957,18 @@
           "order-service"
         ],
         "predicted_candidates": [
+          "billing-service",
           "clean-service",
-          "order-service"
+          "order-service",
+          "otel-service"
         ],
-        "false_positives": [],
-        "false_negatives": [
-          "billing-service"
+        "false_positives": [
+          "otel-service"
         ],
-        "precision": 1.0,
-        "recall": 0.6667,
-        "f1_score": 0.8
+        "false_negatives": [],
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1_score": 0.8571
       },
       {
         "system_id": "god-service",
@@ -2157,6 +3021,35 @@
           "platform-service",
           "small-service",
           "user-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      {
+        "system_id": "recall-stress-test",
+        "root": "../tests/fixtures/recall-stress",
+        "expected_candidates": [
+          "alert-service",
+          "billing-gateway-service",
+          "checkout-service",
+          "fulfillment-service",
+          "ledger-service",
+          "legacy-bridge-service",
+          "platform-hub-service",
+          "profile-service"
+        ],
+        "predicted_candidates": [
+          "alert-service",
+          "billing-gateway-service",
+          "checkout-service",
+          "fulfillment-service",
+          "ledger-service",
+          "legacy-bridge-service",
+          "platform-hub-service",
+          "profile-service"
         ],
         "false_positives": [],
         "false_negatives": [],
@@ -2421,10 +3314,10 @@
   },
   "recommendations": {
     "overall": {
-      "system_count": 7,
-      "usefulness_score": 0.8373,
+      "system_count": 8,
+      "usefulness_score": 0.8558,
       "structured_coverage": 1.0,
-      "step_quality_score": 0.8571
+      "step_quality_score": 0.875
     },
     "systems": [
       {
@@ -2838,6 +3731,197 @@
             "step_quality_score": 1.0
           }
         ]
+      },
+      {
+        "system_id": "recall-stress-test",
+        "finding_count": 26,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9846,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-SHDB-001",
+            "type": "SHARED_DATABASE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-014",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-015",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-016",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-017",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-018",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-019",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-020",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-021",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-022",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          }
+        ]
       }
     ]
   },
@@ -2897,6 +3981,17 @@
           "This benchmark is a useful stand-in for distributed monolith symptoms, but it is not a real production repository."
         ],
         "limitations": []
+      },
+      {
+        "id": "recall-stress-test",
+        "notes": [
+          "Unlike the other seeded fixtures (mostly one anti-pattern per system), this system deliberately interleaves five anti-patterns across 8 services in one scan: a 3-node CYCLIC_DEPENDENCY (checkout-service -> billing-gateway-service -> fulfillment-service -> checkout-service), a CHATTY_SERVICE pair (alert-service -> profile-service, 4 static call sites), a 3-service SHARED_DATABASE (checkout-service, billing-gateway-service, ledger-service all reference platform_ledger_db), a GOD_SERVICE hotspot (platform-hub-service, scoring exactly at the 70.0 HIGH-risk threshold with 10 endpoints and 7 distinct outbound targets), and source-level HARD_CODED_SERVICE_DEPENDENCY findings including 2 private-IP references in legacy-bridge-service.",
+          "The 3 services sharing platform_ledger_db (checkout-service, billing-gateway-service, ledger-service) each also produce a HARD_CODED_SERVICE_DEPENDENCY finding purely from the literal `db-host:5432` substring inside their database connection string: this is the existing generic host:port hard-coded-endpoint pattern matching independently of the separate database-connection extraction that produces the SHARED_DATABASE finding. Not a bug specific to this fixture - the same DB connection string is legitimately both a database reference and a literal host:port pattern - but worth noting since it means 'one line' can produce two different finding types.",
+          "This benchmark exists specifically to test recall (does MESA find everything that is really there) on a single system with multiple overlapping anti-patterns, complementing the real-repository benchmarks in benchmarks/real_repo_*.yml, which mostly tested precision on comparatively clean architectures. See docs/research/THREATS_TO_VALIDITY.md."
+        ],
+        "limitations": [
+          "This is still a synthetic, hand-authored fixture, not a real repository; it demonstrates MESA can find multiple co-occurring anti-patterns in one scan, not that real messy systems look exactly like this."
+        ]
       }
     ],
     "track_summary": {
@@ -3623,16 +4718,18 @@
           "order-service"
         ],
         "predicted_candidates": [
+          "billing-service",
           "clean-service",
-          "order-service"
+          "order-service",
+          "otel-service"
         ],
-        "false_positives": [],
-        "false_negatives": [
-          "billing-service"
+        "false_positives": [
+          "otel-service"
         ],
-        "precision": 1.0,
-        "recall": 0.6667,
-        "f1_score": 0.8
+        "false_negatives": [],
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1_score": 0.8571
       },
       "explanations": {
         "system_id": "hard-coded-dependencies",
@@ -3851,7 +4948,7 @@
           "id": "MESA-CYCL-001",
           "type": "CYCLIC_DEPENDENCY",
           "services": [
-            "inventory-service",
+            "order-service",
             "platform-service"
           ],
           "severity": "CRITICAL",
@@ -3861,7 +4958,7 @@
           "id": "MESA-CYCL-002",
           "type": "CYCLIC_DEPENDENCY",
           "services": [
-            "order-service",
+            "inventory-service",
             "platform-service"
           ],
           "severity": "CRITICAL",
@@ -4349,7 +5446,7 @@
           "id": "MESA-CYCL-001",
           "type": "CYCLIC_DEPENDENCY",
           "services": [
-            "inventory-service",
+            "order-service",
             "platform-service"
           ],
           "severity": "CRITICAL",
@@ -4359,7 +5456,7 @@
           "id": "MESA-CYCL-002",
           "type": "CYCLIC_DEPENDENCY",
           "services": [
-            "order-service",
+            "inventory-service",
             "platform-service"
           ],
           "severity": "CRITICAL",
@@ -4677,6 +5774,665 @@
           },
           {
             "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-GODS-001",
+            "type": "GOD_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "recall-stress-test",
+      "name": "Recall stress test",
+      "category": "recall stress test",
+      "service_paths": [
+        "../tests/fixtures/recall-stress/checkout-service",
+        "../tests/fixtures/recall-stress/billing-gateway-service",
+        "../tests/fixtures/recall-stress/fulfillment-service",
+        "../tests/fixtures/recall-stress/alert-service",
+        "../tests/fixtures/recall-stress/profile-service",
+        "../tests/fixtures/recall-stress/ledger-service",
+        "../tests/fixtures/recall-stress/legacy-bridge-service",
+        "../tests/fixtures/recall-stress/platform-hub-service"
+      ],
+      "expected_count": 26,
+      "predicted_count": 26,
+      "metrics": {
+        "true_positives": 26,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "ground_truth": [
+        {
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "alert-service",
+            "profile-service"
+          ]
+        },
+        {
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-gateway-service",
+            "checkout-service",
+            "fulfillment-service"
+          ]
+        },
+        {
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-gateway-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "checkout-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "checkout-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "fulfillment-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "ledger-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "legacy-bridge-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "legacy-bridge-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ]
+        },
+        {
+          "type": "SHARED_DATABASE",
+          "services": [
+            "billing-gateway-service",
+            "checkout-service",
+            "ledger-service"
+          ]
+        }
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "predicted_findings": [
+        {
+          "id": "MESA-CHAT-001",
+          "type": "CHATTY_SERVICE",
+          "services": [
+            "alert-service",
+            "profile-service"
+          ],
+          "severity": "LOW",
+          "confidence": 0.6833333333333333
+        },
+        {
+          "id": "MESA-CYCL-001",
+          "type": "CYCLIC_DEPENDENCY",
+          "services": [
+            "billing-gateway-service",
+            "checkout-service",
+            "fulfillment-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.9
+        },
+        {
+          "id": "MESA-SHDB-001",
+          "type": "SHARED_DATABASE",
+          "services": [
+            "billing-gateway-service",
+            "checkout-service",
+            "ledger-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-001",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-002",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-003",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-004",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "alert-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-005",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-gateway-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-006",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "billing-gateway-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-007",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "checkout-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-008",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "checkout-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-009",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "fulfillment-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-010",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "ledger-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-011",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "legacy-bridge-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        },
+        {
+          "id": "MESA-HCDD-012",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "legacy-bridge-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.95
+        },
+        {
+          "id": "MESA-HCDD-013",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-014",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-015",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-016",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-017",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-018",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-019",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-020",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-021",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-HCDD-022",
+          "type": "HARD_CODED_SERVICE_DEPENDENCY",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "MEDIUM",
+          "confidence": 0.88
+        },
+        {
+          "id": "MESA-GODS-001",
+          "type": "GOD_SERVICE",
+          "services": [
+            "platform-hub-service"
+          ],
+          "severity": "HIGH",
+          "confidence": 0.8533333333333333
+        }
+      ],
+      "evaluator_notes": [
+        "Unlike the other seeded fixtures (mostly one anti-pattern per system), this system deliberately interleaves five anti-patterns across 8 services in one scan: a 3-node CYCLIC_DEPENDENCY (checkout-service -> billing-gateway-service -> fulfillment-service -> checkout-service), a CHATTY_SERVICE pair (alert-service -> profile-service, 4 static call sites), a 3-service SHARED_DATABASE (checkout-service, billing-gateway-service, ledger-service all reference platform_ledger_db), a GOD_SERVICE hotspot (platform-hub-service, scoring exactly at the 70.0 HIGH-risk threshold with 10 endpoints and 7 distinct outbound targets), and source-level HARD_CODED_SERVICE_DEPENDENCY findings including 2 private-IP references in legacy-bridge-service.",
+        "The 3 services sharing platform_ledger_db (checkout-service, billing-gateway-service, ledger-service) each also produce a HARD_CODED_SERVICE_DEPENDENCY finding purely from the literal `db-host:5432` substring inside their database connection string: this is the existing generic host:port hard-coded-endpoint pattern matching independently of the separate database-connection extraction that produces the SHARED_DATABASE finding. Not a bug specific to this fixture - the same DB connection string is legitimately both a database reference and a literal host:port pattern - but worth noting since it means 'one line' can produce two different finding types.",
+        "This benchmark exists specifically to test recall (does MESA find everything that is really there) on a single system with multiple overlapping anti-patterns, complementing the real-repository benchmarks in benchmarks/real_repo_*.yml, which mostly tested precision on comparatively clean architectures. See docs/research/THREATS_TO_VALIDITY.md."
+      ],
+      "known_limitations": [
+        "This is still a synthetic, hand-authored fixture, not a real repository; it demonstrates MESA can find multiple co-occurring anti-patterns in one scan, not that real messy systems look exactly like this."
+      ],
+      "discovery": {
+        "system_id": "recall-stress-test",
+        "root": "../tests/fixtures/recall-stress",
+        "expected_candidates": [
+          "alert-service",
+          "billing-gateway-service",
+          "checkout-service",
+          "fulfillment-service",
+          "ledger-service",
+          "legacy-bridge-service",
+          "platform-hub-service",
+          "profile-service"
+        ],
+        "predicted_candidates": [
+          "alert-service",
+          "billing-gateway-service",
+          "checkout-service",
+          "fulfillment-service",
+          "ledger-service",
+          "legacy-bridge-service",
+          "platform-hub-service",
+          "profile-service"
+        ],
+        "false_positives": [],
+        "false_negatives": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "recommendations": {
+        "system_id": "recall-stress-test",
+        "finding_count": 26,
+        "structured_coverage": 1.0,
+        "usefulness_score": 0.9846,
+        "step_quality_score": 1.0,
+        "findings": [
+          {
+            "finding_id": "MESA-CHAT-001",
+            "type": "CHATTY_SERVICE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-CYCL-001",
+            "type": "CYCLIC_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-SHDB-001",
+            "type": "SHARED_DATABASE",
+            "has_structured_recommendation": true,
+            "structure_score": 0.9,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-001",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-002",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-003",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-004",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-005",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-006",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-007",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-008",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-009",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-010",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-011",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-012",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-013",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-014",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-015",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-016",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-017",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-018",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-019",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-020",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-021",
+            "type": "HARD_CODED_SERVICE_DEPENDENCY",
+            "has_structured_recommendation": true,
+            "structure_score": 1.0,
+            "step_quality_score": 1.0
+          },
+          {
+            "finding_id": "MESA-HCDD-022",
             "type": "HARD_CODED_SERVICE_DEPENDENCY",
             "has_structured_recommendation": true,
             "structure_score": 1.0,

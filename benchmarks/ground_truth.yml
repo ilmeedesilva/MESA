@@ -298,3 +298,78 @@ systems:
         services: [platform-service]
       - type: HARD_CODED_SERVICE_DEPENDENCY
         services: [platform-service]
+
+  - id: recall-stress-test
+    name: Recall stress test
+    category: recall stress test
+    service_paths:
+      - ../tests/fixtures/recall-stress/checkout-service
+      - ../tests/fixtures/recall-stress/billing-gateway-service
+      - ../tests/fixtures/recall-stress/fulfillment-service
+      - ../tests/fixtures/recall-stress/alert-service
+      - ../tests/fixtures/recall-stress/profile-service
+      - ../tests/fixtures/recall-stress/ledger-service
+      - ../tests/fixtures/recall-stress/legacy-bridge-service
+      - ../tests/fixtures/recall-stress/platform-hub-service
+    service_discovery:
+      root: ../tests/fixtures/recall-stress
+      expected_candidates: [alert-service, billing-gateway-service, checkout-service, fulfillment-service, ledger-service, legacy-bridge-service, platform-hub-service, profile-service]
+    evaluator_notes:
+      - "Unlike the other seeded fixtures (mostly one anti-pattern per system), this system deliberately interleaves five anti-patterns across 8 services in one scan: a 3-node CYCLIC_DEPENDENCY (checkout-service -> billing-gateway-service -> fulfillment-service -> checkout-service), a CHATTY_SERVICE pair (alert-service -> profile-service, 4 static call sites), a 3-service SHARED_DATABASE (checkout-service, billing-gateway-service, ledger-service all reference platform_ledger_db), a GOD_SERVICE hotspot (platform-hub-service, scoring exactly at the 70.0 HIGH-risk threshold with 10 endpoints and 7 distinct outbound targets), and source-level HARD_CODED_SERVICE_DEPENDENCY findings including 2 private-IP references in legacy-bridge-service."
+      - "The 3 services sharing platform_ledger_db (checkout-service, billing-gateway-service, ledger-service) each also produce a HARD_CODED_SERVICE_DEPENDENCY finding purely from the literal `db-host:5432` substring inside their database connection string: this is the existing generic host:port hard-coded-endpoint pattern matching independently of the separate database-connection extraction that produces the SHARED_DATABASE finding. Not a bug specific to this fixture - the same DB connection string is legitimately both a database reference and a literal host:port pattern - but worth noting since it means 'one line' can produce two different finding types."
+      - "This benchmark exists specifically to test recall (does MESA find everything that is really there) on a single system with multiple overlapping anti-patterns, complementing the real-repository benchmarks in benchmarks/real_repo_*.yml, which mostly tested precision on comparatively clean architectures. See docs/research/THREATS_TO_VALIDITY.md."
+    known_limitations:
+      - This is still a synthetic, hand-authored fixture, not a real repository; it demonstrates MESA can find multiple co-occurring anti-patterns in one scan, not that real messy systems look exactly like this.
+    ground_truth:
+      - type: CHATTY_SERVICE
+        services: [alert-service, profile-service]
+      - type: CYCLIC_DEPENDENCY
+        services: [billing-gateway-service, checkout-service, fulfillment-service]
+      - type: GOD_SERVICE
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [alert-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [alert-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [alert-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [alert-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [billing-gateway-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [billing-gateway-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [checkout-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [checkout-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [fulfillment-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [ledger-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [legacy-bridge-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [legacy-bridge-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [platform-hub-service]
+      - type: SHARED_DATABASE
+        services: [billing-gateway-service, checkout-service, ledger-service]

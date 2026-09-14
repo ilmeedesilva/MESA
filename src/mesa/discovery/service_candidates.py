@@ -11,6 +11,7 @@ _MANIFEST_WEIGHTS = {
     "requirements.txt": 0.28,
     "package.json": 0.34,
     "pom.xml": 0.36,
+    "go.mod": 0.28,
     "Dockerfile": 0.22,
     "docker-compose.yml": 0.14,
     "docker-compose.yaml": 0.14,
@@ -43,6 +44,7 @@ _LANGUAGE_BY_FILENAME = {
     "requirements.txt": "python",
     "package.json": "typescript",
     "pom.xml": "java",
+    "go.mod": "go",
     "openapi.yaml": "api-spec",
     "openapi.yml": "api-spec",
     "openapi.json": "api-spec",
@@ -55,6 +57,7 @@ _LANGUAGE_BY_SUFFIX = {
     ".jsx": "javascript",
     ".ts": "typescript",
     ".tsx": "typescript",
+    ".go": "go",
 }
 
 _SERVICE_ROOT_MARKERS = {
@@ -62,6 +65,7 @@ _SERVICE_ROOT_MARKERS = {
     "requirements.txt",
     "package.json",
     "pom.xml",
+    "go.mod",
     "Dockerfile",
     "docker-compose.yml",
     "docker-compose.yaml",

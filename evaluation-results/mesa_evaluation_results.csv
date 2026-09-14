@@ -6,3 +6,4 @@ shared-database,Shared database,shared database,3,0,0,1.0,1.0,1.0
 hard-coded-dependencies,Hard-coded dependencies,hard-coded dependencies,6,0,0,1.0,1.0,1.0
 god-service,God Service,God Service,17,0,0,1.0,1.0,1.0
 distributed-monolith,Distributed monolith composite,distributed monolith,17,0,0,1.0,1.0,1.0
+recall-stress-test,Recall stress test,recall stress test,26,0,0,1.0,1.0,1.0
