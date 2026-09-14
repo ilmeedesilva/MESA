@@ -11,6 +11,7 @@ from mesa import __version__
 from mesa.analysis import analyze_services
 from mesa.analysis.fitness_gate import evaluate_architecture_gate
 from mesa.evaluation import evaluate_benchmark, export_evaluation
+from mesa.evaluation.ai_baseline import export_ai_baseline, run_ai_baseline
 from mesa.models import AnalysisResult, ArchitectureGateThresholds
 
 app = typer.Typer(help="MESA cross-service static architecture analyzer.")
@@ -104,6 +105,34 @@ def evaluate(
     )
     console.print(f"Wrote JSON results to {paths['json']}")
     console.print(f"Wrote CSV results to {paths['csv']}")
+    console.print(f"Wrote Markdown summary to {paths['markdown']}")
+
+
+@app.command("evaluate-ai-baseline")
+def evaluate_ai_baseline(
+    benchmark: Path = typer.Argument(..., help="Ground-truth benchmark YAML file."),
+    systems: str = typer.Option(..., "--systems", help="Comma-separated system ids to run, e.g. god-service,cyclic-dependencies."),
+    runs: int = typer.Option(5, "--runs", help="Number of repeated runs per system."),
+    output_dir: Path = typer.Option(
+        Path("evaluation-results/ai-baseline-comparison"), "--output-dir", "-o", help="Directory for JSON/Markdown results."
+    ),
+) -> None:
+    """Prompt a general-purpose LLM directly (no MESA) against the same benchmark
+    systems MESA is scored on, to measure accuracy and determinism as a baseline
+    comparison. Makes real, billed calls to the configured OpenAI API - confirm
+    the cost with the user before running this.
+    """
+    system_ids = [item.strip() for item in systems.split(",") if item.strip()]
+    report = run_ai_baseline(benchmark, system_ids, runs=runs)
+    paths = export_ai_baseline(report, output_dir)
+    console.print("[bold]MESA AI Baseline Comparison[/bold]")
+    for system in report["systems"]:
+        console.print(
+            f"{system['name']}: F1 {system['f1_score']['mean']} (+/- {system['f1_score']['stdev']}) | "
+            f"exact-match rate {system['determinism']['exact_match_rate']} | "
+            f"mean pairwise Jaccard {system['determinism']['mean_pairwise_jaccard']}"
+        )
+    console.print(f"Wrote JSON results to {paths['json']}")
     console.print(f"Wrote Markdown summary to {paths['markdown']}")
 
 
