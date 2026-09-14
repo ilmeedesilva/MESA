@@ -1,0 +1,2 @@
+system_id,system_name,category,true_positives,false_positives,false_negatives,precision,recall,f1_score
+spring-sample,Spring Boot microservices sample (piomin/sample-spring-microservices-new),real-world public repository,24,2,0,0.9231,1.0,0.96
