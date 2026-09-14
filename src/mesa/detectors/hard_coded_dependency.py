@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import networkx as nx
@@ -17,6 +18,51 @@ CONFIG_FILE_TYPES = {
     "json",
 }
 SOURCE_FILE_TYPES = {"python", "javascript", "typescript", "java"}
+
+# Well-known local observability/infrastructure sidecar ports. A hard-coded
+# reference to one of these on a loopback host is still genuinely hard-coded,
+# but is much more likely to be a local agent address than a cross-service
+# business dependency, so it is downgraded rather than treated the same as
+# e.g. a service-to-service HTTP call. Overridable via MESA_INFRA_PORT_ALLOWLIST.
+_DEFAULT_INFRA_PORTS: dict[int, str] = {
+    4317: "the OpenTelemetry Collector (gRPC)",
+    4318: "the OpenTelemetry Collector (HTTP)",
+    8125: "StatsD",
+    9090: "Prometheus",
+    9091: "the Prometheus Pushgateway",
+    6831: "the Jaeger agent (compact thrift)",
+    6832: "the Jaeger agent (binary thrift)",
+    14268: "the Jaeger collector (HTTP)",
+    8500: "Consul",
+    8200: "Vault",
+}
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
+
+
+def _infra_port_allowlist() -> dict[int, str]:
+    override = os.getenv("MESA_INFRA_PORT_ALLOWLIST")
+    if override is None:
+        return _DEFAULT_INFRA_PORTS
+    table: dict[int, str] = {}
+    for entry in override.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        port_part = entry.rsplit(":", 1)[-1]
+        try:
+            port = int(port_part)
+        except ValueError:
+            continue
+        table[port] = f"a configured infrastructure port ({entry})"
+    return table
+
+
+def _infra_service_label(host: str | None, port: int | None) -> str | None:
+    if host is None or port is None:
+        return None
+    if host.lower() not in _LOCAL_HOSTS:
+        return None
+    return _infra_port_allowlist().get(port)
 
 
 class HardCodedServiceDependencyDetector(Detector):
@@ -63,27 +109,34 @@ def _finding(
         1 for candidate in all_dependencies if candidate.get("value") == dependency.get("value")
     )
     file_type = dependency.get("file_type", "unknown")
-    severity = _severity(file_type, dependency.get("reason"), duplicate_count)
+    host = dependency.get("host")
+    port = dependency.get("port")
+    infra_label = _infra_service_label(host, port)
+    severity = (
+        Severity.LOW if infra_label else _severity(file_type, dependency.get("reason"), duplicate_count)
+    )
     confidence = _confidence(file_type, dependency.get("reason"), duplicate_count)
     value = dependency.get("value", "unknown endpoint")
     location = _location(source)
-    evidence = [
-        {
-            "anti_pattern": "Hard-Coded Service Dependency",
-            "service": service_name,
-            "value": value,
-            "host": dependency.get("host"),
-            "port": dependency.get("port"),
-            "scheme": dependency.get("scheme"),
-            "file_type": file_type,
-            "file_path": source.get("file_path"),
-            "line_number": source.get("line_number"),
-            "context": dependency.get("context"),
-            "reason": dependency.get("reason"),
-            "duplicate_occurrences": duplicate_count,
-            "explanation": _explanation(file_type, dependency.get("reason"), duplicate_count),
-        }
-    ]
+    evidence_entry: dict[str, Any] = {
+        "anti_pattern": "Hard-Coded Service Dependency",
+        "service": service_name,
+        "value": value,
+        "host": host,
+        "port": port,
+        "scheme": dependency.get("scheme"),
+        "file_type": file_type,
+        "file_path": source.get("file_path"),
+        "line_number": source.get("line_number"),
+        "context": dependency.get("context"),
+        "reason": dependency.get("reason"),
+        "duplicate_occurrences": duplicate_count,
+        "explanation": _explanation(file_type, dependency.get("reason"), duplicate_count),
+    }
+    if infra_label:
+        evidence_entry["likely_infrastructure_address"] = True
+        evidence_entry["infrastructure_service_guess"] = infra_label
+    evidence = [evidence_entry]
 
     return Finding(
         id=f"MESA-HCDD-{index:03d}",
@@ -126,10 +179,7 @@ def _finding(
             ),
         ],
         confidence_reason=_explanation(file_type, dependency.get("reason"), duplicate_count),
-        limitations=[
-            "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
-            "The detector does not execute deployment manifests to prove the endpoint is active.",
-        ],
+        limitations=_limitations(port, infra_label),
         source_files=source_files_from_evidence(evidence),
         related_services=[service_name],
         why_valid=(
@@ -137,6 +187,21 @@ def _finding(
             "evidence of a deployment endpoint being coupled to the service implementation."
         ),
     )
+
+
+def _limitations(port: int | None, infra_label: str | None) -> list[str]:
+    limitations = [
+        "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
+        "The detector does not execute deployment manifests to prove the endpoint is active.",
+    ]
+    if infra_label:
+        limitations.append(
+            f"Port {port} is commonly used by {infra_label}; verify this is not a local "
+            "observability/infrastructure sidecar before treating it as a cross-service "
+            "coupling risk. Override MESA_INFRA_PORT_ALLOWLIST to change which ports are "
+            "treated this way."
+        )
+    return limitations
 
 
 def _severity(file_type: str, reason: str | None, duplicate_count: int) -> Severity:

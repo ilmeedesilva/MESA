@@ -3,6 +3,7 @@ from pathlib import Path
 from mesa.analysis import analyze_services
 from mesa.analysis.extractor import _stem_matches_other_service
 from mesa.detectors.god_service import score_god_services
+from mesa.discovery import discover_service_candidates
 from mesa.graph.builder import build_graph
 from mesa.models import FindingType, ServiceFacts
 from mesa.storage.neo4j_store import _service_dependencies
@@ -130,6 +131,52 @@ def test_hard_coded_dependency_detector_handles_unresolved_placeholder_ports() -
     evidence = [item for finding in findings for item in finding.evidence]
     values = {item["value"] for item in evidence}
     assert "http://localhost:${server.port" in values
+
+
+def test_hard_coded_dependency_detector_downgrades_known_infra_ports() -> None:
+    result = analyze_services([str(ROOT / "hardcoded" / "otel-service")])
+
+    findings = [
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.severity.value == "LOW"
+    assert len(finding.evidence) == 1
+    evidence = finding.evidence[0]
+    assert evidence["likely_infrastructure_address"] is True
+    assert "OpenTelemetry" in evidence["infrastructure_service_guess"]
+    assert any("4317" in limitation for limitation in finding.limitations)
+
+
+def test_hard_coded_dependency_detector_leaves_non_infra_ports_unaffected() -> None:
+    result = analyze_services([str(ROOT / "hardcoded" / "order-service")])
+
+    findings = [
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert findings
+    for finding in findings:
+        for evidence in finding.evidence:
+            assert "likely_infrastructure_address" not in evidence
+
+
+def test_infra_port_allowlist_env_override(monkeypatch) -> None:
+    monkeypatch.setenv("MESA_INFRA_PORT_ALLOWLIST", "9999")
+    result = analyze_services([str(ROOT / "hardcoded" / "otel-service")])
+
+    findings = [
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert len(findings) == 1
+    evidence = findings[0].evidence[0]
+    assert "likely_infrastructure_address" not in evidence
 
 
 def test_stem_matches_other_service_ignores_self_and_matches_hosted_variants() -> None:
@@ -382,3 +429,78 @@ def test_extracts_real_repo_style_service_facts() -> None:
     inventory = services["inventory-api"]
     assert any(endpoint.path == "/inventory" for endpoint in inventory.endpoints)
     assert inventory.databases
+
+
+def test_recall_stress_fixture_finds_every_interleaved_anti_pattern() -> None:
+    root = ROOT / "recall-stress"
+    services = [
+        "checkout-service",
+        "billing-gateway-service",
+        "fulfillment-service",
+        "alert-service",
+        "profile-service",
+        "ledger-service",
+        "legacy-bridge-service",
+        "platform-hub-service",
+    ]
+    result = analyze_services([str(root / name) for name in services], chatty_threshold=3)
+
+    finding_types = {finding.type for finding in result.findings}
+    assert finding_types == {
+        FindingType.CHATTY_SERVICE,
+        FindingType.CYCLIC_DEPENDENCY,
+        FindingType.SHARED_DATABASE,
+        FindingType.GOD_SERVICE,
+        FindingType.HARD_CODED_SERVICE_DEPENDENCY,
+    }
+
+    cyclic = next(f for f in result.findings if f.type == FindingType.CYCLIC_DEPENDENCY)
+    assert set(cyclic.services) == {"checkout-service", "billing-gateway-service", "fulfillment-service"}
+
+    chatty = next(f for f in result.findings if f.type == FindingType.CHATTY_SERVICE)
+    assert set(chatty.services) == {"alert-service", "profile-service"}
+
+    shared_db = next(f for f in result.findings if f.type == FindingType.SHARED_DATABASE)
+    assert set(shared_db.services) == {"checkout-service", "billing-gateway-service", "ledger-service"}
+
+    god_finding = next(f for f in result.findings if f.type == FindingType.GOD_SERVICE)
+    assert god_finding.services == ["platform-hub-service"]
+    god_score = next(
+        score for score in result.summary["god_service_scores"] if score["service"] == "platform-hub-service"
+    )
+    assert god_score["score"] >= 70.0
+
+    assert result.summary["finding_count"] == 26
+
+
+def test_go_extraction_detects_endpoints_calls_and_cross_service_cycle() -> None:
+    root = ROOT / "go-services"
+    result = analyze_services(
+        [str(root / "orders-service"), str(root / "inventory-service")], chatty_threshold=3
+    )
+    services = {service.name: service for service in result.services}
+
+    orders = services["orders-service"]
+    assert orders.language == "go"
+    assert any(endpoint.path == "/orders" for endpoint in orders.endpoints)
+    assert any(call.target_hint == "inventory-service" for call in orders.calls)
+
+    inventory = services["inventory-service"]
+    assert inventory.language == "go"
+    assert any(endpoint.path == "/items" and endpoint.method == "GET" for endpoint in inventory.endpoints)
+    assert any(call.target_hint == "orders-service" and call.method == "GRPC" for call in inventory.calls)
+
+    finding_types = {finding.type for finding in result.findings}
+    assert FindingType.CYCLIC_DEPENDENCY in finding_types
+    assert FindingType.HARD_CODED_SERVICE_DEPENDENCY in finding_types
+
+
+def test_go_mod_manifest_is_discoverable_and_selects_go_language() -> None:
+    candidates = discover_service_candidates(ROOT / "go-services")
+    by_path = {candidate.relative_path: candidate for candidate in candidates}
+
+    assert "orders-service" in by_path
+    assert "inventory-service" in by_path
+    assert by_path["orders-service"].language == "go"
+    assert by_path["orders-service"].confidence >= 0.24
+    assert any("go.mod" in reason for reason in by_path["orders-service"].reasons)
