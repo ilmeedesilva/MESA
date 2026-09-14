@@ -18,7 +18,11 @@ from mesa.models import AnalysisResult
 
 
 def analyze_services(service_paths: list[str], chatty_threshold: int = 3) -> AnalysisResult:
-    services = [extract_service_facts(Path(path)) for path in service_paths]
+    sibling_service_names = {Path(path).resolve().name for path in service_paths}
+    services = [
+        extract_service_facts(Path(path), sibling_service_names=sibling_service_names)
+        for path in service_paths
+    ]
     graph = build_graph(services)
 
     detectors = [

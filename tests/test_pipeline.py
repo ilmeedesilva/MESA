@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from mesa.analysis import analyze_services
+from mesa.analysis.extractor import _stem_matches_other_service
 from mesa.detectors.god_service import score_god_services
 from mesa.graph.builder import build_graph
 from mesa.models import FindingType, ServiceFacts
@@ -130,6 +131,38 @@ def test_hard_coded_dependency_detector_handles_unresolved_placeholder_ports() -
     values = {item["value"] for item in evidence}
     assert "http://localhost:${server.port" in values
 
+
+def test_stem_matches_other_service_ignores_self_and_matches_hosted_variants() -> None:
+    other_names = {"discovery-service"}
+
+    assert _stem_matches_other_service(Path("config-service/discovery-service.yml"), other_names)
+    assert _stem_matches_other_service(Path("config-service/discovery-service-docker.yml"), other_names)
+    assert not _stem_matches_other_service(Path("discovery-service/discovery-service.yml"), set())
+    assert not _stem_matches_other_service(Path("config-service/application.yml"), other_names)
+
+
+def test_config_server_hosted_files_do_not_create_false_chatty_or_cyclic_findings() -> None:
+    result = analyze_services(
+        [
+            str(ROOT / "config-server" / "config-service"),
+            str(ROOT / "config-server" / "discovery-service"),
+        ],
+        chatty_threshold=3,
+    )
+
+    finding_types = {finding.type for finding in result.findings}
+    assert FindingType.CHATTY_SERVICE not in finding_types
+    assert FindingType.CYCLIC_DEPENDENCY not in finding_types
+
+    hard_coded = [
+        finding for finding in result.findings if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert any(
+        "discovery-service:8061" in item.get("value", "")
+        for finding in hard_coded
+        if finding.services == ["config-service"]
+        for item in finding.evidence
+    )
 
 
 def test_god_service_scoring_thresholds() -> None:

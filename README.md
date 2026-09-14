@@ -43,7 +43,10 @@ uvicorn mesa.api.main:app --reload
 
 ```bash
 pytest
+ruff check src tests
 ```
+
+CI runs both, plus `pytest --cov=mesa --cov-report=term-missing` for a coverage report (currently ~80% overall; the CLI and the Postgres/Neo4j storage backends are the least-covered areas since the test suite exercises the in-memory repository).
 
 ## Public Demo Experience
 
@@ -111,3 +114,85 @@ Phase 5 adds service-level, domain-level, and system-level architectural health 
 ## Scan History and Findings Dashboard
 
 Phase 6 adds a persistent frontend workflow for project creation, scan execution, scan history, findings filtering, finding detail inspection, and health score review. See `docs/architecture/PHASE_6_SCAN_HISTORY_AND_FINDINGS_DASHBOARD.md` for the dashboard workflow and limitations.
+
+
+## Architecture Graph Dashboard
+
+Phase 7 renders the persisted Neo4j architecture graph as an interactive architectural digital twin: services, per-service API groups, databases, and supporting resources as distinct node types, with risk-highlighted edges linked back to findings. Clicking a node or edge opens an inspector with ownership, linked findings, and health context. See `docs/architecture/PHASE_7_ARCHITECTURE_GRAPH_DASHBOARD.md`.
+
+
+## Architecture Snapshots and Evolution Tracking
+
+Phase 8 compares scan N with scan N+1 to detect architectural drift over time.
+
+```text
+GET /projects/{project_id}/snapshots
+GET /projects/{project_id}/evolution
+GET /projects/{project_id}/evolution/compare?base_scan_id=<scan_id>&target_scan_id=<scan_id>
+```
+
+Each comparison reports architecture change summary, risk trend, score trend, new/removed dependencies, and new/removed cycles. See `docs/architecture/PHASE_8_ARCHITECTURE_SNAPSHOTS_AND_EVOLUTION.md`.
+
+
+## Recommendation Layer
+
+Phase 9 attaches a structured, evidence-grounded recommendation to every finding: root cause, architectural consequence, affected services/files, refactoring steps, expected impact, priority, and estimated difficulty, covering all implemented detectors. See `docs/architecture/PHASE_9_RECOMMENDATION_LAYER.md`.
+
+
+## Governance Policy Engine
+
+Phase 10 lets a project define its own architecture rules and have MESA enforce them at scan time; violations are returned as normal findings with recommendations.
+
+```text
+GET /projects/{project_id}/policies
+POST /projects/{project_id}/policies
+PUT /projects/{project_id}/policies/{policy_id}
+POST /projects/{project_id}/policies/import
+```
+
+See `docs/architecture/PHASE_10_GOVERNANCE_POLICY_ENGINE.md` for the YAML/JSON policy format.
+
+
+## Evaluation Runner
+
+Phase 11 adds a repeatable evaluation runner that scores MESA's own detector output against ground-truth benchmark labels (precision/recall/F1, CSV/JSON/Markdown export):
+
+```bash
+mesa evaluate benchmarks/ground_truth.yml --output-dir evaluation-results
+```
+
+See `docs/architecture/PHASE_11_EVALUATION_RUNNER.md`.
+
+
+## Secure Scan Intake Hardening
+
+Phase 13 hardens archive/GitHub-URL ingestion: decompressed-size and file-count caps, rejection of tar symlink/hardlink/device members, and a TTL sweep of extracted workspaces, on top of the existing zip-slip/path-traversal protection. See `docs/architecture/PHASE_13_SECURE_SCAN_INTAKE.md`.
+
+
+## Async Scan Job System
+
+Phase 14 runs repository-backed scans (archive or GitHub URL) as a background job instead of blocking the request:
+
+```text
+POST /projects/{project_id}/repo-scans/async
+GET /scan-jobs/{job_id}
+```
+
+The guided scan workflow's repository-backed submit path uses this automatically. See `docs/architecture/PHASE_14_ASYNC_SCAN_JOB_SYSTEM.md`.
+
+
+## Real Repository Evaluation
+
+Phase 15 evaluates MESA against manually reviewed, real, third-party repositories (`GoogleCloudPlatform/microservices-demo`, `piomin/sample-spring-microservices-new`) rather than only synthetic fixtures, with full TP/FP/FN reasoning recorded in `benchmarks/real_repo_*.yml`. See `docs/architecture/PHASE_15_REAL_REPOSITORY_EVALUATION.md` and `docs/research/EVALUATION_SETUP_AND_RESULTS.md` for results.
+
+
+## Benchmark Evaluation API and UI
+
+Phase 16 exposes the evaluation runner over the API and a frontend `Benchmarks` page, so ground-truth precision/recall/F1 can be run without a terminal:
+
+```text
+GET /benchmarks
+POST /benchmarks/{benchmark_id}/evaluate
+```
+
+See `docs/architecture/PHASE_16_BENCHMARK_EVALUATION_API_AND_UI.md`.

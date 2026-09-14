@@ -91,9 +91,17 @@ SPRING_URL_CALL_PATTERN = re.compile(
 )
 
 
-def extract_service_facts(service_path: str | Path) -> ServiceFacts:
+_HOSTED_CONFIG_STEM_SUFFIXES = ("-docker", "-prod", "-production", "-local", "-dev", "-staging")
+
+
+def extract_service_facts(
+    service_path: str | Path, sibling_service_names: set[str] | None = None
+) -> ServiceFacts:
     root = Path(service_path).resolve()
     facts = ServiceFacts(name=root.name, root_path=str(root), language=detect_language(root))
+    other_service_names = {
+        name.lower() for name in (sibling_service_names or set()) if name != root.name
+    }
 
     for file_path in sorted(root.rglob("*")):
         if not file_path.is_file() or _is_ignored(file_path):
@@ -117,10 +125,27 @@ def extract_service_facts(service_path: str | Path) -> ServiceFacts:
         if _is_analyzed_text_file(file_path):
             _extract_hard_coded_dependencies(file_path, facts)
         if file_path.name.startswith(".env") or file_path.suffix in {".yml", ".yaml", ".properties"}:
-            _extract_text_config(file_path, facts, include_urls=True)
+            hosts_other_service_config = _stem_matches_other_service(file_path, other_service_names)
+            _extract_text_config(file_path, facts, include_urls=not hosts_other_service_config)
 
     facts.domain_keywords = _domain_keywords_for(root, facts)
     return facts
+
+
+def _stem_matches_other_service(file_path: Path, other_service_names: set[str]) -> bool:
+    """True if this file is very likely a Config-Server-hosted copy of another
+    service's own config (e.g. config-service/.../discovery-service.yml), rather
+    than this service's own configuration. Used to exclude its URLs from this
+    service's outbound-call evidence without affecting hard-coded-dependency
+    scanning, which still runs on every analyzed text file unconditionally."""
+    if not other_service_names:
+        return False
+    stem = file_path.stem.lower()
+    for suffix in _HOSTED_CONFIG_STEM_SUFFIXES:
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
+    return stem in other_service_names
 
 
 def _domain_keywords_for(root: Path, facts: ServiceFacts) -> list[str]:
