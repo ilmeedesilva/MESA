@@ -132,6 +132,52 @@ def test_hard_coded_dependency_detector_handles_unresolved_placeholder_ports() -
     assert "http://localhost:${server.port" in values
 
 
+def test_hard_coded_dependency_detector_downgrades_known_infra_ports() -> None:
+    result = analyze_services([str(ROOT / "hardcoded" / "otel-service")])
+
+    findings = [
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.severity.value == "LOW"
+    assert len(finding.evidence) == 1
+    evidence = finding.evidence[0]
+    assert evidence["likely_infrastructure_address"] is True
+    assert "OpenTelemetry" in evidence["infrastructure_service_guess"]
+    assert any("4317" in limitation for limitation in finding.limitations)
+
+
+def test_hard_coded_dependency_detector_leaves_non_infra_ports_unaffected() -> None:
+    result = analyze_services([str(ROOT / "hardcoded" / "order-service")])
+
+    findings = [
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert findings
+    for finding in findings:
+        for evidence in finding.evidence:
+            assert "likely_infrastructure_address" not in evidence
+
+
+def test_infra_port_allowlist_env_override(monkeypatch) -> None:
+    monkeypatch.setenv("MESA_INFRA_PORT_ALLOWLIST", "9999")
+    result = analyze_services([str(ROOT / "hardcoded" / "otel-service")])
+
+    findings = [
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+    ]
+    assert len(findings) == 1
+    evidence = findings[0].evidence[0]
+    assert "likely_infrastructure_address" not in evidence
+
+
 def test_stem_matches_other_service_ignores_self_and_matches_hosted_variants() -> None:
     other_names = {"discovery-service"}
 
