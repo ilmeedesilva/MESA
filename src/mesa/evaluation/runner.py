@@ -245,6 +245,26 @@ def evaluate_findings_against_ground_truth(
     }
 
 
+def compare_labels(
+    expected: list[dict[str, Any]], predicted: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Score arbitrary {"type": ..., "services": [...]} label lists against each
+    other using MESA's own matching rules (type + sorted service set, with
+    occurrence counting for duplicates). Unlike evaluate_findings_against_ground_truth,
+    neither side needs to be a real Finding object — this is what lets an external
+    caller (e.g. the AI baseline comparison) score a raw LLM JSON response against
+    the same ground truth MESA itself is scored against, with identical math.
+    """
+    expected_labels = [_label_from_truth(item) for item in expected]
+    predicted_labels = [_label_from_truth(item) for item in predicted]
+    metrics, false_positives, false_negatives = _compare(expected_labels, predicted_labels)
+    return {
+        "metrics": metrics,
+        "false_positives": [_label_to_dict(label) for label in false_positives],
+        "false_negatives": [_label_to_dict(label) for label in false_negatives],
+    }
+
+
 def _evaluate_system(base_dir: Path, system: dict[str, Any], chatty_threshold: int) -> dict[str, Any]:
     service_paths = [str((base_dir / path).resolve()) for path in system.get("service_paths", [])]
     result = analyze_services(service_paths, chatty_threshold=chatty_threshold)
