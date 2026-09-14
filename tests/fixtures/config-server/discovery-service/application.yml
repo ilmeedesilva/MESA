@@ -1,0 +1,5 @@
+spring:
+  config:
+    import: http://config-service:8888/discovery-service
+server:
+  port: 8061

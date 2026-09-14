@@ -1,0 +1,8 @@
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-service:8061/eureka/
+routes:
+  - uri: http://discovery-service:8061/eureka/status
+  - uri: http://discovery-service:8061/eureka/apps
+  - uri: http://discovery-service:8061/eureka/renew
