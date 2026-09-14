@@ -650,9 +650,7 @@ def run_benchmark_evaluation(benchmark_id: str, chatty_threshold: int = 3) -> di
             status_code=400,
             detail=(
                 f"Benchmark '{benchmark_id}' references {len(missing_paths)} service path(s) "
-                f"that do not exist locally, e.g. {missing_paths[0]}. Real-repository benchmarks "
-                "require their local source copy under benchmarks/real-repos/ "
-                "(see benchmarks/real-repos/README.md)."
+                f"that do not exist locally, e.g. {missing_paths[0]}. {_missing_path_guidance(missing_paths[0])}"
             ),
         )
 
@@ -662,6 +660,19 @@ def run_benchmark_evaluation(benchmark_id: str, chatty_threshold: int = 3) -> di
         raise HTTPException(
             status_code=400, detail=f"Could not evaluate benchmark '{benchmark_id}': {error}"
         ) from error
+
+
+def _missing_path_guidance(example_missing_path: str) -> str:
+    if "real-repos" in example_missing_path:
+        return (
+            "Real-repository benchmarks require their local source copy under "
+            "benchmarks/real-repos/ (see benchmarks/real-repos/README.md)."
+        )
+    return (
+        "This deployment is missing the tests/ directory (synthetic benchmark fixtures live "
+        "under tests/fixtures/) — the API image/environment needs tests/ available alongside "
+        "src/ and benchmarks/ for synthetic benchmarks to run."
+    )
 
 
 def _refresh_finding_summary(result: AnalysisResult) -> None:
