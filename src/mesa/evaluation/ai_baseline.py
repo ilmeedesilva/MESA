@@ -8,9 +8,9 @@ multiple times to measure determinism: MESA is deterministic by construction
 (same code, same input, same output, every time) while an LLM prompted
 directly is not, which this harness measures rather than asserts.
 
-Every call this module makes is a real, billed request to the configured
-OpenAI API (MESA_OPENAI_API_KEY) - it is never invoked as a side effect of
-building or testing MESA itself.
+Every call this module makes is a real, billed request to a general-purpose
+LLM API (OpenAI or Anthropic, selected via `provider`) - it is never invoked
+as a side effect of building or testing MESA itself.
 """
 
 from __future__ import annotations
@@ -159,6 +159,45 @@ def _call_openai_for_findings(source_bundle: str, api_key: str) -> list[dict[str
     return parsed.get("findings", [])
 
 
+def _call_anthropic_for_findings(source_bundle: str, api_key: str) -> list[dict[str, Any]]:
+    import anthropic
+
+    model = os.getenv("MESA_ANTHROPIC_MODEL", "claude-opus-5")
+    timeout_seconds = float(os.getenv("MESA_ANTHROPIC_TIMEOUT_SECONDS", "120"))
+    client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds)
+
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=4096,
+            system=_TAXONOMY_PROMPT,
+            messages=[{"role": "user", "content": source_bundle}],
+            output_config={"format": {"type": "json_schema", "schema": _response_schema()}},
+        )
+    except anthropic.RateLimitError as error:
+        raise RuntimeError(f"Rate limited: {error.message}") from error
+    except anthropic.APIStatusError as error:
+        raise RuntimeError(f"HTTP {error.status_code}: {str(error.message)[:240]}") from error
+    except anthropic.APIConnectionError as error:
+        raise RuntimeError(str(error)) from error
+
+    text = next((block.text for block in response.content if block.type == "text"), "")
+    if not text:
+        return []
+    parsed = json.loads(text)
+    return parsed.get("findings", [])
+
+
+_PROVIDER_CALLERS = {
+    "openai": _call_openai_for_findings,
+    "anthropic": _call_anthropic_for_findings,
+}
+_PROVIDER_API_KEY_ENV_VARS = {
+    "openai": ("MESA_OPENAI_API_KEY",),
+    "anthropic": ("MESA_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY"),
+}
+
+
 def _label_set(labels: list[dict[str, Any]]) -> frozenset[tuple[str, tuple[str, ...]]]:
     return frozenset(
         (str(item["type"]), tuple(sorted(str(service) for service in item.get("services", []))))
@@ -198,6 +237,7 @@ def run_ai_baseline(
     system_ids: list[str],
     runs: int = 5,
     api_key: str | None = None,
+    provider: str = "openai",
 ) -> dict[str, Any]:
     """Run a general-purpose LLM directly (no MESA) against the same
     ground-truth systems MESA is scored on, `runs` times per system, and
@@ -206,13 +246,26 @@ def run_ai_baseline(
     runs' finding-sets). MESA's own equivalent numbers are deterministic by
     construction and are not re-measured here.
 
-    Makes `runs * len(system_ids)` real, billed calls to the configured
-    OpenAI API. Callers must obtain explicit user confirmation before
-    invoking this with runs/system_ids that were not already confirmed.
+    `provider` selects which LLM API to call ("openai" or "anthropic"); the
+    comparison methodology (same taxonomy prompt, same compare_labels()
+    scoring) is identical either way. Makes `runs * len(system_ids)` real,
+    billed calls to that provider. Callers must obtain explicit user
+    confirmation before invoking this with runs/system_ids that were not
+    already confirmed.
     """
-    resolved_key = api_key or os.getenv("MESA_OPENAI_API_KEY")
+    caller = _PROVIDER_CALLERS.get(provider)
+    if caller is None:
+        raise ValueError(f"Unknown provider '{provider}'; expected one of {sorted(_PROVIDER_CALLERS)}.")
+
+    resolved_key = api_key
+    if resolved_key is None:
+        for env_var in _PROVIDER_API_KEY_ENV_VARS[provider]:
+            resolved_key = os.getenv(env_var)
+            if resolved_key:
+                break
     if not resolved_key:
-        raise RuntimeError("MESA_OPENAI_API_KEY is not configured.")
+        env_vars = " or ".join(_PROVIDER_API_KEY_ENV_VARS[provider])
+        raise RuntimeError(f"{env_vars} is not configured.")
 
     path = Path(benchmark_path).resolve()
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -230,7 +283,7 @@ def run_ai_baseline(
         run_reports = []
         runs_labels = []
         for _ in range(runs):
-            predicted = _call_openai_for_findings(source_bundle, resolved_key)
+            predicted = caller(source_bundle, resolved_key)
             runs_labels.append(predicted)
             run_reports.append(compare_labels(ground_truth, predicted))
 
@@ -250,7 +303,12 @@ def run_ai_baseline(
             }
         )
 
-    return {"benchmark": str(path), "runs_per_system": runs, "systems": system_results}
+    return {
+        "benchmark": str(path),
+        "runs_per_system": runs,
+        "provider": provider,
+        "systems": system_results,
+    }
 
 
 def export_ai_baseline(report: dict[str, Any], output_dir: str | Path) -> dict[str, str]:
@@ -263,7 +321,8 @@ def export_ai_baseline(report: dict[str, Any], output_dir: str | Path) -> dict[s
     lines = [
         "# AI Baseline Comparison",
         "",
-        f"Benchmark: `{report['benchmark']}` | Runs per system: {report['runs_per_system']}",
+        f"Benchmark: `{report['benchmark']}` | Provider: {report.get('provider', 'openai')} | "
+        f"Runs per system: {report['runs_per_system']}",
         "",
         "| System | F1 mean | F1 stdev | Precision mean | Recall mean | Exact-match rate | Mean pairwise Jaccard |",
         "|---|---:|---:|---:|---:|---:|---:|",

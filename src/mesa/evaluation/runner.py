@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 import csv
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any
@@ -16,7 +17,19 @@ from mesa.discovery import discover_service_candidates
 from mesa.models import AIExplainerIntent, AIExplainerRequest, Finding
 
 LabelKey = tuple[str, tuple[str, ...]]
-BENCHMARKS_DIR = Path(__file__).resolve().parents[3] / "benchmarks"
+# In the Docker image, the installed package lives under /app (baked in at
+# build time), but repositories a user scans - including MESA's own seeded
+# fixtures and real-repo checkouts under benchmarks/ - are reached via the
+# live-mounted /workspace (docker-compose.yml: .:/workspace:ro). Deriving
+# BENCHMARKS_DIR from __file__ alone silently resolved to /app/benchmarks,
+# so a scanned service's root_path (always under /workspace/...) could never
+# string-match a benchmark's expected path even when the content was
+# byte-identical - ground-truth auto-matching for research evaluation
+# records was structurally impossible inside Docker. MESA_WORKSPACE_ROOT
+# lets docker-compose.yml point this at /workspace; bare CLI/test usage
+# (no env var set) keeps resolving from the installed package location.
+_WORKSPACE_ROOT = Path(os.getenv("MESA_WORKSPACE_ROOT", str(Path(__file__).resolve().parents[3])))
+BENCHMARKS_DIR = _WORKSPACE_ROOT / "benchmarks"
 DEFAULT_BENCHMARK_PATH = BENCHMARKS_DIR / "ground_truth.yml"
 _LISTABLE_BENCHMARK_PATTERNS = ("ground_truth.yml", "real_repo_*.yml")
 _BENCHMARK_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
@@ -206,27 +219,42 @@ def find_matching_ground_truth_system(
     service_paths: list[str],
     benchmark_path: str | Path | None = None,
 ) -> dict[str, Any] | None:
-    path = Path(benchmark_path).resolve() if benchmark_path else DEFAULT_BENCHMARK_PATH
-    if not path.exists():
-        return None
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    """Find the benchmark system (if any) whose service_paths exactly match
+    the given paths. When `benchmark_path` is not given, this searches every
+    registered benchmark file (ground_truth.yml and every real_repo_*.yml),
+    not just the seeded-fixtures default - a scan of a real repository like
+    Online Boutique or Sock Shop must be matchable against its own
+    real_repo_*.yml, not silently limited to the synthetic benchmark."""
     requested = {_normalized_path(item) for item in service_paths}
     if not requested:
         return None
 
-    for system in data.get("systems", []):
-        expected_paths = {
-            _normalized_path((path.parent / relative_path).resolve())
-            for relative_path in system.get("service_paths", [])
-        }
-        if expected_paths == requested:
-            return {
-                "benchmark": data.get("benchmark", path.stem),
-                "matching": data.get("matching", "type_and_service_set"),
-                "system_id": system.get("id"),
-                "system_name": system.get("name", system.get("id")),
-                "ground_truth": list(system.get("ground_truth", [])),
+    if benchmark_path is not None:
+        candidate_paths = [Path(benchmark_path).resolve()]
+    else:
+        candidate_paths = [DEFAULT_BENCHMARK_PATH] + [
+            BENCHMARKS_DIR / f"{listing['id']}.yml"
+            for listing in list_available_benchmarks()
+            if listing["id"] != DEFAULT_BENCHMARK_PATH.stem
+        ]
+
+    for path in candidate_paths:
+        if not path.exists():
+            continue
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        for system in data.get("systems", []):
+            expected_paths = {
+                _normalized_path((path.parent / relative_path).resolve())
+                for relative_path in system.get("service_paths", [])
             }
+            if expected_paths == requested:
+                return {
+                    "benchmark": data.get("benchmark", path.stem),
+                    "matching": data.get("matching", "type_and_service_set"),
+                    "system_id": system.get("id"),
+                    "system_name": system.get("name", system.get("id")),
+                    "ground_truth": list(system.get("ground_truth", [])),
+                }
     return None
 
 
