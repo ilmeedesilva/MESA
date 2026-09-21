@@ -38,6 +38,22 @@ ANALYZED_TEXT_FILENAMES = {
     ".env", "docker-compose.yml", "docker-compose.yaml", "application.yml",
     "application.yaml", "package.json", "pom.xml",
 }
+_LANGUAGE_MANIFEST_FILES = {
+    "go.mod": "go",
+    "pom.xml": "java",
+    "package.json": "typescript",
+    "pyproject.toml": "python",
+    "requirements.txt": "python",
+}
+_LANGUAGE_SUFFIXES = {
+    ".py": "python",
+    ".java": "java",
+    ".js": "typescript",
+    ".jsx": "typescript",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".go": "go",
+}
 DOMAIN_STOPWORDS = {
     "api", "app", "application", "base", "client", "config", "controller", "data",
     "database", "db", "docker", "env", "error", "handler", "http", "internal", "main",
@@ -66,6 +82,7 @@ DB_PATTERN = re.compile(
     r"(?::(?P<port>\d+))?"
     r"/(?P<database>[A-Za-z0-9_.-]+)"
 )
+_DB_TYPE_ALIASES = {"postgresql": "postgres", "mongo": "mongodb"}
 JS_ROUTE_PATTERN = re.compile(
     r"(?:app|router|server)\s*\.\s*(?P<method>get|post|put|patch|delete|head|options)\s*"
     r"\(\s*[`'\"](?P<path>/[^`'\"]*)[`'\"]",
@@ -196,15 +213,27 @@ def _tokens_from(value: str) -> set[str]:
 
 
 def detect_language(root: Path) -> str:
-    if any(root.rglob("*.py")):
-        return "python"
-    if any(root.rglob("*.java")):
-        return "java"
-    if any(root.rglob("*.js")) or any(root.rglob("*.ts")):
-        return "typescript"
-    if any(root.rglob("*.go")):
-        return "go"
-    return "unknown"
+    """Detect a service's dominant language by weighted vote rather than a
+    fixed existence-check priority order. A single stray file (e.g. a Python
+    BDD test helper sitting inside an otherwise all-Go service) must not be
+    able to hijack the whole service's reported language, which the previous
+    "any .py file anywhere wins" check allowed - a manifest match (go.mod,
+    pom.xml, ...) counts far more than one source file, and the language with
+    the most weighted votes across the tree wins."""
+    votes: dict[str, int] = {}
+    for file_path in root.rglob("*"):
+        if not file_path.is_file() or _is_ignored(file_path):
+            continue
+        manifest_language = _LANGUAGE_MANIFEST_FILES.get(file_path.name)
+        if manifest_language:
+            votes[manifest_language] = votes.get(manifest_language, 0) + 10
+            continue
+        suffix_language = _LANGUAGE_SUFFIXES.get(file_path.suffix)
+        if suffix_language:
+            votes[suffix_language] = votes.get(suffix_language, 0) + 1
+    if not votes:
+        return "unknown"
+    return sorted(votes.items(), key=lambda item: (-item[1], item[0]))[0][0]
 
 
 def _extract_requirements(file_path: Path, facts: ServiceFacts) -> None:
@@ -608,7 +637,15 @@ def _extract_text_config(
         )
 
     for match in DB_PATTERN.finditer(content):
-        db_type = match.group("type").replace("postgresql", "postgres").replace("mongo", "mongodb")
+        # Exact-match normalization, not chained .replace() calls: "mongo" is a
+        # substring of "mongodb" itself, so a naive
+        # .replace("mongo", "mongodb") corrupts an already-correct "mongodb"
+        # match into "mongodbdb" (found evaluating Sock Shop's carts/orders
+        # database evidence, where it also masked which real bug the
+        # resulting shared-database finding actually had - see evaluator
+        # notes in benchmarks/real_repo_sockshop.yml).
+        matched_type = match.group("type")
+        db_type = _DB_TYPE_ALIASES.get(matched_type, matched_type)
         facts.databases.append(
             DatabaseConnection(
                 service_name=facts.name,

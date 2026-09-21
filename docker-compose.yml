@@ -16,6 +16,7 @@ services:
       MESA_OPENAI_MODEL: ${MESA_OPENAI_MODEL:-gpt-5.4-mini}
       MESA_OPENAI_BASE_URL: ${MESA_OPENAI_BASE_URL:-https://api.openai.com/v1}
       MESA_OPENAI_TIMEOUT_SECONDS: ${MESA_OPENAI_TIMEOUT_SECONDS:-20}
+      MESA_WORKSPACE_ROOT: /workspace
     volumes:
       - .:/workspace:ro
     depends_on:

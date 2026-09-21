@@ -1,5 +1,8 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
+
+import anthropic
 
 from mesa.evaluation import ai_baseline as ai_baseline_module
 from mesa.evaluation import compare_labels, export_ai_baseline, run_ai_baseline
@@ -131,6 +134,76 @@ def test_run_ai_baseline_rejects_unknown_system_id(monkeypatch) -> None:
         run_ai_baseline(ROOT / "benchmarks" / "ground_truth.yml", ["does-not-exist"], runs=1)
         raised = False
     except ValueError:
+        raised = True
+
+    assert raised
+
+
+def test_run_ai_baseline_rejects_unknown_provider(monkeypatch) -> None:
+    monkeypatch.setenv("MESA_OPENAI_API_KEY", "test-key")
+
+    try:
+        run_ai_baseline(
+            ROOT / "benchmarks" / "ground_truth.yml",
+            ["cyclic-dependencies"],
+            runs=1,
+            provider="does-not-exist",
+        )
+        raised = False
+    except ValueError:
+        raised = True
+
+    assert raised
+
+
+def test_run_ai_baseline_supports_anthropic_provider(monkeypatch) -> None:
+    findings = [
+        {"type": "CYCLIC_DEPENDENCY", "services": ["order-service", "payment-service"]},
+        {"type": "HARD_CODED_SERVICE_DEPENDENCY", "services": ["order-service"]},
+        {"type": "HARD_CODED_SERVICE_DEPENDENCY", "services": ["payment-service"]},
+    ]
+    call_count = {"n": 0}
+
+    class _FakeMessages:
+        def create(self, **kwargs):
+            call_count["n"] += 1
+            text = json.dumps({"findings": findings})
+            return SimpleNamespace(content=[SimpleNamespace(type="text", text=text)])
+
+    class _FakeAnthropicClient:
+        def __init__(self, *args, **kwargs) -> None:
+            self.messages = _FakeMessages()
+
+    monkeypatch.setattr(anthropic, "Anthropic", _FakeAnthropicClient)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+
+    report = run_ai_baseline(
+        ROOT / "benchmarks" / "ground_truth.yml",
+        ["cyclic-dependencies"],
+        runs=2,
+        provider="anthropic",
+    )
+
+    assert call_count["n"] == 2
+    assert report["provider"] == "anthropic"
+    system_result = report["systems"][0]
+    assert system_result["f1_score"]["mean"] == 1.0
+    assert system_result["determinism"]["exact_match_rate"] == 1.0
+
+
+def test_run_ai_baseline_requires_anthropic_api_key(monkeypatch) -> None:
+    monkeypatch.delenv("MESA_ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    try:
+        run_ai_baseline(
+            ROOT / "benchmarks" / "ground_truth.yml",
+            ["cyclic-dependencies"],
+            runs=1,
+            provider="anthropic",
+        )
+        raised = False
+    except RuntimeError:
         raised = True
 
     assert raised

@@ -113,17 +113,19 @@ def evaluate_ai_baseline(
     benchmark: Path = typer.Argument(..., help="Ground-truth benchmark YAML file."),
     systems: str = typer.Option(..., "--systems", help="Comma-separated system ids to run, e.g. god-service,cyclic-dependencies."),
     runs: int = typer.Option(5, "--runs", help="Number of repeated runs per system."),
+    provider: str = typer.Option("openai", "--provider", help="Which LLM API to call: openai or anthropic."),
     output_dir: Path = typer.Option(
         Path("evaluation-results/ai-baseline-comparison"), "--output-dir", "-o", help="Directory for JSON/Markdown results."
     ),
 ) -> None:
     """Prompt a general-purpose LLM directly (no MESA) against the same benchmark
     systems MESA is scored on, to measure accuracy and determinism as a baseline
-    comparison. Makes real, billed calls to the configured OpenAI API - confirm
-    the cost with the user before running this.
+    comparison. Makes real, billed calls to the selected provider's API
+    (MESA_OPENAI_API_KEY, or MESA_ANTHROPIC_API_KEY/ANTHROPIC_API_KEY for
+    --provider anthropic) - confirm the cost with the user before running this.
     """
     system_ids = [item.strip() for item in systems.split(",") if item.strip()]
-    report = run_ai_baseline(benchmark, system_ids, runs=runs)
+    report = run_ai_baseline(benchmark, system_ids, runs=runs, provider=provider)
     paths = export_ai_baseline(report, output_dir)
     console.print("[bold]MESA AI Baseline Comparison[/bold]")
     for system in report["systems"]:

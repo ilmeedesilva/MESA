@@ -1,3 +1,4 @@
+import importlib
 from pathlib import Path
 
 from mesa.evaluation import (
@@ -7,6 +8,7 @@ from mesa.evaluation import (
     missing_benchmark_service_paths,
     resolve_benchmark_path,
 )
+from mesa.evaluation.runner import find_matching_ground_truth_system
 
 ROOT = Path(__file__).parent.parent
 
@@ -96,4 +98,58 @@ systems:
 
     assert len(missing) == 1
     assert missing[0].endswith("definitely/does/not/exist")
+
+
+def test_find_matching_ground_truth_system_searches_every_registered_benchmark() -> None:
+    """Regression test: find_matching_ground_truth_system() used to only ever
+    check the default benchmarks/ground_truth.yml, so a scan of a real
+    repository registered in its own real_repo_*.yml (e.g. real_repo_sockshop.yml)
+    could never auto-populate research-evaluation-record metrics - the
+    Research Evaluation panel always showed N/A for real repos, even ones
+    with a fully authored ground truth file, until this was fixed."""
+    benchmarks_dir = ROOT / "benchmarks"
+
+    cyclic_paths = [
+        str((benchmarks_dir / "../tests/fixtures/cycle/order-service").resolve()),
+        str((benchmarks_dir / "../tests/fixtures/cycle/payment-service").resolve()),
+    ]
+    match = find_matching_ground_truth_system(cyclic_paths)
+    assert match is not None
+    assert match["system_id"] == "cyclic-dependencies"
+
+    sock_shop_services = [
+        "catalogue", "carts", "orders", "payment", "shipping", "user", "queue-master", "front-end",
+    ]
+    sock_shop_paths = [
+        str((benchmarks_dir / "real-repos" / "sock-shop" / name).resolve())
+        for name in sock_shop_services
+    ]
+    match = find_matching_ground_truth_system(sock_shop_paths)
+    assert match is not None
+    assert match["system_id"] == "sock-shop"
+    assert match["benchmark"] == "mesa-real-repo-sockshop"
+
+
+def test_benchmarks_dir_honours_mesa_workspace_root_override(monkeypatch) -> None:
+    """Regression test for a real bug: in the Docker image, the installed
+    package lives under /app (baked in at build time) but scanned
+    repositories - including MESA's own seeded fixtures and real-repo
+    checkouts - are reached via the live-mounted /workspace. BENCHMARKS_DIR
+    used to derive purely from __file__, resolving to /app/benchmarks, so a
+    scanned service's /workspace/... root_path could never match a
+    benchmark's expected path even with byte-identical content - ground
+    truth auto-matching for research evaluation records was structurally
+    broken inside Docker. MESA_WORKSPACE_ROOT (set in docker-compose.yml)
+    fixes this; this test confirms the override is actually honoured.
+    """
+    import mesa.evaluation.runner as runner_module
+
+    fake_root = str(ROOT)
+    monkeypatch.setenv("MESA_WORKSPACE_ROOT", fake_root)
+    try:
+        importlib.reload(runner_module)
+        assert runner_module.BENCHMARKS_DIR == Path(fake_root) / "benchmarks"
+    finally:
+        monkeypatch.delenv("MESA_WORKSPACE_ROOT", raising=False)
+        importlib.reload(runner_module)
     assert missing_benchmark_service_paths(ROOT / "benchmarks" / "ground_truth.yml") == []
