@@ -196,3 +196,25 @@ POST /benchmarks/{benchmark_id}/evaluate
 ```
 
 See `docs/architecture/PHASE_16_BENCHMARK_EVALUATION_API_AND_UI.md`.
+
+## Detector Fixes and Language Coverage (Phases 17–20)
+
+Phase 17 fixes a Config Server misattribution: MESA no longer reads a hosted config file's URLs (e.g. `config-service/discovery-service.yml`) as the hosting service's own outbound calls, removing false `CHATTY_SERVICE`/`CYCLIC_DEPENDENCY` findings on Spring Cloud Config-based systems. See `docs/architecture/PHASE_17_CONFIG_SERVER_MISATTRIBUTION_FIX.md`.
+
+Phase 18 downgrades hard-coded-dependency findings for known observability/infra sidecar addresses (OpenTelemetry, Prometheus, Jaeger, Consul, Vault) to `LOW` severity with a `likely_infrastructure_address` flag, configurable via `MESA_INFRA_PORT_ALLOWLIST`. See `docs/architecture/PHASE_18_INFRA_ADDRESS_DOWNGRADE.md`.
+
+Phase 19 adds a synthetic recall-stress-test fixture (8 services, 5 anti-pattern types deliberately interleaved in one scan) to test whether co-occurring patterns mask each other. See `docs/architecture/PHASE_19_RECALL_STRESS_TEST.md`.
+
+Phase 20 adds MVP Go language support (regex-based extraction, matching the existing per-language style), closing a real discovery gap found evaluating Online Boutique. See `docs/architecture/PHASE_20_GO_LANGUAGE_SUPPORT.md`.
+
+Real-repository evaluation (Phase 15) was extended with a third repository, Sock Shop (`microservices-demo` org, 8 services split across 8 separate repos) — a deliberately different kind of result from Online Boutique and the Spring sample: 17 of 21 findings are false positives traced to test fixtures, API-contract mocks, and code comments, quantifying a specific extraction gap rather than another clean score. Evaluating it surfaced and fixed four further real bugs (language misdetection, a `db_type` string-normalization bug, and two bugs blocking ground-truth auto-matching for real repositories). See `benchmarks/real_repo_sockshop.yml`.
+
+## AI Baseline Comparison
+
+An empirical comparison of MESA's deterministic static analysis against a general-purpose LLM (Claude Sonnet 5) prompted directly with MESA's own anti-pattern taxonomy, run 5 times per benchmark system to measure both accuracy and output determinism:
+
+```text
+mesa evaluate-ai-baseline <benchmark.yml> --systems <ids> --runs 5 --provider openai|anthropic
+```
+
+On the one real repository tested (`spring-sample`), the LLM scored F1 = 0.0000 with a 40% exact-match rate across 5 runs, against MESA's 1.0000/100% (deterministic by construction). See `docs/research/AI_BASELINE_COMPARISON.md` for the full methodology and results.

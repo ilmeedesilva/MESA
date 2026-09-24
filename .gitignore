@@ -17,3 +17,5 @@ frontend/dist/
 
 benchmarks/real-repos/*
 !benchmarks/real-repos/README.md
+
+dissertation/

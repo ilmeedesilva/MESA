@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 import csv
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any
@@ -16,8 +17,24 @@ from mesa.discovery import discover_service_candidates
 from mesa.models import AIExplainerIntent, AIExplainerRequest, Finding
 
 LabelKey = tuple[str, tuple[str, ...]]
-BENCHMARKS_DIR = Path(__file__).resolve().parents[3] / "benchmarks"
+# In the Docker image, the installed package lives under /app (baked in at
+# build time), but repositories a user scans - including MESA's own seeded
+# fixtures and real-repo checkouts under benchmarks/ - are reached via the
+# live-mounted /workspace (docker-compose.yml: .:/workspace:ro). Deriving
+# BENCHMARKS_DIR from __file__ alone silently resolved to /app/benchmarks,
+# so a scanned service's root_path (always under /workspace/...) could never
+# string-match a benchmark's expected path even when the content was
+# byte-identical - ground-truth auto-matching for research evaluation
+# records was structurally impossible inside Docker. MESA_WORKSPACE_ROOT
+# lets docker-compose.yml point this at /workspace; bare CLI/test usage
+# (no env var set) keeps resolving from the installed package location.
+_WORKSPACE_ROOT = Path(os.getenv("MESA_WORKSPACE_ROOT", str(Path(__file__).resolve().parents[3])))
+BENCHMARKS_DIR = _WORKSPACE_ROOT / "benchmarks"
 DEFAULT_BENCHMARK_PATH = BENCHMARKS_DIR / "ground_truth.yml"
+EVALUATION_RESULTS_DIR = _WORKSPACE_ROOT / "evaluation-results"
+AI_BASELINE_COMPARISON_PATH = (
+    EVALUATION_RESULTS_DIR / "ai-baseline-comparison" / "ai_baseline_comparison.json"
+)
 _LISTABLE_BENCHMARK_PATTERNS = ("ground_truth.yml", "real_repo_*.yml")
 _BENCHMARK_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -64,6 +81,18 @@ def resolve_benchmark_path(benchmark_id: str) -> Path | None:
     if not any(candidate.match(pattern) for pattern in _LISTABLE_BENCHMARK_PATTERNS):
         return None
     return candidate
+
+
+def load_ai_baseline_comparison() -> dict[str, Any] | None:
+    """Read the exported AI-vs-MESA baseline comparison report, if one exists.
+
+    Produced by `mesa evaluate-ai-baseline` (see ai_baseline.export_ai_baseline);
+    returns None rather than raising when no run has been exported yet, so
+    callers (e.g. the API layer) can turn that into a 404/empty state.
+    """
+    if not AI_BASELINE_COMPARISON_PATH.is_file():
+        return None
+    return json.loads(AI_BASELINE_COMPARISON_PATH.read_text(encoding="utf-8"))
 
 
 def missing_benchmark_service_paths(benchmark_path: str | Path) -> list[str]:
@@ -206,27 +235,42 @@ def find_matching_ground_truth_system(
     service_paths: list[str],
     benchmark_path: str | Path | None = None,
 ) -> dict[str, Any] | None:
-    path = Path(benchmark_path).resolve() if benchmark_path else DEFAULT_BENCHMARK_PATH
-    if not path.exists():
-        return None
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    """Find the benchmark system (if any) whose service_paths exactly match
+    the given paths. When `benchmark_path` is not given, this searches every
+    registered benchmark file (ground_truth.yml and every real_repo_*.yml),
+    not just the seeded-fixtures default - a scan of a real repository like
+    Online Boutique or Sock Shop must be matchable against its own
+    real_repo_*.yml, not silently limited to the synthetic benchmark."""
     requested = {_normalized_path(item) for item in service_paths}
     if not requested:
         return None
 
-    for system in data.get("systems", []):
-        expected_paths = {
-            _normalized_path((path.parent / relative_path).resolve())
-            for relative_path in system.get("service_paths", [])
-        }
-        if expected_paths == requested:
-            return {
-                "benchmark": data.get("benchmark", path.stem),
-                "matching": data.get("matching", "type_and_service_set"),
-                "system_id": system.get("id"),
-                "system_name": system.get("name", system.get("id")),
-                "ground_truth": list(system.get("ground_truth", [])),
+    if benchmark_path is not None:
+        candidate_paths = [Path(benchmark_path).resolve()]
+    else:
+        candidate_paths = [DEFAULT_BENCHMARK_PATH] + [
+            BENCHMARKS_DIR / f"{listing['id']}.yml"
+            for listing in list_available_benchmarks()
+            if listing["id"] != DEFAULT_BENCHMARK_PATH.stem
+        ]
+
+    for path in candidate_paths:
+        if not path.exists():
+            continue
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        for system in data.get("systems", []):
+            expected_paths = {
+                _normalized_path((path.parent / relative_path).resolve())
+                for relative_path in system.get("service_paths", [])
             }
+            if expected_paths == requested:
+                return {
+                    "benchmark": data.get("benchmark", path.stem),
+                    "matching": data.get("matching", "type_and_service_set"),
+                    "system_id": system.get("id"),
+                    "system_name": system.get("name", system.get("id")),
+                    "ground_truth": list(system.get("ground_truth", [])),
+                }
     return None
 
 
@@ -557,7 +601,7 @@ def _matched_by_type(system: dict[str, Any]) -> Counter[str]:
 def _detector_metrics(tp: int, fp: int, fn: int) -> dict[str, Any]:
     precision = _safe_divide(tp, tp + fp)
     recall = _safe_divide(tp, tp + fn)
-    f1 = _safe_divide(2 * precision * recall, precision + recall)
+    f1 = _f1_score(precision, recall)
     return {
         "true_positives": tp,
         "false_positives": fp,
@@ -592,7 +636,7 @@ def _compare_simple_labels(
     fn = list((expected_counts - predicted_counts).elements())
     precision = _safe_divide(tp, tp + len(fp))
     recall = _safe_divide(tp, tp + len(fn))
-    f1 = _safe_divide(2 * precision * recall, precision + recall)
+    f1 = _f1_score(precision, recall)
     return (
         {
             "precision": round(precision, 4),
@@ -615,6 +659,22 @@ def _safe_divide(numerator: float, denominator: float) -> float:
     if denominator == 0:
         return 1.0
     return numerator / denominator
+
+
+def _f1_score(precision: float, recall: float) -> float:
+    """Deliberately does not reuse _safe_divide's 0-denominator convention:
+    _safe_divide returns 1.0 for a 0 denominator because that's the right
+    vacuous-truth default for precision/recall themselves (e.g. "no false
+    positives" when nothing was predicted at all). But precision + recall
+    can only be 0 when precision and recall are BOTH already exactly 0
+    (a genuine complete miss: real predictions and real expected findings
+    existed, with zero overlap) - reusing that same 1.0 fallback here
+    previously reported F1 = 1.0 for a total failure, found evaluating an
+    LLM baseline that missed every expected finding on a real repository
+    (see docs/research/AI_BASELINE_COMPARISON.md)."""
+    if precision + recall == 0:
+        return 0.0
+    return 2 * precision * recall / (precision + recall)
 
 
 def _normalized_path(value: str | Path) -> str:

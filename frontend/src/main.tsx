@@ -7,6 +7,7 @@ import { DimensionBars, FindingDrawer } from "./FindingDrawer";
 import { DocLinkButton } from "./DocLinkButton";
 import { HealthScoreView, RemediationRoadmapPanel } from "./RemediationRoadmapPanel";
 import { BenchmarksPanel } from "./BenchmarksPanel";
+import { AiBaselinePanel } from "./AiBaselinePanel";
 import { EvolutionPanel } from "./EvolutionPanel";
 import { FindingsDashboard } from "./FindingsDashboard";
 import { AIExplainerPanel } from "./AIExplainerPanel";
@@ -202,7 +203,8 @@ const appNavigation = [
     group: "Research",
     items: [
       { id: "evaluation", label: "Evaluation", description: "Research evidence and validation" },
-      { id: "benchmarks", label: "Benchmarks", description: "Ground-truth precision/recall/F1 against seeded and real repositories" }
+      { id: "benchmarks", label: "Benchmarks", description: "Ground-truth precision/recall/F1 against seeded and real repositories" },
+      { id: "ai-baseline", label: "AI Baseline", description: "MESA vs a general-purpose AI, run repeatedly on the same code" }
     ]
   },
   {
@@ -2090,6 +2092,8 @@ function App() {
         );
       case "benchmarks":
         return <BenchmarksPanel />;
+      case "ai-baseline":
+        return <AiBaselinePanel />;
       case "docs":
         return (
           <DocumentationPortal
