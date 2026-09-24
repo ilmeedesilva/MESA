@@ -1,7 +1,12 @@
 from pathlib import Path
 
 from mesa.analysis import analyze_services
-from mesa.analysis.extractor import _extract_text_config, _stem_matches_other_service, detect_language
+from mesa.analysis.extractor import (
+    _extract_text_config,
+    _stem_matches_other_service,
+    detect_language,
+    extract_service_facts,
+)
 from mesa.detectors.god_service import score_god_services
 from mesa.discovery import discover_service_candidates
 from mesa.graph.builder import build_graph
@@ -548,3 +553,47 @@ def test_go_mod_manifest_is_discoverable_and_selects_go_language() -> None:
     assert by_path["orders-service"].language == "go"
     assert by_path["orders-service"].confidence >= 0.24
     assert any("go.mod" in reason for reason in by_path["orders-service"].reasons)
+
+
+def test_hard_coded_dependency_scan_strips_comments_but_keeps_real_urls() -> None:
+    """Regression test for a real bug found evaluating Sock Shop:
+    CustomerOrder.java documents its API with `//`-prefixed example curl
+    commands, which the hard-coded-dependency scan previously flagged
+    identically to a real, live embedded address. Comment stripping must not,
+    in turn, blind the scan to a real URL that appears in actual code (a URL's
+    own `//` scheme separator must survive)."""
+    facts = extract_service_facts(ROOT / "comment-and-tooling" / "order-service")
+    values = {dependency.value for dependency in facts.hard_coded_dependencies}
+
+    assert "http://payment-service:8082/api" in values
+    assert not any("localhost:9999" in value for value in values)
+
+
+def test_hard_coded_dependency_and_database_evidence_ignored_under_test_tooling_dirs() -> None:
+    """Regression test for a real bug found evaluating Sock Shop: a Dredd
+    contract-test hook file (api-spec/hooks.js) and a test-fixture config file
+    each produced hard-coded-dependency / SHARED_DATABASE evidence
+    indistinguishable from a real embedded dependency, because MESA's
+    extraction did not previously distinguish test/contract-mock tooling
+    directories from real service configuration."""
+    facts = extract_service_facts(ROOT / "comment-and-tooling" / "order-service")
+    values = {dependency.value for dependency in facts.hard_coded_dependencies}
+    db_hosts = {database.host for database in facts.databases}
+
+    assert not any("orders-mock" in value for value in values)
+    assert "localhost" not in db_hosts
+    assert "orders-db" in db_hosts
+
+
+def test_hard_coded_dependency_self_reference_is_excluded() -> None:
+    """Regression test for a real bug found evaluating Sock Shop: front-end's
+    own end-to-end tests hardcoding `http://front-end:8080/`, the URL of the
+    running instance of itself under test, is normal E2E practice, not a
+    cross-service coupling risk - regardless of which directory the file
+    lives in. Fixture file sits outside any excluded directory, so this
+    exercises the self-reference rule specifically, not the directory rule."""
+    facts = extract_service_facts(ROOT / "comment-and-tooling" / "order-service")
+    values = {dependency.value for dependency in facts.hard_coded_dependencies}
+
+    assert not any("order-service:8080" in value for value in values)
+    assert "http://payment-service:8082/api" in values

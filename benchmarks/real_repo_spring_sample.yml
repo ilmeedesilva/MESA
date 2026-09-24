@@ -27,6 +27,32 @@ systems:
         - employee-service
         - gateway-service
         - organization-service
+    explanation_checks:
+      - id: spring-sample-summary
+        intent: SCAN_SUMMARY
+        question: Summarize this scan simply.
+        required_evidence_kinds: [scan]
+        expected_phrases: [services]
+        min_suggestions: 1
+        min_follow_up_questions: 1
+        min_limitations: 1
+      - id: spring-sample-priority
+        intent: PRIORITIZE_FIXES
+        question: What should I fix first here?
+        required_evidence_kinds: [finding]
+        expected_phrases: [first]
+        min_suggestions: 2
+        min_follow_up_questions: 1
+        min_limitations: 1
+      - id: spring-sample-finding
+        intent: FINDING_EXPLANATION
+        question: Explain simply why this should be reviewed.
+        finding_type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [config-service]
+        required_evidence_kinds: [finding]
+        min_suggestions: 1
+        min_follow_up_questions: 1
+        min_limitations: 1
     evaluator_notes:
       - "config-service is a Spring Cloud Config Server: it hosts one YAML file per other service (gateway-service.yml, discovery-service.yml, etc.) containing that service's own Eureka registration address. MESA's static extractor originally read every YAML file under a service's directory as if its contents were that service's own configuration, so it read discovery-service's Eureka URL out of a file config-service merely serves to discovery-service at runtime, not a URL config-service itself calls."
       - "That misattribution originally produced a CHATTY_SERVICE finding (config-service -> discovery-service, 4 static call sites) and a CYCLIC_DEPENDENCY finding (config-service -> discovery-service -> config-service), both false positives. FIXED in `src/mesa/analysis/extractor.py` (`extract_service_facts`/`_stem_matches_other_service`, see `docs/architecture/PHASE_17_CONFIG_SERVER_MISATTRIBUTION_FIX.md`): MESA now recognizes when a YAML/properties file's name matches a sibling service being scanned and excludes its URLs from the hosting service's own call evidence, while still scanning it for hard-coded-dependency evidence (unaffected, see below). Detector precision on this system moved from 0.9231 to 1.0000 after the fix; both false positives are gone. Regression covered by `tests/test_pipeline.py::test_config_server_hosted_files_do_not_create_false_chatty_or_cyclic_findings`."

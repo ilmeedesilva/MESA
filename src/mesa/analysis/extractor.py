@@ -123,6 +123,96 @@ GO_GRPC_DIAL_PATTERN = re.compile(
 
 _HOSTED_CONFIG_STEM_SUFFIXES = ("-docker", "-prod", "-production", "-local", "-dev", "-staging")
 
+# Directory names conventionally used for API-contract mock tooling (Dredd,
+# Pact, etc.), not real service configuration. Found necessary evaluating
+# Sock Shop: a Dredd contract-test hook file (api-spec/hooks.js) in both
+# `carts` and `orders` independently contained the identical generic
+# fallback `mongodb://localhost:32769/data`, producing a false
+# SHARED_DATABASE finding, and `orders/api-spec/hooks.js` produced false
+# HARD_CODED_SERVICE_DEPENDENCY findings - see
+# benchmarks/real_repo_sockshop.yml's known_limitations, which named this
+# exact fix as future work before it was implemented here.
+#
+# Deliberately NOT a generic "test"/"tests"/"e2e"/"spec" directory-name
+# exclusion: a first attempt at that broader rule was measured against all
+# four benchmarks and found to also discard genuine true positives that
+# legitimately live under a directory literally named "test" (a Spring
+# service's src/test resources, Sock Shop's own front-end/test/docker-compose.yml)
+# - real deployment-relevant config, not mock/contract-test data. Scoped to
+# the one directory convention (api-spec/) actually shown, by measurement, to
+# only ever contain non-authoritative contract-test tooling in this study's
+# corpus. Applies to hard-coded-dependency and database-connection evidence
+# only; file counts, domain keywords, and every other signal still see these
+# files.
+_TEST_TOOLING_DIR_NAMES = {"api-spec", "mock", "mocks", "__mocks__"}
+
+# Comment-stripping languages, C-style `//` and `/* */` only. Found necessary
+# evaluating Sock Shop: CustomerOrder.java documents its API with `//`-prefixed
+# example curl commands (e.g. "// curl http://localhost:8080/..."), which the
+# hard-coded-dependency scan previously flagged identically to a real, live
+# embedded address. Deliberately scoped to C-style-comment languages only
+# (not Python's `#`, which can legitimately appear inside a URL fragment).
+_C_STYLE_COMMENT_SUFFIXES = {".java", ".js", ".jsx", ".ts", ".tsx", ".go"}
+
+
+def _is_self_reference(host: str | None, service_name: str) -> bool:
+    """True if a hard-coded host is the service's own name - e.g. front-end's
+    own end-to-end tests hardcoding `http://front-end:8080/`, the URL of the
+    running instance of itself under test. Found evaluating Sock Shop: this is
+    normal E2E test practice, not a cross-service coupling risk, and is a
+    narrower, more architecturally principled fix than excluding an entire
+    test directory by name (which would also discard genuine findings)."""
+    return bool(host) and host.lower() == service_name.lower()
+
+
+def _is_under_test_tooling_dir(file_path: Path, root: Path) -> bool:
+    try:
+        relative_parts = file_path.relative_to(root).parts[:-1]
+    except ValueError:
+        return False
+    return any(part.lower() in _TEST_TOOLING_DIR_NAMES for part in relative_parts)
+
+
+def _strip_c_style_comments(content: str) -> str:
+    """Blank out `//` and `/* */` comments, replacing comment characters with
+    spaces (never removing characters, and preserving newlines) so that line
+    numbers computed via _line_for() against the result stay accurate."""
+    out: list[str] = []
+    i = 0
+    n = len(content)
+    in_block = False
+    while i < n:
+        if in_block:
+            if content[i : i + 2] == "*/":
+                out.append("  ")
+                i += 2
+                in_block = False
+                continue
+            out.append(content[i] if content[i] == "\n" else " ")
+            i += 1
+            continue
+        if content[i : i + 2] == "/*":
+            out.append("  ")
+            i += 2
+            in_block = True
+            continue
+        if content[i : i + 2] == "//" and not (i > 0 and content[i - 1] == ":"):
+            # A "//" immediately preceded by ":" is a URL scheme separator
+            # (http://, https://, ws://, ...), not a line comment - blanking
+            # it would destroy the exact embedded URLs this scan exists to
+            # find. A genuine "// comment" is never written with no space
+            # directly after a preceding colon in practice, so this is a safe
+            # trade-off.
+            j = i
+            while j < n and content[j] != "\n":
+                j += 1
+            out.append(" " * (j - i))
+            i = j
+            continue
+        out.append(content[i])
+        i += 1
+    return "".join(out)
+
 
 def extract_service_facts(
     service_path: str | Path, sibling_service_names: set[str] | None = None
@@ -159,6 +249,18 @@ def extract_service_facts(
         if file_path.name.startswith(".env") or file_path.suffix in {".yml", ".yaml", ".properties"}:
             hosts_other_service_config = _stem_matches_other_service(file_path, other_service_names)
             _extract_text_config(file_path, facts, include_urls=not hosts_other_service_config)
+
+    facts.hard_coded_dependencies = [
+        dependency
+        for dependency in facts.hard_coded_dependencies
+        if not _is_under_test_tooling_dir(Path(dependency.source.file_path), root)
+        and not _is_self_reference(dependency.host, facts.name)
+    ]
+    facts.databases = [
+        database
+        for database in facts.databases
+        if not _is_under_test_tooling_dir(Path(database.source.file_path), root)
+    ]
 
     facts.domain_keywords = _domain_keywords_for(root, facts)
     return facts
@@ -684,9 +786,13 @@ def _extract_hard_coded_dependencies(file_path: Path, facts: ServiceFacts) -> No
     except UnicodeDecodeError:
         return
 
+    scan_content = (
+        _strip_c_style_comments(content) if file_path.suffix in _C_STYLE_COMMENT_SUFFIXES else content
+    )
+
     file_type = _file_type(file_path)
     seen: set[tuple[str, int]] = set()
-    for match in URL_PATTERN.finditer(content):
+    for match in URL_PATTERN.finditer(scan_content):
         url = match.group(0).rstrip("'\"),]}")
         parsed = urlparse(url)
         host = parsed.hostname
@@ -716,8 +822,8 @@ def _extract_hard_coded_dependencies(file_path: Path, facts: ServiceFacts) -> No
             )
         )
 
-    for match in HOST_PORT_PATTERN.finditer(content):
-        if _inside_url(content, match.start()):
+    for match in HOST_PORT_PATTERN.finditer(scan_content):
+        if _inside_url(scan_content, match.start()):
             continue
         host = match.group("host")
         port = int(match.group("port"))
