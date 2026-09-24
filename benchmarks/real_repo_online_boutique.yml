@@ -38,6 +38,24 @@ systems:
         - recommendationservice
         - shippingservice
         - shoppingassistantservice
+    explanation_checks:
+      - id: online-boutique-summary
+        intent: SCAN_SUMMARY
+        question: Summarize this scan simply.
+        required_evidence_kinds: [scan]
+        expected_phrases: [services]
+        min_suggestions: 1
+        min_follow_up_questions: 1
+        min_limitations: 1
+      - id: online-boutique-finding
+        intent: FINDING_EXPLANATION
+        question: Explain simply why this should be reviewed.
+        finding_type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [emailservice]
+        required_evidence_kinds: [finding]
+        min_suggestions: 1
+        min_follow_up_questions: 1
+        min_limitations: 1
     evaluator_notes:
       - "Real inter-service traffic in this system is almost entirely gRPC calls made from Go services (frontend, checkoutservice, productcatalogservice, shippingservice) and a C# service (cartservice) to each other and to the Python/Node services. MESA gained MVP Go support (`docs/architecture/PHASE_20_GO_LANGUAGE_SUPPORT.md`) — literal-string net/http and grpc.Dial calls, plus HTTP endpoint registrations — but this repository's real Go code reads service addresses from environment variables (e.g. `addr := os.Getenv(\"LISTEN_ADDR\")` then `grpc.NewClient(addr, ...)`), not literal strings, so MESA's static (and necessarily literal-only, per docs/research/THREATS_TO_VALIDITY.md's Internal Validity note) extraction still cannot see these specific calls. Verified: checkoutservice, frontend, productcatalogservice, and shippingservice each extract to 0 endpoints and 0 calls even with Go support enabled. C# (cartservice) is unaffected by this change and remains entirely unsupported."
       - "The 2 HARD_CODED_SERVICE_DEPENDENCY findings (emailservice, recommendationservice) both flag the same literal address: localhost:4317, the OpenTelemetry Collector's gRPC endpoint. This is a standard local observability sidecar address, not a cross-service architectural coupling risk in the sense the finding's remediation guidance implies. Still labeled a true positive (the address is genuinely hard-coded), but as of `docs/architecture/PHASE_18_INFRA_ADDRESS_DOWNGRADE.md`, MESA itself now recognizes localhost:4317 as a well-known OpenTelemetry Collector port and downgrades both findings to LOW severity with a `likely_infrastructure_address` evidence flag and an explanatory limitation, instead of requiring a human evaluator to notice and write down this nuance by hand every time."
