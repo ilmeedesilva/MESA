@@ -813,6 +813,7 @@ export function readSectionFromUrl(): AppSection {
     "ai",
     "evaluation",
     "benchmarks",
+    "ai-baseline",
     "docs"
   ]);
   return value && knownSections.has(value as AppSection) ? (value as AppSection) : "overview";
