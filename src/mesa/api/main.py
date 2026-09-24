@@ -24,6 +24,7 @@ from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.evaluation import (
     evaluate_benchmark,
     list_available_benchmarks,
+    load_ai_baseline_comparison,
     missing_benchmark_service_paths,
     resolve_benchmark_path,
 )
@@ -636,6 +637,21 @@ def get_scan_high_risk_clusters(
 @app.get("/benchmarks")
 def list_benchmarks() -> list[dict]:
     return list_available_benchmarks()
+
+
+@app.get("/ai-baseline-comparison")
+def get_ai_baseline_comparison() -> dict:
+    report = load_ai_baseline_comparison()
+    if report is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "No AI baseline comparison results found. Run "
+                "`mesa evaluate-ai-baseline <benchmark.yml> --runs 5 --provider anthropic|openai` "
+                "and export to evaluation-results/ai-baseline-comparison/ first."
+            ),
+        )
+    return report
 
 
 @app.post("/benchmarks/{benchmark_id}/evaluate")

@@ -31,6 +31,10 @@ LabelKey = tuple[str, tuple[str, ...]]
 _WORKSPACE_ROOT = Path(os.getenv("MESA_WORKSPACE_ROOT", str(Path(__file__).resolve().parents[3])))
 BENCHMARKS_DIR = _WORKSPACE_ROOT / "benchmarks"
 DEFAULT_BENCHMARK_PATH = BENCHMARKS_DIR / "ground_truth.yml"
+EVALUATION_RESULTS_DIR = _WORKSPACE_ROOT / "evaluation-results"
+AI_BASELINE_COMPARISON_PATH = (
+    EVALUATION_RESULTS_DIR / "ai-baseline-comparison" / "ai_baseline_comparison.json"
+)
 _LISTABLE_BENCHMARK_PATTERNS = ("ground_truth.yml", "real_repo_*.yml")
 _BENCHMARK_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -77,6 +81,18 @@ def resolve_benchmark_path(benchmark_id: str) -> Path | None:
     if not any(candidate.match(pattern) for pattern in _LISTABLE_BENCHMARK_PATTERNS):
         return None
     return candidate
+
+
+def load_ai_baseline_comparison() -> dict[str, Any] | None:
+    """Read the exported AI-vs-MESA baseline comparison report, if one exists.
+
+    Produced by `mesa evaluate-ai-baseline` (see ai_baseline.export_ai_baseline);
+    returns None rather than raising when no run has been exported yet, so
+    callers (e.g. the API layer) can turn that into a 404/empty state.
+    """
+    if not AI_BASELINE_COMPARISON_PATH.is_file():
+        return None
+    return json.loads(AI_BASELINE_COMPARISON_PATH.read_text(encoding="utf-8"))
 
 
 def missing_benchmark_service_paths(benchmark_path: str | Path) -> list[str]:

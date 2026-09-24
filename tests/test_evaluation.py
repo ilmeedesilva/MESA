@@ -5,6 +5,7 @@ from mesa.evaluation import (
     evaluate_benchmark,
     export_evaluation,
     list_available_benchmarks,
+    load_ai_baseline_comparison,
     missing_benchmark_service_paths,
     resolve_benchmark_path,
 )
@@ -153,3 +154,23 @@ def test_benchmarks_dir_honours_mesa_workspace_root_override(monkeypatch) -> Non
         monkeypatch.delenv("MESA_WORKSPACE_ROOT", raising=False)
         importlib.reload(runner_module)
     assert missing_benchmark_service_paths(ROOT / "benchmarks" / "ground_truth.yml") == []
+
+
+def test_load_ai_baseline_comparison_returns_none_when_no_report_exists(tmp_path, monkeypatch) -> None:
+    import mesa.evaluation.runner as runner_module
+
+    monkeypatch.setattr(runner_module, "AI_BASELINE_COMPARISON_PATH", tmp_path / "does_not_exist.json")
+
+    assert load_ai_baseline_comparison() is None
+
+
+def test_load_ai_baseline_comparison_reads_the_exported_report(tmp_path, monkeypatch) -> None:
+    import mesa.evaluation.runner as runner_module
+
+    report_path = tmp_path / "ai_baseline_comparison.json"
+    report_path.write_text('{"benchmark": "ground_truth.yml", "systems": []}', encoding="utf-8")
+    monkeypatch.setattr(runner_module, "AI_BASELINE_COMPARISON_PATH", report_path)
+
+    report = load_ai_baseline_comparison()
+
+    assert report == {"benchmark": "ground_truth.yml", "systems": []}

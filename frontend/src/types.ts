@@ -247,6 +247,50 @@ export type BenchmarkEvaluationReport = {
   };
 };
 
+export type AiBaselineRunMetrics = {
+  true_positives: number;
+  false_positives: number;
+  false_negatives: number;
+  precision: number;
+  recall: number;
+  f1_score: number;
+};
+
+export type AiBaselineFindingLabel = { type: string; services: string[] };
+
+export type AiBaselineRun = {
+  metrics: AiBaselineRunMetrics;
+  false_positives: AiBaselineFindingLabel[];
+  false_negatives: AiBaselineFindingLabel[];
+};
+
+export type AiBaselineStat = { mean: number; stdev: number };
+
+export type AiBaselineDeterminism = {
+  exact_match_rate: number;
+  mean_pairwise_jaccard: number;
+  distinct_result_sets: number;
+  run_count: number;
+};
+
+export type AiBaselineSystemReport = {
+  benchmark: string;
+  id: string;
+  name: string;
+  runs: AiBaselineRun[];
+  precision: AiBaselineStat;
+  recall: AiBaselineStat;
+  f1_score: AiBaselineStat;
+  determinism: AiBaselineDeterminism;
+};
+
+export type AiBaselineComparisonReport = {
+  benchmark: string;
+  runs_per_system: number;
+  provider: string;
+  systems: AiBaselineSystemReport[];
+};
+
 export type EvolutionReport = {
   project_id: string;
   base_scan_id: string;
@@ -420,6 +464,7 @@ export type AppSection =
   | "ai"
   | "evaluation"
   | "benchmarks"
+  | "ai-baseline"
   | "docs";
 export type ApiAvailability = "checking" | "online" | "offline";
 export type ProjectListStatus = "idle" | "loading" | "ready" | "error";
