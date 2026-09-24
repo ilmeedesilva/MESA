@@ -40,6 +40,27 @@ def test_compare_labels_reuses_mesa_matching_rules() -> None:
     assert result["false_negatives"] == []
 
 
+def test_compare_labels_reports_zero_f1_for_a_complete_miss() -> None:
+    """Regression test for a real bug: a shared _safe_divide() helper
+    returned 1.0 for any 0-denominator division, including F1's
+    2*precision*recall/(precision+recall) - correct for precision/recall's
+    own vacuous-truth 0-denominator case, but wrong for F1 specifically
+    when precision and recall are both genuinely 0 (real predictions and
+    real expected findings existed, zero overlap). This previously
+    reported F1 = 1.0 for a total failure - found running the real
+    AI-baseline evaluation, where an LLM missed every expected finding on
+    the spring-sample repository (TP=0, FP>0, FN>0 on every one of 5 runs)."""
+    expected = [{"type": "CYCLIC_DEPENDENCY", "services": ["order-service", "payment-service"]}]
+    predicted = [{"type": "SHARED_DATABASE", "services": ["unrelated-a", "unrelated-b"]}]
+
+    result = compare_labels(expected, predicted)
+
+    assert result["metrics"]["true_positives"] == 0
+    assert result["metrics"]["precision"] == 0.0
+    assert result["metrics"]["recall"] == 0.0
+    assert result["metrics"]["f1_score"] == 0.0
+
+
 def test_build_source_bundle_concatenates_service_files_with_headers() -> None:
     bundle = ai_baseline_module._build_source_bundle(
         ROOT / "tests" / "fixtures" / "cycle",
@@ -236,3 +257,61 @@ def test_export_ai_baseline_writes_json_and_markdown(tmp_path) -> None:
     assert Path(paths["json"]).exists()
     assert Path(paths["markdown"]).exists()
     assert "Cyclic dependencies" in Path(paths["markdown"]).read_text(encoding="utf-8")
+
+
+def test_export_ai_baseline_merges_across_separate_benchmark_files(tmp_path) -> None:
+    """Regression test: the documented workflow runs two separate CLI
+    invocations - one per benchmark file (god-service/cyclic-dependencies
+    live in ground_truth.yml, spring-sample in real_repo_spring_sample.yml)
+    - into the same --output-dir. export_ai_baseline used to overwrite the
+    file on every call, so the second invocation silently discarded the
+    first invocation's results."""
+    first_report = {
+        "benchmark": "ground_truth.yml",
+        "provider": "anthropic",
+        "runs_per_system": 5,
+        "systems": [
+            {
+                "id": "cyclic-dependencies",
+                "name": "Cyclic dependencies",
+                "runs": [],
+                "precision": {"mean": 1.0, "stdev": 0.0},
+                "recall": {"mean": 0.4, "stdev": 0.0},
+                "f1_score": {"mean": 0.4, "stdev": 0.0},
+                "determinism": {
+                    "exact_match_rate": 1.0, "mean_pairwise_jaccard": 1.0,
+                    "distinct_result_sets": 1, "run_count": 5,
+                },
+            }
+        ],
+    }
+    second_report = {
+        "benchmark": "real_repo_spring_sample.yml",
+        "provider": "anthropic",
+        "runs_per_system": 5,
+        "systems": [
+            {
+                "id": "spring-sample",
+                "name": "Spring sample",
+                "runs": [],
+                "precision": {"mean": 0.0, "stdev": 0.0},
+                "recall": {"mean": 0.0, "stdev": 0.0},
+                "f1_score": {"mean": 0.0, "stdev": 0.0},
+                "determinism": {
+                    "exact_match_rate": 0.6, "mean_pairwise_jaccard": 0.55,
+                    "distinct_result_sets": 3, "run_count": 5,
+                },
+            }
+        ],
+    }
+
+    export_ai_baseline(first_report, tmp_path)
+    paths = export_ai_baseline(second_report, tmp_path)
+
+    merged = json.loads(Path(paths["json"]).read_text(encoding="utf-8"))
+    system_ids = {system["id"] for system in merged["systems"]}
+    assert system_ids == {"cyclic-dependencies", "spring-sample"}
+
+    markdown = Path(paths["markdown"]).read_text(encoding="utf-8")
+    assert "Cyclic dependencies" in markdown
+    assert "Spring sample" in markdown

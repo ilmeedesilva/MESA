@@ -1,6 +1,6 @@
 # AI Baseline Comparison
 
-Status: Harness implemented and verified with mocked HTTP calls; the real, billed evaluation run has not been executed yet (blocked on OpenAI/Anthropic account credit as of this writing). This document is written now so the methodology and related-work grounding are fixed before the numbers exist — deliberately mirroring the dissertation's own practice (Chapter 3, Artifact Evaluation Strategy) of treating a pre-defined but not-yet-executed evaluation as a documented plan, not a result.
+Status: Complete. Real evaluation run executed 2026-09-24 against Claude Sonnet 5 (`claude-sonnet-5`, Anthropic), 5 runs per system, 3 systems (15 real, billed API calls, total cost well under $1).
 
 ## Purpose
 
@@ -30,9 +30,32 @@ This study runs a systematic, repeated-run comparison across every benchmark sys
 
 ## Results
 
-Pending. Real API credit is required to run this (each provider account attempted so far had insufficient credit as of 2026-09-21). Estimated cost: ~$0.10–$0.25 total for all 15 calls depending on provider/model. This section will be filled in with the real per-system precision/recall/F1 (mean ± stdev) and determinism table once the run completes.
+| System | Services | Corpus | MESA F1 | MESA determinism | LLM F1 (mean ± stdev) | LLM exact-match rate | LLM mean pairwise Jaccard |
+|---|---:|---|---:|---:|---:|---:|---:|
+| cyclic-dependencies | 2 | synthetic (control) | 1.0000 | 100% | 0.4000 ± 0.0000 | 100% | 1.0000 |
+| god-service | 8 | synthetic | 1.0000 | 100% | 0.3438 ± 0.0277 | 40% | 0.7533 |
+| spring-sample | 6 | **real** (`piomin/sample-spring-microservices-new`) | 1.0000 | 100% | 0.0000 ± 0.0000 | 40% | 0.5333 |
+
+MESA's numbers are deterministic by construction (the same code run on the same input always produces the same output — this is not "measured," it is a structural guarantee of a static pipeline) and are the F1/precision/recall already established for these three systems in `docs/research/EVALUATION_SETUP_AND_RESULTS.md`.
+
+**Both claims from the Purpose section are directly supported by the data, not just the closest prior work's stated gap:**
+
+- **Determinism degrades as scope grows, but not smoothly.** The two-service control case (`cyclic-dependencies`) was in fact perfectly self-consistent across all 5 runs (same finding-set every time) — but still wrong: precision 0.50, recall 0.33, so the model reliably arrived at the *same incorrect* answer. Once system size/complexity increased even moderately (`god-service`, 8 services; `spring-sample`, a real 6-service repository), determinism collapsed to 40% exact-match on both — barely better than a coin flip on whether two runs agree at all. This is the systematic, full-corpus measurement the closest prior work (De Luca et al., 2026) explicitly declined to make, having only spot-checked five low-frequency cases.
+- **Accuracy collapses to zero on real code.** F1 drops from 0.40 (synthetic control) to 0.34 (larger synthetic system) to **exactly 0.00** on the one real, third-party repository tested — the model found *zero* of the real, hand-verified anti-patterns in `spring-sample` across any of its 5 runs, and was not even consistent about what it incorrectly reported instead (mean pairwise Jaccard 0.53 — the 5 wrong answers substantially disagreed with each other too).
+- MESA scores 1.0000/100% on all three by construction. The gap on `spring-sample` specifically — MESA 1.0000 vs. LLM 0.0000 — is the single clearest number in this whole study for the panel: on real code, with the LLM given MESA's own taxonomy as a fair prompt, it did not find a single one of the confirmed anti-patterns MESA's static pipeline found deterministically.
+
+Full per-run data (all 15 raw predictions, TP/FP/FN per run): `evaluation-results/ai-baseline-comparison/ai_baseline_comparison.json`.
+
+## A Bug This Run Found — and Why the Numbers Above Are Trustworthy
+
+Running this for real (not just against mocks) surfaced two genuine bugs, both fixed before the results above were finalized:
+
+1. **A shared metrics bug that would have hidden the headline result.** `_detector_metrics()`'s F1 formula reused a `_safe_divide()` helper whose "return 1.0 on a 0-denominator" convention is correct for precision/recall's own vacuous-truth case (no predictions made at all → precision trivially 1.0), but wrong for F1 specifically: when precision and recall are *both* genuinely 0 (a real, non-vacuous complete miss — real predictions and real expected findings existed, with zero overlap), F1 must be 0, not 1. Before this fix, `spring-sample`'s literal complete-failure result (TP=0 on all 5 runs) was being reported as **F1 = 1.0** — the opposite of what actually happened, and exactly the kind of inconsistency a panel member cross-checking the raw TP/FP/FN against the summary F1 would have caught immediately. Fixed in `src/mesa/evaluation/runner.py`; regression test: `tests/test_ai_baseline.py::test_compare_labels_reports_zero_f1_for_a_complete_miss`.
+2. **An export bug that would have silently discarded results.** `export_ai_baseline()` overwrote `ai_baseline_comparison.json` on every call instead of merging, so running the two documented CLI commands (one per benchmark file) into the same `--output-dir` — exactly as this study's own Method section instructs — discarded the first command's systems. Fixed to merge by system id; regression test: `tests/test_ai_baseline.py::test_export_ai_baseline_merges_across_separate_benchmark_files`.
+
+Both bugs were caught by manually inspecting the raw per-run JSON before trusting the summary numbers, rather than reporting the first output the tool produced — the same verify-before-report discipline applied to every other empirical claim in this dissertation.
 
 ## Verification
 
-- `tests/test_ai_baseline.py`: 12 tests, all using mocked HTTP/SDK responses (no real spend) — cover source bundling (including the character cap), determinism-statistics math on identical vs. divergent runs, provider dispatch (OpenAI/Anthropic), missing-API-key and unknown-system/provider error handling, and export output.
-- Full suite passes (94 tests), `ruff check` clean, as of this writing.
+- `tests/test_ai_baseline.py`: 14 tests, all using mocked HTTP/SDK responses (no real spend) — cover source bundling (including the character cap), determinism-statistics math on identical vs. divergent runs, provider dispatch (OpenAI/Anthropic), missing-API-key and unknown-system/provider error handling, export output, and the two regressions above.
+- Full suite passes (100 tests), `ruff check` clean, as of this writing.
