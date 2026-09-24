@@ -585,7 +585,7 @@ def _matched_by_type(system: dict[str, Any]) -> Counter[str]:
 def _detector_metrics(tp: int, fp: int, fn: int) -> dict[str, Any]:
     precision = _safe_divide(tp, tp + fp)
     recall = _safe_divide(tp, tp + fn)
-    f1 = _safe_divide(2 * precision * recall, precision + recall)
+    f1 = _f1_score(precision, recall)
     return {
         "true_positives": tp,
         "false_positives": fp,
@@ -620,7 +620,7 @@ def _compare_simple_labels(
     fn = list((expected_counts - predicted_counts).elements())
     precision = _safe_divide(tp, tp + len(fp))
     recall = _safe_divide(tp, tp + len(fn))
-    f1 = _safe_divide(2 * precision * recall, precision + recall)
+    f1 = _f1_score(precision, recall)
     return (
         {
             "precision": round(precision, 4),
@@ -643,6 +643,22 @@ def _safe_divide(numerator: float, denominator: float) -> float:
     if denominator == 0:
         return 1.0
     return numerator / denominator
+
+
+def _f1_score(precision: float, recall: float) -> float:
+    """Deliberately does not reuse _safe_divide's 0-denominator convention:
+    _safe_divide returns 1.0 for a 0 denominator because that's the right
+    vacuous-truth default for precision/recall themselves (e.g. "no false
+    positives" when nothing was predicted at all). But precision + recall
+    can only be 0 when precision and recall are BOTH already exactly 0
+    (a genuine complete miss: real predictions and real expected findings
+    existed, with zero overlap) - reusing that same 1.0 fallback here
+    previously reported F1 = 1.0 for a total failure, found evaluating an
+    LLM baseline that missed every expected finding on a real repository
+    (see docs/research/AI_BASELINE_COMPARISON.md)."""
+    if precision + recall == 0:
+        return 0.0
+    return 2 * precision * recall / (precision + recall)
 
 
 def _normalized_path(value: str | Path) -> str:

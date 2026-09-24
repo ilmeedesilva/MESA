@@ -312,27 +312,65 @@ def run_ai_baseline(
 
 
 def export_ai_baseline(report: dict[str, Any], output_dir: str | Path) -> dict[str, str]:
+    """Writes/updates ai_baseline_comparison.{json,md} in output_dir. Merges
+    with whatever is already there (keyed by system id) rather than
+    overwriting, since the documented workflow is multiple CLI invocations
+    - one per benchmark file (god-service/cyclic-dependencies live in
+    ground_truth.yml, spring-sample in real_repo_spring_sample.yml) - into
+    the same --output-dir; overwriting silently discarded every earlier
+    system's results."""
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     json_path = output / "ai_baseline_comparison.json"
     markdown_path = output / "ai_baseline_comparison.md"
-    json_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    merged = _merge_ai_baseline_reports(_load_existing_report(json_path), report)
+    json_path.write_text(json.dumps(merged, indent=2), encoding="utf-8")
 
     lines = [
         "# AI Baseline Comparison",
         "",
-        f"Benchmark: `{report['benchmark']}` | Provider: {report.get('provider', 'openai')} | "
-        f"Runs per system: {report['runs_per_system']}",
+        f"Provider: {merged.get('provider', 'openai')} | Runs per system: {merged['runs_per_system']}",
         "",
-        "| System | F1 mean | F1 stdev | Precision mean | Recall mean | Exact-match rate | Mean pairwise Jaccard |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| System | Benchmark | F1 mean | F1 stdev | Precision mean | Recall mean | Exact-match rate | Mean pairwise Jaccard |",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
     ]
-    for system in report["systems"]:
+    for system in merged["systems"]:
         lines.append(
-            f"| {system['name']} | {system['f1_score']['mean']} | {system['f1_score']['stdev']} | "
+            f"| {system['name']} | `{system.get('benchmark', merged.get('benchmark', ''))}` | "
+            f"{system['f1_score']['mean']} | {system['f1_score']['stdev']} | "
             f"{system['precision']['mean']} | {system['recall']['mean']} | "
             f"{system['determinism']['exact_match_rate']} | {system['determinism']['mean_pairwise_jaccard']} |"
         )
     markdown_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     return {"json": str(json_path), "markdown": str(markdown_path)}
+
+
+def _load_existing_report(json_path: Path) -> dict[str, Any] | None:
+    if not json_path.exists():
+        return None
+    try:
+        return json.loads(json_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _merge_ai_baseline_reports(
+    existing: dict[str, Any] | None, new_report: dict[str, Any]
+) -> dict[str, Any]:
+    if existing is None:
+        return {**new_report, "systems": [
+            {"benchmark": new_report["benchmark"], **system} for system in new_report["systems"]
+        ]}
+
+    systems_by_id = {system["id"]: system for system in existing.get("systems", [])}
+    for system in new_report["systems"]:
+        systems_by_id[system["id"]] = {"benchmark": new_report["benchmark"], **system}
+
+    return {
+        **existing,
+        "provider": new_report.get("provider", existing.get("provider")),
+        "runs_per_system": new_report.get("runs_per_system", existing.get("runs_per_system")),
+        "systems": list(systems_by_id.values()),
+    }
