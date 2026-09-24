@@ -8,9 +8,9 @@ multiple times to measure determinism: MESA is deterministic by construction
 (same code, same input, same output, every time) while an LLM prompted
 directly is not, which this harness measures rather than asserts.
 
-Every call this module makes is a real, billed request to the configured
-OpenAI API (MESA_OPENAI_API_KEY) - it is never invoked as a side effect of
-building or testing MESA itself.
+Every call this module makes is a real, billed request to a general-purpose
+LLM API (OpenAI or Anthropic, selected via `provider`) - it is never invoked
+as a side effect of building or testing MESA itself.
 """
 
 from __future__ import annotations
@@ -159,6 +159,45 @@ def _call_openai_for_findings(source_bundle: str, api_key: str) -> list[dict[str
     return parsed.get("findings", [])
 
 
+def _call_anthropic_for_findings(source_bundle: str, api_key: str) -> list[dict[str, Any]]:
+    import anthropic
+
+    model = os.getenv("MESA_ANTHROPIC_MODEL", "claude-opus-5")
+    timeout_seconds = float(os.getenv("MESA_ANTHROPIC_TIMEOUT_SECONDS", "120"))
+    client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds)
+
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=4096,
+            system=_TAXONOMY_PROMPT,
+            messages=[{"role": "user", "content": source_bundle}],
+            output_config={"format": {"type": "json_schema", "schema": _response_schema()}},
+        )
+    except anthropic.RateLimitError as error:
+        raise RuntimeError(f"Rate limited: {error.message}") from error
+    except anthropic.APIStatusError as error:
+        raise RuntimeError(f"HTTP {error.status_code}: {str(error.message)[:240]}") from error
+    except anthropic.APIConnectionError as error:
+        raise RuntimeError(str(error)) from error
+
+    text = next((block.text for block in response.content if block.type == "text"), "")
+    if not text:
+        return []
+    parsed = json.loads(text)
+    return parsed.get("findings", [])
+
+
+_PROVIDER_CALLERS = {
+    "openai": _call_openai_for_findings,
+    "anthropic": _call_anthropic_for_findings,
+}
+_PROVIDER_API_KEY_ENV_VARS = {
+    "openai": ("MESA_OPENAI_API_KEY",),
+    "anthropic": ("MESA_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY"),
+}
+
+
 def _label_set(labels: list[dict[str, Any]]) -> frozenset[tuple[str, tuple[str, ...]]]:
     return frozenset(
         (str(item["type"]), tuple(sorted(str(service) for service in item.get("services", []))))
@@ -198,6 +237,7 @@ def run_ai_baseline(
     system_ids: list[str],
     runs: int = 5,
     api_key: str | None = None,
+    provider: str = "openai",
 ) -> dict[str, Any]:
     """Run a general-purpose LLM directly (no MESA) against the same
     ground-truth systems MESA is scored on, `runs` times per system, and
@@ -206,13 +246,26 @@ def run_ai_baseline(
     runs' finding-sets). MESA's own equivalent numbers are deterministic by
     construction and are not re-measured here.
 
-    Makes `runs * len(system_ids)` real, billed calls to the configured
-    OpenAI API. Callers must obtain explicit user confirmation before
-    invoking this with runs/system_ids that were not already confirmed.
+    `provider` selects which LLM API to call ("openai" or "anthropic"); the
+    comparison methodology (same taxonomy prompt, same compare_labels()
+    scoring) is identical either way. Makes `runs * len(system_ids)` real,
+    billed calls to that provider. Callers must obtain explicit user
+    confirmation before invoking this with runs/system_ids that were not
+    already confirmed.
     """
-    resolved_key = api_key or os.getenv("MESA_OPENAI_API_KEY")
+    caller = _PROVIDER_CALLERS.get(provider)
+    if caller is None:
+        raise ValueError(f"Unknown provider '{provider}'; expected one of {sorted(_PROVIDER_CALLERS)}.")
+
+    resolved_key = api_key
+    if resolved_key is None:
+        for env_var in _PROVIDER_API_KEY_ENV_VARS[provider]:
+            resolved_key = os.getenv(env_var)
+            if resolved_key:
+                break
     if not resolved_key:
-        raise RuntimeError("MESA_OPENAI_API_KEY is not configured.")
+        env_vars = " or ".join(_PROVIDER_API_KEY_ENV_VARS[provider])
+        raise RuntimeError(f"{env_vars} is not configured.")
 
     path = Path(benchmark_path).resolve()
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -230,7 +283,7 @@ def run_ai_baseline(
         run_reports = []
         runs_labels = []
         for _ in range(runs):
-            predicted = _call_openai_for_findings(source_bundle, resolved_key)
+            predicted = caller(source_bundle, resolved_key)
             runs_labels.append(predicted)
             run_reports.append(compare_labels(ground_truth, predicted))
 
@@ -250,30 +303,74 @@ def run_ai_baseline(
             }
         )
 
-    return {"benchmark": str(path), "runs_per_system": runs, "systems": system_results}
+    return {
+        "benchmark": str(path),
+        "runs_per_system": runs,
+        "provider": provider,
+        "systems": system_results,
+    }
 
 
 def export_ai_baseline(report: dict[str, Any], output_dir: str | Path) -> dict[str, str]:
+    """Writes/updates ai_baseline_comparison.{json,md} in output_dir. Merges
+    with whatever is already there (keyed by system id) rather than
+    overwriting, since the documented workflow is multiple CLI invocations
+    - one per benchmark file (god-service/cyclic-dependencies live in
+    ground_truth.yml, spring-sample in real_repo_spring_sample.yml) - into
+    the same --output-dir; overwriting silently discarded every earlier
+    system's results."""
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     json_path = output / "ai_baseline_comparison.json"
     markdown_path = output / "ai_baseline_comparison.md"
-    json_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    merged = _merge_ai_baseline_reports(_load_existing_report(json_path), report)
+    json_path.write_text(json.dumps(merged, indent=2), encoding="utf-8")
 
     lines = [
         "# AI Baseline Comparison",
         "",
-        f"Benchmark: `{report['benchmark']}` | Runs per system: {report['runs_per_system']}",
+        f"Provider: {merged.get('provider', 'openai')} | Runs per system: {merged['runs_per_system']}",
         "",
-        "| System | F1 mean | F1 stdev | Precision mean | Recall mean | Exact-match rate | Mean pairwise Jaccard |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| System | Benchmark | F1 mean | F1 stdev | Precision mean | Recall mean | Exact-match rate | Mean pairwise Jaccard |",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
     ]
-    for system in report["systems"]:
+    for system in merged["systems"]:
         lines.append(
-            f"| {system['name']} | {system['f1_score']['mean']} | {system['f1_score']['stdev']} | "
+            f"| {system['name']} | `{system.get('benchmark', merged.get('benchmark', ''))}` | "
+            f"{system['f1_score']['mean']} | {system['f1_score']['stdev']} | "
             f"{system['precision']['mean']} | {system['recall']['mean']} | "
             f"{system['determinism']['exact_match_rate']} | {system['determinism']['mean_pairwise_jaccard']} |"
         )
     markdown_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     return {"json": str(json_path), "markdown": str(markdown_path)}
+
+
+def _load_existing_report(json_path: Path) -> dict[str, Any] | None:
+    if not json_path.exists():
+        return None
+    try:
+        return json.loads(json_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _merge_ai_baseline_reports(
+    existing: dict[str, Any] | None, new_report: dict[str, Any]
+) -> dict[str, Any]:
+    if existing is None:
+        return {**new_report, "systems": [
+            {"benchmark": new_report["benchmark"], **system} for system in new_report["systems"]
+        ]}
+
+    systems_by_id = {system["id"]: system for system in existing.get("systems", [])}
+    for system in new_report["systems"]:
+        systems_by_id[system["id"]] = {"benchmark": new_report["benchmark"], **system}
+
+    return {
+        **existing,
+        "provider": new_report.get("provider", existing.get("provider")),
+        "runs_per_system": new_report.get("runs_per_system", existing.get("runs_per_system")),
+        "systems": list(systems_by_id.values()),
+    }

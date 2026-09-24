@@ -1312,6 +1312,39 @@ def test_run_benchmark_evaluation_endpoint_404s_for_unlisted_template() -> None:
     assert response.status_code == 404
 
 
+def test_get_ai_baseline_comparison_returns_404_when_no_report_exists(tmp_path, monkeypatch) -> None:
+    from mesa.evaluation import runner as evaluation_runner_module
+
+    monkeypatch.setattr(
+        evaluation_runner_module, "AI_BASELINE_COMPARISON_PATH", tmp_path / "does_not_exist.json"
+    )
+
+    client = TestClient(app)
+    response = client.get("/ai-baseline-comparison")
+
+    assert response.status_code == 404
+    assert "evaluate-ai-baseline" in response.json()["detail"]
+
+
+def test_get_ai_baseline_comparison_returns_the_exported_report(tmp_path, monkeypatch) -> None:
+    from mesa.evaluation import runner as evaluation_runner_module
+
+    report_path = tmp_path / "ai_baseline_comparison.json"
+    report_path.write_text(
+        '{"benchmark": "ground_truth.yml", "runs_per_system": 5, "provider": "anthropic", "systems": []}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(evaluation_runner_module, "AI_BASELINE_COMPARISON_PATH", report_path)
+
+    client = TestClient(app)
+    response = client.get("/ai-baseline-comparison")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["provider"] == "anthropic"
+    assert payload["runs_per_system"] == 5
+
+
 def test_run_benchmark_evaluation_endpoint_400s_for_missing_local_source(tmp_path, monkeypatch) -> None:
     from mesa.evaluation import runner as evaluation_runner_module
 

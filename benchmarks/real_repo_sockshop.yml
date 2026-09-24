@@ -1,0 +1,52 @@
+benchmark: mesa-real-repo-sockshop
+version: 1
+matching: type_and_service_set
+notes:
+  - "Real, third-party, multi-repo microservices reference application (\"Sock Shop\", weaveworks/microservices-demo org). Unlike Online Boutique and the Spring sample, which are each a single repository, Sock Shop's 8 core services each live in their own separate GitHub repository under the archived `microservices-demo` org - archived Dec 29 2023 (read-only, no drift risk for reproducibility). Evaluated at the pinned commit SHAs below, copied locally under benchmarks/real-repos/sock-shop (see benchmarks/real-repos/README.md)."
+  - "Evaluating this repository surfaced two real, general (not Sock-Shop-specific) bugs, both fixed before this benchmark was finalized: (1) detect_language() picked a service's reported language by checking \"does any file of this extension exist anywhere in the tree\" with a fixed Python-first priority, so a single stray Python BDD test helper (present in every one of these Go/Java services) mislabelled the whole service as Python; fixed with weighted majority voting, matching the approach discovery/service_candidates.py already used correctly (docs: this file's evaluator_notes below). (2) db_type normalization used chained `.replace(\"mongo\", \"mongodb\")`, and since \"mongo\" is a substring of \"mongodb\" itself, a URI that already matched \"mongodb://\" was corrupted into \"mongodbdb://\" - cosmetic on its own, but it obscured the real root cause of a false SHARED_DATABASE finding while debugging it. Both are covered by regression tests: tests/test_pipeline.py::test_detect_language_is_not_hijacked_by_a_single_stray_file and tests/test_pipeline.py::test_db_type_normalization_does_not_double_mongodb."
+  - "This repository's headline result is different from, and complementary to, Online Boutique and the Spring sample: those two scored precision 1.0 after their respective fixes, mostly stress-testing precision on clean/typical service code. Sock Shop's repos are unusually dense with test fixtures, API-contract mock hooks, and code comments containing example curl commands - content MESA's current heuristics do not distinguish from real service configuration - producing a genuinely low, honestly-measured precision that quantifies a specific, actionable extraction gap rather than another 1.0 result."
+systems:
+  - id: sock-shop
+    name: Sock Shop (microservices-demo org - catalogue, carts, orders, payment, shipping, user, queue-master, front-end)
+    category: real-world public repository (multi-repo)
+    repo_url: https://github.com/microservices-demo/microservices-demo
+    manual_review_status: reviewed
+    service_paths:
+      - real-repos/sock-shop/catalogue
+      - real-repos/sock-shop/carts
+      - real-repos/sock-shop/orders
+      - real-repos/sock-shop/payment
+      - real-repos/sock-shop/shipping
+      - real-repos/sock-shop/user
+      - real-repos/sock-shop/queue-master
+      - real-repos/sock-shop/front-end
+    service_discovery:
+      root: real-repos/sock-shop
+      expected_candidates:
+        - catalogue
+        - carts
+        - orders
+        - payment
+        - shipping
+        - user
+        - queue-master
+        - front-end
+    evaluator_notes:
+      - "True positives (4, all HARD_CODED_SERVICE_DEPENDENCY): catalogue hard-codes its own database DSN default `catalogue_user:default_password@tcp(catalogue-db:3306)/socksdb` as a Go flag default (cmd/cataloguesvc/main.go:48); user hard-codes `user-db:27017` in two of its own real deployment compose files (docker-compose.yml, docker-compose-zipkin.yml); front-end hard-codes `user-db:27017` in its own test/docker-compose.yml. All four are genuine literal addresses embedded in each service's own configuration, not test/mock artifacts."
+      - "False positive - SHARED_DATABASE (carts, orders): MESA reported both services sharing `mongodb://localhost/data`. Manually verified this is wrong: each service's real Spring config points at a separate database host (`carts/src/main/resources/application.properties`: `mongodb://${db:carts-db}:27017/data`; `orders/.../application.properties`: `mongodb://${db:orders-db}:27017/data`) - genuinely separate persistence, the correct microservices pattern. MESA's extractor currently cannot parse the Spring `${var:default}` placeholder syntax in a database URI at all (confirmed: DB_PATTERN does not match `mongodb://${db:carts-db}:27017/data`), so this evidence was never the source. The real source is that both services' Dredd API-contract-test hook files (`api-spec/hooks.js`) independently contain the identical literal fallback `process.env.MONGO_ENDPOINT || 'mongodb://localhost:32769/data'` - generic local-testing boilerplate that happens to be byte-identical across services, not evidence of shared production persistence. Not fixed (would require the detector to distinguish test-harness fixture files from real service configuration, a broader change out of scope for this evaluation - see known_limitations)."
+      - "False positives - HARD_CODED_SERVICE_DEPENDENCY, front-end (6 of front-end's 7 findings): 1 is `max-width:768`, a CSS media-query breakpoint inside the vendored third-party library `public/js/modernizr.js`, misparsed by the host:port heuristic as a service address - not a service reference at all. The other 5 are `http://front-end:8080/` appearing in front-end's own CasperJS end-to-end test files (test/e2e/*.js) - front-end hardcoding the URL of the running instance of itself under test, which is normal E2E test practice, not a cross-service coupling risk to a different service."
+      - "False positives - HARD_CODED_SERVICE_DEPENDENCY, orders (10 of orders's 11 findings): 4 are `http://users-orders-mock:80/...` inside `api-spec/hooks.js` - a Dredd API-contract-test mock server address, not a real dependency. The remaining 6 are `http://localhost:808x/...` inside `src/main/java/.../entities/CustomerOrder.java` lines 12-16 - confirmed these are entirely inside `//`-prefixed code comments (example curl commands documenting how to call the API by hand), not live code. MESA's hard-coded-dependency scan does not currently strip comments before matching, so developer-documentation examples get flagged identically to real embedded addresses - the most severe instance of this was scored HIGH severity, the same tier as genuine production risk."
+      - "A related, structurally different limitation (not a detector bug, and consistent with the same literal-value-only extraction constraint already documented for Online Boutique's Go services): front-end's real calls to catalogue, carts, orders, and user (front-end/api/endpoints.js) are built as `util.format(\"http://catalogue%s\", domain)` - a runtime string, not a literal `http://...` string inside the calling `request.get(...)`/`fetch(...)` site - so none of these genuine, production inter-service calls are visible to MESA's static, literal-value-only call extraction. This likely hides real CHATTY_SERVICE-shaped relationships (front-end calls catalogue via at least 3 distinct routes alone) that a dynamic-URL-aware extractor would surface. Not added to this benchmark's ground_truth: consistent with how the equivalent Online Boutique/Go gap was handled, ground truth here reflects what a reviewer can confirm from the same kind of static evidence MESA itself uses, not omniscient knowledge of the runtime architecture - so this is reported as a named limitation rather than an inflated false-negative count."
+    known_limitations:
+      - "Discovery precision on this repository is 8/23 = 0.3478 (measured, via `mesa evaluate`) even though recall is 8/8 = 1.0. The two most notable over-triggers, at confidence high enough to be auto-selected by default, are `catalogue-db` and `user-db` (Docker build-context subdirectories containing only a Dockerfile for seeding the corresponding database image, 0.57 confidence each) - the same discovery-false-positive pattern already seen on the Spring sample (config-service's nested resource directory). The remaining ~13 lower-confidence, not-auto-selected candidates are test/tooling directories (`orders/test/json-server`, `front-end/test`, six `*/docker/<service>` subdirectories, five `*/api-spec` directories) that the discovery evaluation metric counts against precision even though a user scanning through the UI would not have them pre-selected - this repository's unusually high ratio of test/tooling subdirectories to real services is the main driver of the low discovery-precision number, not a sign MESA mis-selected services for analysis (all 8 real services were correctly selected by default, see service_discovery above)."
+      - "This repository has a genuinely different, and more severe, precision profile than Online Boutique or the Spring sample: 17 of 21 raw findings (81%) are false positives, almost entirely because MESA's current heuristics treat test fixtures, API-contract mock files, and source-code comments as equally authoritative to real service configuration. This is a concrete, actionable direction for future detector work (e.g. stripping comments before hard-coded-dependency matching; excluding common test/mock directory conventions from certain detectors while keeping them in scope for others, mirroring the config-server distinction already made for YAML/properties files) - not attempted here, kept as an honestly-reported limitation rather than narrowed after the fact by loosening the ground truth to match what the detector currently produces."
+      - "Only 8 of Sock Shop's services were evaluated (the 8 with real business logic: catalogue, carts, orders, payment, shipping, user, queue-master, front-end). `edge-router` (API gateway/routing config) and the `orders.NET`/`orders-aws` alternate implementations were excluded as out of scope - the default deployment uses the Java `orders` service evaluated here."
+    ground_truth:
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [catalogue]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [user]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [user]
+      - type: HARD_CODED_SERVICE_DEPENDENCY
+        services: [front-end]

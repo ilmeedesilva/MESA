@@ -1,0 +1,1856 @@
+{
+  "benchmark": "/Users/ilmeedesilva/MESA/benchmarks/real_repo_spring_sample.yml",
+  "runs_per_system": 5,
+  "provider": "anthropic",
+  "systems": [
+    {
+      "benchmark": "/Users/ilmeedesilva/MESA/benchmarks/real_repo_spring_sample.yml",
+      "id": "spring-sample",
+      "name": "Spring Boot microservices sample (piomin/sample-spring-microservices-new)",
+      "runs": [
+        {
+          "metrics": {
+            "true_positives": 0,
+            "false_positives": 2,
+            "false_negatives": 24,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0
+          },
+          "false_positives": [
+            {
+              "type": "GOD_SERVICE",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service",
+                "department-service",
+                "discovery-service",
+                "employee-service",
+                "gateway-service",
+                "organization-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 0,
+            "false_positives": 2,
+            "false_negatives": 24,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0
+          },
+          "false_positives": [
+            {
+              "type": "GOD_SERVICE",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service",
+                "department-service",
+                "discovery-service",
+                "employee-service",
+                "gateway-service",
+                "organization-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 0,
+            "false_positives": 2,
+            "false_negatives": 24,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0
+          },
+          "false_positives": [
+            {
+              "type": "GOD_SERVICE",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service",
+                "department-service",
+                "discovery-service",
+                "employee-service",
+                "gateway-service",
+                "organization-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 0,
+            "false_positives": 2,
+            "false_negatives": 24,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0
+          },
+          "false_positives": [
+            {
+              "type": "GOD_SERVICE",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service",
+                "department-service",
+                "discovery-service",
+                "employee-service",
+                "gateway-service",
+                "organization-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 0,
+            "false_positives": 1,
+            "false_negatives": 24,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service",
+                "department-service",
+                "discovery-service",
+                "employee-service",
+                "gateway-service",
+                "organization-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "config-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "department-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "discovery-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "employee-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "gateway-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "organization-service"
+              ]
+            }
+          ]
+        }
+      ],
+      "precision": {
+        "mean": 0.0,
+        "stdev": 0.0
+      },
+      "recall": {
+        "mean": 0.0,
+        "stdev": 0.0
+      },
+      "f1_score": {
+        "mean": 0.0,
+        "stdev": 0.0
+      },
+      "determinism": {
+        "exact_match_rate": 0.4,
+        "mean_pairwise_jaccard": 0.5333,
+        "distinct_result_sets": 3,
+        "run_count": 5
+      }
+    },
+    {
+      "benchmark": "/Users/ilmeedesilva/MESA/benchmarks/ground_truth.yml",
+      "id": "god-service",
+      "name": "God Service",
+      "runs": [
+        {
+          "metrics": {
+            "true_positives": 4,
+            "false_positives": 1,
+            "false_negatives": 13,
+            "precision": 0.8,
+            "recall": 0.2353,
+            "f1_score": 0.3636
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service",
+                "inventory-service",
+                "order-service",
+                "platform-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "inventory-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 4,
+            "false_positives": 2,
+            "false_negatives": 13,
+            "precision": 0.6667,
+            "recall": 0.2353,
+            "f1_score": 0.3478
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service",
+                "inventory-service",
+                "order-service",
+                "platform-service"
+              ]
+            },
+            {
+              "type": "SHARED_DATABASE",
+              "services": [
+                "order-service",
+                "payment-service",
+                "platform-service",
+                "user-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "inventory-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 4,
+            "false_positives": 6,
+            "false_negatives": 13,
+            "precision": 0.4,
+            "recall": 0.2353,
+            "f1_score": 0.2963
+          },
+          "false_positives": [
+            {
+              "type": "CHATTY_SERVICE",
+              "services": [
+                "inventory-service",
+                "platform-service"
+              ]
+            },
+            {
+              "type": "CHATTY_SERVICE",
+              "services": [
+                "order-service",
+                "platform-service"
+              ]
+            },
+            {
+              "type": "CHATTY_SERVICE",
+              "services": [
+                "payment-service",
+                "platform-service"
+              ]
+            },
+            {
+              "type": "CHATTY_SERVICE",
+              "services": [
+                "platform-service",
+                "user-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service",
+                "inventory-service",
+                "order-service",
+                "platform-service"
+              ]
+            },
+            {
+              "type": "SHARED_DATABASE",
+              "services": [
+                "order-service",
+                "payment-service",
+                "platform-service",
+                "user-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "inventory-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 4,
+            "false_positives": 1,
+            "false_negatives": 13,
+            "precision": 0.8,
+            "recall": 0.2353,
+            "f1_score": 0.3636
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service",
+                "inventory-service",
+                "order-service",
+                "platform-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "inventory-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 4,
+            "false_positives": 2,
+            "false_negatives": 13,
+            "precision": 0.6667,
+            "recall": 0.2353,
+            "f1_score": 0.3478
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service",
+                "inventory-service",
+                "order-service",
+                "platform-service"
+              ]
+            },
+            {
+              "type": "SHARED_DATABASE",
+              "services": [
+                "order-service",
+                "payment-service",
+                "platform-service",
+                "user-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "billing-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "inventory-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "platform-service"
+              ]
+            }
+          ]
+        }
+      ],
+      "precision": {
+        "mean": 0.6667,
+        "stdev": 0.1633
+      },
+      "recall": {
+        "mean": 0.2353,
+        "stdev": 0.0
+      },
+      "f1_score": {
+        "mean": 0.3438,
+        "stdev": 0.0277
+      },
+      "determinism": {
+        "exact_match_rate": 0.4,
+        "mean_pairwise_jaccard": 0.7533,
+        "distinct_result_sets": 3,
+        "run_count": 5
+      }
+    },
+    {
+      "benchmark": "/Users/ilmeedesilva/MESA/benchmarks/ground_truth.yml",
+      "id": "cyclic-dependencies",
+      "name": "Cyclic dependencies",
+      "runs": [
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 1,
+            "false_negatives": 2,
+            "precision": 0.5,
+            "recall": 0.3333,
+            "f1_score": 0.4
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service",
+                "payment-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "payment-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 1,
+            "false_negatives": 2,
+            "precision": 0.5,
+            "recall": 0.3333,
+            "f1_score": 0.4
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service",
+                "payment-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "payment-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 1,
+            "false_negatives": 2,
+            "precision": 0.5,
+            "recall": 0.3333,
+            "f1_score": 0.4
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service",
+                "payment-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "payment-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 1,
+            "false_negatives": 2,
+            "precision": 0.5,
+            "recall": 0.3333,
+            "f1_score": 0.4
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service",
+                "payment-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "payment-service"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 1,
+            "false_negatives": 2,
+            "precision": 0.5,
+            "recall": 0.3333,
+            "f1_score": 0.4
+          },
+          "false_positives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service",
+                "payment-service"
+              ]
+            }
+          ],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "order-service"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "payment-service"
+              ]
+            }
+          ]
+        }
+      ],
+      "precision": {
+        "mean": 0.5,
+        "stdev": 0.0
+      },
+      "recall": {
+        "mean": 0.3333,
+        "stdev": 0.0
+      },
+      "f1_score": {
+        "mean": 0.4,
+        "stdev": 0.0
+      },
+      "determinism": {
+        "exact_match_rate": 1.0,
+        "mean_pairwise_jaccard": 1.0,
+        "distinct_result_sets": 1,
+        "run_count": 5
+      }
+    },
+    {
+      "benchmark": "/Users/ilmeedesilva/MESA/benchmarks/real_repo_sockshop.yml",
+      "id": "sock-shop",
+      "name": "Sock Shop (microservices-demo org - catalogue, carts, orders, payment, shipping, user, queue-master, front-end)",
+      "runs": [
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 0,
+            "false_negatives": 3,
+            "precision": 1.0,
+            "recall": 0.25,
+            "f1_score": 0.4
+          },
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "front-end"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 0,
+            "false_negatives": 3,
+            "precision": 1.0,
+            "recall": 0.25,
+            "f1_score": 0.4
+          },
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "front-end"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 0,
+            "false_negatives": 3,
+            "precision": 1.0,
+            "recall": 0.25,
+            "f1_score": 0.4
+          },
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "front-end"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 0,
+            "false_negatives": 3,
+            "precision": 1.0,
+            "recall": 0.25,
+            "f1_score": 0.4
+          },
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "front-end"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            }
+          ]
+        },
+        {
+          "metrics": {
+            "true_positives": 1,
+            "false_positives": 0,
+            "false_negatives": 3,
+            "precision": 1.0,
+            "recall": 0.25,
+            "f1_score": 0.4
+          },
+          "false_positives": [],
+          "false_negatives": [
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "front-end"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            },
+            {
+              "type": "HARD_CODED_SERVICE_DEPENDENCY",
+              "services": [
+                "user"
+              ]
+            }
+          ]
+        }
+      ],
+      "precision": {
+        "mean": 1.0,
+        "stdev": 0.0
+      },
+      "recall": {
+        "mean": 0.25,
+        "stdev": 0.0
+      },
+      "f1_score": {
+        "mean": 0.4,
+        "stdev": 0.0
+      },
+      "determinism": {
+        "exact_match_rate": 1.0,
+        "mean_pairwise_jaccard": 1.0,
+        "distinct_result_sets": 1,
+        "run_count": 5
+      }
+    }
+  ]
+}

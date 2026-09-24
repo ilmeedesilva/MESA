@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from mesa.analysis import analyze_services
-from mesa.analysis.extractor import _stem_matches_other_service
+from mesa.analysis.extractor import _extract_text_config, _stem_matches_other_service, detect_language
 from mesa.detectors.god_service import score_god_services
 from mesa.discovery import discover_service_candidates
 from mesa.graph.builder import build_graph
@@ -493,6 +493,50 @@ def test_go_extraction_detects_endpoints_calls_and_cross_service_cycle() -> None
     finding_types = {finding.type for finding in result.findings}
     assert FindingType.CYCLIC_DEPENDENCY in finding_types
     assert FindingType.HARD_CODED_SERVICE_DEPENDENCY in finding_types
+
+
+def test_db_type_normalization_does_not_double_mongodb() -> None:
+    """Regression test for a real bug found evaluating Sock Shop: db_type
+    normalization used chained .replace("mongo", "mongodb") calls, and since
+    "mongo" is a substring of "mongodb" itself, a URI that already matched
+    "mongodb://..." got corrupted into "mongodbdb://..." - which masked the
+    real false-positive cause behind a SHARED_DATABASE finding (see
+    benchmarks/real_repo_sockshop.yml evaluator_notes).
+    """
+    facts = ServiceFacts(name="carts", root_path="/tmp/carts")
+    _extract_text_config(
+        Path("app.js"), facts, text="var endpoint = 'mongodb://carts-db:27017/data';"
+    )
+    assert len(facts.databases) == 1
+    assert facts.databases[0].db_type == "mongodb"
+
+    facts_alias = ServiceFacts(name="legacy", root_path="/tmp/legacy")
+    _extract_text_config(
+        Path("app.js"), facts_alias, text="var endpoint = 'mongo://legacy-db:27017/data';"
+    )
+    assert facts_alias.databases[0].db_type == "mongodb"
+
+    facts_pg = ServiceFacts(name="billing", root_path="/tmp/billing")
+    _extract_text_config(
+        Path("app.js"), facts_pg, text="var endpoint = 'postgresql://billing-db:5432/data';"
+    )
+    assert facts_pg.databases[0].db_type == "postgres"
+
+
+def test_detect_language_is_not_hijacked_by_a_single_stray_file() -> None:
+    """Regression test for a real bug found evaluating Sock Shop
+    (github.com/microservices-demo): every Go/Java service there ships a
+    Python BDD test helper, and the old detect_language() checked "does any
+    .py file exist anywhere in the tree" with a fixed priority ahead of Go,
+    so a single stray test script reported the whole service as Python.
+    """
+    root = ROOT / "language-detection" / "go-with-python-tests"
+    assert detect_language(root) == "go"
+
+    result = analyze_services([str(root)])
+    service = result.services[0]
+    assert service.language == "go"
+    assert any(endpoint.path == "/catalogue" for endpoint in service.endpoints)
 
 
 def test_go_mod_manifest_is_discoverable_and_selects_go_language() -> None:
