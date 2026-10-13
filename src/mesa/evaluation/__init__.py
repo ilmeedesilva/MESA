@@ -7,6 +7,7 @@ from mesa.evaluation.runner import (
     find_matching_ground_truth_system,
     list_available_benchmarks,
     load_ai_baseline_comparison,
+    load_ai_baseline_comparisons,
     missing_benchmark_service_paths,
     resolve_benchmark_path,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "find_matching_ground_truth_system",
     "list_available_benchmarks",
     "load_ai_baseline_comparison",
+    "load_ai_baseline_comparisons",
     "missing_benchmark_service_paths",
     "resolve_benchmark_path",
     "run_ai_baseline",
