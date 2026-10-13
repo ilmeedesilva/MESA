@@ -1975,7 +1975,13 @@ function App() {
   }
 
   function renderGlobalScanHistoryRail() {
-    if (!selectedProject || history.length === 0 || currentSection === "history" || currentSection === "docs") {
+    if (
+      !selectedProject ||
+      history.length === 0 ||
+      currentSection === "history" ||
+      currentSection === "docs" ||
+      currentSection === "ai-baseline"
+    ) {
       return null;
     }
     return (
@@ -2112,6 +2118,9 @@ function App() {
   }
 
   const globalScanHistoryRail = renderGlobalScanHistoryRail();
+  // The AI Baseline page is shown on its own (e.g. during the viva), so the
+  // workspace banners and interpretation controls are hidden there.
+  const isStandaloneSection = currentSection === "ai-baseline";
 
   return (
     <main className={sidebarCollapsed ? "appShell sidebarCollapsed" : "appShell"}>
@@ -2255,20 +2264,25 @@ function App() {
           </div>
         </header>
 
-        <PublicDemoBanner
-          apiAvailability={apiAvailability}
-          isPublicDemoMode={isPublicDemoMode}
-          usingEmbeddedDemo={usingEmbeddedDemo}
-          onOpenDoc={openDoc}
-        />
+        {!isStandaloneSection ? (
+          <>
+            <PublicDemoBanner
+              apiAvailability={apiAvailability}
+              isPublicDemoMode={isPublicDemoMode}
+              usingEmbeddedDemo={usingEmbeddedDemo}
+              onOpenDoc={openDoc}
+            />
 
-        <section className="globalControlBar">
-          {renderInterpretationCard()}
-        </section>
+            <section className="globalControlBar">
+              {renderInterpretationCard()}
+            </section>
+          </>
+        ) : null}
 
         {error ? <div className="error workspaceError">{error}</div> : null}
 
         <section className="workspaceFrame">
+          {!isStandaloneSection ? (
           <div className="workspaceFrameHeader">
             <div>
               <div className="eyebrow">Current Workspace</div>
@@ -2284,6 +2298,7 @@ function App() {
               <code>{sectionNeedsProject ? sourceLabel : "Reference workspace"}</code>
             </div>
           </div>
+          ) : null}
 
           <div className={globalScanHistoryRail ? "workspaceBody workspaceBodyWithRail" : "workspaceBody"}>
             <div className="workspacePrimaryContent">

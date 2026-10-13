@@ -1369,3 +1369,30 @@ systems:
 
     assert response.status_code == 400
     assert "do not exist locally" in response.json()["detail"]
+
+
+def test_get_ai_baseline_comparisons_returns_every_model_run(tmp_path, monkeypatch) -> None:
+    from mesa.evaluation import runner as evaluation_runner_module
+
+    (tmp_path / "ai-baseline-comparison-opus5").mkdir()
+    (tmp_path / "ai-baseline-comparison-opus5" / "ai_baseline_comparison.json").write_text(
+        '{"model": "claude-opus-5", "provider": "anthropic", "runs_per_system": 5, "systems": []}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(evaluation_runner_module, "EVALUATION_RESULTS_DIR", tmp_path)
+
+    response = TestClient(app).get("/ai-baseline-comparisons")
+
+    assert response.status_code == 200
+    assert [report["model"] for report in response.json()["reports"]] == ["claude-opus-5"]
+
+
+def test_get_ai_baseline_comparisons_returns_404_when_nothing_exported(tmp_path, monkeypatch) -> None:
+    from mesa.evaluation import runner as evaluation_runner_module
+
+    monkeypatch.setattr(evaluation_runner_module, "EVALUATION_RESULTS_DIR", tmp_path)
+
+    response = TestClient(app).get("/ai-baseline-comparisons")
+
+    assert response.status_code == 404
+    assert "evaluate-ai-baseline" in response.json()["detail"]

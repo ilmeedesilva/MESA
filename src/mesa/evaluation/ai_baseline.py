@@ -117,7 +117,7 @@ def _response_schema() -> dict[str, Any]:
 
 def _call_openai_for_findings(source_bundle: str, api_key: str) -> list[dict[str, Any]]:
     base_url = os.getenv("MESA_OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-    model = os.getenv("MESA_OPENAI_MODEL", "gpt-5.4-mini")
+    model = _resolve_model("openai")
     timeout_seconds = float(os.getenv("MESA_OPENAI_TIMEOUT_SECONDS", "60"))
 
     body = {
@@ -162,7 +162,7 @@ def _call_openai_for_findings(source_bundle: str, api_key: str) -> list[dict[str
 def _call_anthropic_for_findings(source_bundle: str, api_key: str) -> list[dict[str, Any]]:
     import anthropic
 
-    model = os.getenv("MESA_ANTHROPIC_MODEL", "claude-opus-5")
+    model = _resolve_model("anthropic")
     timeout_seconds = float(os.getenv("MESA_ANTHROPIC_TIMEOUT_SECONDS", "120"))
     client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds)
 
@@ -196,6 +196,15 @@ _PROVIDER_API_KEY_ENV_VARS = {
     "openai": ("MESA_OPENAI_API_KEY",),
     "anthropic": ("MESA_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY"),
 }
+_PROVIDER_MODEL_ENV_VARS = {
+    "openai": ("MESA_OPENAI_MODEL", "gpt-5.4-mini"),
+    "anthropic": ("MESA_ANTHROPIC_MODEL", "claude-opus-5"),
+}
+
+
+def _resolve_model(provider: str) -> str:
+    env_var, default = _PROVIDER_MODEL_ENV_VARS[provider]
+    return os.getenv(env_var, default)
 
 
 def _label_set(labels: list[dict[str, Any]]) -> frozenset[tuple[str, tuple[str, ...]]]:
@@ -267,6 +276,7 @@ def run_ai_baseline(
         env_vars = " or ".join(_PROVIDER_API_KEY_ENV_VARS[provider])
         raise RuntimeError(f"{env_vars} is not configured.")
 
+    model = _resolve_model(provider)
     path = Path(benchmark_path).resolve()
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     systems_by_id = {system["id"]: system for system in data.get("systems", [])}
@@ -295,6 +305,7 @@ def run_ai_baseline(
             {
                 "id": system_id,
                 "name": system.get("name", system_id),
+                "model": model,
                 "runs": run_reports,
                 "precision": _mean_stdev(precision_values),
                 "recall": _mean_stdev(recall_values),
@@ -307,6 +318,7 @@ def run_ai_baseline(
         "benchmark": str(path),
         "runs_per_system": runs,
         "provider": provider,
+        "model": model,
         "systems": system_results,
     }
 
@@ -330,14 +342,15 @@ def export_ai_baseline(report: dict[str, Any], output_dir: str | Path) -> dict[s
     lines = [
         "# AI Baseline Comparison",
         "",
-        f"Provider: {merged.get('provider', 'openai')} | Runs per system: {merged['runs_per_system']}",
+        f"Provider: {merged.get('provider', 'openai')} | Model: {merged.get('model', 'not recorded')} | "
+        f"Runs per system: {merged['runs_per_system']}",
         "",
-        "| System | Benchmark | F1 mean | F1 stdev | Precision mean | Recall mean | Exact-match rate | Mean pairwise Jaccard |",
-        "|---|---|---:|---:|---:|---:|---:|---:|",
+        "| System | Model | Benchmark | F1 mean | F1 stdev | Precision mean | Recall mean | Exact-match rate | Mean pairwise Jaccard |",
+        "|---|---|---|---:|---:|---:|---:|---:|---:|",
     ]
     for system in merged["systems"]:
         lines.append(
-            f"| {system['name']} | `{system.get('benchmark', merged.get('benchmark', ''))}` | "
+            f"| {system['name']} | {system.get('model', 'not recorded')} | `{system.get('benchmark', merged.get('benchmark', ''))}` | "
             f"{system['f1_score']['mean']} | {system['f1_score']['stdev']} | "
             f"{system['precision']['mean']} | {system['recall']['mean']} | "
             f"{system['determinism']['exact_match_rate']} | {system['determinism']['mean_pairwise_jaccard']} |"
@@ -371,6 +384,7 @@ def _merge_ai_baseline_reports(
     return {
         **existing,
         "provider": new_report.get("provider", existing.get("provider")),
+        "model": new_report.get("model", existing.get("model")),
         "runs_per_system": new_report.get("runs_per_system", existing.get("runs_per_system")),
         "systems": list(systems_by_id.values()),
     }

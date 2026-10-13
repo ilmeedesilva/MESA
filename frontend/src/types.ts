@@ -277,6 +277,7 @@ export type AiBaselineSystemReport = {
   benchmark: string;
   id: string;
   name: string;
+  model?: string | null;
   runs: AiBaselineRun[];
   precision: AiBaselineStat;
   recall: AiBaselineStat;
@@ -288,8 +289,13 @@ export type AiBaselineComparisonReport = {
   benchmark: string;
   runs_per_system: number;
   provider: string;
+  model?: string | null;
+  model_note?: string;
+  results_dir?: string;
   systems: AiBaselineSystemReport[];
 };
+
+export type AiBaselineComparisonsResponse = { reports: AiBaselineComparisonReport[] };
 
 export type EvolutionReport = {
   project_id: string;

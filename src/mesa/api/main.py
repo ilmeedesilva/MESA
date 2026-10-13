@@ -25,6 +25,7 @@ from mesa.evaluation import (
     evaluate_benchmark,
     list_available_benchmarks,
     load_ai_baseline_comparison,
+    load_ai_baseline_comparisons,
     missing_benchmark_service_paths,
     resolve_benchmark_path,
 )
@@ -652,6 +653,21 @@ def get_ai_baseline_comparison() -> dict:
             ),
         )
     return report
+
+
+@app.get("/ai-baseline-comparisons")
+def get_ai_baseline_comparisons() -> dict:
+    reports = load_ai_baseline_comparisons()
+    if not reports:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "No AI baseline comparison results found. Run "
+                "`mesa evaluate-ai-baseline <benchmark.yml> --runs 5 --provider anthropic|openai` "
+                "with a separate --output-dir per model, under evaluation-results/ai-baseline-comparison*/."
+            ),
+        )
+    return {"reports": reports}
 
 
 @app.post("/benchmarks/{benchmark_id}/evaluate")
