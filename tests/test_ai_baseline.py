@@ -315,3 +315,34 @@ def test_export_ai_baseline_merges_across_separate_benchmark_files(tmp_path) -> 
     markdown = Path(paths["markdown"]).read_text(encoding="utf-8")
     assert "Cyclic dependencies" in markdown
     assert "Spring sample" in markdown
+
+
+def test_run_ai_baseline_records_the_model_used(monkeypatch, tmp_path) -> None:
+    requested_models = []
+
+    class _FakeMessages:
+        def create(self, **kwargs):
+            requested_models.append(kwargs["model"])
+            return SimpleNamespace(content=[SimpleNamespace(type="text", text=json.dumps({"findings": []}))])
+
+    class _FakeAnthropicClient:
+        def __init__(self, *args, **kwargs) -> None:
+            self.messages = _FakeMessages()
+
+    monkeypatch.setattr(anthropic, "Anthropic", _FakeAnthropicClient)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setenv("MESA_ANTHROPIC_MODEL", "claude-test-model")
+
+    report = run_ai_baseline(
+        ROOT / "benchmarks" / "ground_truth.yml",
+        ["cyclic-dependencies"],
+        runs=1,
+        provider="anthropic",
+    )
+
+    assert requested_models == ["claude-test-model"]
+    assert report["model"] == "claude-test-model"
+    assert report["systems"][0]["model"] == "claude-test-model"
+
+    paths = export_ai_baseline(report, tmp_path)
+    assert "Model: claude-test-model" in Path(paths["markdown"]).read_text(encoding="utf-8")

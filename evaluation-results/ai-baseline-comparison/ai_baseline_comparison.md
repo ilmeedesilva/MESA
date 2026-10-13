@@ -1,6 +1,6 @@
 # AI Baseline Comparison
 
-Provider: anthropic | Runs per system: 5
+Provider: anthropic | Model: claude-sonnet-5 (recorded after the run from .env; see model_note in the JSON) | Runs per system: 5
 
 | System | Benchmark | F1 mean | F1 stdev | Precision mean | Recall mean | Exact-match rate | Mean pairwise Jaccard |
 |---|---|---:|---:|---:|---:|---:|---:|

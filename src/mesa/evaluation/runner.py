@@ -95,6 +95,26 @@ def load_ai_baseline_comparison() -> dict[str, Any] | None:
     return json.loads(AI_BASELINE_COMPARISON_PATH.read_text(encoding="utf-8"))
 
 
+def load_ai_baseline_comparisons() -> list[dict[str, Any]]:
+    """Read every exported AI baseline run, one per results directory.
+
+    Each `mesa evaluate-ai-baseline` model run is exported to its own
+    evaluation-results/ai-baseline-comparison*/ directory (exports merge by
+    system id, so two models sharing a directory would overwrite each other).
+    Unreadable files are skipped; returns [] when nothing has been exported.
+    """
+    reports: list[dict[str, Any]] = []
+    for path in sorted(EVALUATION_RESULTS_DIR.glob("ai-baseline-comparison*/ai_baseline_comparison.json")):
+        try:
+            report = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        report.setdefault("model", None)
+        report["results_dir"] = path.parent.name
+        reports.append(report)
+    return reports
+
+
 def missing_benchmark_service_paths(benchmark_path: str | Path) -> list[str]:
     """Return service_paths referenced by a benchmark file that do not exist on disk.
 

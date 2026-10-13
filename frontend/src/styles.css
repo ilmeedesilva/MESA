@@ -4711,3 +4711,221 @@ meter {
     flex-direction: column;
   }
 }
+
+/* AI baseline: model cards, one-table scoreboard and model tabs */
+.aiModelCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.aiModelCard {
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.aiModelCard.mesa {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.aiModelCard.top {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.aiModelCard.mid {
+  background: #f8fafc;
+}
+
+.aiModelCard strong {
+  display: block;
+  font-size: 17px;
+  color: #0f172a;
+  margin: 4px 0 6px;
+}
+
+.aiModelCard p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.aiModelCardTag {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.aiModelCardMeta {
+  color: #64748b !important;
+  font-size: 12px !important;
+}
+
+.aiScoreboard {
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  margin-bottom: 16px;
+  min-width: 0;
+}
+
+.aiScoreboardHead strong {
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.aiScoreboardHead p {
+  margin: 4px 0 12px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.aiScoreboardScroll {
+  overflow-x: auto;
+}
+
+.aiScoreboardTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 6px;
+  min-width: 560px;
+}
+
+.aiScoreboardTable thead th {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #475569;
+  text-align: center;
+  padding: 4px 8px;
+}
+
+.aiScoreboardTable thead th:first-child {
+  text-align: left;
+}
+
+.aiScoreboardTable thead th.mesaCol {
+  color: #0f766e;
+}
+
+.aiScoreboardTable tbody th {
+  text-align: left;
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 13.5px;
+  padding: 4px 8px 4px 0;
+  white-space: nowrap;
+}
+
+.aiScoreboardSystemName {
+  vertical-align: middle;
+}
+
+.aiScoreCell {
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.aiScoreCell.good {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.aiScoreCell.mixed {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.aiScoreCell.poor {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.aiScoreValue {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.aiScoreDetail {
+  display: block;
+  font-size: 12px;
+  color: #475569;
+  margin-top: 2px;
+}
+
+.aiScoreConsistency {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.aiScoreConsistency.consistent {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.aiScoreConsistency.inconsistent {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.aiScoreboardTakeaways {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.aiModelTabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 4px;
+}
+
+.aiModelTabsLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.aiModelTabs button {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.aiModelTabs button.active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
