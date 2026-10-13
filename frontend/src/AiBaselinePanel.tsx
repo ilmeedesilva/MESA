@@ -2,6 +2,7 @@ import React from "react";
 import { ApiError, api, messageFor } from "./api";
 import type {
   AiBaselineComparisonReport,
+  AiBaselineComparisonsResponse,
   AiBaselineFindingLabel,
   AiBaselineRun,
   AiBaselineSystemReport,
@@ -12,6 +13,13 @@ type MesaReference = { precision: number; recall: number; f1_score: number } | n
 
 type UnstableFinding = AiBaselineFindingLabel & { occurrences: number };
 
+const SHORT_SYSTEM_NAMES: Record<string, string> = {
+  "spring-sample": "Spring Boot sample",
+  "sock-shop": "Sock Shop",
+  "god-service": "God Service",
+  "cyclic-dependencies": "Cyclic dependencies"
+};
+
 const SYSTEM_DESCRIPTIONS: Record<string, string> = {
   "god-service":
     "Synthetic test case — 8 made-up services, built specifically to check whether accuracy holds up as the number of services grows.",
@@ -21,6 +29,57 @@ const SYSTEM_DESCRIPTIONS: Record<string, string> = {
   "sock-shop":
     "Real, public repository — Sock Shop (8 services), deliberately messy: real test files and code comments are mixed in with real service code."
 };
+
+type ModelInfo = { label: string; rankNote: string; tier: "top" | "mid" | "unknown" };
+
+// Leaderboard positions are from the independent Vals AI SWE-bench Verified
+// leaderboard (results as of 1 September 2026), cited in the dissertation.
+const MODEL_INFO: Record<string, ModelInfo> = {
+  "claude-sonnet-5": {
+    label: "Claude Sonnet 5",
+    rankNote: "A typical mid-tier AI model: ranked 27th of 88 on the SWE-bench Verified coding leaderboard (Vals AI, Sept 2026).",
+    tier: "mid"
+  },
+  "claude-opus-5": {
+    label: "Claude Opus 5",
+    rankNote: "The strongest AI model tested: ranked 1st of 88 on the SWE-bench Verified coding leaderboard (Vals AI, Sept 2026).",
+    tier: "top"
+  }
+};
+
+const MODEL_ORDER = ["claude-sonnet-5", "claude-opus-5"];
+
+function modelInfo(model: string | null | undefined): ModelInfo {
+  if (model && MODEL_INFO[model]) return MODEL_INFO[model];
+  return { label: model ?? "AI model (not recorded)", rankNote: "General-purpose AI model.", tier: "unknown" };
+}
+
+function scoreTone(f1: number): "good" | "mixed" | "poor" {
+  if (f1 >= 0.9) return "good";
+  if (f1 >= 0.5) return "mixed";
+  return "poor";
+}
+
+function realProblemTotal(system: AiBaselineSystemReport): number {
+  const first = system.runs[0]?.metrics;
+  return first ? first.true_positives + first.false_negatives : 0;
+}
+
+function averageFound(system: AiBaselineSystemReport): number {
+  if (system.runs.length === 0) return 0;
+  const total = system.runs.reduce((sum, run) => sum + run.metrics.true_positives, 0);
+  return Math.round(total / system.runs.length);
+}
+
+function foundLabel(system: AiBaselineSystemReport): string {
+  const counts = new Set(system.runs.map((run) => run.metrics.true_positives));
+  const prefix = counts.size > 1 ? "~" : "";
+  return `found ${prefix}${averageFound(system)} of ${realProblemTotal(system)}`;
+}
+
+function sameAnswerCount(system: AiBaselineSystemReport): number {
+  return Math.round(system.determinism.exact_match_rate * system.runs.length);
+}
 
 function benchmarkIdFromPath(benchmarkPath: string): string {
   const fileName = benchmarkPath.split("/").pop() ?? benchmarkPath;
@@ -112,11 +171,13 @@ function buildPlainEnglishSummary(
 function SystemCard({
   system,
   mesaReference,
-  mesaError
+  mesaError,
+  modelLabel
 }: {
   system: AiBaselineSystemReport;
   mesaReference: MesaReference;
   mesaError: string | null;
+  modelLabel: string;
 }) {
   const unstable = findingsUnstableAcrossRuns(system.runs);
   const runF1s = system.runs.map((run) => run.metrics.f1_score);
@@ -174,7 +235,9 @@ function SystemCard({
           </div>
         </div>
         <div className="aiBaselineCompareCol llm">
-          <span className="aiBaselineCompareLabel">General-purpose AI (mean of {system.runs.length} runs)</span>
+          <span className="aiBaselineCompareLabel">
+            {modelLabel} (average of {system.runs.length} runs)
+          </span>
           <div className="aiBaselineStatRow">
             <span>
               {formatMetric(system.precision.mean)} ± {system.precision.stdev.toFixed(4)}
@@ -203,7 +266,7 @@ function SystemCard({
 
       <div className="aiBaselineRunStrip">
         <span className="aiBaselineRunStripLabel">
-          AI accuracy (F1) on each of the {system.runs.length} identical attempts — the dashed line is where MESA
+          {modelLabel} accuracy (F1) on each of the {system.runs.length} identical attempts — the dashed line is where MESA
           always sits (1.00, perfect)
         </span>
         <div className="aiBaselineRunChart">
@@ -237,8 +300,154 @@ function SystemCard({
   );
 }
 
+function Scoreboard({
+  reports,
+  mesaReferences
+}: {
+  reports: AiBaselineComparisonReport[];
+  mesaReferences: Record<string, MesaReference>;
+}) {
+  const systemOrder: AiBaselineSystemReport[] = [];
+  reports.forEach((report) =>
+    report.systems.forEach((system) => {
+      if (!systemOrder.some((existing) => existing.id === system.id)) systemOrder.push(system);
+    })
+  );
+  systemOrder.sort((a, b) => Number(isRealRepoBenchmark(b.benchmark)) - Number(isRealRepoBenchmark(a.benchmark)));
+
+  return (
+    <div className="aiScoreboard">
+      <div className="aiScoreboardHead">
+        <strong>The result in one table</strong>
+        <p>
+          Each cell shows the accuracy score (F1, from 0 to 1, where 1.00 is perfect), how many of the real problems
+          were found ("~" means the count changed between runs, so the average is shown), and whether the same answer
+          came back every time the identical question was asked.
+        </p>
+      </div>
+      <div className="aiScoreboardScroll">
+        <table className="aiScoreboardTable">
+          <thead>
+            <tr>
+              <th>System</th>
+              <th className="mesaCol">MESA</th>
+              {reports.map((report) => (
+                <th key={report.results_dir ?? report.model ?? "model"}>{modelInfo(report.model).label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {systemOrder.map((system) => {
+              const mesa = mesaReferences[system.id];
+              const total = realProblemTotal(system);
+              const isReal = isRealRepoBenchmark(system.benchmark);
+              return (
+                <tr key={system.id}>
+                  <th scope="row">
+                    <span className={`aiBaselineBadge ${isReal ? "real" : "synthetic"}`}>{isReal ? "Real" : "Synthetic"}</span>
+                    <span className="aiScoreboardSystemName">{SHORT_SYSTEM_NAMES[system.id] ?? system.name}</span>
+                  </th>
+                  <td className={`aiScoreCell ${mesa ? scoreTone(mesa.f1_score) : ""}`}>
+                    {mesa ? (
+                      <>
+                        <span className="aiScoreValue">{mesa.f1_score.toFixed(2)}</span>
+                        <span className="aiScoreDetail">
+                          found {Math.round(mesa.recall * total)} of {total}
+                        </span>
+                        <span className="aiScoreConsistency consistent">Same answer every time</span>
+                      </>
+                    ) : (
+                      <span className="aiScoreDetail">measuring…</span>
+                    )}
+                  </td>
+                  {reports.map((report) => {
+                    const result = report.systems.find((candidate) => candidate.id === system.id);
+                    if (!result) {
+                      return (
+                        <td key={report.results_dir ?? report.model ?? "model"} className="aiScoreCell">
+                          <span className="aiScoreDetail">not run</span>
+                        </td>
+                      );
+                    }
+                    const same = sameAnswerCount(result);
+                    const runs = result.runs.length;
+                    return (
+                      <td
+                        key={report.results_dir ?? report.model ?? "model"}
+                        className={`aiScoreCell ${scoreTone(result.f1_score.mean)}`}
+                      >
+                        <span className="aiScoreValue">{result.f1_score.mean.toFixed(2)}</span>
+                        <span className="aiScoreDetail">{foundLabel(result)}</span>
+                        <span className={`aiScoreConsistency ${same === runs ? "consistent" : "inconsistent"}`}>
+                          {same === runs ? "Same answer every time" : `Same answer in only ${same} of ${runs} runs`}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <ul className="aiScoreboardTakeaways">
+        <li>
+          <strong>MESA</strong> scored 1.00 on every system and gives the identical answer every time, because it runs
+          fixed rules over the code instead of generating a guess.
+        </li>
+        {reports.map((report) => {
+          const info = modelInfo(report.model);
+          const realSystems = report.systems.filter((system) => isRealRepoBenchmark(system.benchmark));
+          const bestRealRecall = realSystems.length
+            ? Math.max(...realSystems.map((system) => system.recall.mean))
+            : null;
+          const fullyConsistent = report.systems.filter((system) => sameAnswerCount(system) === system.runs.length).length;
+          return (
+            <li key={`takeaway-${report.results_dir ?? report.model}`}>
+              <strong>{info.label}</strong>
+              {bestRealRecall !== null
+                ? ` found at most ${Math.round(bestRealRecall * 100)}% of the real problems in the real repositories`
+                : ""}
+              , and gave the same answer on all runs for {fullyConsistent} of {report.systems.length} systems.
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function ModelCards({ reports }: { reports: AiBaselineComparisonReport[] }) {
+  return (
+    <div className="aiModelCards">
+      <div className="aiModelCard mesa">
+        <span className="aiModelCardTag">The tool built in this research</span>
+        <strong>MESA</strong>
+        <p>Fixed, rule-based static analysis. The same code always gives the same answer.</p>
+      </div>
+      {reports.map((report) => {
+        const info = modelInfo(report.model);
+        return (
+          <div key={report.results_dir ?? report.model ?? "model"} className={`aiModelCard ${info.tier}`}>
+            <span className="aiModelCardTag">
+              {info.tier === "top" ? "Strongest AI tested" : info.tier === "mid" ? "Typical AI model" : "AI model"}
+            </span>
+            <strong>{info.label}</strong>
+            <p>{info.rankNote}</p>
+            <p className="aiModelCardMeta">
+              Asked the identical question {report.runs_per_system} times per system, with the same anti-pattern list MESA
+              uses.
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function AiBaselinePanel() {
-  const [report, setReport] = React.useState<AiBaselineComparisonReport | null>(null);
+  const [reports, setReports] = React.useState<AiBaselineComparisonReport[]>([]);
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
   const [notGenerated, setNotGenerated] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -250,10 +459,18 @@ export function AiBaselinePanel() {
     setIsLoading(true);
     setNotGenerated(false);
     setError(null);
-    api<AiBaselineComparisonReport>("/api/ai-baseline-comparison")
+    api<AiBaselineComparisonsResponse>("/api/ai-baseline-comparisons")
       .then((result) => {
         if (cancelled) return;
-        setReport(result);
+        const ordered = [...result.reports].sort((a, b) => {
+          const rank = (report: AiBaselineComparisonReport) => {
+            const index = MODEL_ORDER.indexOf(report.model ?? "");
+            return index === -1 ? MODEL_ORDER.length : index;
+          };
+          return rank(a) - rank(b);
+        });
+        setReports(ordered);
+        setSelectedIndex(0);
       })
       .catch((caught) => {
         if (cancelled) return;
@@ -272,9 +489,10 @@ export function AiBaselinePanel() {
   }, []);
 
   React.useEffect(() => {
-    if (!report) return;
+    if (reports.length === 0) return;
     let cancelled = false;
-    const benchmarkIds = Array.from(new Set(report.systems.map((system) => benchmarkIdFromPath(system.benchmark))));
+    const allSystems = reports.flatMap((report) => report.systems);
+    const benchmarkIds = Array.from(new Set(allSystems.map((system) => benchmarkIdFromPath(system.benchmark))));
 
     benchmarkIds.forEach((benchmarkId) => {
       api<BenchmarkEvaluationReport>(`/api/benchmarks/${benchmarkId}/evaluate`, { method: "POST" })
@@ -299,7 +517,7 @@ export function AiBaselinePanel() {
           const message = messageFor(caught, "MESA reference unavailable");
           setMesaErrors((current) => {
             const next = { ...current };
-            report.systems
+            allSystems
               .filter((system) => benchmarkIdFromPath(system.benchmark) === benchmarkId)
               .forEach((system) => {
                 next[system.id] = message;
@@ -312,10 +530,12 @@ export function AiBaselinePanel() {
     return () => {
       cancelled = true;
     };
-  }, [report]);
+  }, [reports]);
 
-  const orderedSystems = report
-    ? [...report.systems].sort((a, b) => {
+  const selected = reports[selectedIndex] ?? null;
+  const selectedLabel = modelInfo(selected?.model).label;
+  const orderedSystems = selected
+    ? [...selected.systems].sort((a, b) => {
         const aReal = isRealRepoBenchmark(a.benchmark) ? 0 : 1;
         const bReal = isRealRepoBenchmark(b.benchmark) ? 0 : 1;
         return aReal - bReal;
@@ -328,53 +548,72 @@ export function AiBaselinePanel() {
         <div>
           <h2>AI Baseline Comparison</h2>
           <p>
-            MESA vs. a general-purpose AI model, prompted with MESA's own anti-pattern taxonomy and run repeatedly
-            on the same code — measuring accuracy and, separately, whether the answer stays the same when nothing
-            about the input does.
+            Can a general-purpose AI model find the same architectural problems as MESA, and does it give the same
+            answer when asked the same question again?
           </p>
         </div>
-        {report ? (
+        {reports.length > 0 ? (
           <span>
-            {report.systems.length} system{report.systems.length === 1 ? "" : "s"} · provider: {report.provider}
+            {reports.length} AI model{reports.length === 1 ? "" : "s"} tested · {reports[0].runs_per_system} runs per system
           </span>
         ) : null}
-      </div>
-
-      <div className="aiBaselineIntro">
-        <strong>How to read this page</strong>
-        <p>
-          Every system below was scanned twice: once by MESA, and separately by a general-purpose AI model that was
-          given the exact same list of anti-patterns to look for. To test whether the AI's answer can be trusted, it
-          was asked the identical question {report ? report.runs_per_system : 5} times on the unchanged code. MESA's
-          side of the comparison cannot vary — the same rules on the same code always give the same answer — so its
-          numbers are shown once, labelled "by construction." The AI's side shows the average across its repeated
-          attempts, plus how much those attempts actually agreed with each other.
-        </p>
       </div>
 
       {isLoading ? <div className="emptyInline">Loading AI baseline comparison...</div> : null}
 
       {notGenerated ? (
         <div className="emptyInline">
-          No AI baseline comparison has been exported yet. Run it from a terminal:
-          <pre className="aiBaselineCliHint">mesa evaluate-ai-baseline benchmarks/ground_truth.yml --systems god-service,cyclic-dependencies --runs 5 --provider anthropic --output-dir evaluation-results/ai-baseline-comparison</pre>
+          No AI baseline comparison has been exported yet. Run it from a terminal, with one output directory per model:
+          <pre className="aiBaselineCliHint">MESA_ANTHROPIC_MODEL=claude-opus-5 mesa evaluate-ai-baseline benchmarks/ground_truth.yml --systems god-service,cyclic-dependencies --runs 5 --provider anthropic --output-dir evaluation-results/ai-baseline-comparison-opus5</pre>
           Then reload this page.
         </div>
       ) : null}
 
       {error ? <div className="error">{error}</div> : null}
 
-      {orderedSystems.length > 0 ? (
-        <div className="aiBaselineResults">
-          {orderedSystems.map((system) => (
-            <SystemCard
-              key={system.id}
-              system={system}
-              mesaReference={mesaReferences[system.id] ?? null}
-              mesaError={mesaErrors[system.id] ?? null}
-            />
-          ))}
-        </div>
+      {reports.length > 0 ? (
+        <>
+          <ModelCards reports={reports} />
+          <Scoreboard reports={reports} mesaReferences={mesaReferences} />
+
+          <div className="aiBaselineIntro">
+            <strong>How the test worked</strong>
+            <p>
+              Every system was checked by MESA and, separately, by each AI model. The AI was given the exact same list
+              of anti-patterns that MESA looks for, plus the system's source code, and was asked the identical question{" "}
+              {reports[0].runs_per_system} times on the unchanged code. Both were scored against the same answer key
+              using the same scoring rules.
+            </p>
+          </div>
+
+          <div className="aiModelTabs" role="tablist" aria-label="Choose which AI model's detailed results to show">
+            <span className="aiModelTabsLabel">Detailed results for:</span>
+            {reports.map((report, index) => (
+              <button
+                key={report.results_dir ?? report.model ?? index}
+                type="button"
+                role="tab"
+                aria-selected={index === selectedIndex}
+                className={index === selectedIndex ? "active" : ""}
+                onClick={() => setSelectedIndex(index)}
+              >
+                {modelInfo(report.model).label}
+              </button>
+            ))}
+          </div>
+
+          <div className="aiBaselineResults">
+            {orderedSystems.map((system) => (
+              <SystemCard
+                key={`${selected?.results_dir}-${system.id}`}
+                system={system}
+                mesaReference={mesaReferences[system.id] ?? null}
+                mesaError={mesaErrors[system.id] ?? null}
+                modelLabel={selectedLabel}
+              />
+            ))}
+          </div>
+        </>
       ) : null}
     </section>
   );

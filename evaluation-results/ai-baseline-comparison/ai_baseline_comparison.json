@@ -895,7 +895,8 @@
         "mean_pairwise_jaccard": 0.5333,
         "distinct_result_sets": 3,
         "run_count": 5
-      }
+      },
+      "model": "claude-sonnet-5"
     },
     {
       "benchmark": "/Users/ilmeedesilva/MESA/benchmarks/ground_truth.yml",
@@ -1480,7 +1481,8 @@
         "mean_pairwise_jaccard": 0.7533,
         "distinct_result_sets": 3,
         "run_count": 5
-      }
+      },
+      "model": "claude-sonnet-5"
     },
     {
       "benchmark": "/Users/ilmeedesilva/MESA/benchmarks/ground_truth.yml",
@@ -1670,7 +1672,8 @@
         "mean_pairwise_jaccard": 1.0,
         "distinct_result_sets": 1,
         "run_count": 5
-      }
+      },
+      "model": "claude-sonnet-5"
     },
     {
       "benchmark": "/Users/ilmeedesilva/MESA/benchmarks/real_repo_sockshop.yml",
@@ -1850,7 +1853,10 @@
         "mean_pairwise_jaccard": 1.0,
         "distinct_result_sets": 1,
         "run_count": 5
-      }
+      },
+      "model": "claude-sonnet-5"
     }
-  ]
+  ],
+  "model": "claude-sonnet-5",
+  "model_note": "Added on 2026-10-13: this run (2026-09-24) predates automatic model recording. The model is taken from MESA_ANTHROPIC_MODEL=claude-sonnet-5 in the .env used for the run."
 }

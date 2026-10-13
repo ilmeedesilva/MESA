@@ -174,3 +174,31 @@ def test_load_ai_baseline_comparison_reads_the_exported_report(tmp_path, monkeyp
     report = load_ai_baseline_comparison()
 
     assert report == {"benchmark": "ground_truth.yml", "systems": []}
+
+
+def test_load_ai_baseline_comparisons_reads_one_report_per_model_directory(tmp_path, monkeypatch) -> None:
+    import mesa.evaluation.runner as runner_module
+    from mesa.evaluation import load_ai_baseline_comparisons
+
+    for directory, model in (("ai-baseline-comparison", "claude-sonnet-5"), ("ai-baseline-comparison-opus5", "claude-opus-5")):
+        (tmp_path / directory).mkdir()
+        (tmp_path / directory / "ai_baseline_comparison.json").write_text(
+            f'{{"model": "{model}", "systems": []}}', encoding="utf-8"
+        )
+    (tmp_path / "ai-baseline-comparison-broken").mkdir()
+    (tmp_path / "ai-baseline-comparison-broken" / "ai_baseline_comparison.json").write_text("{", encoding="utf-8")
+    monkeypatch.setattr(runner_module, "EVALUATION_RESULTS_DIR", tmp_path)
+
+    reports = load_ai_baseline_comparisons()
+
+    assert [report["model"] for report in reports] == ["claude-sonnet-5", "claude-opus-5"]
+    assert [report["results_dir"] for report in reports] == ["ai-baseline-comparison", "ai-baseline-comparison-opus5"]
+
+
+def test_load_ai_baseline_comparisons_returns_empty_list_when_nothing_exported(tmp_path, monkeypatch) -> None:
+    import mesa.evaluation.runner as runner_module
+    from mesa.evaluation import load_ai_baseline_comparisons
+
+    monkeypatch.setattr(runner_module, "EVALUATION_RESULTS_DIR", tmp_path)
+
+    assert load_ai_baseline_comparisons() == []
