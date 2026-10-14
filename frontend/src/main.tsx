@@ -6,6 +6,7 @@ import { ApiError, api, messageFor, pollScanJob, streamAIResponse } from "./api"
 import { DimensionBars, FindingDrawer } from "./FindingDrawer";
 import { DocLinkButton } from "./DocLinkButton";
 import { HealthScoreView, RemediationRoadmapPanel } from "./RemediationRoadmapPanel";
+import { FitnessGatePanel } from "./FitnessGatePanel";
 import { BenchmarksPanel } from "./BenchmarksPanel";
 import { AiBaselinePanel } from "./AiBaselinePanel";
 import { EvolutionPanel } from "./EvolutionPanel";
@@ -196,7 +197,8 @@ const appNavigation = [
     items: [
       { id: "history", label: "Scan History", description: "Review previous scans" },
       { id: "evolution", label: "Evolution", description: "Compare architecture changes" },
-      { id: "roadmap", label: "Roadmap", description: "Recommended remediation order" }
+      { id: "roadmap", label: "Roadmap", description: "Recommended remediation order" },
+      { id: "gate", label: "Fitness Gate", description: "Pass or fail against architecture rules" }
     ]
   },
   {
@@ -226,6 +228,7 @@ const sectionsRequiringProject = new Set<AppSection>([
   "history",
   "evolution",
   "roadmap",
+  "gate",
   "ai",
   "evaluation"
 ]);
@@ -2051,6 +2054,13 @@ function App() {
             roadmap={roadmap}
             isLoading={isLoadingRoadmap}
             onOpenDoc={openDoc}
+          />
+        );
+      case "gate":
+        return (
+          <FitnessGatePanel
+            scanId={activeScan?.id ?? null}
+            isDemo={Boolean(activeScan && isDemoScan(activeScan.id))}
           />
         );
       case "ai":
