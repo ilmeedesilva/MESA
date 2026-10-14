@@ -810,6 +810,7 @@ export function readSectionFromUrl(): AppSection {
     "history",
     "evolution",
     "roadmap",
+    "gate",
     "ai",
     "evaluation",
     "benchmarks",

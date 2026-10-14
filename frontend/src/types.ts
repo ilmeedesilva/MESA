@@ -467,6 +467,7 @@ export type AppSection =
   | "history"
   | "evolution"
   | "roadmap"
+  | "gate"
   | "ai"
   | "evaluation"
   | "benchmarks"
@@ -554,4 +555,32 @@ export type ResearchEvaluationRecord = {
   suitable_for_report: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+};
+
+export type ArchitectureGateThresholds = {
+  minimum_health_score: number;
+  maximum_critical_findings: number;
+  allow_new_cyclic_dependencies: boolean;
+  allow_governance_violations: boolean;
+  allow_new_high_risk_coupling: boolean;
+};
+
+export type ArchitectureGateRuleResult = {
+  rule_id: string;
+  passed: boolean;
+  message: string;
+  observed_value?: unknown;
+  threshold?: unknown;
+  related_findings: string[];
+};
+
+export type ArchitectureFitnessGateResult = {
+  status: "passed" | "failed";
+  health_score: number | null;
+  threshold: number;
+  failed_rules: string[];
+  rules: ArchitectureGateRuleResult[];
+  thresholds: ArchitectureGateThresholds;
+  baseline_scan_id: string | null;
+  source: string;
 };
