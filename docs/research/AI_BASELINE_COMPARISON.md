@@ -42,10 +42,23 @@ MESA's numbers are deterministic by construction (the same code run on the same 
 **Both claims from the Purpose section are directly supported by the data, not just the closest prior work's stated gap:**
 
 - **Determinism degrades as scope grows, but not smoothly.** The two-service control case (`cyclic-dependencies`) was in fact perfectly self-consistent across all 5 runs (same finding-set every time) — but still wrong: precision 0.50, recall 0.33, so the model reliably arrived at the *same incorrect* answer. Once system size/complexity increased even moderately (`god-service`, 8 services; `spring-sample`, a real 6-service repository), determinism collapsed to 40% exact-match on both — barely better than a coin flip on whether two runs agree at all. `sock-shop` (8 services, real) was, by contrast, 100% self-consistent again — determinism is not simply a function of scale; it can also fail by being *confidently, repeatably* wrong.
-- **Accuracy is poor on real code, in two different ways.** On `spring-sample`, F1 is **exactly 0.00** — the model found *zero* of the four real, hand-verified anti-patterns across any of its 5 runs, and disagreed with itself about what it incorrectly reported instead (mean pairwise Jaccard 0.53). On `sock-shop`, F1 is 0.40 (precision 1.0000, recall 0.2500) — the model never hallucinated a false positive here, but missed 3 of the 4 real anti-patterns, identically, on every single run. Read together, these are two different failure modes, not one: on one real repository the model is unreliable in *what* it finds; on the other it is reliably *incomplete*. Neither is a substitute for MESA's 1.0000/100% on both.
+- **Accuracy is poor on real code, in two different ways.** On `spring-sample`, F1 is **exactly 0.00** — the model found *zero* of the 24 labelled, hand-verified findings across any of its 5 runs, and disagreed with itself about what it incorrectly reported instead (mean pairwise Jaccard 0.53). On `sock-shop`, F1 is 0.40 (precision 1.0000, recall 0.2500) — the model never hallucinated a false positive here, but missed 3 of the 4 real anti-patterns, identically, on every single run. Read together, these are two different failure modes, not one: on one real repository the model is unreliable in *what* it finds; on the other it is reliably *incomplete*. Neither is a substitute for MESA's 1.0000/100% on both.
 - MESA scores 1.0000/100% on all four systems tested, by construction. `sock-shop`'s F1 is the one case in this study where the LLM's raw number (0.40) is nominally higher than the number MESA scored on the same repository *before* its own precision fixes existed (0.32) — reported here without softening: MESA's original imperfection on Sock Shop had a documented, fixable root cause and was fixed and re-measured at 1.0000; the LLM's 75%-recall gap on the same repository has no equivalent remediation path available to a user of the model.
 
 Full per-run data (all 20 raw predictions, TP/FP/FN per run): `evaluation-results/ai-baseline-comparison/ai_baseline_comparison.json`.
+
+## Second Model: Claude Opus 5 (robustness check, 2026-10-13)
+
+To check whether the result above depended on choosing a mid-ranked model (Claude Sonnet 5, 79.6% on SWE-bench Verified, 27th of 88; Vals AI, 2026), the identical comparison was re-run with Claude Opus 5, ranked 1st on the same leaderboard (97.0%). Prompt, taxonomy, scoring function, ground truth, systems and 5 runs per system were unchanged.
+
+| System | Corpus | MESA F1 | Opus 5 F1 (mean ± stdev) | Opus 5 recall | Opus 5 exact-match rate | Opus 5 mean pairwise Jaccard |
+|---|---|---:|---:|---:|---:|---:|
+| cyclic-dependencies | synthetic | 1.0000 | 0.8800 ± 0.2683 | 0.8667 | 80% | 0.7000 |
+| god-service | synthetic | 1.0000 | 0.5847 ± 0.1236 | 0.4235 | 80% | 0.7778 |
+| spring-sample | **real** | 1.0000 | 0.3897 ± 0.0058 | 0.2500 | 80% | 0.9429 |
+| sock-shop | **real** | 1.0000 | 0.3867 ± 0.0298 | 0.2500 | 80% | 0.8000 |
+
+The stronger model was more accurate on the small synthetic systems, but on both real repositories its recall stayed at 0.25 in every run (6 of 24 on the Spring sample, 1 of 4 on Sock Shop), and it was not fully deterministic on any system (4 of 5 runs identical). The Spring sample source was truncated at 60,000 characters for both models. Full per-run data: `evaluation-results/ai-baseline-comparison-opus5/ai_baseline_comparison.json`.
 
 ## A Bug This Run Found — and Why the Numbers Above Are Trustworthy
 
