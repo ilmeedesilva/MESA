@@ -211,10 +211,10 @@ Real-repository evaluation (Phase 15) was extended with a third repository, Sock
 
 ## AI Baseline Comparison
 
-An empirical comparison of MESA's deterministic static analysis against a general-purpose LLM (Claude Sonnet 5) prompted directly with MESA's own anti-pattern taxonomy, run 5 times per benchmark system to measure both accuracy and output determinism:
+An empirical comparison of MESA's deterministic static analysis against two general-purpose LLMs (Claude Sonnet 5 and Claude Opus 5) prompted directly with MESA's own anti-pattern taxonomy, run 5 times per benchmark system to measure both accuracy and output determinism:
 
 ```text
 mesa evaluate-ai-baseline <benchmark.yml> --systems <ids> --runs 5 --provider openai|anthropic
 ```
 
-On the one real repository tested (`spring-sample`), the LLM scored F1 = 0.0000 with a 40% exact-match rate across 5 runs, against MESA's 1.0000/100% (deterministic by construction). See `docs/research/AI_BASELINE_COMPARISON.md` for the full methodology and results.
+On the two real repositories tested (`spring-sample`, `sock-shop`), neither model found more than 25% of the labelled findings (Sonnet 5: F1 0.00 and 0.40; Opus 5, ranked 1st on SWE-bench Verified: F1 0.39 on both), and neither model was fully deterministic across all systems, against MESA's 1.0000 with identical output every run. See `docs/research/AI_BASELINE_COMPARISON.md` for the full methodology and results.
