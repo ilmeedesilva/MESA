@@ -1396,3 +1396,181 @@ def test_get_ai_baseline_comparisons_returns_404_when_nothing_exported(tmp_path,
 
     assert response.status_code == 404
     assert "evaluate-ai-baseline" in response.json()["detail"]
+
+
+def test_live_ai_schema_is_valid_for_openai_strict_mode(monkeypatch) -> None:
+    # OpenAI strict json_schema mode rejects a schema whose "required" list
+    # does not name every property; this once made every non-streaming call
+    # fall back silently to the grounded answer.
+    from mesa.models import AIExplainerIntent, AIExplainerRequest, AIExplainerResponse
+
+    captured: dict = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "output": [
+                        {
+                            "type": "message",
+                            "content": [
+                                {
+                                    "type": "output_text",
+                                    "text": json.dumps(
+                                        {
+                                            "title": "Live title",
+                                            "answer": "Live answer",
+                                            "suggestions": [],
+                                            "follow_up_questions": [],
+                                            "limitations": [],
+                                            "policy_document": None,
+                                            "confidence": "HIGH",
+                                        }
+                                    ),
+                                }
+                            ],
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(request, timeout=None):
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeResponse()
+
+    monkeypatch.setattr(explainer_module.urllib_request, "urlopen", fake_urlopen)
+    grounded = AIExplainerResponse(
+        intent=AIExplainerIntent.POLICY_WRITING_ASSISTANCE,
+        title="Grounded",
+        answer="Grounded answer",
+        policy_document="policies: []\n",
+    )
+    result = explainer_module._call_openai_responses_api(
+        AIExplainerRequest(question="Draft a policy"), grounded, "sk-test"
+    )
+
+    schema = captured["body"]["text"]["format"]["schema"]
+    assert set(schema["required"]) == set(schema["properties"])
+    assert result is not None
+    assert result.answer == "Live answer"
+    assert result.policy_document == "policies: []\n"
+
+
+class _FakeClaudeBlock:
+    def __init__(self, text: str) -> None:
+        self.type = "text"
+        self.text = text
+
+
+class _FakeClaudeMessage:
+    def __init__(self, text: str, stop_reason: str = "end_turn") -> None:
+        self.content = [_FakeClaudeBlock(text)]
+        self.stop_reason = stop_reason
+
+
+class _FakeClaudeStream:
+    def __init__(self, pieces: list[str]) -> None:
+        self.text_stream = iter(pieces)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def get_final_message(self):
+        return _FakeClaudeMessage("".join([]))
+
+
+class _FakeClaudeClient:
+    def __init__(self, structured: str = "", pieces: list[str] | None = None, stop_reason: str = "end_turn"):
+        self.calls: list[dict] = []
+        outer = self
+
+        class _Messages:
+            def create(self, **kwargs):
+                outer.calls.append(kwargs)
+                return _FakeClaudeMessage(structured, stop_reason)
+
+            def stream(self, **kwargs):
+                outer.calls.append(kwargs)
+                return _FakeClaudeStream(pieces or [])
+
+        self.messages = _Messages()
+
+
+def _claude_env(monkeypatch, client: _FakeClaudeClient) -> None:
+    monkeypatch.setenv("MESA_AI_MODE", "hybrid")
+    monkeypatch.setenv("MESA_AI_PROVIDER", "anthropic")
+    monkeypatch.setenv("MESA_ANTHROPIC_API_KEY", "sk-ant-test")
+    monkeypatch.setattr(explainer_module, "_anthropic_client", lambda api_key: client)
+
+
+def _grounded_for_claude():
+    from mesa.models import AIExplainerIntent, AIExplainerResponse
+
+    return AIExplainerResponse(
+        intent=AIExplainerIntent.FINDING_EXPLANATION, title="Grounded", answer="Grounded answer"
+    )
+
+
+def test_claude_provider_returns_structured_answer(monkeypatch) -> None:
+    from mesa.models import AIExplainerRequest
+
+    payload = json.dumps(
+        {
+            "title": "Claude title",
+            "answer": "Claude answer",
+            "suggestions": ["s1"],
+            "follow_up_questions": [],
+            "limitations": [],
+            "policy_document": None,
+            "confidence": "HIGH",
+        }
+    )
+    client = _FakeClaudeClient(structured=payload)
+    _claude_env(monkeypatch, client)
+
+    result = explainer_module.finalize_response_with_live_ai(
+        AIExplainerRequest(question="Explain"), _grounded_for_claude()
+    )
+
+    assert result.answer == "Claude answer"
+    assert result.source.startswith("anthropic-hybrid:")
+    request = client.calls[0]
+    assert request["output_config"]["format"]["type"] == "json_schema"
+    schema = request["output_config"]["format"]["schema"]
+    assert set(schema["required"]) == set(schema["properties"])
+
+
+def test_claude_provider_falls_back_on_refusal(monkeypatch) -> None:
+    from mesa.models import AIExplainerRequest
+
+    _claude_env(monkeypatch, _FakeClaudeClient(structured="", stop_reason="refusal"))
+
+    result = explainer_module.finalize_response_with_live_ai(
+        AIExplainerRequest(question="Explain"), _grounded_for_claude()
+    )
+
+    assert result.answer == "Grounded answer"
+    assert result.source == "mesa-grounded-explainer-fallback"
+
+
+def test_claude_provider_streams_answer(monkeypatch) -> None:
+    from mesa.models import AIExplainerRequest
+
+    _claude_env(monkeypatch, _FakeClaudeClient(pieces=["Hello ", "from Claude"]))
+
+    response, chunks = explainer_module.stream_answer_text(
+        AIExplainerRequest(question="Explain"), _grounded_for_claude()
+    )
+
+    assert chunks == ["Hello ", "from Claude"]
+    assert response.answer == "Hello from Claude"
+    assert response.source.startswith("anthropic-hybrid:")

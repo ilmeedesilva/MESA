@@ -42,6 +42,30 @@ _PLACEHOLDER_KEY_FRAGMENTS = {
 
 logger = logging.getLogger(__name__)
 
+_LIVE_AI_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "title": {"type": "string"},
+        "answer": {"type": "string"},
+        "suggestions": {"type": "array", "items": {"type": "string"}},
+        "follow_up_questions": {"type": "array", "items": {"type": "string"}},
+        "limitations": {"type": "array", "items": {"type": "string"}},
+        "policy_document": {"type": ["string", "null"]},
+        "confidence": {"type": "string", "enum": ["LOW", "MODERATE", "HIGH"]},
+    },
+    "required": [
+        "title",
+        "answer",
+        "suggestions",
+        "follow_up_questions",
+        "limitations",
+        "policy_document",
+        "confidence",
+    ],
+}
+
+
 
 @dataclass(frozen=True)
 class _DocPage:
@@ -114,6 +138,8 @@ def finalize_response_with_live_ai(
 ) -> AIExplainerResponse:
     if not _hybrid_mode_enabled():
         return grounded_response
+    if _ai_provider() == "anthropic":
+        return _finalize_with_anthropic(payload, grounded_response)
 
     api_key = _openai_api_key()
     if not api_key:
@@ -176,6 +202,8 @@ def stream_answer_text(
             grounded_response.intent.value,
         )
         return grounded_response, list(_chunk_text(grounded_response.answer))
+    if _ai_provider() == "anthropic":
+        return _stream_with_anthropic(payload, grounded_response)
 
     api_key = _openai_api_key()
     if not api_key:
@@ -239,6 +267,8 @@ def _openai_api_key() -> str | None:
 
 
 def ai_status(*, probe: bool = True) -> AIExplainerStatus:
+    if _hybrid_mode_enabled() and _ai_provider() == "anthropic":
+        return _anthropic_status(probe=probe)
     mode = os.getenv("MESA_AI_MODE", "grounded").lower()
     base_url = os.getenv("MESA_OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip(
         "/"
@@ -324,27 +354,7 @@ def _call_openai_responses_api(
     model = os.getenv("MESA_OPENAI_MODEL", "gpt-5.4-mini")
     timeout_seconds = float(os.getenv("MESA_OPENAI_TIMEOUT_SECONDS", "20"))
 
-    schema = {
-        "type": "object",
-        "additionalProperties": False,
-        "properties": {
-            "title": {"type": "string"},
-            "answer": {"type": "string"},
-            "suggestions": {"type": "array", "items": {"type": "string"}},
-            "follow_up_questions": {"type": "array", "items": {"type": "string"}},
-            "limitations": {"type": "array", "items": {"type": "string"}},
-            "policy_document": {"type": ["string", "null"]},
-            "confidence": {"type": "string", "enum": ["LOW", "MODERATE", "HIGH"]},
-        },
-        "required": [
-            "title",
-            "answer",
-            "suggestions",
-            "follow_up_questions",
-            "limitations",
-            "confidence",
-        ],
-    }
+    schema = _LIVE_AI_SCHEMA
 
     prompt = _build_live_ai_prompt(payload, grounded_response)
     body = {
@@ -401,7 +411,14 @@ def _call_openai_responses_api(
     if not structured_text:
         return None
 
-    parsed = json.loads(structured_text)
+    return _apply_live_ai_json(
+        json.loads(structured_text), grounded_response, f"openai-hybrid:{model}"
+    )
+
+
+def _apply_live_ai_json(
+    parsed: dict, grounded_response: AIExplainerResponse, source: str
+) -> AIExplainerResponse:
     return grounded_response.model_copy(
         update={
             "title": parsed["title"],
@@ -411,11 +428,10 @@ def _call_openai_responses_api(
             "limitations": _merge_lists(
                 grounded_response.limitations, parsed["limitations"], limit=5
             ),
-            "policy_document": parsed.get(
-                "policy_document", grounded_response.policy_document
-            ),
+            "policy_document": parsed.get("policy_document")
+            or grounded_response.policy_document,
             "confidence": AIExplainerConfidence(parsed["confidence"]),
-            "source": f"openai-hybrid:{model}",
+            "source": source,
         }
     )
 
@@ -1544,3 +1560,192 @@ def _doc_summary(content: str) -> str:
         return "No summary available."
     sentences = re.split(r"(?<=[.!?])\s+", cleaned)
     return " ".join(sentences[:2])[:320].strip()
+
+
+# --- Anthropic (Claude) provider ------------------------------------------
+# Selected with MESA_AI_PROVIDER=anthropic. Same grounding packet, schema and
+# fallback behaviour as the OpenAI path: any failure or refusal returns the
+# grounded answer, so the explainer never blocks on the live model.
+
+_ANTHROPIC_SYSTEM_STRUCTURED = (
+    "You are MESA's architecture explainer. Use only the provided grounding packet. "
+    "Do not invent findings, files, services, metrics, policies, or docs. "
+    "Keep the answer user-friendly and concrete. Preserve uncertainty and limitations."
+)
+_ANTHROPIC_SYSTEM_STREAM = (
+    "You are MESA's architecture explainer. Use only the provided grounding packet. "
+    "Return only a plain-text answer. Do not invent findings or evidence."
+)
+
+
+def _ai_provider() -> str:
+    return os.getenv("MESA_AI_PROVIDER", "openai").strip().lower()
+
+
+def _anthropic_api_key() -> str | None:
+    key = os.getenv("MESA_ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+    return key.strip() if key else None
+
+
+def _anthropic_model() -> str:
+    return os.getenv("MESA_ANTHROPIC_EXPLAINER_MODEL", "claude-opus-5-5")
+
+
+def _anthropic_client(api_key: str):
+    import anthropic
+
+    timeout_seconds = float(os.getenv("MESA_ANTHROPIC_TIMEOUT_SECONDS", "60"))
+    return anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds, max_retries=1)
+
+
+def _anthropic_request(prompt: str, system: str) -> dict:
+    return {
+        "model": _anthropic_model(),
+        "max_tokens": 8000,
+        # Low effort keeps live explanations fast and cheap; the task is a rewrite
+        # of evidence MESA already found, not open-ended reasoning.
+        "output_config": {"effort": os.getenv("MESA_ANTHROPIC_EFFORT", "low")},
+        "system": system,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+
+
+def _anthropic_fallback(
+    grounded_response: AIExplainerResponse, reason: str
+) -> AIExplainerResponse:
+    logger.warning(
+        "MESA AI fallback: Claude request failed for intent=%s model=%s error=%s",
+        grounded_response.intent.value,
+        _anthropic_model(),
+        reason,
+    )
+    return grounded_response.model_copy(
+        update={
+            "source": "mesa-grounded-explainer-fallback",
+            "limitations": grounded_response.limitations
+            + [f"Live AI fallback was used because the Claude request failed: {reason}"],
+        }
+    )
+
+
+def _missing_anthropic_key(grounded_response: AIExplainerResponse) -> AIExplainerResponse:
+    return grounded_response.model_copy(
+        update={
+            "limitations": grounded_response.limitations
+            + ["Live AI mode is enabled, but no Anthropic API key was configured."],
+        }
+    )
+
+
+def _finalize_with_anthropic(
+    payload: AIExplainerRequest, grounded_response: AIExplainerResponse
+) -> AIExplainerResponse:
+    api_key = _anthropic_api_key()
+    if not api_key:
+        return _missing_anthropic_key(grounded_response)
+    try:
+        request = _anthropic_request(
+            _build_live_ai_prompt(payload, grounded_response), _ANTHROPIC_SYSTEM_STRUCTURED
+        )
+        request["output_config"]["format"] = {"type": "json_schema", "schema": _LIVE_AI_SCHEMA}
+        response = _anthropic_client(api_key).messages.create(**request)
+        if response.stop_reason == "refusal":
+            return _anthropic_fallback(grounded_response, "Claude declined the request")
+        text = next((block.text for block in response.content if block.type == "text"), "")
+        if not text:
+            return _anthropic_fallback(grounded_response, "no structured response")
+        result = _apply_live_ai_json(
+            json.loads(text), grounded_response, f"anthropic-hybrid:{_anthropic_model()}"
+        )
+    except Exception as error:
+        return _anthropic_fallback(grounded_response, str(error)[:240])
+    logger.info(
+        "MESA AI answered via Claude intent=%s model=%s",
+        grounded_response.intent.value,
+        _anthropic_model(),
+    )
+    return result
+
+
+def _stream_with_anthropic(
+    payload: AIExplainerRequest, grounded_response: AIExplainerResponse
+) -> tuple[AIExplainerResponse, list[str]]:
+    api_key = _anthropic_api_key()
+    if not api_key:
+        fallback = _missing_anthropic_key(grounded_response)
+        return fallback, list(_chunk_text(fallback.answer))
+    chunks: list[str] = []
+    try:
+        request = _anthropic_request(
+            _build_live_ai_stream_prompt(payload, grounded_response), _ANTHROPIC_SYSTEM_STREAM
+        )
+        with _anthropic_client(api_key).messages.stream(**request) as stream:
+            for text in stream.text_stream:
+                chunks.append(text)
+            final_message = stream.get_final_message()
+        if final_message.stop_reason == "refusal":
+            raise RuntimeError("Claude declined the request")
+    except Exception as error:
+        fallback = _anthropic_fallback(grounded_response, str(error)[:240])
+        return fallback, list(_chunk_text(fallback.answer))
+    answer = "".join(chunks).strip()
+    final_response = grounded_response.model_copy(
+        update={
+            "answer": answer or grounded_response.answer,
+            "source": f"anthropic-hybrid:{_anthropic_model()}",
+        }
+    )
+    logger.info(
+        "MESA AI answered via Claude streaming intent=%s model=%s",
+        grounded_response.intent.value,
+        _anthropic_model(),
+    )
+    return final_response, (chunks or list(_chunk_text(final_response.answer)))
+
+
+def _anthropic_status(*, probe: bool) -> AIExplainerStatus:
+    mode = os.getenv("MESA_AI_MODE", "grounded").lower()
+    model = _anthropic_model()
+    api_key = _anthropic_api_key()
+    base = {
+        "mode": mode,
+        "live_enabled": True,
+        "api_key_configured": bool(api_key),
+        "api_key_hint": _api_key_hint(api_key),
+        "model": model,
+        "base_url": "https://api.anthropic.com",
+    }
+    if not api_key:
+        return AIExplainerStatus(
+            **base,
+            state=AIConnectionState.MISSING_API_KEY,
+            message="Hybrid AI is enabled with Claude, but no Anthropic API key was configured.",
+        )
+    if not probe:
+        return AIExplainerStatus(
+            **base,
+            state=AIConnectionState.READY,
+            message="Hybrid AI (Claude) appears configured. Probe was skipped.",
+        )
+    import anthropic
+
+    try:
+        _anthropic_client(api_key).models.retrieve(model)
+        state, message = (
+            AIConnectionState.READY,
+            f"Live AI is ready. Anthropic accepted the configured key for model {model}.",
+        )
+    except anthropic.AuthenticationError:
+        state, message = AIConnectionState.INVALID_API_KEY, "Anthropic rejected the configured API key."
+    except anthropic.PermissionDeniedError:
+        state, message = AIConnectionState.ACCESS_DENIED, "Anthropic denied access to this model or account."
+    except anthropic.NotFoundError:
+        state, message = (
+            AIConnectionState.MODEL_UNAVAILABLE,
+            f"The configured model '{model}' was not available from Anthropic.",
+        )
+    except anthropic.APIStatusError as error:
+        state, message = AIConnectionState.CONNECTION_ERROR, f"Anthropic probe failed with HTTP {error.status_code}."
+    except anthropic.APIConnectionError as error:
+        state, message = AIConnectionState.CONNECTION_ERROR, f"Could not reach Anthropic: {error}"
+    return AIExplainerStatus(**base, state=state, message=message)
