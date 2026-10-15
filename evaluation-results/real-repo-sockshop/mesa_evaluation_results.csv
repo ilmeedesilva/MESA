@@ -1,2 +1,2 @@
 system_id,system_name,category,true_positives,false_positives,false_negatives,precision,recall,f1_score
-sock-shop,"Sock Shop (microservices-demo org - catalogue, carts, orders, payment, shipping, user, queue-master, front-end)",real-world public repository (multi-repo),4,17,0,0.1905,1.0,0.32
+sock-shop,"Sock Shop (microservices-demo org - catalogue, carts, orders, payment, shipping, user, queue-master, front-end)",real-world public repository (multi-repo),4,0,0,1.0,1.0,1.0
