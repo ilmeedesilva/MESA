@@ -203,7 +203,7 @@ def _is_self_reference(host: str | None, service_name: str) -> bool:
     normal E2E test practice, not a cross-service coupling risk, and is a
     narrower, more architecturally principled fix than excluding an entire
     test directory by name (which would also discard genuine findings)."""
-    return bool(host) and host.lower() == service_name.lower()
+    return bool(host and host.lower() == service_name.lower())
 
 
 def _is_under_test_tooling_dir(file_path: Path, root: Path) -> bool:

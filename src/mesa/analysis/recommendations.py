@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from typing import Any
 
 from mesa.models import Finding, FindingRecommendation, FindingType, Severity
@@ -230,8 +231,8 @@ def _llm_refine_if_enabled(
     if not finding.evidence:
         return recommendations
     try:
-        from langchain_core.prompts import ChatPromptTemplate  # type: ignore
-        from langgraph.graph import END, StateGraph  # type: ignore
+        from langchain_core.prompts import ChatPromptTemplate
+        from langgraph.graph import END, StateGraph
     except Exception:
         return recommendations
 
@@ -278,7 +279,7 @@ def _domain_keywords(evidence: list[dict[str, Any]]) -> list[str]:
     return []
 
 
-def _walk_dicts(value: Any):
+def _walk_dicts(value: Any) -> Iterator[dict[str, Any]]:
     if isinstance(value, dict):
         yield value
         for nested in value.values():

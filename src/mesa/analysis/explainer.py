@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
@@ -109,7 +110,9 @@ def grounded_response_for_request(
     intent = intent or _resolve_intent(payload, result is not None, comparison is not None)
     if intent == AIExplainerIntent.DOC_QA:
         return _doc_answer(payload)
-    if result is None and intent != AIExplainerIntent.COMPARE_SCANS:
+    if intent == AIExplainerIntent.COMPARE_SCANS:
+        return _comparison_answer(payload, comparison)
+    if result is None:
         return _missing_scan_response(intent, payload.question or "No scan question provided.")
     if intent == AIExplainerIntent.SCAN_SUMMARY:
         return _scan_summary_answer(result, scores)
@@ -119,8 +122,6 @@ def grounded_response_for_request(
         return _prioritize_answer(result)
     if intent == AIExplainerIntent.HEALTH_SCORE_EXPLANATION:
         return _health_answer(payload, scores, result)
-    if intent == AIExplainerIntent.COMPARE_SCANS:
-        return _comparison_answer(payload, comparison)
     if intent == AIExplainerIntent.GOVERNANCE_POLICY_HELP:
         return _governance_answer(result, policies)
     if intent == AIExplainerIntent.POLICY_WRITING_ASSISTANCE:
@@ -1530,7 +1531,7 @@ def _anthropic_model() -> str:
     return os.getenv("MESA_ANTHROPIC_EXPLAINER_MODEL", "claude-opus-5-5")
 
 
-def _anthropic_client(api_key: str):
+def _anthropic_client(api_key: str) -> Any:
     import anthropic
 
     timeout_seconds = float(os.getenv("MESA_ANTHROPIC_TIMEOUT_SECONDS", "60"))
@@ -1644,7 +1645,7 @@ def _anthropic_status(*, probe: bool) -> AIExplainerStatus:
     mode = os.getenv("MESA_AI_MODE", "grounded").lower()
     model = _anthropic_model()
     api_key = _anthropic_api_key()
-    base = {
+    base: dict[str, Any] = {
         "mode": mode,
         "live_enabled": True,
         "api_key_configured": bool(api_key),

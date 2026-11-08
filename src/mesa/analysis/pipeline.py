@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import networkx as nx
+
 from mesa.analysis.extractor import extract_service_facts
 from mesa.analysis.health import calculate_health_scores
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
@@ -65,7 +67,7 @@ def _count_by(items: list, attr: str) -> dict[str, int]:
     return counts
 
 
-def _attach_linked_finding_counts(graph, findings: list) -> None:
+def _attach_linked_finding_counts(graph: nx.MultiDiGraph, findings: list) -> None:
     counts: dict[str, int] = {}
     for finding in findings:
         for service in finding.services:

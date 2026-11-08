@@ -178,7 +178,7 @@ def _score_trend(base_result: AnalysisResult, target_result: AnalysisResult) -> 
     system_key = ("system", "system")
     previous = base_scores.get(system_key)
     current = target_scores.get(system_key)
-    service_deltas = []
+    service_deltas: list[dict[str, Any]] = []
     for key in sorted(base_scores.keys() | target_scores.keys()):
         if key[0] != "service":
             continue

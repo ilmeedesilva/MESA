@@ -986,9 +986,7 @@ def _service_health_pressure(
 ) -> float:
     if services:
         scores = [
-            service_scores.get(service)
-            for service in services
-            if service_scores.get(service) is not None
+            score for service in services if (score := service_scores.get(service)) is not None
         ]
         if scores:
             return max(0.0, 1 - (mean(scores) / 100.0))
