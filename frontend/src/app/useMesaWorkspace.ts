@@ -31,6 +31,7 @@ import {
   servicePathsFromText,
   syncAppStateToUrl
 } from "../viewHelpers";
+import { useEffectEvent } from "../hooks/useEffectEvent";
 import { defaultPaths, defaultPolicyDocument } from "./defaults";
 import { navigationItems, sectionsRequiringProject } from "./navigation";
 import type {
@@ -152,7 +153,8 @@ export function useMesaWorkspace() {
     syncAppStateToUrl(selectedProjectId, currentSection, "replace");
   }, [currentSection, selectedProjectId]);
 
-  React.useEffect(() => {
+  // Runs when the selected project, demo mode or API availability changes.
+  const syncSelectedProjectState = useEffectEvent(() => {
     if (!selectedProjectId) {
       cancelProjectRequests();
       resetProjectScanFlowState();
@@ -178,25 +180,43 @@ export function useMesaWorkspace() {
       return;
     }
     void loadSelectedProjectState(selectedProjectId);
-  }, [apiAvailability, isPublicDemoMode, selectedProjectId]);
-
+  });
   React.useEffect(() => {
+    syncSelectedProjectState();
+  }, [apiAvailability, isPublicDemoMode, selectedProjectId, syncSelectedProjectState]);
+
+  // Once on start: AI status and research records, then the API health probe.
+  const loadInitialData = useEffectEvent(() => {
     void loadAIStatus();
     void loadResearchRecords();
-  }, []);
-
+  });
   React.useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
+
+  const probeApiOnStart = useEffectEvent(() => {
     void probeApiAvailability();
-  }, []);
-
+  });
   React.useEffect(() => {
+    probeApiOnStart();
+  }, [probeApiOnStart]);
+
+  // Load the project list whenever the live API becomes the data source.
+  const loadProjectsForLiveApi = useEffectEvent(() => {
     if (apiAvailability !== "online" || isPublicDemoMode) return;
     void loadProjects();
-  }, [apiAvailability, isPublicDemoMode]);
-
+  });
   React.useEffect(() => {
+    loadProjectsForLiveApi();
+  }, [apiAvailability, isPublicDemoMode, loadProjectsForLiveApi]);
+
+  // Refresh research records each time the Evaluation section is opened.
+  const refreshResearchRecordsForSection = useEffectEvent(() => {
     if (currentSection === "evaluation") void loadResearchRecords();
-  }, [currentSection]);
+  });
+  React.useEffect(() => {
+    refreshResearchRecordsForSection();
+  }, [currentSection, refreshResearchRecordsForSection]);
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -966,44 +986,47 @@ export function useMesaWorkspace() {
           : !hasCompletedScan
             ? "Run the scan to generate findings, health scores, and the architecture graph."
             : "Review the results, compare history, and inspect findings in detail.";
-  const workflowSteps: WorkflowStep[] = [
-    {
-      id: "project",
-      label: "Project",
-      description: "Create or select the project that will hold scan history.",
-      done: hasProject,
-      active: !hasProject
-    },
-    {
-      id: "source",
-      label: "Source",
-      description: "Choose a repository source or provide manual service paths.",
-      done: hasSourceConfigured,
-      active: hasProject && !hasSourceConfigured
-    },
-    {
-      id: "review",
-      label: "Review Services",
-      description: "Preview discovery and confirm the services to analyze.",
-      done: hasServiceSelection,
-      active: hasProject && hasSourceConfigured && !hasServiceSelection
-    },
-    {
-      id: "policies",
-      label: "Policies",
-      description: "Optionally save governance policies before the scan runs.",
-      done: hasSavedPolicies,
-      active: hasProject && hasServiceSelection && !hasCompletedScan,
-      optional: true
-    },
-    {
-      id: "scan",
-      label: "Run Scan",
-      description: "Generate findings, graph evidence, scores, and history.",
-      done: hasCompletedScan,
-      active: hasProject && hasServiceSelection && !hasCompletedScan
-    }
-  ];
+  const workflowSteps = React.useMemo<WorkflowStep[]>(
+    () => [
+      {
+        id: "project",
+        label: "Project",
+        description: "Create or select the project that will hold scan history.",
+        done: hasProject,
+        active: !hasProject
+      },
+      {
+        id: "source",
+        label: "Source",
+        description: "Choose a repository source or provide manual service paths.",
+        done: hasSourceConfigured,
+        active: hasProject && !hasSourceConfigured
+      },
+      {
+        id: "review",
+        label: "Review Services",
+        description: "Preview discovery and confirm the services to analyze.",
+        done: hasServiceSelection,
+        active: hasProject && hasSourceConfigured && !hasServiceSelection
+      },
+      {
+        id: "policies",
+        label: "Policies",
+        description: "Optionally save governance policies before the scan runs.",
+        done: hasSavedPolicies,
+        active: hasProject && hasServiceSelection && !hasCompletedScan,
+        optional: true
+      },
+      {
+        id: "scan",
+        label: "Run Scan",
+        description: "Generate findings, graph evidence, scores, and history.",
+        done: hasCompletedScan,
+        active: hasProject && hasServiceSelection && !hasCompletedScan
+      }
+    ],
+    [hasProject, hasSourceConfigured, hasServiceSelection, hasSavedPolicies, hasCompletedScan]
+  );
   const pendingWorkflowSteps = workflowSteps.filter((step) => !step.done);
   const activeWorkflowStep =
     workflowSteps.find((step) => step.active) ?? pendingWorkflowSteps[0] ?? workflowSteps[workflowSteps.length - 1];

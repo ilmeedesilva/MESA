@@ -1,5 +1,6 @@
 import React from "react";
 import { api } from "../api";
+import { useEffectEvent } from "../hooks/useEffectEvent";
 import type { ArchitectureFitnessGateResult, ArchitectureGateRuleResult } from "../types";
 
 const RULE_LABELS: Record<string, { name: string; explains: string }> = {
@@ -66,11 +67,15 @@ export function FitnessGatePanel({ scanId, isDemo }: { scanId: string | null; is
     [scanId, isDemo]
   );
 
-  React.useEffect(() => {
+  // Re-run only when the scan changes (runGate changes with it); threshold edits run on demand,
+  // so the current thresholds are read without making them dependencies.
+  const runGateForScan = useEffectEvent(() => {
     setResult(null);
     void runGate(minimumHealthScore, maximumCriticalFindings);
-    // Re-run only when the scan changes; threshold edits run on demand.
-  }, [scanId, isDemo]);
+  });
+  React.useEffect(() => {
+    runGateForScan();
+  }, [runGate, runGateForScan]);
 
   const passed = result?.status === "passed";
   const score = result?.health_score ?? null;
