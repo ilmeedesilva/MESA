@@ -1,0 +1,14 @@
+.sourceActionRow {
+  align-items: stretch;
+  gap: 10px;
+}
+
+.sourceActionRow > button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 860px) {
+  .sourceActionRow > button {
+    width: 100%;
+  }
+}

@@ -1,0 +1,79 @@
+.appHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 24px 18px;
+  border-bottom: 1px solid #dbe4f0;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+}
+
+.appHeaderIntro {
+  display: grid;
+  gap: 6px;
+}
+
+.appHeaderIntro h2 {
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.appHeaderIntro p {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.55;
+  max-width: 64ch;
+}
+
+.appHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.toolbarProjectShell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #ffffff, #f8fbff);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
+}
+
+.toolbarProjectPicker span {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.toolbarProjectMeta {
+  display: grid;
+  gap: 2px;
+  min-width: 170px;
+}
+
+.toolbarProjectMeta strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.toolbarProjectMeta small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 1180px) {
+  .appHeaderActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+}

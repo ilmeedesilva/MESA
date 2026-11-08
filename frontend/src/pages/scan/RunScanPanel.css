@@ -1,0 +1,43 @@
+.scanReadinessGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.scanReadinessItem {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.scanReadinessItem span {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.scanReadinessItem strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+@media (max-width: 1200px) {
+  .scanReadinessGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.runStepCard button {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.runStepCard {
+  grid-column: 1 / -1;
+}

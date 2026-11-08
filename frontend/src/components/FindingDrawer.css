@@ -1,0 +1,212 @@
+.drawerActionRow {
+  margin-top: 12px;
+}
+
+.dimensionRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(80px, 160px) 34px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dimensionRow span {
+  color: #475569;
+}
+
+.dimensionRow div {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.dimensionRow i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #2563eb;
+}
+
+.structuredRecommendation {
+  display: grid;
+  gap: 12px;
+}
+
+.recommendationHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.recommendationHeader span {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.structuredRecommendation dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.structuredRecommendation dt {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.structuredRecommendation dd {
+  margin: 0;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.structuredRecommendation ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #475569;
+}
+
+.structuredRecommendation li {
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.affectedFiles {
+  display: grid;
+  gap: 6px;
+}
+
+.affectedFiles code {
+  display: block;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #1e293b;
+  background: #ffffff;
+  font-size: 11px;
+}
+
+.evidenceFiles {
+  margin-top: 12px;
+}
+
+.ledgerMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.ledgerMetaGrid div {
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #eff6ff;
+}
+
+.ledgerMetaGrid span,
+.ledgerMetaGrid strong {
+  display: block;
+}
+
+.ledgerMetaGrid span {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ledgerMetaGrid strong {
+  margin-top: 3px;
+  color: #1e3a8a;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.evidenceChainList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  color: #475569;
+}
+
+.evidenceChainList li {
+  padding-left: 2px;
+  line-height: 1.45;
+}
+
+.evidenceChainList strong,
+.evidenceChainList span,
+.evidenceChainList code {
+  display: block;
+}
+
+.evidenceChainList strong {
+  color: #0f172a;
+  font-size: 12px;
+}
+
+.evidenceChainList span {
+  margin-top: 2px;
+}
+
+.evidenceChainList code {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 6px;
+  border-radius: 6px;
+  padding: 4px 7px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.drawerModeNote {
+  margin-bottom: 10px;
+  color: #475569;
+}
+
+.evidenceBulletList {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+}
+
+.evidenceBulletList li {
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.evidenceBulletList li:first-child {
+  margin-top: 0;
+}
+
+.supportText {
+  display: block;
+  margin-top: 10px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.drawerClose {
+  float: right;
+  padding: 8px 12px;
+  box-shadow: none;
+}

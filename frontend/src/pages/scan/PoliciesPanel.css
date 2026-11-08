@@ -1,0 +1,8 @@
+.policyEditor textarea {
+  min-height: 230px;
+  font-size: 11px;
+}
+
+.policyEditor .fullButton {
+  margin-top: 10px;
+}

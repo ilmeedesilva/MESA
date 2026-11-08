@@ -1,0 +1,149 @@
+.projectChoiceHeader {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.projectStepLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.projectStepLayout.withCreatePanel {
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.85fr);
+}
+
+.projectSelectionPanel,
+.projectCreatePanel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.projectSelectionPanel {
+  padding: 16px 18px 18px;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff, #f8fbff);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.06);
+}
+
+.projectChoiceHeader .secondaryButton {
+  justify-self: start;
+}
+
+.projectSelectionControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.projectSelectionField {
+  min-width: 0;
+}
+
+.projectSelectionField label {
+  margin-top: 0;
+}
+
+.activeInlineButton {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.selectedProjectSummary {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #eff6ff, #ffffff);
+  min-height: 100%;
+}
+
+.selectedProjectSummary strong {
+  color: #1d4ed8;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.selectedProjectSummary span {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.selectedProjectSummary small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.projectQuickList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.projectQuickButton {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+  box-shadow: 0 8px 18px rgba(148, 163, 184, 0.08);
+}
+
+.projectQuickButton strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.projectQuickButton small {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.projectQuickButton.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.projectCreatePanel {
+  padding: 14px 16px 16px;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f8fbff, #ffffff);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
+}
+
+.projectCreatePanel h3 {
+  font-size: 15px;
+}
+
+@media (max-width: 1320px) {
+  .projectStepLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .projectSelectionControls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .projectQuickList {
+    grid-template-columns: 1fr;
+  }
+}

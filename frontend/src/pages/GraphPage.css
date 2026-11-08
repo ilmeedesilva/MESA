@@ -1,0 +1,57 @@
+.workspaceGraphGrid {
+  align-items: start;
+}
+
+.graphPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.18) 1px, transparent 0), #ffffff;
+  background-size: 26px 26px;
+}
+
+.graphHeader {
+  padding: 18px 18px 10px;
+}
+
+.graphHeader h2 {
+  font-size: 16px;
+}
+
+.graphHeader p {
+  font-size: 12px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.serviceDot,
+.apiDot,
+.databaseDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #2563eb;
+}
+
+.apiDot {
+  border-radius: 3px;
+  background: #059669;
+  transform: rotate(45deg);
+}
+
+.databaseDot {
+  border-radius: 3px;
+  background: #7c3aed;
+}
+
+.riskLine {
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: #dc2626;
+}

@@ -1,0 +1,67 @@
+.graphInspector {
+  margin: 0 18px 18px;
+  padding: 12px;
+  max-height: 190px;
+  overflow: auto;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.96);
+}
+
+.graphInspector h3 {
+  margin: 8px 0 4px;
+  font-size: 15px;
+}
+
+.graphInspector p {
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.graphInspector details {
+  margin-top: 10px;
+}
+
+.graphInspector summary {
+  cursor: pointer;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.graphInspector pre {
+  max-height: 120px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: 8px;
+  color: #334155;
+  background: #ffffff;
+  font-size: 11px;
+}
+
+.emptyInspector {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.miniHealth {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+}
+
+.miniHealth strong {
+  color: #2563eb;
+  font-size: 18px;
+}
+
+.miniHealth span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}

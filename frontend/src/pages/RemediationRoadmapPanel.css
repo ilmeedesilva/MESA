@@ -1,0 +1,358 @@
+.roadmapPanel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  box-shadow: 0 8px 24px rgba(148, 163, 184, 0.08);
+}
+
+.roadmapLayout {
+  display: grid;
+  gap: 14px;
+}
+
+.roadmapSummaryCard,
+.roadmapOrderCard,
+.roadmapDependencyCard,
+.roadmapColumn {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.roadmapSummaryCard strong,
+.roadmapSectionHeader strong {
+  font-size: 13px;
+}
+
+.roadmapSummaryCard p,
+.roadmapSectionHeader span,
+.roadmapActionCard p,
+.roadmapActionDetails dd,
+.roadmapOrderItem p,
+.roadmapDependencyItem p {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.roadmapStats div {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #dbe4f0;
+  background: #f8fafc;
+}
+
+.roadmapStats strong {
+  display: block;
+  color: #1d4ed8;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.roadmapStats span {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.roadmapColumn.quick {
+  background: linear-gradient(180deg, #f9fcff, #ffffff);
+}
+
+.roadmapSectionHeader {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.roadmapActionList,
+.roadmapOrderList,
+.roadmapDependencyList {
+  display: grid;
+  gap: 10px;
+}
+
+.roadmapActionCard,
+.roadmapOrderItem,
+.roadmapDependencyItem {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.roadmapActionMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.roadmapActionMeta span,
+.roadmapActionMeta strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.roadmapActionMeta span {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.roadmapActionMeta strong {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.roadmapActionCard h3 {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.roadmapTagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.roadmapTagRow span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #475569;
+  background: #f1f5f9;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.roadmapActionDetails {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 0;
+}
+
+.roadmapActionDetails div {
+  display: grid;
+  gap: 3px;
+}
+
+.roadmapActionDetails dt {
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.roadmapActionDetails dd {
+  margin: 0;
+}
+
+.roadmapDimensions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.roadmapDimensions code {
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 10px;
+}
+
+.playbookDetails {
+  margin-top: 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.playbookDetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  cursor: pointer;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.playbookDetails summary small {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.playbookBody {
+  display: grid;
+  gap: 10px;
+  padding: 0 10px 10px;
+}
+
+.playbookBlock,
+.playbookPhase,
+.playbookList {
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.playbookBlock strong,
+.playbookPhase strong,
+.playbookList strong {
+  font-size: 11px;
+}
+
+.playbookBlock p,
+.playbookPhase p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.playbookPhaseList,
+.playbookGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.playbookPhase ul,
+.playbookList ul {
+  margin: 8px 0 0 16px;
+  padding: 0;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.playbookPhase li,
+.playbookList li {
+  margin-top: 4px;
+}
+
+.playbookChecks {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.playbookChecks span {
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.roadmapOrderItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.roadmapOrderBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #2563eb;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.roadmapOrderItem strong,
+.roadmapDependencyItem strong {
+  display: block;
+  font-size: 12px;
+}
+
+.roadmapOrderItem small {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 5px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #475569;
+  background: #f1f5f9;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.roadmapOrderItem p,
+.roadmapDependencyItem p {
+  margin-top: 6px;
+}
+
+.healthPanel {
+  overflow: hidden;
+  min-width: 0;
+  margin-top: 0;
+}
+
+.systemScore.medium strong {
+  color: #b45309;
+}
+
+.systemScore.high strong {
+  color: #b91c1c;
+}
+
+.scoreRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(80px, 150px) 44px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.scoreRow span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.healthPanel .panelHeader {
+  align-items: flex-start;
+}
+
+.healthPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+@media (max-width: 980px) {
+  .healthPanel {
+    grid-template-columns: 1fr;
+  }
+}
