@@ -21,6 +21,10 @@ Only `online-boutique/src/` (the actual service source) is kept; the rest of tha
 
 ## How to regenerate
 
+Run `python scripts/fetch_benchmark_repos.py` from the repository root. It downloads every repository above at its pinned commit into this layout and checks each folder against a pinned content hash. The commit list and hashes live in that script (the single source of truth); `--verify` checks an existing copy without downloading. See `docs/research/REPRODUCE.md`.
+
+The original copies were made as follows:
+
 These were fetched using MESA's own `GITHUB_URL` ingestion, then the resulting extracted workspace was copied here for a stable path the `benchmarks/real_repo_*.yml` files can reference (MESA's own repo-cache workspaces are per-run, UUID-suffixed, and swept on a TTL — not stable enough to reference directly from a committed benchmark file):
 
 ```python
