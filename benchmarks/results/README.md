@@ -44,6 +44,10 @@ tag `v0.1.0-research` use the old paths.
 | `docs/research/DETECTION_ALGORITHMS.md` | [`docs/detectors.md`](../../docs/detectors.md) |
 | `docs/architecture/PHASE_*.md` (per-phase build notes) | Summarised in [`CHANGELOG.md`](../../CHANGELOG.md); the originals remain readable at the tag `v0.1.0-research` |
 
+The absolute paths inside the AI-baseline result files (for example in the `benchmark` field) are
+from the machine the original runs were made on. They are a record of that run only and don't
+affect the results.
+
 Benchmark IDs, benchmark manifest files (`benchmarks/*.yml`) and test fixture paths are unchanged.
 The notes inside the manifests still mention some of the old document paths above; the manifests
 are part of the research record, so they are left as they were.

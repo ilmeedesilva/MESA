@@ -34,10 +34,10 @@ python scripts/fetch_benchmark_repos.py   # downloads the 10 pinned repos, check
 
 export PYTHONHASHSEED=0                   # fixed ordering of findings (see note below)
 
-mesa evaluate benchmarks/ground_truth.yml               -o /tmp/repro/synthetic
-mesa evaluate benchmarks/real_repo_online_boutique.yml  -o /tmp/repro/online-boutique
-mesa evaluate benchmarks/real_repo_spring_sample.yml    -o /tmp/repro/spring-sample
-mesa evaluate benchmarks/real_repo_sockshop.yml         -o /tmp/repro/sockshop
+mesa evaluate benchmarks/ground_truth.yml               -o benchmarks/results/latest/repro/synthetic
+mesa evaluate benchmarks/real_repo_online_boutique.yml  -o benchmarks/results/latest/repro/online-boutique
+mesa evaluate benchmarks/real_repo_spring_sample.yml    -o benchmarks/results/latest/repro/spring-sample
+mesa evaluate benchmarks/real_repo_sockshop.yml         -o benchmarks/results/latest/repro/sockshop
 ```
 
 Compare each `mesa_evaluation_results.json` with the committed file for the same benchmark.
