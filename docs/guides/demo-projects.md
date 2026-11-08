@@ -43,7 +43,7 @@ This guide explains how to use the built-in demo repositories for a before-and-a
 
 9. Compare the second scan against the first one.
 
-## Suggested Viva Narrative
+## Suggested demo narrative
 
 1. Show the first scan and explain the key risks.
 2. Explain that the code was refactored to remove tight coupling and shared persistence.

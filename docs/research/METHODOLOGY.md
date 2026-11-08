@@ -1,23 +1,62 @@
-# MESA Methodology
+# Methodology and threats to validity
 
-## Research Approach
+## Approach
 
-MESA follows design science research: identify a practical software engineering problem, build an artifact, evaluate the artifact, and document limitations. The artifact is a working static analysis platform for microservice architecture assessment.
+MESA was built and evaluated using design science research: identify a practical software
+engineering problem, build an artifact that addresses it, evaluate the artifact, and state its
+limitations. The artifact is a static analysis tool for microservice architecture assessment.
 
 ## Process
 
-1. Requirement analysis from proposal and defense feedback.
-2. Incremental phased implementation from persistence to evaluation.
+1. Requirements from the literature on microservice anti-patterns and architecture recovery.
+2. Incremental implementation, from persistence and the graph model to the evaluation runner
+   (the history is summarised in the [CHANGELOG](../../CHANGELOG.md)).
 3. Static evidence extraction from service source code and configuration.
 4. Architecture graph construction with NetworkX and Neo4j.
-5. Rule-based detector execution over graph and service facts.
-6. Health score, recommendation, governance, and evolution analysis.
-7. Evaluation against seeded benchmark systems with ground truth.
+5. Rule-based detectors over the graph and service facts.
+6. Health score, recommendation, governance and evolution analysis.
+7. Evaluation against seeded benchmark systems and manually labelled real repositories, plus a
+   repeated-run comparison with two general-purpose LLMs.
 
-## Data Sources
+## Data sources
 
-MESA uses local service directories containing Python, Java, JavaScript/TypeScript, YAML, `.env`, Docker Compose, and common config/build files. Runtime telemetry is not required.
+MESA reads local service directories containing Python, Java, JavaScript/TypeScript, Go, YAML,
+`.env`, Docker Compose and common config and build files. Runtime telemetry is not needed.
 
-## Evaluation Method
+## Evaluation method
 
-The evaluation runner compares detector output against ground truth labels using type and affected service set. It reports true positives, false positives, false negatives, precision, recall, and F1-score at system and overall levels.
+The evaluation runner compares detector output with ground-truth labels. A prediction is a true
+positive only when both its anti-pattern type and its set of affected services match a label;
+each label can be matched at most once. It reports true positives, false positives, false
+negatives, precision, recall and F1 per system and overall. See [Evaluation](evaluation.md) for
+the results and [REPRODUCE.md](REPRODUCE.md) to re-run them.
+
+## Threats to validity
+
+### Construct Validity
+
+Some anti-patterns, such as chatty services, are runtime-observable in production. MESA uses static proxies such as call-site counts and topology, which estimate risk rather than actual runtime frequency.
+
+### Internal Validity
+
+Detector outputs depend on current extraction heuristics. Dynamically generated URLs, reflection, framework magic, and runtime configuration may be missed.
+
+### External Validity
+
+The original benchmark set was synthetic and small, useful for controlled evaluation but not evidence of real-world accuracy. The real-repository evaluation ([Evaluation](evaluation.md)) added two manually reviewed real public repositories: Google's Online Boutique (`GoogleCloudPlatform/microservices-demo`, 12 services, Go/Python/Node/Java/C#) and a pure Java/Spring Boot sample (`piomin/sample-spring-microservices-new`, 6 services). A third, Sock Shop (`microservices-demo` org, 8 services split across 8 separate repos), was added afterward specifically to stress recall/precision under realistic, messy conditions rather than add another clean reference architecture — see below. This is still only three repositories and should be expanded further, but it already surfaced concrete external-validity threats that synthetic fixtures could not:
+
+- **Language coverage (partially addressed).** MESA's extractor originally only parsed Python, JavaScript/TypeScript, and Java. On Online Boutique, 6 of 12 real services are Go or C#, so their real gRPC inter-service calls were invisible to MESA. MVP Go support was added — verified working via dedicated fixtures — but it did not change Online Boutique's detector findings, because this specific real repository's Go code sources service addresses from environment variables rather than literal strings, and MESA's extraction is literal-value-only for every language, not just Go (see Internal Validity above). C# remains entirely unsupported. The near-zero anti-pattern findings on that system still reflect extraction coverage, not architectural cleanliness — see `benchmarks/real_repo_online_boutique.yml` for the full reasoning.
+- **Discovery false negatives (Go fixed; C# open).** Two real services (`frontend`, `cartservice`) were originally missed entirely by service discovery because neither had a manifest filename MESA recognized and a bare Dockerfile alone fell below the minimum confidence cutoff. Recognizing `go.mod` fixed this for `frontend` (and raised confidence for three other Go services from 0.35/language=unknown to 0.63/language=go) — discovery recall on this repository improved from 0.8333 to 0.9167. `cartservice` (C#) is unaddressed; Go was the only language added in this step.
+- **Config Server misattribution (fixed).** On the Spring sample, MESA's per-file static extraction originally could not distinguish a Config Server's hosted templates (YAML files it merely serves to other services) from its own runtime configuration, producing false-positive `CHATTY_SERVICE` and `CYCLIC_DEPENDENCY` findings and an inflated God Service score for `config-service`. Fixed (see [Detectors](../detectors.md#config-server-files)) by recognizing when a config file's name matches a sibling service being scanned. Kept here as a record of the kind of extraction-heuristic threat this methodology can surface and correct.
+- **A real crash.** The same evaluation surfaced (and led to a fix for) a `ValueError` crash in the hard-coded-dependency extractor on Spring's `${server.port}` placeholder syntax — a pattern no synthetic fixture had exercised.
+- **Test/mock/comment content mistaken for real configuration (Sock Shop, found and fixed).** Unlike Online Boutique and the Spring sample, Sock Shop's repositories are unusually dense with end-to-end test files, API-contract mock fixtures (Dredd `hooks.js`), and source-code comments containing example curl commands. 17 of 21 raw findings (81%) on this repository were originally false positives traced directly to this: a vendored third-party JS library's CSS media-query breakpoint misread as a host:port; a service's own E2E tests hardcoding the URL of itself under test; a mock server address inside contract-test fixtures; and code comments (example curl commands) scanned as if they were live code. This was fixed rather than left as an open limitation: hard-coded-dependency scanning now strips `//`/`/* */` comments before matching (without blinding itself to a real `http://` URL in live code); evidence from `api-spec/`/`mock/`/`mocks/`/`__mocks__/` directories is excluded; and a hard-coded host matching the owning service's own name is excluded as a self-reference. A broader `test/`/`e2e/`/`spec/` directory-name exclusion was tried first, measured against all four benchmarks, and reverted after it was found to also discard genuine true positives elsewhere — the narrower rules shipped were chosen because they were verified not to cause that regression. Detector precision on this repository is now 1.0000 (recall unchanged at 1.0 — nothing real was ever missed). Evaluating this repository also surfaced two further real, general bugs (not Sock-Shop-specific), both fixed: `detect_language()` letting a single stray file hijack a whole service's reported language, and a `db_type` string-normalization bug (`"mongo"` being a substring of `"mongodb"`) that had also been obscuring the real cause of a false `SHARED_DATABASE` finding. See `benchmarks/real_repo_sockshop.yml` for the full per-finding reasoning and fix history.
+
+### Conclusion Validity
+
+High seeded synthetic-benchmark scores (precision/recall/F1 = 1.0) show correctness against known synthetic labels, not universal detector accuracy — those labels were authored by the same team that built the detectors. The real-repository results are more informative precisely because they were not 1.0 across the board at every stage of this study: Online Boutique scored F1 of 1.0 (2/2, but only 2 findings existed to find given the language-coverage gap above), the Spring sample originally scored F1 of 0.96 (precision 0.9231) before the Config Server misattribution fix, and Sock Shop originally scored F1 of 0.32 (precision 0.1905) — all real false positives caught by evaluating against real code, not asserted. Both the Spring sample and Sock Shop now score 1.0/1.0/1.0 after their respective fixes (combined across all three real repositories: 30 true positives, 0 false positives, 0 false negatives), but every one of those numbers is reported alongside its fix's history, not instead of it — the original, imperfect scores and their root causes remain documented in `benchmarks/real_repo_*.yml` and are the actual evidence for this validity argument, not the final clean numbers on their own.
+
+The `recall-stress-test` synthetic system narrows one specific gap: prior synthetic fixtures mostly isolated one anti-pattern per system, so a detector interfering with another (e.g. one pattern's graph edges masking a different pattern) was untested. That system interleaves 5 anti-pattern types across 8 services in one scan and MESA found all 26 expected findings with zero errors — evidence the detectors compose correctly, though still on hand-authored, not real, code. It does not address the bigger remaining external-validity gap: no repository evaluated so far — real or synthetic — was chosen specifically because it contains anti-patterns MESA might plausibly *miss*. Future work should expand real-repository coverage well beyond three repositories, and should specifically seek out repositories with intentional, known anti-patterns rather than production-quality reference architectures, to test recall under realistic conditions rather than mostly testing precision.
+
+### Reliability
+
+Scans are deterministic for the same repository state and thresholds. Docker Compose improves reproducibility, but local path differences can affect source locations.

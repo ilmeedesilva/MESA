@@ -1,7 +1,7 @@
 # Reproduction environment
 
 Recorded on 2026-11-08 when the research results were re-run from a fresh fetch (see
-[`docs/research/REPRODUCE.md`](../docs/research/REPRODUCE.md)). All four benchmarks reproduced
+[`docs/research/REPRODUCE.md`](../../../docs/research/REPRODUCE.md)). All four benchmarks reproduced
 the paper's detection and discovery numbers in this environment.
 
 | Item | Value |
@@ -12,7 +12,7 @@ the paper's detection and discovery numbers in this environment.
 | pip | 26.3 |
 | MESA | `mesa-analyzer` 0.1.0, installed editable (`pip install -e ".[dev]"`) |
 
-The performance figures in the dissertation (Section 5.5) were measured on 2026-09-24 on the
+The performance figures in the research report (Section 5.5) were measured on 2026-09-24 on the
 same model of machine with **Python 3.13.9** and macOS 27.0.1. This re-run used Python
 3.12.16. Detection and discovery results are identical across the two; timings were not
 re-measured.

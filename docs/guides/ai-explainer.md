@@ -97,7 +97,7 @@ If hybrid mode is not enabled, or if no API key is configured, MESA automaticall
    - the limitations
    - the response source label
 
-## What This Means For Evaluators
+## Judging the explainer
 
 Evaluate the AI layer separately from detector quality.
 

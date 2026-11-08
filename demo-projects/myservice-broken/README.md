@@ -2,7 +2,7 @@
 
 This demo repository is intentionally architecturally unhealthy.
 
-Use it for the first MESA scan in your demo or viva.
+Use it for the first MESA scan in a demo.
 
 Expected MESA findings include:
 
@@ -22,3 +22,5 @@ Services:
 - `payment-service`
 - `user-service`
 - `platform-service`
+
+The `.env` files in this demo are intentional: they hold a fake shared database URL so that MESA has a shared database to detect. They contain no real credentials.

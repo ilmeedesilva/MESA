@@ -1,6 +1,6 @@
 # Real-World Evaluation Repositories
 
-Local copies of real, third-party open-source repositories used for MESA's Phase 7 real-repository evaluation (see `docs/research/EVALUATION_SETUP_AND_RESULTS.md` and `docs/guides/IMPLEMENTATION_PHASE_TRACKER.md`). This directory is gitignored: third-party source is not committed into MESA's history.
+Local copies of real, third-party open-source repositories used for MESA's real-repository evaluation (see [`docs/research/evaluation.md`](../../docs/research/evaluation.md)). This directory is gitignored: third-party source is not committed into MESA's history.
 
 ## Repositories
 

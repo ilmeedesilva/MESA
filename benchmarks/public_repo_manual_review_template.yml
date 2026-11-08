@@ -27,7 +27,7 @@ systems:
         min_follow_up_questions: 1
         min_limitations: 1
     evaluator_notes:
-      - Record what an evaluator found useful or confusing here.
+      - Record what a reviewer found useful or confusing here.
     known_limitations:
       - Record important threats to validity for this repository here.
     ground_truth:

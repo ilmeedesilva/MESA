@@ -126,7 +126,7 @@ Repository-backed project scan example:
 }
 ```
 
-Phase 3 note:
+Review step:
 
 - use the `discovered_services` array from the preview response as the review step before deciding which `service_paths` to send into the persisted repo scan
 
