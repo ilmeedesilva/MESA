@@ -26,9 +26,9 @@
 
 .projectSelectionPanel {
   padding: 16px 18px 18px;
-  border: 1px solid #dbe4f0;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #ffffff, #f8fbff);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(145deg, var(--white), var(--surface-tint));
   box-shadow: 0 12px 24px rgba(148, 163, 184, 0.06);
 }
 
@@ -52,36 +52,36 @@
 }
 
 .activeInlineButton {
-  border-color: #2563eb;
-  color: #1d4ed8;
-  background: #eff6ff;
+  border-color: var(--blue-600);
+  color: var(--blue-700);
+  background: var(--blue-50);
 }
 
 .selectedProjectSummary {
   display: grid;
   gap: 4px;
   padding: 12px 14px;
-  border: 1px solid #dbeafe;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #eff6ff, #ffffff);
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, var(--blue-50), var(--white));
   min-height: 100%;
 }
 
 .selectedProjectSummary strong {
-  color: #1d4ed8;
+  color: var(--blue-700);
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .selectedProjectSummary span {
-  color: #0f172a;
+  color: var(--slate-900);
   font-size: 14px;
   font-weight: 800;
 }
 
 .selectedProjectSummary small {
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -97,34 +97,34 @@
   display: grid;
   gap: 4px;
   padding: 10px 12px;
-  border: 1px solid #dbe4f0;
-  border-radius: 12px;
-  background: #ffffff;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: var(--white);
   text-align: left;
   box-shadow: 0 8px 18px rgba(148, 163, 184, 0.08);
 }
 
 .projectQuickButton strong {
-  color: #0f172a;
+  color: var(--slate-900);
   font-size: 13px;
 }
 
 .projectQuickButton small {
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 11px;
   line-height: 1.45;
 }
 
 .projectQuickButton.active {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: var(--blue-600);
+  background: var(--blue-50);
 }
 
 .projectCreatePanel {
   padding: 14px 16px 16px;
-  border: 1px solid #dbe4f0;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #f8fbff, #ffffff);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(145deg, var(--surface-tint), var(--white));
   box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
 }
 

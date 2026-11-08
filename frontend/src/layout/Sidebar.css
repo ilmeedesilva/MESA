@@ -7,10 +7,10 @@
   width: 280px;
   height: 100vh;
   padding: 20px 16px 18px;
-  border-right: 1px solid #dbe4f0;
+  border-right: 1px solid var(--border-soft);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.96)),
-    linear-gradient(180deg, #ffffff, #f8fbff);
+    linear-gradient(180deg, var(--white), var(--surface-tint));
   backdrop-filter: blur(18px);
   transition:
     width 220ms ease,
@@ -49,9 +49,9 @@
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
-  color: #ffffff;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-radius: var(--radius-md);
+  color: var(--white);
+  background: linear-gradient(135deg, var(--blue-600), var(--blue-700));
   box-shadow: 0 14px 30px rgba(37, 99, 235, 0.22);
   font-size: 17px;
   font-weight: 900;
@@ -59,7 +59,7 @@
 }
 
 .appIdentity p {
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 12px;
   line-height: 1.55;
   transition:
@@ -75,8 +75,8 @@
   min-width: 38px;
   height: 38px;
   padding: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #0f172a, #172554);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--slate-900), #172554);
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.2);
   transition:
     transform 180ms ease,
@@ -118,7 +118,7 @@
 }
 
 .sidebarNav::-webkit-scrollbar-thumb {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
 }
 
@@ -137,17 +137,17 @@
   gap: 10px;
   margin-top: auto;
   padding: 12px;
-  border: 1px solid #dbe4f0;
-  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
   background:
     radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%),
-    linear-gradient(135deg, #ffffff, #f8fbff);
+    linear-gradient(135deg, var(--white), var(--surface-tint));
   box-shadow: 0 14px 30px rgba(148, 163, 184, 0.08);
 }
 
 .sidebarFooterAction p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 10px;
   line-height: 1.45;
 }
@@ -155,14 +155,14 @@
 .sidebarFooterAction.collapsed {
   gap: 8px;
   padding: 6px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .sidebarDemoButton {
   width: fit-content;
   min-height: 36px;
   padding-inline: 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   justify-self: start;
   box-shadow: 0 12px 26px rgba(37, 99, 235, 0.16);
 }
@@ -183,7 +183,7 @@
 }
 
 .sidebarGroup h2 {
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -201,8 +201,8 @@
   width: 100%;
   padding: 12px 13px;
   border: 1px solid transparent;
-  border-radius: 14px;
-  color: #0f172a;
+  border-radius: var(--radius-lg);
+  color: var(--slate-900);
   background: transparent;
   box-shadow: none;
   text-align: left;
@@ -218,20 +218,20 @@
 }
 
 .sidebarItem span {
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 11px;
   line-height: 1.45;
 }
 
 .sidebarItem:hover {
-  border-color: #dbeafe;
+  border-color: var(--blue-100);
   background: rgba(239, 246, 255, 0.72);
   transform: translateX(2px);
 }
 
 .sidebarItem.active {
-  border-color: #93c5fd;
-  background: linear-gradient(135deg, #eff6ff, #ffffff);
+  border-color: var(--blue-300);
+  background: linear-gradient(135deg, var(--blue-50), var(--white));
   box-shadow: 0 12px 26px rgba(37, 99, 235, 0.12);
 }
 
@@ -273,7 +273,7 @@
     max-height: none;
     overflow: visible;
     border-right: 0;
-    border-bottom: 1px solid #dbe4f0;
+    border-bottom: 1px solid var(--border-soft);
   }
 
   .appSidebarTop {

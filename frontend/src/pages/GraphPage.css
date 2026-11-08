@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.18) 1px, transparent 0), #ffffff;
+  background: radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.18) 1px, transparent 0), var(--white);
   background-size: 26px 26px;
 }
 
@@ -34,8 +34,8 @@
 .databaseDot {
   width: 9px;
   height: 9px;
-  border-radius: 999px;
-  background: #2563eb;
+  border-radius: var(--radius-pill);
+  background: var(--blue-600);
 }
 
 .apiDot {
@@ -52,6 +52,6 @@
 .riskLine {
   width: 18px;
   height: 3px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #dc2626;
 }

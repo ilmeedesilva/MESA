@@ -5,25 +5,25 @@
   gap: 14px;
   margin: 14px 24px 0;
   padding: 14px 16px;
-  border: 1px solid #dbe4f0;
-  border-radius: 14px;
-  background: #ffffff;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--white);
   box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
 }
 
 .publicDemoBanner.demo {
-  border-color: #bfdbfe;
-  background: linear-gradient(135deg, #eff6ff, #ffffff);
+  border-color: var(--blue-200);
+  background: linear-gradient(135deg, var(--blue-50), var(--white));
 }
 
 .publicDemoBanner.live {
   border-color: #bbf7d0;
-  background: linear-gradient(135deg, #f0fdf4, #ffffff);
+  background: linear-gradient(135deg, #f0fdf4, var(--white));
 }
 
 .publicDemoBanner.neutral {
-  border-color: #dbe4f0;
-  background: #f8fafc;
+  border-color: var(--border-soft);
+  background: var(--slate-50);
 }
 
 .publicDemoBanner strong,
@@ -37,7 +37,7 @@
 
 .publicDemoBanner span {
   margin-top: 5px;
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 11px;
   line-height: 1.55;
   max-width: 72ch;

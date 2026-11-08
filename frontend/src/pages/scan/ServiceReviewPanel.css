@@ -1,9 +1,9 @@
 .discoveryPanel {
   margin-top: 14px;
   padding: 12px;
-  border: 1px solid #dbeafe;
-  border-radius: 8px;
-  background: #f8fbff;
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-sm);
+  background: var(--surface-tint);
 }
 
 .discoveryMeta {
@@ -11,7 +11,7 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 10px;
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 12px;
   font-weight: 800;
 }
@@ -26,7 +26,7 @@
 .warningList small {
   display: block;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #92400e;
   background: #fef3c7;
   line-height: 1.4;
@@ -42,14 +42,14 @@
 
 .discoveryCard {
   padding: 12px;
-  border: 1px solid #dbe4f0;
-  border-radius: 8px;
-  background: #ffffff;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--white);
 }
 
 .discoveryCard.selected {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: var(--blue-600);
+  background: var(--blue-50);
 }
 
 .discoveryToggle {
@@ -73,13 +73,13 @@
 }
 
 .discoveryStats strong {
-  color: #2563eb;
+  color: var(--blue-600);
   font-size: 14px;
 }
 
 .discoveryStats span,
 .discoveryStats small {
-  color: #64748b;
+  color: var(--slate-500);
   font-weight: 700;
 }
 
@@ -92,17 +92,17 @@
 
 .signalTags code {
   padding: 3px 7px;
-  border-radius: 999px;
-  color: #1d4ed8;
-  background: #dbeafe;
+  border-radius: var(--radius-pill);
+  color: var(--blue-700);
+  background: var(--blue-100);
   font-size: 11px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .reasonList {
   margin: 10px 0 0;
   padding-left: 18px;
-  color: #475569;
+  color: var(--slate-600);
   font-size: 12px;
   line-height: 1.5;
 }

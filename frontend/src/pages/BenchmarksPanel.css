@@ -27,14 +27,14 @@
 .benchmarksMetrics div {
   min-width: 0;
   padding: 12px;
-  border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
 }
 
 .benchmarksMetrics strong {
   display: block;
-  color: #2563eb;
+  color: var(--blue-600);
   font-size: 22px;
   line-height: 1;
 }
@@ -42,7 +42,7 @@
 .benchmarksMetrics span {
   display: block;
   margin-top: 4px;
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 12px;
   font-weight: 800;
 }
@@ -56,15 +56,15 @@
 .benchmarksNoteCard {
   min-width: 0;
   padding: 14px;
-  border: 1px solid #dbeafe;
-  border-radius: 12px;
-  background: #f8fafc;
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-md);
+  background: var(--slate-50);
   overflow-wrap: break-word;
 }
 
 .benchmarksNoteCard p {
   margin: 8px 0 0;
-  color: #475569;
+  color: var(--slate-600);
   font-size: 13px;
   line-height: 1.6;
 }

@@ -9,7 +9,7 @@
 .dashboardFindings {
   overflow: visible;
   padding: 18px;
-  border-radius: 18px;
+  border-radius: var(--radius-2xl);
   box-shadow: 0 14px 32px rgba(148, 163, 184, 0.1);
 }
 
@@ -27,7 +27,7 @@
 
 .findingsHeaderText p {
   margin-top: 6px;
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 12px;
 }
 
@@ -35,9 +35,9 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: end;
   padding: 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--white), var(--surface-tint));
 }
 
 .confidenceFilter {
@@ -47,7 +47,7 @@
 .confidenceFilter span {
   display: block;
   margin-bottom: 5px;
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 11px;
 }
 
@@ -59,9 +59,9 @@
 
 .findingCard {
   padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, var(--white), #fbfdff);
   box-shadow: 0 8px 22px rgba(148, 163, 184, 0.08);
 }
 
@@ -75,12 +75,12 @@
 
 .findingCard.clickable:hover {
   transform: translateY(-1px);
-  border-color: #bfdbfe;
+  border-color: var(--blue-200);
   box-shadow: 0 16px 28px rgba(148, 163, 184, 0.14);
 }
 
 .findingCard.clickable:hover h3 {
-  color: #2563eb;
+  color: var(--blue-600);
 }
 
 .findingCard h3 {
@@ -91,7 +91,7 @@
 
 .findingCard p {
   margin-bottom: 8px;
-  color: #334155;
+  color: var(--slate-700);
   font-size: 11px;
   line-height: 1.6;
   word-break: break-word;
@@ -105,9 +105,9 @@
 
 .findingHighlights div {
   padding: 10px 12px;
-  border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
 }
 
 .findingHighlights strong,
@@ -121,13 +121,13 @@
 }
 
 .findingHighlights span {
-  color: #475569;
+  color: var(--slate-600);
   font-size: 11px;
   line-height: 1.45;
 }
 
 .confidenceText {
-  color: #64748b;
+  color: var(--slate-500);
   font-size: 11px;
   font-weight: 800;
 }

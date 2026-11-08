@@ -5,6 +5,7 @@
  * by several components. Add new component files where their rules do not depend on order.
  */
 
+@import "./tokens.css";
 @import "./base.css";
 @import "../layout/AppShell.css";
 @import "../layout/Sidebar.css";
