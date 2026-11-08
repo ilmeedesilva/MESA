@@ -1,7 +1,7 @@
 # Reproducing the research results
 
 This guide reproduces the detection and discovery results reported in the MESA dissertation
-and the ICACIT 2027 paper: 76/76 seeded findings, and 30/30 hard-coded dependencies across
+and the conference paper: 76/76 seeded findings, and 30/30 hard-coded dependencies across
 three public repositories with no false positives.
 
 ## Which version
@@ -32,6 +32,8 @@ pip install -e ".[dev]"
 python -m pytest -q                       # expect: 116 passed
 python scripts/fetch_benchmark_repos.py   # downloads the 10 pinned repos, checks hashes
 
+export PYTHONHASHSEED=0                   # fixed ordering of findings (see note below)
+
 mesa evaluate benchmarks/ground_truth.yml               -o /tmp/repro/synthetic
 mesa evaluate benchmarks/real_repo_online_boutique.yml  -o /tmp/repro/online-boutique
 mesa evaluate benchmarks/real_repo_spring_sample.yml    -o /tmp/repro/spring-sample
@@ -61,7 +63,14 @@ without downloading.
 Verified on 2026-11-08 from a fresh fetch, in the environment recorded in
 [`evaluation-results/ENVIRONMENT.md`](../../evaluation-results/ENVIRONMENT.md):
 
-- **Seeded benchmark and Sock Shop** reproduce the committed result files byte for byte.
+- **Seeded benchmark and Sock Shop** reproduce the committed result files byte for byte. With
+  `PYTHONHASHSEED=0` this holds on every run.
+
+> **Ordering of findings.** Python randomises string hashing per process unless
+> `PYTHONHASHSEED` is set, and this changes the order in which cycle findings are listed (and
+> the order of services within them) in the JSON file. The *set* of findings, every metric and
+> every true/false positive is the same on every run: this was checked with six different seeds.
+> Set `PYTHONHASHSEED=0` to get byte-identical files.
 - **Online Boutique and the Spring Boot sample** reproduce every detector and discovery value
   in the committed files. The re-run also includes an *Explanation Quality* section that is
   empty in the committed files. Those files were generated in commit `30a6cc8` (now rewritten)

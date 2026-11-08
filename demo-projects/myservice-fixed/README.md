@@ -14,7 +14,7 @@ Expected outcome:
 
 Recommended scan root:
 
-`/Users/ilmeedesilva/MESA/demo-projects/myservice-fixed`
+`demo-projects/myservice-fixed`
 
 Services:
 
