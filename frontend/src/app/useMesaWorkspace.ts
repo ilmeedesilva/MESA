@@ -1,12 +1,9 @@
 import React from "react";
-import cytoscape from "cytoscape";
 import { demoWorkspace } from "../demoData";
 import { ApiError, api, messageFor, pollScanJob, streamAIResponse } from "../api";
 import { demoPersistedScan, isDemoScan, isPublicDemoProject, localDemoAIResponse } from "../demoMode";
 import {
-  aggregateEdges,
   buildFilterOptions,
-  buildGraphElements,
   comparisonBaseScan,
   downloadTextFile,
   filterFindings,
@@ -17,7 +14,6 @@ import {
   getMostUrgentFinding,
   graphFromDigitalTwin,
   graphFromReport,
-  graphStyle,
   isAbortError,
   isNotFoundError,
   normalizeResearchRecordPayload,
@@ -26,8 +22,6 @@ import {
   readProjectIdFromUrl,
   readSectionFromUrl,
   resolveProjectSelection,
-  selectionForEdge,
-  selectionForNode,
   servicePathsFromText,
   syncAppStateToUrl
 } from "../viewHelpers";
@@ -126,7 +120,6 @@ export function useMesaWorkspace() {
     service: "ALL",
     minConfidence: 0
   });
-  const graphRef = React.useRef<HTMLDivElement | null>(null);
   const initialProjectIdRef = React.useRef(readProjectIdFromUrl());
   const projectListRequestRef = React.useRef(0);
   const projectStateRequestRef = React.useRef(0);
@@ -235,38 +228,9 @@ export function useMesaWorkspace() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const aggregatedEdges = React.useMemo(() => (displayGraph ? aggregateEdges(displayGraph.edges) : []), [displayGraph]);
-
   const filteredFindings = React.useMemo(() => filterFindings(result?.findings ?? [], filters), [filters, result]);
 
   const filterOptions = React.useMemo(() => buildFilterOptions(result?.findings ?? []), [result]);
-
-  React.useEffect(() => {
-    if (!displayGraph || !graphRef.current) return;
-
-    const elements = buildGraphElements(displayGraph.nodes, aggregatedEdges);
-    const cy = cytoscape({
-      container: graphRef.current,
-      elements,
-      style: graphStyle,
-      layout: { name: "preset", animate: false, fit: true, padding: 48 },
-      minZoom: 0.45,
-      maxZoom: 1.35,
-      wheelSensitivity: 0.2
-    });
-
-    cy.ready(() => {
-      cy.fit(undefined, 54);
-      cy.center();
-    });
-    cy.on("tap", "node", (event) => {
-      setSelectedGraphElement(selectionForNode(event.target.data(), result?.findings ?? [], scores));
-    });
-    cy.on("tap", "edge", (event) => {
-      setSelectedGraphElement(selectionForEdge(event.target.data(), displayGraph.nodes, result?.findings ?? []));
-    });
-    return () => cy.destroy();
-  }, [aggregatedEdges, displayGraph, result, scores]);
 
   function cancelProjectRequests() {
     projectStateAbortRef.current?.abort();
@@ -1213,8 +1177,9 @@ export function useMesaWorkspace() {
     loadScan,
     result,
     displayGraph,
-    graphRef,
     selectedGraphElement,
+    setSelectedGraphElement,
+    scores,
     systemScore,
     serviceScores,
     highestSeverity,

@@ -1,10 +1,21 @@
 import type { MesaWorkspace } from "../app/useMesaWorkspace";
+import { ArchitectureGraph } from "../components/ArchitectureGraph";
 import { GraphInspector } from "../components/GraphInspector";
 import { HealthScoreView } from "./RemediationRoadmapPanel";
 import { shortId } from "../viewHelpers";
 
 export function GraphPage({ ws }: { ws: MesaWorkspace }) {
-  const { activeScan, displayGraph, result, graphRef, selectedGraphElement, systemScore, serviceScores, openDoc } = ws;
+  const {
+    activeScan,
+    displayGraph,
+    result,
+    scores,
+    selectedGraphElement,
+    setSelectedGraphElement,
+    systemScore,
+    serviceScores,
+    openDoc
+  } = ws;
   return (
     <section className="contentGrid workspaceGraphGrid">
       <section className="graphPanel dashboardGraph">
@@ -32,7 +43,16 @@ export function GraphPage({ ws }: { ws: MesaWorkspace }) {
             </span>
           </div>
         </div>
-        {result ? <div ref={graphRef} className="graph" /> : <div className="emptyState">No scan selected.</div>}
+        {result ? (
+          <ArchitectureGraph
+            graph={displayGraph}
+            findings={result.findings}
+            scores={scores}
+            onSelect={setSelectedGraphElement}
+          />
+        ) : (
+          <div className="emptyState">No scan selected.</div>
+        )}
         <GraphInspector selection={selectedGraphElement} />
       </section>
       <HealthScoreView systemScore={systemScore ?? null} serviceScores={serviceScores} onOpenDoc={openDoc} />
