@@ -30,6 +30,7 @@ from mesa.evaluation import (
     resolve_benchmark_path,
 )
 from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
+from mesa.ingestion.scan_roots import ScanPathNotAllowedError, resolve_allowed_service_paths
 from mesa.models import (
     AIExplainerStatus,
     AIExplainerRequest,
@@ -125,7 +126,15 @@ def health() -> dict[str, str]:
 
 @app.post("/analyze", response_model=AnalysisResult)
 def analyze(request: AnalysisRequest) -> AnalysisResult:
-    return analyze_services(request.service_paths, request.chatty_threshold)
+    service_paths = _allowed_service_paths(request.service_paths)
+    return analyze_services(service_paths, request.chatty_threshold)
+
+
+def _allowed_service_paths(raw_paths: list[str]) -> list[str]:
+    try:
+        return resolve_allowed_service_paths(raw_paths)
+    except ScanPathNotAllowedError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @app.post("/repo-scans/preview", response_model=RepoScanPreview)
@@ -299,6 +308,7 @@ def run_project_scan(project_id: str, payload: RunScanRequest, request: Request)
     repository = get_repository(request)
     if repository.get_project(project_id) is None:
         raise HTTPException(status_code=404, detail="Project not found")
+    service_paths = _allowed_service_paths(payload.service_paths)
     repository.upsert_project_setup(
         project_id,
         ProjectSetup(
@@ -307,7 +317,7 @@ def run_project_scan(project_id: str, payload: RunScanRequest, request: Request)
             chatty_threshold=payload.chatty_threshold,
         ),
     )
-    result = analyze_services(payload.service_paths, payload.chatty_threshold)
+    result = analyze_services(service_paths, payload.chatty_threshold)
     result.summary["selected_service_paths"] = list(payload.service_paths)
     policies = repository.list_policies(project_id)
     policy_findings = evaluate_policies(result, policies)
