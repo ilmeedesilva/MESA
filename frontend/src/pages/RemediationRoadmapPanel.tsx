@@ -1,9 +1,9 @@
 import React from "react";
-import { DocLinkButton } from "./DocLinkButton";
-import { DimensionBars } from "./FindingDrawer";
-import { bucketLabel } from "./demoMode";
-import { formatType, gradeTone } from "./viewHelpers";
-import type { HealthScore, RefactoringPlaybook, RemediationRoadmap, RoadmapAction } from "./types";
+import { DocLinkButton } from "../components/DocLinkButton";
+import { DimensionBars } from "../components/FindingDrawer";
+import { bucketLabel } from "../demoMode";
+import { formatType, gradeTone } from "../viewHelpers";
+import type { HealthScore, RefactoringPlaybook, RemediationRoadmap, RoadmapAction } from "../types";
 
 export function RemediationRoadmapPanel({
   roadmap,

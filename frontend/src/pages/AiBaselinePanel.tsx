@@ -1,5 +1,5 @@
 import React from "react";
-import { ApiError, api, messageFor } from "./api";
+import { ApiError, api, messageFor } from "../api";
 import type {
   AiBaselineComparisonReport,
   AiBaselineComparisonsResponse,
@@ -7,7 +7,7 @@ import type {
   AiBaselineRun,
   AiBaselineSystemReport,
   BenchmarkEvaluationReport
-} from "./types";
+} from "../types";
 
 type MesaReference = { precision: number; recall: number; f1_score: number } | null;
 

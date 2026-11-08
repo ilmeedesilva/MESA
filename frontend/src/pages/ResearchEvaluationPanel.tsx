@@ -1,7 +1,7 @@
 import React from "react";
-import { api, messageFor } from "./api";
-import { Metric, averageMetric, draftMetricPreview, formatMetricValue, shortId } from "./viewHelpers";
-import type { ProjectRecord, ResearchEvaluationDraft, ResearchEvaluationRecord, ScanRecord } from "./types";
+import { api, messageFor } from "../api";
+import { Metric, averageMetric, draftMetricPreview, formatMetricValue, shortId } from "../viewHelpers";
+import type { ProjectRecord, ResearchEvaluationDraft, ResearchEvaluationRecord, ScanRecord } from "../types";
 
 export function ResearchEvaluationPanel({
   records,

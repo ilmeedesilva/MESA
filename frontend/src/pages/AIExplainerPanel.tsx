@@ -1,5 +1,5 @@
 import React from "react";
-import { DocLinkButton } from "./DocLinkButton";
+import { DocLinkButton } from "../components/DocLinkButton";
 import {
   aiAnswerProvider,
   aiStatusLabel,
@@ -7,7 +7,7 @@ import {
   renderHighlightedText,
   shortId,
   summaryFindingTitle
-} from "./viewHelpers";
+} from "../viewHelpers";
 import type {
   AIExplainerIntent,
   AIExplainerResponse,
@@ -15,7 +15,7 @@ import type {
   Finding,
   HealthScore,
   ScanRecord
-} from "./types";
+} from "../types";
 
 export function AIExplainerPanel({
   activeScan,

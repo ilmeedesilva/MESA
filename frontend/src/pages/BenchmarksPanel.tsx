@@ -1,6 +1,6 @@
 import React from "react";
-import { api, messageFor } from "./api";
-import type { BenchmarkEvaluationReport, BenchmarkListing } from "./types";
+import { api, messageFor } from "../api";
+import type { BenchmarkEvaluationReport, BenchmarkListing } from "../types";
 
 export function BenchmarksPanel() {
   const [benchmarks, setBenchmarks] = React.useState<BenchmarkListing[]>([]);

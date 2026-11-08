@@ -7,8 +7,8 @@ import {
   plainLanguageFindingTitle,
   recommendationPreview,
   renderHighlightedText
-} from "./viewHelpers";
-import type { Filters, Finding, InterpretationMode } from "./types";
+} from "../viewHelpers";
+import type { Filters, Finding, InterpretationMode } from "../types";
 
 export function FindingsDashboard({
   findings,

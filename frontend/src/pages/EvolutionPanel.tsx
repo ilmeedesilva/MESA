@@ -1,6 +1,6 @@
 import React from "react";
-import { formatSigned, shortId } from "./viewHelpers";
-import type { EvolutionReport } from "./types";
+import { formatSigned, shortId } from "../viewHelpers";
+import type { EvolutionReport } from "../types";
 
 export function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
   const latest = reports[reports.length - 1];

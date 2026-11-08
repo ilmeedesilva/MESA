@@ -1,6 +1,6 @@
 import React from "react";
-import { api } from "./api";
-import type { ArchitectureFitnessGateResult, ArchitectureGateRuleResult } from "./types";
+import { api } from "../api";
+import type { ArchitectureFitnessGateResult, ArchitectureGateRuleResult } from "../types";
 
 const RULE_LABELS: Record<string, { name: string; explains: string }> = {
   minimum_health_score: {

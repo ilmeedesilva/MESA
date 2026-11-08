@@ -1,7 +1,7 @@
 import React from "react";
-import { docBySlug, docNeighbors, docsByQuery, docsCatalog, docsCategories } from "./docsPortal";
-import { DocLinkButton } from "./DocLinkButton";
-import { renderMarkdown } from "./viewHelpers";
+import { docBySlug, docNeighbors, docsByQuery, docsCatalog, docsCategories } from "../docsPortal";
+import { DocLinkButton } from "../components/DocLinkButton";
+import { renderMarkdown } from "../viewHelpers";
 
 export function DocumentationPortal({
   selectedDocSlug,

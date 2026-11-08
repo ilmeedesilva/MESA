@@ -8,8 +8,8 @@ import {
   plainLanguageFindingTitle,
   recommendationImpact,
   summarizeEvidence
-} from "./viewHelpers";
-import type { Finding, InterpretationMode } from "./types";
+} from "../viewHelpers";
+import type { Finding, InterpretationMode } from "../types";
 
 export function DimensionBars({ breakdown }: { breakdown: Record<string, number> }) {
   return (
