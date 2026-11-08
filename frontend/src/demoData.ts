@@ -73,8 +73,16 @@ export const demoWorkspace = {
           services: ["order-service", "payment-service"],
           description: "order-service and payment-service share database postgres://shared-db/orders.",
           evidence: [
-            { service: "order-service", database: "postgres://shared-db/orders", source: "/workspace/tests/fixtures/shared-db/order-service/.env:1" },
-            { service: "payment-service", database: "postgres://shared-db/orders", source: "/workspace/tests/fixtures/shared-db/payment-service/.env:1" }
+            {
+              service: "order-service",
+              database: "postgres://shared-db/orders",
+              source: "/workspace/tests/fixtures/shared-db/order-service/.env:1"
+            },
+            {
+              service: "payment-service",
+              database: "postgres://shared-db/orders",
+              source: "/workspace/tests/fixtures/shared-db/payment-service/.env:1"
+            }
           ],
           recommendation: "Assign one owner for the shared data and move the other service behind APIs or events.",
           recommendations: [
@@ -105,7 +113,8 @@ export const demoWorkspace = {
           severity: "LOW",
           confidence: 0.78,
           services: ["payment-service"],
-          description: "payment-service directly references shared-db:5432 in /workspace/tests/fixtures/shared-db/payment-service/.env:1. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+          description:
+            "payment-service directly references shared-db:5432 in /workspace/tests/fixtures/shared-db/payment-service/.env:1. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
           evidence: [
             {
               anti_pattern: "Hard-Coded Service Dependency",
@@ -171,7 +180,8 @@ export const demoWorkspace = {
                 deployment_independence: 61,
                 ownership_clarity: 52
               },
-              explanation: "order-service has service-level architectural health 58.2/100; weakest dimensions are ownership clarity, shared database usage, deployment independence.",
+              explanation:
+                "order-service has service-level architectural health 58.2/100; weakest dimensions are ownership clarity, shared database usage, deployment independence.",
               recommendations: [
                 "Assign clear data owners and replace shared persistence with APIs, events, or read models."
               ]
@@ -192,7 +202,8 @@ export const demoWorkspace = {
                 deployment_independence: 48,
                 ownership_clarity: 48
               },
-              explanation: "payment-service has service-level architectural health 46.4/100; weakest dimensions are ownership clarity, deployment independence, shared database usage.",
+              explanation:
+                "payment-service has service-level architectural health 46.4/100; weakest dimensions are ownership clarity, deployment independence, shared database usage.",
               recommendations: [
                 "Move endpoints into configuration or service discovery.",
                 "Assign clear data owners and replace shared persistence with APIs, events, or read models."
@@ -216,10 +227,9 @@ export const demoWorkspace = {
                 deployment_independence: 55,
                 ownership_clarity: 50
               },
-              explanation: "payments has domain-level architectural health 52.3/100; weakest dimensions are ownership clarity, shared database usage, deployment independence.",
-              recommendations: [
-                "Assign clear service ownership over data and APIs."
-              ]
+              explanation:
+                "payments has domain-level architectural health 52.3/100; weakest dimensions are ownership clarity, shared database usage, deployment independence.",
+              recommendations: ["Assign clear service ownership over data and APIs."]
             }
           ],
           system: {
@@ -238,7 +248,8 @@ export const demoWorkspace = {
               deployment_independence: 55,
               ownership_clarity: 50
             },
-            explanation: "system has system-level architectural health 51.8/100; weakest dimensions are ownership clarity, shared database usage, deployment independence.",
+            explanation:
+              "system has system-level architectural health 51.8/100; weakest dimensions are ownership clarity, shared database usage, deployment independence.",
             recommendations: [
               "Assign clear data owners and replace shared persistence with APIs, events, or read models."
             ]
@@ -254,17 +265,20 @@ export const demoWorkspace = {
           severity: "HIGH",
           confidence: 0.88,
           services: ["platform-service"],
-          description: "platform-service has a God Service risk score of 82.0/100. The service appears too central or responsible for too many capabilities.",
+          description:
+            "platform-service has a God Service risk score of 82.0/100. The service appears too central or responsible for too many capabilities.",
           evidence: [
             {
               anti_pattern: "God Service",
               service: "platform-service",
               score: 82,
               severity: "HIGH",
-              explanation: "platform-service exposes many APIs, has multiple inbound and outbound dependencies, and is linked to several findings."
+              explanation:
+                "platform-service exposes many APIs, has multiple inbound and outbound dependencies, and is linked to several findings."
             }
           ],
-          recommendation: "Review platform-service for responsibility boundaries and split cohesive capabilities into clearer modules or services.",
+          recommendation:
+            "Review platform-service for responsibility boundaries and split cohesive capabilities into clearer modules or services.",
           recommendations: [
             {
               root_cause: "The service has accumulated too many responsibilities and dependencies.",
@@ -291,14 +305,23 @@ export const demoWorkspace = {
           confidence: 0.9,
           services: ["platform-service", "order-service"],
           description: "Cyclic service dependency detected: platform-service -> order-service -> platform-service.",
-          evidence: [{ cycle: ["platform-service", "order-service"], cycle_path: ["platform-service", "order-service", "platform-service"], cycle_length: 2 }],
+          evidence: [
+            {
+              cycle: ["platform-service", "order-service"],
+              cycle_path: ["platform-service", "order-service", "platform-service"],
+              cycle_length: 2
+            }
+          ],
           recommendation: "Break the cycle by reversing one dependency or introducing an event boundary.",
           recommendations: [
             {
               root_cause: "The affected services depend on each other directly.",
               architectural_consequence: "The cycle blocks independent deployment and increases coordination cost.",
               affected_services: ["platform-service", "order-service"],
-              affected_files: ["/workspace/tests/fixtures/god/platform-service/app.py", "/workspace/tests/fixtures/god/order-service/app.py"],
+              affected_files: [
+                "/workspace/tests/fixtures/god/platform-service/app.py",
+                "/workspace/tests/fixtures/god/order-service/app.py"
+              ],
               refactoring_steps: [
                 "Identify the dependency edge with the weakest ownership justification.",
                 "Replace one synchronous call with an event or orchestration boundary.",
@@ -318,7 +341,8 @@ export const demoWorkspace = {
           severity: "MEDIUM",
           confidence: 0.82,
           services: ["platform-service", "order-service"],
-          description: "platform-service has 6 static call sites targeting order-service, meeting or exceeding the chatty threshold of 3.",
+          description:
+            "platform-service has 6 static call sites targeting order-service, meeting or exceeding the chatty threshold of 3.",
           evidence: [{ caller: "platform-service", callee: "order-service", call_count: 6 }],
           recommendation: "Review whether these calls can be consolidated into a coarser API or read model.",
           recommendations: [
@@ -346,8 +370,17 @@ export const demoWorkspace = {
           severity: "MEDIUM",
           confidence: 0.88,
           services: ["platform-service"],
-          description: "platform-service directly references http://order-service/orders in /workspace/tests/fixtures/god/platform-service/app.py:8. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
-          evidence: [{ value: "http://order-service/orders", file_path: "/workspace/tests/fixtures/god/platform-service/app.py", line_number: 8, reason: "service endpoint", duplicate_occurrences: 1 }],
+          description:
+            "platform-service directly references http://order-service/orders in /workspace/tests/fixtures/god/platform-service/app.py:8. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+          evidence: [
+            {
+              value: "http://order-service/orders",
+              file_path: "/workspace/tests/fixtures/god/platform-service/app.py",
+              line_number: 8,
+              reason: "service endpoint",
+              duplicate_occurrences: 1
+            }
+          ],
           recommendation: "Move the endpoint value into environment-specific configuration.",
           recommendations: [
             {
@@ -373,8 +406,17 @@ export const demoWorkspace = {
           severity: "MEDIUM",
           confidence: 0.88,
           services: ["platform-service"],
-          description: "platform-service directly references http://payment-service/payments in /workspace/tests/fixtures/god/platform-service/app.py:12. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
-          evidence: [{ value: "http://payment-service/payments", file_path: "/workspace/tests/fixtures/god/platform-service/app.py", line_number: 12, reason: "service endpoint", duplicate_occurrences: 1 }],
+          description:
+            "platform-service directly references http://payment-service/payments in /workspace/tests/fixtures/god/platform-service/app.py:12. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+          evidence: [
+            {
+              value: "http://payment-service/payments",
+              file_path: "/workspace/tests/fixtures/god/platform-service/app.py",
+              line_number: 12,
+              reason: "service endpoint",
+              duplicate_occurrences: 1
+            }
+          ],
           recommendation: "Move the endpoint value into environment-specific configuration.",
           recommendations: [
             {
@@ -400,8 +442,17 @@ export const demoWorkspace = {
           severity: "MEDIUM",
           confidence: 0.88,
           services: ["platform-service"],
-          description: "platform-service directly references http://user-service/users in /workspace/tests/fixtures/god/platform-service/app.py:16. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
-          evidence: [{ value: "http://user-service/users", file_path: "/workspace/tests/fixtures/god/platform-service/app.py", line_number: 16, reason: "service endpoint", duplicate_occurrences: 1 }],
+          description:
+            "platform-service directly references http://user-service/users in /workspace/tests/fixtures/god/platform-service/app.py:16. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+          evidence: [
+            {
+              value: "http://user-service/users",
+              file_path: "/workspace/tests/fixtures/god/platform-service/app.py",
+              line_number: 16,
+              reason: "service endpoint",
+              duplicate_occurrences: 1
+            }
+          ],
           recommendation: "Move the endpoint value into environment-specific configuration.",
           recommendations: [
             {
@@ -427,8 +478,16 @@ export const demoWorkspace = {
           severity: "HIGH",
           confidence: 0.96,
           services: [],
-          description: "Governance policy 'No hard-coded service URLs' failed for system: hard_coded_service_url_count was 3, expected rule 'hard_coded_service_url_count == 0'.",
-          evidence: [{ policy_id: "no-hardcoded-service-urls", policy_name: "No hard-coded service URLs", actual: 3, expected: 0 }],
+          description:
+            "Governance policy 'No hard-coded service URLs' failed for system: hard_coded_service_url_count was 3, expected rule 'hard_coded_service_url_count == 0'.",
+          evidence: [
+            {
+              policy_id: "no-hardcoded-service-urls",
+              policy_name: "No hard-coded service URLs",
+              actual: 3,
+              expected: 0
+            }
+          ],
           recommendation: "Bring the architecture back within the configured governance policy and re-run MESA.",
           recommendations: [
             {
@@ -499,7 +558,8 @@ export const demoWorkspace = {
                 deployment_independence: 30,
                 ownership_clarity: 54
               },
-              explanation: "platform-service has service-level architectural health 32.8/100; weakest dimensions are god service risk, deployment independence, coupling, api complexity.",
+              explanation:
+                "platform-service has service-level architectural health 32.8/100; weakest dimensions are god service risk, deployment independence, coupling, api complexity.",
               recommendations: [
                 "Decompose oversized services around cohesive capabilities.",
                 "Reduce direct service dependencies; prefer events, stable APIs, or orchestration boundaries."
@@ -521,10 +581,9 @@ export const demoWorkspace = {
                 deployment_independence: 56,
                 ownership_clarity: 72
               },
-              explanation: "order-service has service-level architectural health 57.4/100; weakest dimensions are cyclic dependencies, deployment independence, coupling.",
-              recommendations: [
-                "Break dependency cycles by reversing ownership or introducing events."
-              ]
+              explanation:
+                "order-service has service-level architectural health 57.4/100; weakest dimensions are cyclic dependencies, deployment independence, coupling.",
+              recommendations: ["Break dependency cycles by reversing ownership or introducing events."]
             },
             {
               scope: "service",
@@ -542,10 +601,9 @@ export const demoWorkspace = {
                 deployment_independence: 71,
                 ownership_clarity: 76
               },
-              explanation: "payment-service has service-level architectural health 72.1/100; weakest dimensions are deployment independence and coupling.",
-              recommendations: [
-                "Keep monitoring payment-service for architectural drift as the system evolves."
-              ]
+              explanation:
+                "payment-service has service-level architectural health 72.1/100; weakest dimensions are deployment independence and coupling.",
+              recommendations: ["Keep monitoring payment-service for architectural drift as the system evolves."]
             }
           ],
           domain: [
@@ -565,10 +623,9 @@ export const demoWorkspace = {
                 deployment_independence: 52,
                 ownership_clarity: 67
               },
-              explanation: "platform has domain-level architectural health 44.8/100; weakest dimensions are deployment independence, coupling, god service risk.",
-              recommendations: [
-                "Reduce direct service dependencies and central responsibilities."
-              ]
+              explanation:
+                "platform has domain-level architectural health 44.8/100; weakest dimensions are deployment independence, coupling, god service risk.",
+              recommendations: ["Reduce direct service dependencies and central responsibilities."]
             }
           ],
           system: {
@@ -587,7 +644,8 @@ export const demoWorkspace = {
               deployment_independence: 50,
               ownership_clarity: 69
             },
-            explanation: "system has system-level architectural health 46.7/100; weakest dimensions are deployment independence, coupling, god service risk, cohesion.",
+            explanation:
+              "system has system-level architectural health 46.7/100; weakest dimensions are deployment independence, coupling, god service risk, cohesion.",
             recommendations: [
               "Reduce runtime coupling that forces services to change or deploy together.",
               "Decompose oversized services around cohesive capabilities."
@@ -602,7 +660,8 @@ export const demoWorkspace = {
       scan_id: "demo-scan-shared-db",
       generated_from_finding_count: 2,
       system_health_score: 51.8,
-      summary: "MESA grouped 2 findings into 2 remediation actions. Start by externalizing the endpoint configuration, then remove shared database ownership across the two services.",
+      summary:
+        "MESA grouped 2 findings into 2 remediation actions. Start by externalizing the endpoint configuration, then remove shared database ownership across the two services.",
       quick_wins: [
         {
           id: "roadmap-demo-shared-01",
@@ -610,10 +669,12 @@ export const demoWorkspace = {
           bucket: "quick_win",
           priority_rank: 1,
           priority_score: 58.2,
-          summary: "Replace the embedded database host and port in payment-service with deployment-managed configuration.",
+          summary:
+            "Replace the embedded database host and port in payment-service with deployment-managed configuration.",
           rationale: "The payment-service configuration is environment-specific and increases drift risk.",
           expected_benefit: "Improves portability across environments.",
-          suggested_order_reason: "This is a low-effort quick win that reduces operational fragility before larger data-ownership work.",
+          suggested_order_reason:
+            "This is a low-effort quick win that reduces operational fragility before larger data-ownership work.",
           estimated_difficulty: "Low",
           affected_services: ["payment-service"],
           related_findings: ["MESA-HCDD-001"],
@@ -641,7 +702,8 @@ export const demoWorkspace = {
           summary: "Assign one service as the data owner and move the other behind APIs or events.",
           rationale: "Two services directly reference the same database and weaken service ownership boundaries.",
           expected_benefit: "Improves ownership clarity and makes schema evolution safer.",
-          suggested_order_reason: "Treat this as the main architectural refactor because it changes data ownership and deployment independence.",
+          suggested_order_reason:
+            "Treat this as the main architectural refactor because it changes data ownership and deployment independence.",
           estimated_difficulty: "High",
           affected_services: ["order-service", "payment-service"],
           related_findings: ["MESA-SHDB-001"],
@@ -659,18 +721,35 @@ export const demoWorkspace = {
         }
       ],
       suggested_order: [
-        { order: 1, action_id: "roadmap-demo-shared-01", title: "Externalize hard-coded endpoints in 1 service", bucket: "quick_win", why_now: "Clear the deployment-specific config first so later ownership changes happen on a cleaner baseline." },
-        { order: 2, action_id: "roadmap-demo-shared-02", title: "Remove shared database access for order-service, payment-service", bucket: "high_effort", why_now: "This is the key architecture fix because the shared database is the main source of coupling." }
+        {
+          order: 1,
+          action_id: "roadmap-demo-shared-01",
+          title: "Externalize hard-coded endpoints in 1 service",
+          bucket: "quick_win",
+          why_now: "Clear the deployment-specific config first so later ownership changes happen on a cleaner baseline."
+        },
+        {
+          order: 2,
+          action_id: "roadmap-demo-shared-02",
+          title: "Remove shared database access for order-service, payment-service",
+          bucket: "high_effort",
+          why_now: "This is the key architecture fix because the shared database is the main source of coupling."
+        }
       ],
       dependencies: [
-        { action_id: "roadmap-demo-shared-02", depends_on: "roadmap-demo-shared-01", reason: "Stabilize configuration first so the data ownership migration is easier to manage." }
+        {
+          action_id: "roadmap-demo-shared-02",
+          depends_on: "roadmap-demo-shared-01",
+          reason: "Stabilize configuration first so the data ownership migration is easier to manage."
+        }
       ]
     },
     "demo-scan-monolith": {
       scan_id: "demo-scan-monolith",
       generated_from_finding_count: 7,
       system_health_score: 46.7,
-      summary: "MESA grouped 7 findings into 5 remediation actions. Start with endpoint cleanup and the service cycle, then reduce chatty coupling and decompose platform-service.",
+      summary:
+        "MESA grouped 7 findings into 5 remediation actions. Start with endpoint cleanup and the service cycle, then reduce chatty coupling and decompose platform-service.",
       quick_wins: [
         {
           id: "roadmap-demo-monolith-01",
@@ -705,10 +784,13 @@ export const demoWorkspace = {
           bucket: "medium_term",
           priority_rank: 3,
           priority_score: 76.1,
-          summary: "Consolidate repeated synchronous calls between platform-service and order-service into a cleaner interaction boundary.",
-          rationale: "MESA counted repeated call sites across one interaction path, indicating a fine-grained boundary.",
+          summary:
+            "Consolidate repeated synchronous calls between platform-service and order-service into a cleaner interaction boundary.",
+          rationale:
+            "MESA counted repeated call sites across one interaction path, indicating a fine-grained boundary.",
           expected_benefit: "Lowers synchronous coupling and reduces request fragility.",
-          suggested_order_reason: "Tackle this after the obvious endpoint cleanup so the API redesign happens on stable wiring.",
+          suggested_order_reason:
+            "Tackle this after the obvious endpoint cleanup so the API redesign happens on stable wiring.",
           estimated_difficulty: "Medium",
           affected_services: ["platform-service", "order-service"],
           related_findings: ["MESA-CHAT-001"],
@@ -730,7 +812,8 @@ export const demoWorkspace = {
           bucket: "medium_term",
           priority_rank: 4,
           priority_score: 69.4,
-          summary: "Use the related remediation work to satisfy the governance rule and verify compliance on the next scan.",
+          summary:
+            "Use the related remediation work to satisfy the governance rule and verify compliance on the next scan.",
           rationale: "The system is currently violating an agreed architecture constraint.",
           expected_benefit: "Keeps the architecture aligned with project-specific governance constraints.",
           suggested_order_reason: "Use this as a verification checkpoint after the overlapping fixes complete.",
@@ -760,7 +843,8 @@ export const demoWorkspace = {
           summary: "Remove the bidirectional dependency loop that ties the two services into one change path.",
           rationale: "The detected cycle directly blocks deployment independence and amplifies central coupling.",
           expected_benefit: "Improves deployment independence and reduces cascading change risk.",
-          suggested_order_reason: "Prioritize this structural refactor early because it amplifies other risks when left in place.",
+          suggested_order_reason:
+            "Prioritize this structural refactor early because it amplifies other risks when left in place.",
           estimated_difficulty: "High",
           affected_services: ["platform-service", "order-service"],
           related_findings: ["MESA-CYCL-001"],
@@ -782,10 +866,12 @@ export const demoWorkspace = {
           bucket: "high_effort",
           priority_rank: 5,
           priority_score: 73.8,
-          summary: "Split platform-service into clearer responsibility boundaries and reduce the amount of behavior concentrated in one deployable unit.",
+          summary:
+            "Split platform-service into clearer responsibility boundaries and reduce the amount of behavior concentrated in one deployable unit.",
           rationale: "platform-service is a central hotspot linked to multiple architectural stress signals.",
           expected_benefit: "Improves maintainability, ownership clarity, and scalability.",
-          suggested_order_reason: "Schedule this after the surrounding coupling fixes so the decomposition target is cleaner and easier to scope.",
+          suggested_order_reason:
+            "Schedule this after the surrounding coupling fixes so the decomposition target is cleaner and easier to scope.",
           estimated_difficulty: "High",
           affected_services: ["platform-service"],
           related_findings: ["MESA-GODS-001"],
@@ -803,18 +889,68 @@ export const demoWorkspace = {
         }
       ],
       suggested_order: [
-        { order: 1, action_id: "roadmap-demo-monolith-01", title: "Externalize hard-coded endpoints in 1 service", bucket: "quick_win", why_now: "This is the easiest high-value cleanup and removes deployment noise immediately." },
-        { order: 2, action_id: "roadmap-demo-monolith-02", title: "Break the dependency cycle across platform-service, order-service", bucket: "high_effort", why_now: "The cycle is a core blocker to independent change and keeps two services coupled." },
-        { order: 3, action_id: "roadmap-demo-monolith-03", title: "Reduce chatty traffic between platform-service and order-service", bucket: "medium_term", why_now: "After config cleanup and cycle work, redesign the interaction boundary with less coupling." },
-        { order: 4, action_id: "roadmap-demo-monolith-04", title: "Bring policy 'No hard-coded service URLs' back into compliance", bucket: "medium_term", why_now: "Use this as the compliance check once the direct URL fixes are complete." },
-        { order: 5, action_id: "roadmap-demo-monolith-05", title: "Decompose the hotspot service platform-service", bucket: "high_effort", why_now: "The decomposition is most likely to succeed once surrounding dependencies are cleaner." }
+        {
+          order: 1,
+          action_id: "roadmap-demo-monolith-01",
+          title: "Externalize hard-coded endpoints in 1 service",
+          bucket: "quick_win",
+          why_now: "This is the easiest high-value cleanup and removes deployment noise immediately."
+        },
+        {
+          order: 2,
+          action_id: "roadmap-demo-monolith-02",
+          title: "Break the dependency cycle across platform-service, order-service",
+          bucket: "high_effort",
+          why_now: "The cycle is a core blocker to independent change and keeps two services coupled."
+        },
+        {
+          order: 3,
+          action_id: "roadmap-demo-monolith-03",
+          title: "Reduce chatty traffic between platform-service and order-service",
+          bucket: "medium_term",
+          why_now: "After config cleanup and cycle work, redesign the interaction boundary with less coupling."
+        },
+        {
+          order: 4,
+          action_id: "roadmap-demo-monolith-04",
+          title: "Bring policy 'No hard-coded service URLs' back into compliance",
+          bucket: "medium_term",
+          why_now: "Use this as the compliance check once the direct URL fixes are complete."
+        },
+        {
+          order: 5,
+          action_id: "roadmap-demo-monolith-05",
+          title: "Decompose the hotspot service platform-service",
+          bucket: "high_effort",
+          why_now: "The decomposition is most likely to succeed once surrounding dependencies are cleaner."
+        }
       ],
       dependencies: [
-        { action_id: "roadmap-demo-monolith-03", depends_on: "roadmap-demo-monolith-01", reason: "Stabilize endpoint configuration before redesigning the interaction boundary." },
-        { action_id: "roadmap-demo-monolith-04", depends_on: "roadmap-demo-monolith-01", reason: "The governance rule should pass once the hard-coded URLs are removed." },
-        { action_id: "roadmap-demo-monolith-05", depends_on: "roadmap-demo-monolith-01", reason: "Clean up endpoint configuration before splitting the hotspot service." },
-        { action_id: "roadmap-demo-monolith-05", depends_on: "roadmap-demo-monolith-02", reason: "Reduce structural coupling first so the decomposition target is clearer." },
-        { action_id: "roadmap-demo-monolith-05", depends_on: "roadmap-demo-monolith-03", reason: "Chatty interaction cleanup helps define cleaner service boundaries before decomposition." }
+        {
+          action_id: "roadmap-demo-monolith-03",
+          depends_on: "roadmap-demo-monolith-01",
+          reason: "Stabilize endpoint configuration before redesigning the interaction boundary."
+        },
+        {
+          action_id: "roadmap-demo-monolith-04",
+          depends_on: "roadmap-demo-monolith-01",
+          reason: "The governance rule should pass once the hard-coded URLs are removed."
+        },
+        {
+          action_id: "roadmap-demo-monolith-05",
+          depends_on: "roadmap-demo-monolith-01",
+          reason: "Clean up endpoint configuration before splitting the hotspot service."
+        },
+        {
+          action_id: "roadmap-demo-monolith-05",
+          depends_on: "roadmap-demo-monolith-02",
+          reason: "Reduce structural coupling first so the decomposition target is clearer."
+        },
+        {
+          action_id: "roadmap-demo-monolith-05",
+          depends_on: "roadmap-demo-monolith-03",
+          reason: "Chatty interaction cleanup helps define cleaner service boundaries before decomposition."
+        }
       ]
     }
   },
@@ -830,7 +966,8 @@ export const demoWorkspace = {
         removed_services: [],
         dependency_delta: 6,
         risk_delta: 5,
-        summary: "The later snapshot grew into a more connected platform-centered architecture with new risks, more dependencies, and lower overall health."
+        summary:
+          "The later snapshot grew into a more connected platform-centered architecture with new risks, more dependencies, and lower overall health."
       },
       risk_trend: {
         previous_total: 2,
@@ -841,7 +978,14 @@ export const demoWorkspace = {
         worsened_risk_count: 1,
         new_risks: [{ type: "GOD_SERVICE", services: ["platform-service"] }],
         resolved_risks: [{ type: "SHARED_DATABASE", services: ["order-service", "payment-service"] }],
-        worsened_risks: [{ type: "HARD_CODED_SERVICE_DEPENDENCY", services: ["platform-service"], previous_severity: "LOW", current_severity: "MEDIUM" }]
+        worsened_risks: [
+          {
+            type: "HARD_CODED_SERVICE_DEPENDENCY",
+            services: ["platform-service"],
+            previous_severity: "LOW",
+            current_severity: "MEDIUM"
+          }
+        ]
       },
       score_trend: {
         system_previous: 51.8,
@@ -851,7 +995,14 @@ export const demoWorkspace = {
         worsened_services: [{ service: "platform-service", previous: 60.2, current: 32.8, delta: -27.4 }]
       },
       service_level_changes: [
-        { service: "platform-service", status: "new", file_delta: 12, finding_delta: 6, endpoint_delta: 5, database_delta: 0 }
+        {
+          service: "platform-service",
+          status: "new",
+          file_delta: 12,
+          finding_delta: 6,
+          endpoint_delta: 5,
+          database_delta: 0
+        }
       ],
       new_dependencies: [
         { source: "platform-service", target: "order-service", type: "api_call" },

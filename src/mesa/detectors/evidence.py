@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 from mesa.models import EvidenceChainItem, SourceLocation
@@ -51,7 +52,7 @@ def _add_source(files: set[str], item: dict[str, Any]) -> None:
     files.add(f"{file_path}:{line_number}" if isinstance(line_number, int) else file_path)
 
 
-def _walk_dicts(value: Any):
+def _walk_dicts(value: Any) -> Iterator[dict[str, Any]]:
     if isinstance(value, dict):
         yield value
         for nested in value.values():

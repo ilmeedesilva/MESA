@@ -3,25 +3,44 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "predev": "node scripts/generate-docs-bundle.mjs",
     "dev": "vite --host 0.0.0.0",
     "prebuild": "node scripts/generate-docs-bundle.mjs",
     "build": "tsc && vite build",
     "prelint": "node scripts/generate-docs-bundle.mjs",
-    "lint": "tsc --noEmit"
+    "lint": "eslint . && tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "pretest": "node scripts/generate-docs-bundle.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
     "cytoscape": "^3.30.2",
-    "vite": "^5.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/cytoscape": "^3.21.8",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "typescript": "^5.5.4"
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^17.14.0",
+    "jsdom": "^31.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^5.4.0",
+    "vitest": "^3.2.7"
   }
 }

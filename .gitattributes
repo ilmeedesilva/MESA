@@ -1,0 +1,16 @@
+# Normalise line endings to LF for everything git detects as text.
+* text=auto eol=lf
+
+# Frozen research results are kept byte-for-byte as recorded (their CSVs use
+# CRLF, the Python csv module default). Never convert their line endings.
+evaluation-results/** -text
+benchmarks/results/** -text
+
+# Sample services and benchmark material are not part of MESA's own code, so
+# keep them out of GitHub's language statistics.
+tests/fixtures/** linguist-vendored
+benchmarks/** linguist-vendored
+demo-projects/** linguist-vendored
+
+# Generated from docs/ before every frontend build.
+frontend/src/generated-docs.ts linguist-generated

@@ -95,7 +95,9 @@ class Neo4jArchitectureStore:
                 if edge_type == "api_call":
                     session.execute_write(self._write_call_edge, project_id, scan_id, edge)
                 if edge_type == "shared_database":
-                    session.execute_write(self._write_shared_database_edge, project_id, scan_id, edge)
+                    session.execute_write(
+                        self._write_shared_database_edge, project_id, scan_id, edge
+                    )
 
             for dependency in _service_dependencies(result.graph.get("edges", [])):
                 session.execute_write(
@@ -353,7 +355,12 @@ class Neo4jArchitectureStore:
 
     @staticmethod
     def _write_api(
-        tx, project_id: str, scan_id: str, service_name: str, endpoint_index: int, endpoint: dict[str, Any]
+        tx,
+        project_id: str,
+        scan_id: str,
+        service_name: str,
+        endpoint_index: int,
+        endpoint: dict[str, Any],
     ) -> None:
         api_id = f"{scan_id}:api:{service_name}:{endpoint_index}"
         tx.run(
@@ -564,7 +571,9 @@ class Neo4jArchitectureStore:
         )
 
     @staticmethod
-    def _write_shared_database_edge(tx, project_id: str, scan_id: str, edge: dict[str, Any]) -> None:
+    def _write_shared_database_edge(
+        tx, project_id: str, scan_id: str, edge: dict[str, Any]
+    ) -> None:
         tx.run(
             """
             MATCH (source:Service {project_id: $project_id, scan_id: $scan_id, name: $source_name})
@@ -643,7 +652,12 @@ def _service_dependencies(edges: Iterable[dict[str, Any]]) -> list[dict[str, Any
             key = (edge["source"], edge["target"], "api_call", None)
             dependency = dependencies.setdefault(
                 key,
-                {"source": edge["source"], "target": edge["target"], "kind": "api_call", "weight": 0},
+                {
+                    "source": edge["source"],
+                    "target": edge["target"],
+                    "kind": "api_call",
+                    "weight": 0,
+                },
             )
             dependency["weight"] += 1
         if edge_type == "shared_database":

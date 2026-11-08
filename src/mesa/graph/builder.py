@@ -23,8 +23,7 @@ def build_graph(services: Iterable[ServiceFacts]) -> nx.MultiDiGraph:
             file_count=service.file_count,
             domain_keywords=service.domain_keywords,
             hard_coded_dependencies=[
-                dependency.model_dump(mode="json")
-                for dependency in service.hard_coded_dependencies
+                dependency.model_dump(mode="json") for dependency in service.hard_coded_dependencies
             ],
         )
 
@@ -86,4 +85,3 @@ def graph_to_dict(graph: nx.MultiDiGraph) -> dict:
             for source, target, key, data in graph.edges(keys=True, data=True)
         ],
     }
-

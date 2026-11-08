@@ -11,7 +11,6 @@ from mesa.models import (
     Severity,
 )
 
-
 HIGH_RISK_COUPLING_TYPES = {
     FindingType.CHATTY_SERVICE,
     FindingType.HARD_CODED_SERVICE_DEPENDENCY,
@@ -31,7 +30,9 @@ def evaluate_architecture_gate(
     rules = [
         _minimum_health_score_rule(health_score, active_thresholds),
         _critical_findings_rule(result.findings, active_thresholds),
-        _cyclic_dependency_rule(result.findings, baseline.findings if baseline else [], active_thresholds),
+        _cyclic_dependency_rule(
+            result.findings, baseline.findings if baseline else [], active_thresholds
+        ),
         _governance_rule(result.findings, active_thresholds),
         _high_risk_coupling_rule(
             result.findings, baseline.findings if baseline else [], active_thresholds
@@ -89,12 +90,18 @@ def _critical_findings_rule(
 
 
 def _cyclic_dependency_rule(
-    findings: list[Finding], baseline_findings: list[Finding], thresholds: ArchitectureGateThresholds
+    findings: list[Finding],
+    baseline_findings: list[Finding],
+    thresholds: ArchitectureGateThresholds,
 ) -> ArchitectureGateRuleResult:
     cycles = _findings_by_type(findings, FindingType.CYCLIC_DEPENDENCY)
-    baseline_cycles = _finding_keys(_findings_by_type(baseline_findings, FindingType.CYCLIC_DEPENDENCY))
+    baseline_cycles = _finding_keys(
+        _findings_by_type(baseline_findings, FindingType.CYCLIC_DEPENDENCY)
+    )
     new_cycles = [
-        finding for finding in cycles if not baseline_findings or _finding_key(finding) not in baseline_cycles
+        finding
+        for finding in cycles
+        if not baseline_findings or _finding_key(finding) not in baseline_cycles
     ]
     passed = thresholds.allow_new_cyclic_dependencies or not new_cycles
     return ArchitectureGateRuleResult(
@@ -127,12 +134,15 @@ def _governance_rule(
 
 
 def _high_risk_coupling_rule(
-    findings: list[Finding], baseline_findings: list[Finding], thresholds: ArchitectureGateThresholds
+    findings: list[Finding],
+    baseline_findings: list[Finding],
+    thresholds: ArchitectureGateThresholds,
 ) -> ArchitectureGateRuleResult:
     coupling_findings = [
         finding
         for finding in findings
-        if finding.type in HIGH_RISK_COUPLING_TYPES and finding.severity in {Severity.HIGH, Severity.CRITICAL}
+        if finding.type in HIGH_RISK_COUPLING_TYPES
+        and finding.severity in {Severity.HIGH, Severity.CRITICAL}
     ]
     baseline_keys = _finding_keys(
         [

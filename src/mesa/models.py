@@ -497,13 +497,15 @@ class ResearchEvaluationRecordCreate(ResearchEvaluationRecordBase):
 
 
 class ResearchEvaluationRecordUpdate(ResearchEvaluationRecordBase):
-    repo_name: str | None = None
-    detected_services: int | None = Field(default=None, ge=0)
-    total_findings: int | None = Field(default=None, ge=0)
-    critical_findings: int | None = Field(default=None, ge=0)
-    high_findings: int | None = Field(default=None, ge=0)
-    medium_findings: int | None = Field(default=None, ge=0)
-    low_findings: int | None = Field(default=None, ge=0)
+    # Partial update: fields required on create are optional here, so these
+    # overrides deliberately widen the base types.
+    repo_name: str | None = None  # type: ignore[assignment]
+    detected_services: int | None = Field(default=None, ge=0)  # type: ignore[assignment]
+    total_findings: int | None = Field(default=None, ge=0)  # type: ignore[assignment]
+    critical_findings: int | None = Field(default=None, ge=0)  # type: ignore[assignment]
+    high_findings: int | None = Field(default=None, ge=0)  # type: ignore[assignment]
+    medium_findings: int | None = Field(default=None, ge=0)  # type: ignore[assignment]
+    low_findings: int | None = Field(default=None, ge=0)  # type: ignore[assignment]
 
 
 class ResearchEvaluationRecord(ResearchEvaluationRecordBase):
@@ -517,7 +519,9 @@ class ResearchEvaluationRecord(ResearchEvaluationRecordBase):
 
 class ResearchEvaluationDraft(ResearchEvaluationRecordBase):
     project_id: str
-    accuracy_mode: ResearchEvaluationAccuracyMode = ResearchEvaluationAccuracyMode.MANUAL_VALIDATION_REQUIRED
+    accuracy_mode: ResearchEvaluationAccuracyMode = (
+        ResearchEvaluationAccuracyMode.MANUAL_VALIDATION_REQUIRED
+    )
     matched_benchmark_id: str | None = None
     matched_benchmark_name: str | None = None
     precision: float | None = None

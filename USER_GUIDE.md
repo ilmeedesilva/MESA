@@ -238,7 +238,7 @@ your-project/
    ```python
    # Good — MESA can resolve this
    response = requests.get("http://user-service:8080/api/users")
-   
+
    # Harder for MESA — URL is dynamic
    response = requests.get(os.getenv("USER_SERVICE_URL") + "/api/users")
    ```
@@ -273,27 +273,27 @@ mesa analyze [OPTIONS]
 OPTIONS:
   -r, --repo TEXT           Path to a service directory, OR a GitHub URL.
                             Repeat this option for each service.
-                            
+
   -c, --config FILE         Path to a mesa.yaml configuration file.
                             If provided, repos from the config file are also analyzed.
-                            
+
   -o, --output FILE         Save the report to a file instead of printing to console.
                             Example: -o report.txt
-                            
+
   -f, --format [text|json]  Report format.
                             text = human-readable (default)
                             json = machine-readable JSON
-                            
+
   --threshold-chatty INT    Number of call sites before a pair is flagged as chatty.
                             Default: 3. Increase if you have many intentional calls.
-                            
+
   --no-chatty               Skip Chatty Service detection entirely.
   --no-cyclic               Skip Cyclic Dependency detection entirely.
   --no-shared-db            Skip Shared Database detection entirely.
-  
+
   -v, --verbose             Show detailed progress: which files are being parsed,
                             how many endpoints found, URL resolution results, etc.
-                            
+
   --help                    Show help.
 ```
 
@@ -492,7 +492,7 @@ Each finding looks like this:
 ```
 SUMMARY
   Total Findings: 4
-  
+
   By Severity:     CRITICAL: 1   HIGH: 1   MEDIUM: 1   LOW: 1
   By Type:         Cyclic Dependency: 1   Chatty Service: 2   Shared Database: 1
 

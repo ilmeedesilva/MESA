@@ -13,7 +13,12 @@ from urllib.request import urlopen
 from uuid import uuid4
 
 from mesa.discovery import discover_service_candidates
-from mesa.models import RepoScanPreview, RepoScanPreviewRequest, RepoScanRunRequest, RepoSourceMetadata
+from mesa.models import (
+    RepoScanPreview,
+    RepoScanPreviewRequest,
+    RepoScanRunRequest,
+    RepoSourceMetadata,
+)
 
 _MANIFEST_FILENAMES = {
     "pyproject.toml",
@@ -108,9 +113,7 @@ def _service_discovery_warnings(discovered_services) -> list[str]:
             + ("." if len(unknown_languages) <= 5 else ", ...")
         )
     low_confidence = [
-        candidate.relative_path
-        for candidate in discovered_services
-        if candidate.confidence < 0.45
+        candidate.relative_path for candidate in discovered_services if candidate.confidence < 0.45
     ]
     if low_confidence:
         warnings.append(
@@ -123,13 +126,14 @@ def _service_discovery_warnings(discovered_services) -> list[str]:
 
 def resolve_service_paths(prepared: PreparedRepository, request: RepoScanRunRequest) -> list[str]:
     if request.service_paths:
-        return [str(_resolve_relative_path(prepared.root_path, raw_path)) for raw_path in request.service_paths]
+        return [
+            str(_resolve_relative_path(prepared.root_path, raw_path))
+            for raw_path in request.service_paths
+        ]
 
     candidates = discover_service_candidates(prepared.root_path)
     candidate_paths = [
-        candidate.relative_path
-        for candidate in candidates
-        if candidate.selected_by_default
+        candidate.relative_path for candidate in candidates if candidate.selected_by_default
     ] or [candidate.relative_path for candidate in candidates]
     if not candidate_paths:
         raise RepositoryPreparationError(
@@ -163,7 +167,9 @@ def _prepare_archive_path(location: str, subdirectory: str | None) -> PreparedRe
         raise RepositoryPreparationError(f"Archive path does not exist: {location}")
     if not archive_path.is_file():
         raise RepositoryPreparationError(f"Archive path is not a file: {location}")
-    if archive_path.suffix.lower() not in _ARCHIVE_SUFFIXES and not archive_path.name.endswith(".tar.gz"):
+    if archive_path.suffix.lower() not in _ARCHIVE_SUFFIXES and not archive_path.name.endswith(
+        ".tar.gz"
+    ):
         raise RepositoryPreparationError("Archive path must point to a zip or tar archive")
 
     workspace_root = _workspace_cache_root() / f"{archive_path.stem}-{uuid4().hex[:8]}"
@@ -186,7 +192,9 @@ def _prepare_archive_path(location: str, subdirectory: str | None) -> PreparedRe
     )
 
 
-def _prepare_github_url(location: str, ref: str | None, subdirectory: str | None) -> PreparedRepository:
+def _prepare_github_url(
+    location: str, ref: str | None, subdirectory: str | None
+) -> PreparedRepository:
     owner, repo = _parse_github_repo(location)
     download_ref = ref or "HEAD"
     workspace_root = _workspace_cache_root() / f"{owner}-{repo}-{uuid4().hex[:8]}"
@@ -199,7 +207,9 @@ def _prepare_github_url(location: str, ref: str | None, subdirectory: str | None
 
     warnings = []
     if download_ref == "HEAD":
-        warnings.append("Repository was fetched with HEAD; commit SHA is not yet persisted in the current phase.")
+        warnings.append(
+            "Repository was fetched with HEAD; commit SHA is not yet persisted in the current phase."
+        )
 
     return PreparedRepository(
         root_path=root_path,
@@ -240,7 +250,9 @@ def _sweep_stale_workspaces(root: Path) -> None:
 def _parse_github_repo(location: str) -> tuple[str, str]:
     parsed = urlparse(location)
     if parsed.scheme not in {"http", "https"} or parsed.netloc.lower() != "github.com":
-        raise RepositoryPreparationError("Only https://github.com/<owner>/<repo> URLs are supported")
+        raise RepositoryPreparationError(
+            "Only https://github.com/<owner>/<repo> URLs are supported"
+        )
     parts = [part for part in parsed.path.split("/") if part]
     if len(parts) < 2:
         raise RepositoryPreparationError("GitHub URL must include owner and repository name")
@@ -265,7 +277,9 @@ def _download_github_archive(owner: str, repo: str, ref: str, destination: Path)
     except RepositoryPreparationError:
         raise
     except Exception as error:  # pragma: no cover
-        raise RepositoryPreparationError(f"Could not download GitHub repository archive: {error}") from error
+        raise RepositoryPreparationError(
+            f"Could not download GitHub repository archive: {error}"
+        ) from error
 
 
 def _extract_archive(archive_path: Path, destination: Path) -> None:
@@ -318,7 +332,9 @@ def _check_extraction_limits(*, member_count: int, total_bytes: int) -> None:
 
 
 def _normalize_extracted_root(workspace_root: Path) -> Path:
-    directories = [child for child in workspace_root.iterdir() if child.is_dir() and child.name != "__MACOSX"]
+    directories = [
+        child for child in workspace_root.iterdir() if child.is_dir() and child.name != "__MACOSX"
+    ]
     if len(directories) == 1:
         return directories[0]
     return workspace_root
@@ -329,7 +345,9 @@ def _apply_subdirectory(root_path: Path, subdirectory: str | None) -> Path:
         return root_path
     resolved = _resolve_relative_path(root_path, subdirectory)
     if not resolved.is_dir():
-        raise RepositoryPreparationError(f"Requested subdirectory is not a directory: {subdirectory}")
+        raise RepositoryPreparationError(
+            f"Requested subdirectory is not a directory: {subdirectory}"
+        )
     return resolved
 
 
@@ -350,7 +368,7 @@ def _resolve_relative_path(root_path: Path, raw_path: str) -> Path:
 
 
 def _summarize_repository(root_path: Path) -> tuple[dict[str, int], list[str], int]:
-    manifest_counts = {manifest: 0 for manifest in sorted(_MANIFEST_FILENAMES)}
+    manifest_counts = dict.fromkeys(sorted(_MANIFEST_FILENAMES), 0)
     top_level_entries = sorted(child.name for child in root_path.iterdir())[:40]
     file_count = 0
 
@@ -377,4 +395,6 @@ def _ensure_within_destination(destination: Path, member_path: Path) -> None:
     try:
         resolved_member.relative_to(resolved_destination)
     except ValueError as error:
-        raise RepositoryPreparationError("Archive contains a path that escapes the extraction directory") from error
+        raise RepositoryPreparationError(
+            "Archive contains a path that escapes the extraction directory"
+        ) from error

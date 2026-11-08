@@ -261,6 +261,7 @@ from .endpoint import APIEndpoint
 from .call import ServiceCall
 from .database import DatabaseConnection
 
+
 @dataclass
 class Service:
     name: str
@@ -403,16 +404,19 @@ This is the OUTPUT of each detector.
 ```python
 from enum import Enum
 
+
 class Severity(Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
 
+
 class AntiPatternType(Enum):
     CHATTY_SERVICE = "CHATTY_SERVICE"
     CYCLIC_DEPENDENCY = "CYCLIC_DEPENDENCY"
     SHARED_DATABASE = "SHARED_DATABASE"
+
 
 @dataclass
 class AntiPatternFinding:
@@ -452,6 +456,7 @@ class AntiPatternFinding:
 
 ```python
 import networkx as nx
+
 
 @dataclass
 class ServiceDependencyGraph:
@@ -501,33 +506,57 @@ from .reporters.json_reporter import JsonReporter
 from .reporters.text_reporter import TextReporter
 from .evaluator.benchmark_runner import BenchmarkRunner
 
+
 @click.group()
 @click.version_option(version="1.0.0", prog_name="MESA")
 def cli():
     """MESA: Cross-Service Static Analysis Tool for Microservices Anti-Patterns."""
     pass
 
+
 @cli.command()
-@click.option("--repo", "-r", multiple=True, help="Path to local service dir OR GitHub URL. Can be repeated.")
+@click.option(
+    "--repo", "-r", multiple=True, help="Path to local service dir OR GitHub URL. Can be repeated."
+)
 @click.option("--config", "-c", type=click.Path(exists=True), help="Path to mesa.yaml config file.")
-@click.option("--output", "-o", type=click.Path(), help="Output file path. Prints to console if omitted.")
-@click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text")
-@click.option("--threshold-chatty", type=int, default=3, help="Min call count to flag as chatty. Default: 3.")
+@click.option(
+    "--output", "-o", type=click.Path(), help="Output file path. Prints to console if omitted."
+)
+@click.option(
+    "--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text"
+)
+@click.option(
+    "--threshold-chatty", type=int, default=3, help="Min call count to flag as chatty. Default: 3."
+)
 @click.option("--no-chatty", is_flag=True, default=False)
 @click.option("--no-cyclic", is_flag=True, default=False)
 @click.option("--no-shared-db", is_flag=True, default=False)
 @click.option("--verbose", "-v", is_flag=True, default=False)
-def analyze(repo, config, output, output_format, threshold_chatty, no_chatty, no_cyclic, no_shared_db, verbose):
+def analyze(
+    repo,
+    config,
+    output,
+    output_format,
+    threshold_chatty,
+    no_chatty,
+    no_cyclic,
+    no_shared_db,
+    verbose,
+):
     """Analyze microservice repos for architectural anti-patterns."""
     # Full implementation in Section 6.1 below
 
+
 @cli.command()
 @click.option("--projects", "-p", type=click.Path(exists=True), default="benchmark/projects.yaml")
-@click.option("--ground-truth", "-g", type=click.Path(exists=True), default="benchmark/ground_truth/")
+@click.option(
+    "--ground-truth", "-g", type=click.Path(exists=True), default="benchmark/ground_truth/"
+)
 @click.option("--output", "-o", type=click.Path(), default="evaluation_results.json")
 def evaluate(projects, ground_truth, output):
     """Run evaluation on benchmark projects and compute precision/recall/F1."""
     pass
+
 
 if __name__ == "__main__":
     cli()
@@ -558,7 +587,11 @@ def detect_language(service_path: str) -> str:
     path = Path(service_path)
     if list(path.glob("**/*.py")):
         return "python"
-    if list(path.glob("**/*.java")) or (path / "pom.xml").exists() or (path / "build.gradle").exists():
+    if (
+        list(path.glob("**/*.java"))
+        or (path / "pom.xml").exists()
+        or (path / "build.gradle").exists()
+    ):
         return "java"
     if list(path.glob("**/*.js")) or list(path.glob("**/*.ts")) or (path / "package.json").exists():
         return "javascript"
@@ -574,16 +607,16 @@ Merges configuration from two sources (CLI args have priority over mesa.yaml):
 ```python
 @dataclass
 class MesaConfig:
-    repositories: List[Dict]          # [{path or url, name, language}]
+    repositories: List[Dict]  # [{path or url, name, language}]
     chatty_enabled: bool = True
-    chatty_threshold: int = 3         # Min edge weight to flag as chatty
+    chatty_threshold: int = 3  # Min edge weight to flag as chatty
     cyclic_enabled: bool = True
-    cyclic_min_length: int = 2        # Minimum cycle length to report
+    cyclic_min_length: int = 2  # Minimum cycle length to report
     shared_db_enabled: bool = True
-    output_format: str = "text"       # "text" | "json"
+    output_format: str = "text"  # "text" | "json"
     output_file: Optional[str] = None
     verbose: bool = False
-    temp_dir: str = "/tmp/mesa_repos" # Where to clone remote repos
+    temp_dir: str = "/tmp/mesa_repos"  # Where to clone remote repos
 ```
 
 **Loading logic:**
@@ -609,6 +642,7 @@ def load_config(cli_args: dict, config_file: Optional[str] = None) -> MesaConfig
 from abc import ABC, abstractmethod
 from typing import List
 from ..models.service import Service
+
 
 class BaseCollector(ABC):
     @abstractmethod
@@ -639,6 +673,7 @@ class LocalCollector(BaseCollector):
 import git
 import tempfile
 import shutil
+
 
 class GitCollector(BaseCollector):
     def __init__(self, temp_dir: str = "/tmp/mesa_repos"):
@@ -690,6 +725,7 @@ Detection logic for Flask/FastAPI (AST approach):
 ```python
 import ast
 
+
 def _find_endpoints_in_file(self, filepath: str, source: str) -> List[APIEndpoint]:
     tree = ast.parse(source)
     endpoints = []
@@ -700,15 +736,18 @@ def _find_endpoints_in_file(self, filepath: str, source: str) -> List[APIEndpoin
                 if self._is_route_decorator(decorator):
                     path, methods = self._extract_route_info(decorator)
                     for method in methods:
-                        endpoints.append(APIEndpoint(
-                            service_name=self.service_name,
-                            method=method.upper(),
-                            path=path,
-                            file_path=filepath,
-                            line_number=node.lineno,
-                            handler_name=node.name
-                        ))
+                        endpoints.append(
+                            APIEndpoint(
+                                service_name=self.service_name,
+                                method=method.upper(),
+                                path=path,
+                                file_path=filepath,
+                                line_number=node.lineno,
+                                handler_name=node.name,
+                            )
+                        )
     return endpoints
+
 
 def _is_route_decorator(self, node) -> bool:
     # Matches: @app.route, @router.get, @router.post, etc.
@@ -721,30 +760,30 @@ def _is_route_decorator(self, node) -> bool:
             return True
     return False
 
+
 def _extract_route_info(self, decorator_node) -> Tuple[str, List[str]]:
     # Returns (path_string, [list_of_http_methods])
     # For @app.get("/path") → ("/path", ["GET"])
     # For @app.route("/path", methods=["GET","POST"]) → ("/path", ["GET","POST"])
     func = decorator_node.func
     method_name = func.attr  # "get", "post", "route", etc.
-    
+
     # Extract path (first positional argument)
     path = "/"
     if decorator_node.args:
         arg = decorator_node.args[0]
         if isinstance(arg, ast.Constant):
             path = arg.value
-    
+
     # Determine methods
     if method_name == "route":
         methods = ["GET"]  # Default for Flask route
         for keyword in decorator_node.keywords:
             if keyword.arg == "methods":
-                methods = [elt.value for elt in keyword.value.elts
-                          if isinstance(elt, ast.Constant)]
+                methods = [elt.value for elt in keyword.value.elts if isinstance(elt, ast.Constant)]
     else:
         methods = [method_name.upper()]
-    
+
     return path, methods
 ```
 
@@ -766,14 +805,17 @@ def _find_outbound_calls_in_file(self, filepath: str, source: str) -> List[Servi
             if self._is_http_call(node):
                 url = self._extract_url(node)
                 method = self._extract_http_method(node)
-                calls.append(ServiceCall(
-                    caller_service=self.service_name,
-                    raw_url=url,
-                    http_method=method,
-                    file_path=filepath,
-                    line_number=node.lineno
-                ))
+                calls.append(
+                    ServiceCall(
+                        caller_service=self.service_name,
+                        raw_url=url,
+                        http_method=method,
+                        file_path=filepath,
+                        line_number=node.lineno,
+                    )
+                )
     return calls
+
 
 def _is_http_call(self, node: ast.Call) -> bool:
     # Check if this is requests.get/post/put/delete/patch/request
@@ -788,6 +830,7 @@ def _is_http_call(self, node: ast.Call) -> bool:
             if isinstance(node.func.value, ast.Call):
                 return True  # Be liberal here; URL extraction will validate
     return False
+
 
 def _extract_url(self, call_node: ast.Call) -> str:
     # Try to get the first positional argument as a string
@@ -841,19 +884,20 @@ SPRING_METHOD_ANNOTATIONS = {
     "PatchMapping": "PATCH",
 }
 
+
 def _scan_file_for_endpoints(self, filepath: str, content: str):
     # Find class-level prefix
     class_prefix = ""
     class_mapping = re.search(r'@RequestMapping\("([^"]+)"\)', content)
     if class_mapping:
         class_prefix = class_mapping.group(1)
-    
+
     # Find method-level mappings
     for annotation, method in SPRING_METHOD_ANNOTATIONS.items():
         pattern = rf'@{annotation}\("([^"]+)"\)'
         for match in re.finditer(pattern, content):
             path = class_prefix + match.group(1)
-            line = content[:match.start()].count('\n') + 1
+            line = content[: match.start()].count("\n") + 1
             # yield APIEndpoint(...)
 ```
 
@@ -866,8 +910,8 @@ Detect Spring Boot HTTP clients:
 
 ```python
 REST_TEMPLATE_PATTERN = re.compile(
-    r'restTemplate\.(get|post|put|delete|exchange|getForObject|postForObject|'
-    r'putForObject|getForEntity|postForEntity)\('
+    r"restTemplate\.(get|post|put|delete|exchange|getForObject|postForObject|"
+    r"putForObject|getForEntity|postForEntity)\("
     r'\s*"([^"]+)"'
 )
 WEB_CLIENT_PATTERN = re.compile(r'\.uri\("([^"]+)"\)')
@@ -893,7 +937,7 @@ EXPRESS_PATTERNS = [
 HTTP_CALL_PATTERNS = [
     re.compile(r'axios\.(get|post|put|delete|patch)\s*\(\s*[\'"`]([^\'"` ]+)[\'"`]'),
     re.compile(r'fetch\s*\(\s*[\'"`]([^\'"` ]+)[\'"`]'),
-    re.compile(r'http\.(get|post|request)\s*\('),
+    re.compile(r"http\.(get|post|request)\s*\("),
     re.compile(r'got\.(get|post|put|delete)\s*\(\s*[\'"`]([^\'"` ]+)[\'"`]'),
 ]
 ```
@@ -915,10 +959,20 @@ Files to look for (in order of preference):
 
 ```python
 DB_URL_KEYS = [
-    "DATABASE_URL", "DB_URL", "POSTGRES_URL", "MYSQL_URL",
-    "MONGO_URL", "MONGODB_URI", "REDIS_URL", "DATABASE_URI",
-    "DB_HOST", "DB_NAME", "DB_DATABASE", "SPRING_DATASOURCE_URL",
+    "DATABASE_URL",
+    "DB_URL",
+    "POSTGRES_URL",
+    "MYSQL_URL",
+    "MONGO_URL",
+    "MONGODB_URI",
+    "REDIS_URL",
+    "DATABASE_URI",
+    "DB_HOST",
+    "DB_NAME",
+    "DB_DATABASE",
+    "SPRING_DATASOURCE_URL",
 ]
+
 
 def parse_env_file(filepath: str, service_name: str) -> List[DatabaseConnection]:
     connections = []
@@ -949,27 +1003,34 @@ This is critical. It must parse strings like:
 ```python
 from urllib.parse import urlparse
 
-def parse_connection_string(conn_str: str, service_name: str, source_file: str) -> Optional[DatabaseConnection]:
+
+def parse_connection_string(
+    conn_str: str, service_name: str, source_file: str
+) -> Optional[DatabaseConnection]:
     # Handle JDBC prefix
     conn_str_clean = conn_str.replace("jdbc:", "")
-    
+
     try:
         parsed = urlparse(conn_str_clean)
     except Exception:
         return None
-    
+
     db_type_map = {
-        "postgresql": "postgresql", "postgres": "postgresql",
-        "mysql": "mysql", "mysql+pymysql": "mysql",
-        "mongodb": "mongodb", "redis": "redis", "sqlite": "sqlite",
+        "postgresql": "postgresql",
+        "postgres": "postgresql",
+        "mysql": "mysql",
+        "mysql+pymysql": "mysql",
+        "mongodb": "mongodb",
+        "redis": "redis",
+        "sqlite": "sqlite",
     }
-    
+
     db_type = db_type_map.get(parsed.scheme.lower(), "unknown")
     host = parsed.hostname
     port = parsed.port or DEFAULT_PORTS.get(db_type)
     # Database name is the first path component
     db_name = parsed.path.lstrip("/").split("/")[0] if parsed.path else None
-    
+
     return DatabaseConnection(
         service_name=service_name,
         raw_connection_string=conn_str,
@@ -1017,6 +1078,7 @@ This is Step 3 of the pipeline. Takes a list of `Service` objects and builds a `
 from ..models.graph import ServiceDependencyGraph
 from .resolver import URLResolver
 
+
 class GraphBuilder:
     def __init__(self, services: List[Service]):
         self.services = services
@@ -1045,6 +1107,7 @@ class GraphBuilder:
         # Group database connections by normalized connection key
         # Two connections are "the same" if they share host + database_name
         from itertools import combinations
+
         db_groups: Dict[str, List[DatabaseConnection]] = {}
         for service in self.services:
             for db in service.databases:
@@ -1052,15 +1115,14 @@ class GraphBuilder:
                 if key not in db_groups:
                     db_groups[key] = []
                 db_groups[key].append(db)
-        
+
         for key, connections in db_groups.items():
             if len(connections) >= 2:
                 # Mark all pairs of services sharing this DB
                 for conn_a, conn_b in combinations(connections, 2):
                     if conn_a.service_name != conn_b.service_name:
                         self.graph.add_shared_db_edge(
-                            conn_a.service_name, conn_b.service_name,
-                            conn_a, conn_b
+                            conn_a.service_name, conn_b.service_name, conn_a, conn_b
                         )
 
     def _normalize_db_key(self, db: DatabaseConnection) -> str:
@@ -1104,7 +1166,7 @@ class URLResolver:
             self.host_to_service[normalized] = name
             self.host_to_service[name.lower()] = name
             # Also register from metadata (docker service name, k8s service name)
-        
+
         # Build: env_var_name → service_name
         self.env_var_to_service: Dict[str, str] = {}
         for name in self.services:
@@ -1116,10 +1178,11 @@ class URLResolver:
     def resolve(self, raw_url: str) -> Optional[str]:
         if not raw_url or raw_url == "UNKNOWN_URL":
             return None
-        
+
         # Strategy 1: Parse hostname from URL literal
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(raw_url)
             if parsed.hostname:
                 hostname = parsed.hostname.lower()
@@ -1127,7 +1190,7 @@ class URLResolver:
                     return self.host_to_service[hostname]
         except Exception:
             pass
-        
+
         # Strategy 2: Environment variable reference
         env_var_pattern = re.compile(r'\$\{([^}]+)\}|os\.getenv\([\'"]([^\'"]+)[\'"]\)')
         match = env_var_pattern.search(raw_url)
@@ -1135,13 +1198,13 @@ class URLResolver:
             var_name = (match.group(1) or match.group(2)).upper()
             if var_name in self.env_var_to_service:
                 return self.env_var_to_service[var_name]
-        
+
         # Strategy 3: Service name substring match in URL
         for service_name in self.services:
             normalized = service_name.lower().replace("_", "-")
             if normalized in raw_url.lower():
                 return service_name
-        
+
         return None
 ```
 
@@ -1155,6 +1218,7 @@ class URLResolver:
 from abc import ABC, abstractmethod
 from ..models.finding import AntiPatternFinding
 from ..models.graph import ServiceDependencyGraph
+
 
 class BaseDetector(ABC):
     @abstractmethod
@@ -1177,56 +1241,58 @@ class ChattyServiceDetector(BaseDetector):
     def detect(self, graph: ServiceDependencyGraph) -> List[AntiPatternFinding]:
         findings = []
         g = graph.graph
-        
+
         # For each pair of services (directed: A→B and B→A counted separately)
         # Count edges between them
         pair_call_counts: Dict[Tuple[str, str], List[ServiceCall]] = {}
-        
+
         for u, v, data in g.edges(data=True):
             if data.get("type") == "api_call":
                 key = (u, v)
                 if key not in pair_call_counts:
                     pair_call_counts[key] = []
                 pair_call_counts[key].append(data["call"])
-        
+
         for (caller, callee), calls in pair_call_counts.items():
             count = len(calls)
             if count >= self.threshold:
                 severity = self._compute_severity(count)
-                findings.append(AntiPatternFinding(
-                    pattern_type=AntiPatternType.CHATTY_SERVICE,
-                    severity=severity,
-                    services_involved=[caller, callee],
-                    description=(
-                        f"Service '{caller}' makes {count} distinct API call(s) to "
-                        f"'{callee}', exceeding the threshold of {self.threshold}. "
-                        f"This level of inter-service communication indicates tight "
-                        f"coupling and potential performance degradation."
-                    ),
-                    evidence=[
-                        {
-                            "caller": caller,
-                            "callee": callee,
-                            "call_count": count,
-                            "calls": [
-                                {
-                                    "url": c.raw_url,
-                                    "method": c.http_method,
-                                    "file": c.file_path,
-                                    "line": c.line_number
-                                }
-                                for c in calls
-                            ]
-                        }
-                    ],
-                    recommendation=(
-                        "Consider: (1) Consolidating multiple API calls into a single "
-                        "composite endpoint, (2) Introducing a message queue or event "
-                        "bus to decouple the services, (3) Evaluating whether the "
-                        f"services '{caller}' and '{callee}' should be merged."
+                findings.append(
+                    AntiPatternFinding(
+                        pattern_type=AntiPatternType.CHATTY_SERVICE,
+                        severity=severity,
+                        services_involved=[caller, callee],
+                        description=(
+                            f"Service '{caller}' makes {count} distinct API call(s) to "
+                            f"'{callee}', exceeding the threshold of {self.threshold}. "
+                            f"This level of inter-service communication indicates tight "
+                            f"coupling and potential performance degradation."
+                        ),
+                        evidence=[
+                            {
+                                "caller": caller,
+                                "callee": callee,
+                                "call_count": count,
+                                "calls": [
+                                    {
+                                        "url": c.raw_url,
+                                        "method": c.http_method,
+                                        "file": c.file_path,
+                                        "line": c.line_number,
+                                    }
+                                    for c in calls
+                                ],
+                            }
+                        ],
+                        recommendation=(
+                            "Consider: (1) Consolidating multiple API calls into a single "
+                            "composite endpoint, (2) Introducing a message queue or event "
+                            "bus to decouple the services, (3) Evaluating whether the "
+                            f"services '{caller}' and '{callee}' should be merged."
+                        ),
                     )
-                ))
-        
+                )
+
         return findings
 
     def _compute_severity(self, count: int) -> Severity:
@@ -1247,6 +1313,7 @@ class ChattyServiceDetector(BaseDetector):
 ```python
 import networkx as nx
 
+
 class CyclicDependencyDetector(BaseDetector):
     def __init__(self, min_cycle_length: int = 2):
         self.min_cycle_length = min_cycle_length  # Minimum services in a cycle
@@ -1254,50 +1321,52 @@ class CyclicDependencyDetector(BaseDetector):
     def detect(self, graph: ServiceDependencyGraph) -> List[AntiPatternFinding]:
         findings = []
         g = graph.graph
-        
+
         # Build a simple directed graph (not multigraph) for cycle detection
         # Only include api_call edges (not shared_db edges)
         call_graph = nx.DiGraph()
         for u, v, data in g.edges(data=True):
             if data.get("type") == "api_call":
                 call_graph.add_edge(u, v)
-        
+
         # Find all simple cycles
         all_cycles = list(nx.simple_cycles(call_graph))
-        
+
         # Deduplicate cycles (rotate to canonical form)
         unique_cycles = self._deduplicate_cycles(all_cycles)
-        
+
         for cycle in unique_cycles:
             if len(cycle) >= self.min_cycle_length:
                 severity = self._compute_severity(len(cycle))
                 cycle_str = " → ".join(cycle) + f" → {cycle[0]}"
-                
-                findings.append(AntiPatternFinding(
-                    pattern_type=AntiPatternType.CYCLIC_DEPENDENCY,
-                    severity=severity,
-                    services_involved=cycle,
-                    description=(
-                        f"Cyclic dependency detected: {cycle_str}. "
-                        f"This {len(cycle)}-service cycle creates tight coupling "
-                        f"and can cause deployment ordering issues, cascading failures, "
-                        f"and infinite loops if not handled carefully."
-                    ),
-                    evidence=[
-                        {
-                            "cycle": cycle,
-                            "cycle_length": len(cycle),
-                            "cycle_string": cycle_str,
-                        }
-                    ],
-                    recommendation=(
-                        "Break the cycle by: (1) Introducing an event-driven approach "
-                        "where one service publishes events instead of calling back, "
-                        "(2) Extracting shared logic into a new service, "
-                        "(3) Reversing the direction of one dependency."
+
+                findings.append(
+                    AntiPatternFinding(
+                        pattern_type=AntiPatternType.CYCLIC_DEPENDENCY,
+                        severity=severity,
+                        services_involved=cycle,
+                        description=(
+                            f"Cyclic dependency detected: {cycle_str}. "
+                            f"This {len(cycle)}-service cycle creates tight coupling "
+                            f"and can cause deployment ordering issues, cascading failures, "
+                            f"and infinite loops if not handled carefully."
+                        ),
+                        evidence=[
+                            {
+                                "cycle": cycle,
+                                "cycle_length": len(cycle),
+                                "cycle_string": cycle_str,
+                            }
+                        ],
+                        recommendation=(
+                            "Break the cycle by: (1) Introducing an event-driven approach "
+                            "where one service publishes events instead of calling back, "
+                            "(2) Extracting shared logic into a new service, "
+                            "(3) Reversing the direction of one dependency."
+                        ),
                     )
-                ))
-        
+                )
+
         return findings
 
     def _deduplicate_cycles(self, cycles: List[List[str]]) -> List[List[str]]:
@@ -1317,7 +1386,7 @@ class CyclicDependencyDetector(BaseDetector):
         elif cycle_length == 3:
             return Severity.HIGH
         else:
-            return Severity.MEDIUM    # Long cycles are still bad but less immediate
+            return Severity.MEDIUM  # Long cycles are still bad but less immediate
 ```
 
 #### `shared_database.py` — Shared Database Detector
@@ -1329,61 +1398,65 @@ class SharedDatabaseDetector(BaseDetector):
     def detect(self, graph: ServiceDependencyGraph) -> List[AntiPatternFinding]:
         findings = []
         g = graph.graph
-        
+
         # Collect all shared_db edges
         # (These were pre-computed by the GraphBuilder)
         shared_db_pairs: Dict[str, List[Tuple]] = {}
-        
+
         for u, v, data in g.edges(data=True):
             if data.get("type") == "shared_db":
                 db_key = self._get_db_key(data.get("db_a"))
                 if db_key not in shared_db_pairs:
                     shared_db_pairs[db_key] = []
                 shared_db_pairs[db_key].append((u, v, data))
-        
+
         for db_key, pairs in shared_db_pairs.items():
             # Collect all unique services involved
             services = list(set([p[0] for p in pairs] + [p[1] for p in pairs]))
             severity = Severity.CRITICAL if len(services) == 2 else Severity.HIGH
-            
+
             # Build evidence
             evidence_items = []
             for u, v, data in pairs:
                 db_a = data.get("db_a")
                 db_b = data.get("db_b")
-                evidence_items.append({
-                    "service_a": u,
-                    "service_b": v,
-                    "database": db_key,
-                    "connection_a": {
-                        "file": db_a.source_file if db_a else "",
-                        "raw": db_a.raw_connection_string if db_a else ""
-                    },
-                    "connection_b": {
-                        "file": db_b.source_file if db_b else "",
-                        "raw": db_b.raw_connection_string if db_b else ""
+                evidence_items.append(
+                    {
+                        "service_a": u,
+                        "service_b": v,
+                        "database": db_key,
+                        "connection_a": {
+                            "file": db_a.source_file if db_a else "",
+                            "raw": db_a.raw_connection_string if db_a else "",
+                        },
+                        "connection_b": {
+                            "file": db_b.source_file if db_b else "",
+                            "raw": db_b.raw_connection_string if db_b else "",
+                        },
                     }
-                })
-            
-            findings.append(AntiPatternFinding(
-                pattern_type=AntiPatternType.SHARED_DATABASE,
-                severity=severity,
-                services_involved=services,
-                description=(
-                    f"Services {', '.join(repr(s) for s in services)} share the same "
-                    f"database '{db_key}'. This violates the database-per-service "
-                    f"principle of microservice architecture, creating tight data coupling "
-                    f"and preventing independent deployment and scaling."
-                ),
-                evidence=evidence_items,
-                recommendation=(
-                    "Separate the databases: each service should own its data. "
-                    "Use one of: (1) Service A queries Service B's data via its API, "
-                    "(2) Maintain separate DB copies synchronized via events, "
-                    "(3) Use CQRS pattern to provide read models without DB sharing."
                 )
-            ))
-        
+
+            findings.append(
+                AntiPatternFinding(
+                    pattern_type=AntiPatternType.SHARED_DATABASE,
+                    severity=severity,
+                    services_involved=services,
+                    description=(
+                        f"Services {', '.join(repr(s) for s in services)} share the same "
+                        f"database '{db_key}'. This violates the database-per-service "
+                        f"principle of microservice architecture, creating tight data coupling "
+                        f"and preventing independent deployment and scaling."
+                    ),
+                    evidence=evidence_items,
+                    recommendation=(
+                        "Separate the databases: each service should own its data. "
+                        "Use one of: (1) Service A queries Service B's data via its API, "
+                        "(2) Maintain separate DB copies synchronized via events, "
+                        "(3) Use CQRS pattern to provide read models without DB sharing."
+                    ),
+                )
+            )
+
         return findings
 
     def _get_db_key(self, db: Optional[DatabaseConnection]) -> str:
@@ -1476,33 +1549,33 @@ def calculate_precision(true_positives: int, false_positives: int) -> float:
         return 0.0
     return true_positives / (true_positives + false_positives)
 
+
 def calculate_recall(true_positives: int, false_negatives: int) -> float:
     if true_positives + false_negatives == 0:
         return 0.0
     return true_positives / (true_positives + false_negatives)
+
 
 def calculate_f1(precision: float, recall: float) -> float:
     if precision + recall == 0:
         return 0.0
     return 2 * (precision * recall) / (precision + recall)
 
-def evaluate_findings(
-    detected: List[AntiPatternFinding],
-    ground_truth: List[Dict]
-) -> Dict:
+
+def evaluate_findings(detected: List[AntiPatternFinding], ground_truth: List[Dict]) -> Dict:
     """
     Compare detected findings against ground truth labels.
-    
+
     Ground truth format:
     [
       {"type": "CYCLIC_DEPENDENCY", "services": ["a", "b"]},
       {"type": "CHATTY_SERVICE", "services": ["a", "c"]},
     ]
-    
+
     A finding is a True Positive if:
     - Same pattern_type as a ground truth entry
     - All services_involved are present in the ground truth entry's services list
-    
+
     Returns dict with per-type and overall precision, recall, F1.
     """
 ```
@@ -1743,19 +1816,19 @@ FINDINGS (4)
 
 [MESA-CYCL-001] CRITICAL — Cyclic Dependency
   Services Involved: order-service, user-service
-  
+
   Description:
     Cyclic dependency detected: order-service → user-service → order-service.
     This 2-service cycle creates tight coupling and can cause deployment
     ordering issues and cascading failures.
-  
+
   Evidence:
     • order-service calls user-service at:
         src/orders/service.py:142  GET http://user-service:8080/api/users/{id}
         src/orders/service.py:198  POST http://user-service:8080/api/notifications
     • user-service calls order-service at:
         src/users/handlers.py:87   GET http://order-service:8081/api/orders/pending
-  
+
   Recommendation:
     Break the cycle by: (1) Introducing an event-driven approach where one
     service publishes events instead of calling back, (2) Extracting shared
@@ -1765,11 +1838,11 @@ FINDINGS (4)
 
 [MESA-CHAT-001] MEDIUM — Chatty Service
   Services Involved: order-service → user-service
-  
+
   Description:
     Service 'order-service' makes 6 distinct API calls to 'user-service',
     exceeding the threshold of 3. This indicates tight coupling.
-  
+
   Evidence:
     Call sites in order-service:
     1. src/orders/service.py:142      GET  /api/users/{id}
@@ -1778,7 +1851,7 @@ FINDINGS (4)
     4. src/orders/checkout.py:89      GET  /api/users/{id}/payment-methods
     5. src/orders/history.py:34       GET  /api/users/{id}
     6. src/orders/analytics.py:112    GET  /api/users/count
-  
+
   Recommendation:
     Consider consolidating multiple API calls into a single composite endpoint...
 
@@ -1786,16 +1859,16 @@ FINDINGS (4)
 
 [MESA-SHDB-001] CRITICAL — Shared Database
   Services Involved: order-service, payment-service
-  
+
   Description:
     Services 'order-service' and 'payment-service' share the same database
     'postgresql://db-host/transactions'. This violates the database-per-service
     principle.
-  
+
   Evidence:
     • order-service:   .env:3       DATABASE_URL=postgresql://user:pass@db-host:5432/transactions
     • payment-service: .env:5       DB_URL=postgresql://svc:pass@db-host:5432/transactions
-  
+
   Recommendation:
     Separate the databases. Each service should own its data store...
 
@@ -1803,7 +1876,7 @@ FINDINGS (4)
 SUMMARY
 ================================================================================
   Total Findings:  3
-  
+
   By Severity:     CRITICAL: 2   HIGH: 0   MEDIUM: 1   LOW: 0
   By Type:         Cyclic Dependency: 1   Chatty Service: 1   Shared Database: 1
 
@@ -1876,17 +1949,23 @@ import requests
 
 SERVICE_B_URL = "http://service-b:8080"
 
+
 def get_user_data(user_id):
-    return requests.get(f"{SERVICE_B_URL}/users/{user_id}")   # call 1
+    return requests.get(f"{SERVICE_B_URL}/users/{user_id}")  # call 1
+
 
 def get_user_profile(user_id):
     return requests.get(f"{SERVICE_B_URL}/users/{user_id}/profile")  # call 2
 
+
 def get_user_orders(user_id):
-    return requests.get(f"{SERVICE_B_URL}/users/{user_id}/orders")   # call 3
+    return requests.get(f"{SERVICE_B_URL}/users/{user_id}/orders")  # call 3
+
 
 def get_user_preferences(user_id):
-    return requests.get(f"{SERVICE_B_URL}/users/{user_id}/prefs")    # call 4 → triggers chatty at threshold=3
+    return requests.get(
+        f"{SERVICE_B_URL}/users/{user_id}/prefs"
+    )  # call 4 → triggers chatty at threshold=3
 ```
 
 ---
@@ -1993,7 +2072,7 @@ projects:
       checkoutservice: "go"
       recommendationservice: "python"
       emailservice: "python"
-  
+
   - name: "PiggyMetrics"
     url: "https://github.com/sqshq/piggymetrics"
     services_subdirectory: ""
@@ -2002,7 +2081,7 @@ projects:
       auth-service: "java"
       statistics-service: "java"
       notification-service: "java"
-  
+
   - name: "Synthetic (Injected)"
     path: "tests/fixtures/"
     ground_truth: "benchmark/ground_truth/synthetic.yaml"

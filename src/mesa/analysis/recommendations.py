@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from typing import Any
 
 from mesa.models import Finding, FindingRecommendation, FindingType, Severity
@@ -144,7 +145,11 @@ def rule_based_recommendations(finding: Finding) -> list[FindingRecommendation]:
         ]
 
     if finding.type == FindingType.GOVERNANCE_POLICY_VIOLATION:
-        policy_name = finding.evidence[0].get("policy_name", "architecture policy") if finding.evidence else "architecture policy"
+        policy_name = (
+            finding.evidence[0].get("policy_name", "architecture policy")
+            if finding.evidence
+            else "architecture policy"
+        )
         return [
             FindingRecommendation(
                 root_cause=(
@@ -226,8 +231,8 @@ def _llm_refine_if_enabled(
     if not finding.evidence:
         return recommendations
     try:
-        from langchain_core.prompts import ChatPromptTemplate  # type: ignore
-        from langgraph.graph import END, StateGraph  # type: ignore
+        from langchain_core.prompts import ChatPromptTemplate
+        from langgraph.graph import END, StateGraph
     except Exception:
         return recommendations
 
@@ -237,7 +242,10 @@ def _llm_refine_if_enabled(
     _ = ChatPromptTemplate
     _ = END
     _ = StateGraph
-    return [recommendation.model_copy(update={"source": "rule-based-llm-ready"}) for recommendation in recommendations]
+    return [
+        recommendation.model_copy(update={"source": "rule-based-llm-ready"})
+        for recommendation in recommendations
+    ]
 
 
 def _affected_files(evidence: list[dict[str, Any]]) -> list[str]:
@@ -271,7 +279,7 @@ def _domain_keywords(evidence: list[dict[str, Any]]) -> list[str]:
     return []
 
 
-def _walk_dicts(value: Any):
+def _walk_dicts(value: Any) -> Iterator[dict[str, Any]]:
     if isinstance(value, dict):
         yield value
         for nested in value.values():

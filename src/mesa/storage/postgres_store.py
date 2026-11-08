@@ -10,7 +10,9 @@ class PostgresAnalysisStore:
     """Backward-compatible wrapper around the Phase 1 persistence repository."""
 
     def __init__(self, dsn: str | None = None) -> None:
-        self.dsn = dsn or os.getenv("MESA_POSTGRES_DSN", "postgresql://mesa:mesa@localhost:5432/mesa")
+        self.dsn = dsn or os.getenv(
+            "MESA_POSTGRES_DSN", "postgresql://mesa:mesa@localhost:5432/mesa"
+        )
 
     def initialize(self) -> None:
         PostgresPersistenceRepository(self.dsn).initialize()

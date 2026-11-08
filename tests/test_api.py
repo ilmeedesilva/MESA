@@ -1,12 +1,12 @@
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from mesa.api.main import app
 from mesa.analysis import analyze_services
 from mesa.analysis import explainer as explainer_module
+from mesa.api.main import app
 from mesa.models import (
     AIExplainerIntent,
     AIExplainerRequest,
@@ -129,7 +129,6 @@ def test_project_repo_scan_supports_archive_sources(tmp_path) -> None:
     assert scan_response.json()["scan"]["source_type"] == "ARCHIVE_PATH"
 
     del app.state.persistence_repository
-
 
 
 def test_project_scan_persistence_endpoints() -> None:
@@ -677,9 +676,7 @@ policies:
         for action in roadmap["high_effort_refactors"]
     )
     all_actions = (
-        roadmap["quick_wins"]
-        + roadmap["medium_term_changes"]
-        + roadmap["high_effort_refactors"]
+        roadmap["quick_wins"] + roadmap["medium_term_changes"] + roadmap["high_effort_refactors"]
     )
     assert all(action["playbook"] for action in all_actions)
     for action in all_actions:
@@ -787,8 +784,7 @@ policies:
     scan_id = scan_response.json()["scan"]["id"]
     findings = scan_response.json()["result"]["findings"]
     governance = [
-        finding for finding in findings
-        if finding["type"] == "GOVERNANCE_POLICY_VIOLATION"
+        finding for finding in findings if finding["type"] == "GOVERNANCE_POLICY_VIOLATION"
     ]
     assert governance
     assert governance[0]["evidence"][0]["policy_id"] == "no-cycles"
@@ -797,8 +793,7 @@ policies:
     persisted_findings = client.get(f"/scans/{scan_id}/findings")
     assert persisted_findings.status_code == 200
     assert any(
-        finding["type"] == "GOVERNANCE_POLICY_VIOLATION"
-        for finding in persisted_findings.json()
+        finding["type"] == "GOVERNANCE_POLICY_VIOLATION" for finding in persisted_findings.json()
     )
 
     del app.state.persistence_repository
@@ -902,8 +897,6 @@ def test_project_scan_writes_architecture_graph_and_exposes_queries() -> None:
     del app.state.architecture_store
 
 
-
-
 def test_hard_coded_dependency_findings_appear_in_api_response() -> None:
     client = TestClient(app)
     response = client.post(
@@ -921,7 +914,6 @@ def test_hard_coded_dependency_findings_appear_in_api_response() -> None:
     assert evidence["file_path"]
     assert evidence["line_number"]
     assert hard_coded[0]["recommendation"]
-
 
 
 def test_health_scores_appear_in_api_response() -> None:
@@ -1145,7 +1137,9 @@ def test_call_openai_responses_api_parses_structured_output(monkeypatch) -> None
         answer="Grounded answer.",
         limitations=["Existing grounded limitation."],
     )
-    payload = AIExplainerRequest(intent=AIExplainerIntent.SCAN_SUMMARY, question="Summarize this scan.")
+    payload = AIExplainerRequest(
+        intent=AIExplainerIntent.SCAN_SUMMARY, question="Summarize this scan."
+    )
 
     result = explainer_module._call_openai_responses_api(payload, grounded_response, "test-key")
 
@@ -1312,7 +1306,9 @@ def test_run_benchmark_evaluation_endpoint_404s_for_unlisted_template() -> None:
     assert response.status_code == 404
 
 
-def test_get_ai_baseline_comparison_returns_404_when_no_report_exists(tmp_path, monkeypatch) -> None:
+def test_get_ai_baseline_comparison_returns_404_when_no_report_exists(
+    tmp_path, monkeypatch
+) -> None:
     from mesa.evaluation import runner as evaluation_runner_module
 
     monkeypatch.setattr(
@@ -1345,7 +1341,9 @@ def test_get_ai_baseline_comparison_returns_the_exported_report(tmp_path, monkey
     assert payload["runs_per_system"] == 5
 
 
-def test_run_benchmark_evaluation_endpoint_400s_for_missing_local_source(tmp_path, monkeypatch) -> None:
+def test_run_benchmark_evaluation_endpoint_400s_for_missing_local_source(
+    tmp_path, monkeypatch
+) -> None:
     from mesa.evaluation import runner as evaluation_runner_module
 
     benchmarks_dir = tmp_path / "benchmarks"
@@ -1387,7 +1385,9 @@ def test_get_ai_baseline_comparisons_returns_every_model_run(tmp_path, monkeypat
     assert [report["model"] for report in response.json()["reports"]] == ["claude-opus-5"]
 
 
-def test_get_ai_baseline_comparisons_returns_404_when_nothing_exported(tmp_path, monkeypatch) -> None:
+def test_get_ai_baseline_comparisons_returns_404_when_nothing_exported(
+    tmp_path, monkeypatch
+) -> None:
     from mesa.evaluation import runner as evaluation_runner_module
 
     monkeypatch.setattr(evaluation_runner_module, "EVALUATION_RESULTS_DIR", tmp_path)
@@ -1489,7 +1489,9 @@ class _FakeClaudeStream:
 
 
 class _FakeClaudeClient:
-    def __init__(self, structured: str = "", pieces: list[str] | None = None, stop_reason: str = "end_turn"):
+    def __init__(
+        self, structured: str = "", pieces: list[str] | None = None, stop_reason: str = "end_turn"
+    ):
         self.calls: list[dict] = []
         outer = self
 

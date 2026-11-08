@@ -76,7 +76,10 @@ export function localDemoAIResponse({
           snippet: doc.summary
         }
       ],
-      suggestions: ["Open the full documentation page from inside MESA.", "Use the evaluator quick start if you are reviewing the demo."],
+      suggestions: [
+        "Open the full documentation page from inside MESA.",
+        "Use the evaluator quick start if you are reviewing the demo."
+      ],
       follow_up_questions: ["How do I use this demo?", "What should I look at first in the results?"],
       limitations: ["This answer is from embedded documentation, not the live backend."],
       confidence: "HIGH",
@@ -126,7 +129,9 @@ export function localDemoAIResponse({
             ]
           : [])
       ],
-      suggestions: roadmap?.suggested_order.slice(0, 3).map((step) => step.title) ?? [recommendationPreview(urgentFinding ?? result.findings[0])],
+      suggestions: roadmap?.suggested_order.slice(0, 3).map((step) => step.title) ?? [
+        recommendationPreview(urgentFinding ?? result.findings[0])
+      ],
       follow_up_questions: ["Explain the top finding.", "Why is the health score low?"],
       limitations: ["This answer is generated from embedded demo data, not from a live backend response."],
       confidence: "HIGH",
@@ -139,7 +144,9 @@ export function localDemoAIResponse({
     return {
       intent: "HEALTH_SCORE_EXPLANATION",
       title: "Demo health score explanation",
-      answer: `${systemScore.target} is graded ${systemScore.grade.toLowerCase()} with a score of ${systemScore.score.toFixed(1)}/100. In this demo, the weakest areas are ${Object.entries(systemScore.breakdown)
+      answer: `${systemScore.target} is graded ${systemScore.grade.toLowerCase()} with a score of ${systemScore.score.toFixed(1)}/100. In this demo, the weakest areas are ${Object.entries(
+        systemScore.breakdown
+      )
         .sort((a, b) => a[1] - b[1])
         .slice(0, 3)
         .map(([dimension]) => formatType(dimension).toLowerCase())
@@ -188,16 +195,21 @@ export function localDemoAIResponse({
     return {
       intent: "POLICY_WRITING_ASSISTANCE",
       title: "Demo policy draft",
-      answer: "This embedded demo suggests starting with rules for dependency cycles, hard-coded service URLs, and outbound dependency limits.",
+      answer:
+        "This embedded demo suggests starting with rules for dependency cycles, hard-coded service URLs, and outbound dependency limits.",
       evidence: [
         {
           kind: "policy",
           label: "Current demo policy set",
           pointer: "policies",
-          snippet: "The demo project already includes policies for cycles, hard-coded URLs, and outbound dependency limits."
+          snippet:
+            "The demo project already includes policies for cycles, hard-coded URLs, and outbound dependency limits."
         }
       ],
-      suggestions: ["Save the current draft into a live project when the backend is available.", "Keep policy names simple and specific for evaluators."],
+      suggestions: [
+        "Save the current draft into a live project when the backend is available.",
+        "Keep policy names simple and specific for evaluators."
+      ],
       follow_up_questions: ["Explain governance simply.", "What should I fix first?"],
       limitations: ["Draft generation is static in public demo mode."],
       policy_document: demoWorkspace.policyText,
@@ -230,7 +242,11 @@ export function localDemoAIResponse({
           ]
         : [])
     ],
-    suggestions: roadmap?.suggested_order.slice(0, 3).map((step) => step.title) ?? ["Open the remediation roadmap.", "Inspect the architecture graph.", "Compare the two demo scans."],
+    suggestions: roadmap?.suggested_order.slice(0, 3).map((step) => step.title) ?? [
+      "Open the remediation roadmap.",
+      "Inspect the architecture graph.",
+      "Compare the two demo scans."
+    ],
     follow_up_questions: ["What should I fix first?", "Explain the health score.", "How do I use this demo?"],
     limitations: ["This answer comes from embedded example results and does not analyze your own repository."],
     confidence: "HIGH",
@@ -241,10 +257,18 @@ export function localDemoAIResponse({
 
 export function resolveDemoIntent(question: string, hasScan: boolean, hasDocQuery: boolean) {
   const normalized = `${question} ${hasDocQuery ? "doc" : ""}`.toLowerCase();
-  if (normalized.includes("fix first") || normalized.includes("solve first") || normalized.includes("priority")) return "PRIORITIZE_FIXES";
+  if (normalized.includes("fix first") || normalized.includes("solve first") || normalized.includes("priority"))
+    return "PRIORITIZE_FIXES";
   if (normalized.includes("health") || normalized.includes("score")) return "HEALTH_SCORE_EXPLANATION";
   if (normalized.includes("compare") || normalized.includes("changed")) return "COMPARE_SCANS";
-  if (normalized.includes("policy") || normalized.includes("governance") || normalized.includes("yaml")) return "POLICY_WRITING_ASSISTANCE";
-  if (normalized.includes("doc") || normalized.includes("guide") || normalized.includes("how do i") || normalized.includes("how to")) return "DOC_QA";
+  if (normalized.includes("policy") || normalized.includes("governance") || normalized.includes("yaml"))
+    return "POLICY_WRITING_ASSISTANCE";
+  if (
+    normalized.includes("doc") ||
+    normalized.includes("guide") ||
+    normalized.includes("how do i") ||
+    normalized.includes("how to")
+  )
+    return "DOC_QA";
   return hasScan ? "SCAN_SUMMARY" : "DOC_QA";
 }

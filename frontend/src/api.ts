@@ -40,7 +40,7 @@ export async function readApiErrorDetail(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
     try {
-      const payload = await response.json() as { detail?: unknown };
+      const payload = (await response.json()) as { detail?: unknown };
       if (typeof payload.detail === "string") return payload.detail;
       return JSON.stringify(payload);
     } catch {

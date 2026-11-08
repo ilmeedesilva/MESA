@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from pathlib import Path
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Protocol
 from uuid import uuid4
 
@@ -21,15 +21,18 @@ from mesa.models import (
     ProjectCreate,
     ProjectRecord,
     ProjectSetup,
+    RepoSourceMetadata,
     ResearchEvaluationRecord,
     ResearchEvaluationRecordCreate,
     ResearchEvaluationRecordUpdate,
-    RepoSourceMetadata,
     ScanJobRecord,
     ScanJobStatus,
     ScanRecord,
     SnapshotRecord,
 )
+
+# datetime.UTC only exists from Python 3.11; timezone.utc is the same object.
+UTC = timezone.utc
 
 
 def _project_setup_from_scan_result(
@@ -39,8 +42,12 @@ def _project_setup_from_scan_result(
     if scan is None or result is None:
         return None
 
-    repository_source = result.summary.get("repository_source", {}) if isinstance(result.summary, dict) else {}
-    source_type = repository_source.get("source_type") or (scan.source_type.value if scan.source_type else None)
+    repository_source = (
+        result.summary.get("repository_source", {}) if isinstance(result.summary, dict) else {}
+    )
+    source_type = repository_source.get("source_type") or (
+        scan.source_type.value if scan.source_type else None
+    )
     source_location = (
         repository_source.get("source_path")
         or repository_source.get("repo_url")
@@ -86,93 +93,72 @@ class PersistenceRepository(Protocol):
             raise last_error
         raise RuntimeError("Could not connect to PostgreSQL")
 
-    def initialize(self) -> None:
-        ...
+    def initialize(self) -> None: ...
 
-    def create_project(self, data: ProjectCreate) -> ProjectRecord:
-        ...
+    def create_project(self, data: ProjectCreate) -> ProjectRecord: ...
 
-    def list_projects(self) -> list[ProjectRecord]:
-        ...
+    def list_projects(self) -> list[ProjectRecord]: ...
 
-    def get_project(self, project_id: str) -> ProjectRecord | None:
-        ...
+    def get_project(self, project_id: str) -> ProjectRecord | None: ...
 
-    def get_project_setup(self, project_id: str) -> ProjectSetup | None:
-        ...
+    def get_project_setup(self, project_id: str) -> ProjectSetup | None: ...
 
-    def upsert_project_setup(self, project_id: str, data: ProjectSetup) -> ProjectSetup:
-        ...
+    def upsert_project_setup(self, project_id: str, data: ProjectSetup) -> ProjectSetup: ...
 
     def save_scan_result(
         self,
         project_id: str,
         result: AnalysisResult,
         source_metadata: RepoSourceMetadata | None = None,
-    ) -> ScanRecord:
-        ...
+    ) -> ScanRecord: ...
 
-    def get_scan(self, scan_id: str) -> ScanRecord | None:
-        ...
+    def get_scan(self, scan_id: str) -> ScanRecord | None: ...
 
-    def get_scan_result(self, scan_id: str) -> AnalysisResult | None:
-        ...
+    def get_scan_result(self, scan_id: str) -> AnalysisResult | None: ...
 
-    def list_scans(self, project_id: str) -> list[ScanRecord]:
-        ...
+    def list_scans(self, project_id: str) -> list[ScanRecord]: ...
 
-    def create_scan_job(self, project_id: str) -> ScanJobRecord:
-        ...
+    def create_scan_job(self, project_id: str) -> ScanJobRecord: ...
 
-    def get_scan_job(self, job_id: str) -> ScanJobRecord | None:
-        ...
+    def get_scan_job(self, job_id: str) -> ScanJobRecord | None: ...
 
-    def mark_scan_job_running(self, job_id: str) -> ScanJobRecord | None:
-        ...
+    def mark_scan_job_running(self, job_id: str) -> ScanJobRecord | None: ...
 
-    def complete_scan_job(self, job_id: str, scan_id: str) -> ScanJobRecord | None:
-        ...
+    def complete_scan_job(self, job_id: str, scan_id: str) -> ScanJobRecord | None: ...
 
-    def fail_scan_job(self, job_id: str, error_message: str) -> ScanJobRecord | None:
-        ...
+    def fail_scan_job(self, job_id: str, error_message: str) -> ScanJobRecord | None: ...
 
-    def list_findings(self, scan_id: str) -> list[Finding]:
-        ...
+    def list_findings(self, scan_id: str) -> list[Finding]: ...
 
-    def list_scores(self, scan_id: str) -> list[HealthScore]:
-        ...
+    def list_scores(self, scan_id: str) -> list[HealthScore]: ...
 
-    def list_snapshots(self, project_id: str) -> list[SnapshotRecord]:
-        ...
+    def list_snapshots(self, project_id: str) -> list[SnapshotRecord]: ...
 
-    def create_policy(self, project_id: str, data: PolicyCreate) -> PolicyRecord:
-        ...
+    def create_policy(self, project_id: str, data: PolicyCreate) -> PolicyRecord: ...
 
-    def update_policy(self, project_id: str, policy_id: str, data: PolicyCreate) -> PolicyRecord | None:
-        ...
+    def update_policy(
+        self, project_id: str, policy_id: str, data: PolicyCreate
+    ) -> PolicyRecord | None: ...
 
-    def list_policies(self, project_id: str) -> list[PolicyRecord]:
-        ...
+    def list_policies(self, project_id: str) -> list[PolicyRecord]: ...
 
-    def upsert_policies(self, project_id: str, policies: list[PolicyCreate]) -> list[PolicyRecord]:
-        ...
+    def upsert_policies(
+        self, project_id: str, policies: list[PolicyCreate]
+    ) -> list[PolicyRecord]: ...
 
-    def list_research_records(self) -> list[ResearchEvaluationRecord]:
-        ...
+    def list_research_records(self) -> list[ResearchEvaluationRecord]: ...
 
-    def create_research_record(self, data: ResearchEvaluationRecordCreate) -> ResearchEvaluationRecord:
-        ...
+    def create_research_record(
+        self, data: ResearchEvaluationRecordCreate
+    ) -> ResearchEvaluationRecord: ...
 
-    def get_research_record(self, record_id: str) -> ResearchEvaluationRecord | None:
-        ...
+    def get_research_record(self, record_id: str) -> ResearchEvaluationRecord | None: ...
 
     def update_research_record(
         self, record_id: str, data: ResearchEvaluationRecordUpdate
-    ) -> ResearchEvaluationRecord | None:
-        ...
+    ) -> ResearchEvaluationRecord | None: ...
 
-    def delete_research_record(self, record_id: str) -> bool:
-        ...
+    def delete_research_record(self, record_id: str) -> bool: ...
 
 
 class InMemoryPersistenceRepository:
@@ -226,7 +212,9 @@ class InMemoryPersistenceRepository:
         if setup is not None:
             return setup
         latest_scan = self.list_scans(project_id)[0] if self.list_scans(project_id) else None
-        derived = _project_setup_from_scan_result(latest_scan, self.get_scan_result(latest_scan.id) if latest_scan else None)
+        derived = _project_setup_from_scan_result(
+            latest_scan, self.get_scan_result(latest_scan.id) if latest_scan else None
+        )
         if derived is not None:
             self.project_setups[project_id] = derived
         return derived
@@ -300,7 +288,9 @@ class InMemoryPersistenceRepository:
         return flatten_health_scores(result.summary.get("health_scores", {}))
 
     def list_snapshots(self, project_id: str) -> list[SnapshotRecord]:
-        snapshots = [snapshot for snapshot in self.snapshots.values() if snapshot.project_id == project_id]
+        snapshots = [
+            snapshot for snapshot in self.snapshots.values() if snapshot.project_id == project_id
+        ]
         return sorted(snapshots, key=lambda snapshot: snapshot.created_at or "", reverse=True)
 
     def create_scan_job(self, project_id: str) -> ScanJobRecord:
@@ -370,7 +360,9 @@ class InMemoryPersistenceRepository:
         self.policies[(project_id, policy.id)] = policy
         return policy
 
-    def update_policy(self, project_id: str, policy_id: str, data: PolicyCreate) -> PolicyRecord | None:
+    def update_policy(
+        self, project_id: str, policy_id: str, data: PolicyCreate
+    ) -> PolicyRecord | None:
         key = (project_id, policy_id)
         existing = self.policies.get(key)
         if existing is None:
@@ -399,7 +391,11 @@ class InMemoryPersistenceRepository:
         for policy in policies:
             policy_id = policy.id or str(uuid4())
             updated = self.update_policy(project_id, policy_id, policy)
-            records.append(updated if updated else self.create_policy(project_id, policy.model_copy(update={"id": policy_id})))
+            records.append(
+                updated
+                if updated
+                else self.create_policy(project_id, policy.model_copy(update={"id": policy_id}))
+            )
         return records
 
     def list_research_records(self) -> list[ResearchEvaluationRecord]:
@@ -409,7 +405,9 @@ class InMemoryPersistenceRepository:
             reverse=True,
         )
 
-    def create_research_record(self, data: ResearchEvaluationRecordCreate) -> ResearchEvaluationRecord:
+    def create_research_record(
+        self, data: ResearchEvaluationRecordCreate
+    ) -> ResearchEvaluationRecord:
         payload = with_calculated_metrics(data)
         record = ResearchEvaluationRecord(
             id=str(uuid4()),
@@ -531,7 +529,9 @@ class PostgresPersistenceRepository:
 
         scans = self.list_scans(project_id)
         latest_scan = scans[0] if scans else None
-        derived = _project_setup_from_scan_result(latest_scan, self.get_scan_result(latest_scan.id) if latest_scan else None)
+        derived = _project_setup_from_scan_result(
+            latest_scan, self.get_scan_result(latest_scan.id) if latest_scan else None
+        )
         if derived is not None:
             return self.upsert_project_setup(project_id, derived)
         return None
@@ -598,13 +598,20 @@ class PostgresPersistenceRepository:
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
-                        scan_id, service.name, service.root_path, service.language,
-                        len(service.endpoints), len(service.calls), len(service.databases),
+                        scan_id,
+                        service.name,
+                        service.root_path,
+                        service.language,
+                        len(service.endpoints),
+                        len(service.calls),
+                        len(service.databases),
                     ),
                 )
 
             for edge in result.graph["edges"]:
-                if str(edge.get("source", "")).startswith("db:") or str(edge.get("target", "")).startswith("db:"):
+                if str(edge.get("source", "")).startswith("db:") or str(
+                    edge.get("target", "")
+                ).startswith("db:"):
                     continue
                 connection.execute(
                     """
@@ -613,7 +620,13 @@ class PostgresPersistenceRepository:
                     )
                     VALUES (%s, %s, %s, %s, %s)
                     """,
-                    (scan_id, edge["source"], edge["target"], edge.get("type", "unknown"), Jsonb(edge)),
+                    (
+                        scan_id,
+                        edge["source"],
+                        edge["target"],
+                        edge.get("type", "unknown"),
+                        Jsonb(edge),
+                    ),
                 )
 
             for finding in result.findings:
@@ -626,9 +639,15 @@ class PostgresPersistenceRepository:
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
-                        finding.id, scan_id, finding.type.value, finding.severity.value,
-                        finding.confidence, Jsonb(finding.services), finding.description,
-                        Jsonb(finding.evidence), finding.recommendation,
+                        finding.id,
+                        scan_id,
+                        finding.type.value,
+                        finding.severity.value,
+                        finding.confidence,
+                        Jsonb(finding.services),
+                        finding.description,
+                        Jsonb(finding.evidence),
+                        finding.recommendation,
                     ),
                 )
 
@@ -639,7 +658,10 @@ class PostgresPersistenceRepository:
                     VALUES (%s, %s, %s, %s, %s)
                     """,
                     (
-                        scan_id, score.scope, score.target, score.score,
+                        scan_id,
+                        score.scope,
+                        score.target,
+                        score.score,
                         Jsonb(score.model_dump(mode="json")),
                     ),
                 )
@@ -814,13 +836,20 @@ class PostgresPersistenceRepository:
                           created_at::text, updated_at::text
                 """,
                 (
-                    policy_id, project_id, data.name, data.rule, data.severity.value,
-                    data.description, data.enabled,
+                    policy_id,
+                    project_id,
+                    data.name,
+                    data.rule,
+                    data.severity.value,
+                    data.description,
+                    data.enabled,
                 ),
             ).fetchone()
         return PolicyRecord(**row)
 
-    def update_policy(self, project_id: str, policy_id: str, data: PolicyCreate) -> PolicyRecord | None:
+    def update_policy(
+        self, project_id: str, policy_id: str, data: PolicyCreate
+    ) -> PolicyRecord | None:
         with self._connect(row_factory=dict_row) as connection:
             row = connection.execute(
                 """
@@ -832,8 +861,13 @@ class PostgresPersistenceRepository:
                           created_at::text, updated_at::text
                 """,
                 (
-                    data.name, data.rule, data.severity.value, data.description,
-                    data.enabled, project_id, policy_id,
+                    data.name,
+                    data.rule,
+                    data.severity.value,
+                    data.description,
+                    data.enabled,
+                    project_id,
+                    policy_id,
                 ),
             ).fetchone()
         return PolicyRecord(**row) if row else None
@@ -857,7 +891,11 @@ class PostgresPersistenceRepository:
         for policy in policies:
             policy_id = policy.id or str(uuid4())
             updated = self.update_policy(project_id, policy_id, policy)
-            records.append(updated if updated else self.create_policy(project_id, policy.model_copy(update={"id": policy_id})))
+            records.append(
+                updated
+                if updated
+                else self.create_policy(project_id, policy.model_copy(update={"id": policy_id}))
+            )
         return records
 
     def list_research_records(self) -> list[ResearchEvaluationRecord]:
@@ -871,7 +909,9 @@ class PostgresPersistenceRepository:
             ).fetchall()
         return [ResearchEvaluationRecord(**row) for row in rows]
 
-    def create_research_record(self, data: ResearchEvaluationRecordCreate) -> ResearchEvaluationRecord:
+    def create_research_record(
+        self, data: ResearchEvaluationRecordCreate
+    ) -> ResearchEvaluationRecord:
         record_id = str(uuid4())
         payload = with_calculated_metrics(data)
         with self._connect(row_factory=dict_row) as connection:

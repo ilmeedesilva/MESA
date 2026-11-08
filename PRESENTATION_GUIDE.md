@@ -259,7 +259,7 @@ Screenshot 2: Report output showing a finding
 ```
 [MESA-CYCL-001] CRITICAL — Cyclic Dependency
   Services: order-service → user-service → order-service
-  
+
   Evidence:
     order-service/src/service.py:142  GET http://user-service:8080/api/users
     user-service/src/handlers.py:87   GET http://order-service:8081/api/orders
@@ -705,7 +705,7 @@ mesa evaluate \
 - **Background:** White or very light grey
 - **Primary colour:** Dark navy (#1a1a2e) or deep blue for titles
 - **Accent colour:** A single accent (orange #e55b13 or teal #0d9488) for important callouts
-- **Font:** 
+- **Font:**
   - Titles: Calibri or Roboto, 28–36pt, bold
   - Body: Calibri or Roboto, 18–20pt, regular
   - Code/terminal output: Consolas or Courier New, 14–16pt

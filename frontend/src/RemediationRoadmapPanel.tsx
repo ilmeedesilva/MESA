@@ -34,11 +34,7 @@ export function RemediationRoadmapPanel({
           </div>
         </div>
         <span>
-          {roadmap
-            ? `${roadmap.suggested_order.length} actions`
-            : isLoading
-              ? "Building roadmap"
-              : "No roadmap yet"}
+          {roadmap ? `${roadmap.suggested_order.length} actions` : isLoading ? "Building roadmap" : "No roadmap yet"}
         </span>
       </div>
 
@@ -181,7 +177,9 @@ function RoadmapBucketColumn({
               </div>
               {action.affected_services.length > 0 ? (
                 <div className="serviceChips compact">
-                  {action.affected_services.map((service) => <span key={service}>{service}</span>)}
+                  {action.affected_services.map((service) => (
+                    <span key={service}>{service}</span>
+                  ))}
                 </div>
               ) : null}
               <dl className="roadmapActionDetails">
@@ -196,7 +194,9 @@ function RoadmapBucketColumn({
               </dl>
               {action.metrics.impacted_dimensions?.length ? (
                 <div className="roadmapDimensions">
-                  {action.metrics.impacted_dimensions.map((dimension) => <code key={dimension}>{formatType(dimension)}</code>)}
+                  {action.metrics.impacted_dimensions.map((dimension) => (
+                    <code key={dimension}>{formatType(dimension)}</code>
+                  ))}
                 </div>
               ) : null}
               {action.playbook ? <RefactoringPlaybookDetails playbook={action.playbook} /> : null}
@@ -226,11 +226,15 @@ function RefactoringPlaybookDetails({ playbook }: { playbook: RefactoringPlayboo
               <strong>{phase.title}</strong>
               <p>{phase.objective}</p>
               <ul>
-                {phase.steps.map((step) => <li key={step}>{step}</li>)}
+                {phase.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
               </ul>
               {phase.verification_checks.length ? (
                 <div className="playbookChecks">
-                  {phase.verification_checks.map((check) => <span key={check}>{check}</span>)}
+                  {phase.verification_checks.map((check) => (
+                    <span key={check}>{check}</span>
+                  ))}
                 </div>
               ) : null}
             </article>
@@ -254,7 +258,9 @@ function PlaybookList({ title, items }: { title: string; items: string[] }) {
     <div className="playbookList">
       <strong>{title}</strong>
       <ul>
-        {items.map((item) => <li key={item}>{item}</li>)}
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
       </ul>
     </div>
   );

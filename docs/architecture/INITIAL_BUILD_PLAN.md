@@ -25,4 +25,3 @@ This first implementation is a vertical slice, not the final research system.
 - Add health scoring and evolution comparison.
 - Add LangGraph/LangChain recommendation workflow.
 - Expand detectors beyond the proposal's three core patterns.
-

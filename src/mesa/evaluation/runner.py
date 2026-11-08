@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
 import csv
 import json
 import os
-from pathlib import Path
 import re
+from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -104,7 +104,9 @@ def load_ai_baseline_comparisons() -> list[dict[str, Any]]:
     Unreadable files are skipped; returns [] when nothing has been exported.
     """
     reports: list[dict[str, Any]] = []
-    for path in sorted(EVALUATION_RESULTS_DIR.glob("ai-baseline-comparison*/ai_baseline_comparison.json")):
+    for path in sorted(
+        EVALUATION_RESULTS_DIR.glob("ai-baseline-comparison*/ai_baseline_comparison.json")
+    ):
         try:
             report = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -136,9 +138,7 @@ def missing_benchmark_service_paths(benchmark_path: str | Path) -> list[str]:
     return missing
 
 
-def evaluate_benchmark(
-    benchmark_path: str | Path, chatty_threshold: int = 3
-) -> dict[str, Any]:
+def evaluate_benchmark(benchmark_path: str | Path, chatty_threshold: int = 3) -> dict[str, Any]:
     path = Path(benchmark_path).resolve()
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     systems = data.get("systems", [])
@@ -177,16 +177,22 @@ def evaluate_benchmark(
         },
         "discovery": {
             "overall": discovery,
-            "systems": [system["discovery"] for system in system_results if system.get("discovery")],
+            "systems": [
+                system["discovery"] for system in system_results if system.get("discovery")
+            ],
         },
         "explanations": {
             "overall": explanations,
-            "systems": [system["explanations"] for system in system_results if system.get("explanations")],
+            "systems": [
+                system["explanations"] for system in system_results if system.get("explanations")
+            ],
         },
         "recommendations": {
             "overall": recommendations,
             "systems": [
-                system["recommendations"] for system in system_results if system.get("recommendations")
+                system["recommendations"]
+                for system in system_results
+                if system.get("recommendations")
             ],
         },
         "evaluation_notes": {
@@ -329,7 +335,9 @@ def compare_labels(
     }
 
 
-def _evaluate_system(base_dir: Path, system: dict[str, Any], chatty_threshold: int) -> dict[str, Any]:
+def _evaluate_system(
+    base_dir: Path, system: dict[str, Any], chatty_threshold: int
+) -> dict[str, Any]:
     service_paths = [str((base_dir / path).resolve()) for path in system.get("service_paths", [])]
     result = analyze_services(service_paths, chatty_threshold=chatty_threshold)
     expected = [_label_from_truth(item) for item in system.get("ground_truth", [])]
@@ -473,7 +481,7 @@ def _build_explanation_request(check: dict[str, Any], result) -> AIExplainerRequ
     finding_id = None
     score_target = check.get("score_target")
     if "finding_type" in check:
-        target_services = set(str(item) for item in check.get("services", []))
+        target_services = {str(item) for item in check.get("services", [])}
         for finding in result.findings:
             if finding.type.value != str(check["finding_type"]):
                 continue
@@ -506,12 +514,9 @@ def _score_explanation_case(
             0.3 if response.answer.strip() else 0.0,
             0.2 if len(response.suggestions) >= int(check.get("min_suggestions", 1)) else 0.0,
             0.2
-            if len(response.follow_up_questions)
-            >= int(check.get("min_follow_up_questions", 1))
+            if len(response.follow_up_questions) >= int(check.get("min_follow_up_questions", 1))
             else 0.0,
-            0.15
-            if len(response.limitations) >= int(check.get("min_limitations", 1))
-            else 0.0,
+            0.15 if len(response.limitations) >= int(check.get("min_limitations", 1)) else 0.0,
             0.15 if all(phrase in answer_lower for phrase in required_phrases) else 0.0,
         ]
     )
@@ -638,7 +643,7 @@ def _aggregate_named_metrics(
     if not items:
         return {
             "system_count": 0,
-            **{key: None for key in metrics_keys},
+            **dict.fromkeys(metrics_keys),
         }
     return {
         "system_count": len(items),
@@ -651,7 +656,10 @@ def _compare_simple_labels(
 ) -> tuple[dict[str, float], list[str], list[str]]:
     expected_counts = Counter(expected)
     predicted_counts = Counter(predicted)
-    tp = sum(min(expected_counts[key], predicted_counts[key]) for key in expected_counts | predicted_counts)
+    tp = sum(
+        min(expected_counts[key], predicted_counts[key])
+        for key in expected_counts | predicted_counts
+    )
     fp = list((predicted_counts - expected_counts).elements())
     fn = list((expected_counts - predicted_counts).elements())
     precision = _safe_divide(tp, tp + len(fp))

@@ -36,26 +36,48 @@ export function FindingsDashboard({
       <div className="findingsHeader">
         <div className="findingsHeaderText">
           <h2>Findings Dashboard</h2>
-          <p>{filteredFindings.length} of {findings.length} findings</p>
+          <p>
+            {filteredFindings.length} of {findings.length} findings
+          </p>
           <div className="docLinks">
             <DocLinkButton label="How to read findings" onClick={() => onOpenDoc("findings-guide")} />
           </div>
         </div>
-        <span className="modePill">{interpretationMode === "beginner" ? "Plain-language view" : "Research detail view"}</span>
+        <span className="modePill">
+          {interpretationMode === "beginner" ? "Plain-language view" : "Research detail view"}
+        </span>
       </div>
 
       <div className="filters findingsFilters">
         <select value={filters.type} onChange={(event) => onFilterChange({ ...filters, type: event.target.value })}>
           <option value="ALL">All anti-patterns</option>
-          {filterOptions.types.map((type) => <option key={type} value={type}>{formatType(type)}</option>)}
+          {filterOptions.types.map((type) => (
+            <option key={type} value={type}>
+              {formatType(type)}
+            </option>
+          ))}
         </select>
-        <select value={filters.severity} onChange={(event) => onFilterChange({ ...filters, severity: event.target.value })}>
+        <select
+          value={filters.severity}
+          onChange={(event) => onFilterChange({ ...filters, severity: event.target.value })}
+        >
           <option value="ALL">All severities</option>
-          {filterOptions.severities.map((severity) => <option key={severity} value={severity}>{severity}</option>)}
+          {filterOptions.severities.map((severity) => (
+            <option key={severity} value={severity}>
+              {severity}
+            </option>
+          ))}
         </select>
-        <select value={filters.service} onChange={(event) => onFilterChange({ ...filters, service: event.target.value })}>
+        <select
+          value={filters.service}
+          onChange={(event) => onFilterChange({ ...filters, service: event.target.value })}
+        >
           <option value="ALL">All services</option>
-          {filterOptions.services.map((service) => <option key={service} value={service}>{service}</option>)}
+          {filterOptions.services.map((service) => (
+            <option key={service} value={service}>
+              {service}
+            </option>
+          ))}
         </select>
         <label className="confidenceFilter">
           <span>Min confidence {Math.round(filters.minConfidence * 100)}%</span>
@@ -71,7 +93,9 @@ export function FindingsDashboard({
       </div>
 
       {findings.length === 0 ? <div className="emptyList">No findings for this scan.</div> : null}
-      {findings.length > 0 && filteredFindings.length === 0 ? <div className="emptyList">No findings match these filters.</div> : null}
+      {findings.length > 0 && filteredFindings.length === 0 ? (
+        <div className="emptyList">No findings match these filters.</div>
+      ) : null}
 
       {filteredFindings.length > 0 ? (
         <div className="findingsGrid">
@@ -86,7 +110,9 @@ export function FindingsDashboard({
                 <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
               ) : null}
               <div className="serviceChips">
-                {finding.services.map((service) => <span key={service}>{service}</span>)}
+                {finding.services.map((service) => (
+                  <span key={service}>{service}</span>
+                ))}
               </div>
               <p>{renderHighlightedText(finding.description)}</p>
               <div className="findingHighlights">

@@ -55,7 +55,11 @@ export function DocumentationPortal({
           <label htmlFor="docsCategory">Category</label>
           <select id="docsCategory" value={docsCategory} onChange={(event) => onChangeCategory(event.target.value)}>
             <option value="ALL">All categories</option>
-            {docsCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+            {docsCategories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -103,18 +107,28 @@ export function DocumentationPortal({
         </div>
 
         <div className="docsTags">
-          {selectedDoc.tags.map((tag) => <span key={tag}>{tag}</span>)}
+          {selectedDoc.tags.map((tag) => (
+            <span key={tag}>{tag}</span>
+          ))}
         </div>
 
-        <div className="docsMarkdown">
-          {renderMarkdown(selectedDoc.content)}
-        </div>
+        <div className="docsMarkdown">{renderMarkdown(selectedDoc.content)}</div>
 
         <div className="docsPager">
-          <button type="button" className="docsPagerButton" onClick={() => neighbors.previous && onSelectDoc(neighbors.previous.slug)} disabled={!neighbors.previous}>
+          <button
+            type="button"
+            className="docsPagerButton"
+            onClick={() => neighbors.previous && onSelectDoc(neighbors.previous.slug)}
+            disabled={!neighbors.previous}
+          >
             {neighbors.previous ? `Previous: ${neighbors.previous.title}` : "No previous page"}
           </button>
-          <button type="button" className="docsPagerButton" onClick={() => neighbors.next && onSelectDoc(neighbors.next.slug)} disabled={!neighbors.next}>
+          <button
+            type="button"
+            className="docsPagerButton"
+            onClick={() => neighbors.next && onSelectDoc(neighbors.next.slug)}
+            disabled={!neighbors.next}
+          >
             {neighbors.next ? `Next: ${neighbors.next.title}` : "No next page"}
           </button>
         </div>

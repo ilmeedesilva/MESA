@@ -1,0 +1,38 @@
+name: Docs links
+
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - ".github/workflows/links.yml"
+  schedule:
+    - cron: "41 4 * * 1" # Mondays 04:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lychee:
+    name: Link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pull requests check links between files in the repository (including
+      # #anchors), which is deterministic. The weekly run also checks external
+      # links, which can fail for reasons outside the repository.
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          fail: true
+          args: >-
+            --no-progress
+            --include-fragments
+            ${{ github.event_name == 'pull_request' && '--offline' || '--max-retries 3 --accept 200,206,429' }}
+            --exclude-path evaluation-results
+            --exclude-path benchmarks/results/v0.1.0-research
+            --exclude-path frontend/node_modules
+            './**/*.md'

@@ -102,7 +102,10 @@ def _deduplicate(dependencies: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _finding(
-    index: int, service_name: str, dependency: dict[str, Any], all_dependencies: list[dict[str, Any]]
+    index: int,
+    service_name: str,
+    dependency: dict[str, Any],
+    all_dependencies: list[dict[str, Any]],
 ) -> Finding:
     source = dependency.get("source", {})
     duplicate_count = sum(
@@ -113,7 +116,9 @@ def _finding(
     port = dependency.get("port")
     infra_label = _infra_service_label(host, port)
     severity = (
-        Severity.LOW if infra_label else _severity(file_type, dependency.get("reason"), duplicate_count)
+        Severity.LOW
+        if infra_label
+        else _severity(file_type, dependency.get("reason"), duplicate_count)
     )
     confidence = _confidence(file_type, dependency.get("reason"), duplicate_count)
     value = dependency.get("value", "unknown endpoint")
@@ -205,7 +210,10 @@ def _limitations(port: int | None, infra_label: str | None) -> list[str]:
 
 
 def _severity(file_type: str, reason: str | None, duplicate_count: int) -> Severity:
-    if file_type in SOURCE_FILE_TYPES and reason in {"private IP endpoint", "local development endpoint"}:
+    if file_type in SOURCE_FILE_TYPES and reason in {
+        "private IP endpoint",
+        "local development endpoint",
+    }:
         return Severity.HIGH
     if file_type in SOURCE_FILE_TYPES:
         return Severity.MEDIUM
@@ -228,9 +236,13 @@ def _confidence(file_type: str, reason: str | None, duplicate_count: int) -> flo
 def _explanation(file_type: str, reason: str | None, duplicate_count: int) -> str:
     parts = [f"Detected {reason or 'service endpoint'} in a {file_type} file."]
     if file_type in SOURCE_FILE_TYPES:
-        parts.append("Because the endpoint is inside source code, deployment changes may require code edits.")
+        parts.append(
+            "Because the endpoint is inside source code, deployment changes may require code edits."
+        )
     elif file_type in CONFIG_FILE_TYPES:
-        parts.append("The endpoint is configuration-level evidence, so it is lower risk than source code but still couples deployments to concrete addresses.")
+        parts.append(
+            "The endpoint is configuration-level evidence, so it is lower risk than source code but still couples deployments to concrete addresses."
+        )
     if duplicate_count > 1:
         parts.append(f"The same endpoint appears {duplicate_count} times, increasing drift risk.")
     return " ".join(parts)

@@ -36,10 +36,9 @@ export function BenchmarksPanel() {
     setIsRunning(true);
     setReport(null);
     try {
-      const result = await api<BenchmarkEvaluationReport>(
-        `/api/benchmarks/${selectedBenchmarkId}/evaluate`,
-        { method: "POST" }
-      );
+      const result = await api<BenchmarkEvaluationReport>(`/api/benchmarks/${selectedBenchmarkId}/evaluate`, {
+        method: "POST"
+      });
       setReport(result);
     } catch (caught) {
       setError(messageFor(caught, "Benchmark evaluation failed"));
@@ -57,7 +56,9 @@ export function BenchmarksPanel() {
       <div className="panelHeader compact">
         <div>
           <h2>Benchmarks</h2>
-          <p>Ground-truth precision/recall/F1 against seeded synthetic fixtures and manually reviewed real repositories</p>
+          <p>
+            Ground-truth precision/recall/F1 against seeded synthetic fixtures and manually reviewed real repositories
+          </p>
         </div>
         <span>{benchmarks.length} available</span>
       </div>

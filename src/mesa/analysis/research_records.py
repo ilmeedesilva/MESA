@@ -6,7 +6,10 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from mesa.evaluation import evaluate_findings_against_ground_truth, find_matching_ground_truth_system
+from mesa.evaluation import (
+    evaluate_findings_against_ground_truth,
+    find_matching_ground_truth_system,
+)
 from mesa.models import (
     AnalysisResult,
     ProjectSetup,
@@ -57,7 +60,9 @@ def record_draft_from_scan(
     project_setup: ProjectSetup | None = None,
 ) -> ResearchEvaluationDraft:
     severities = Counter(finding.severity for finding in result.findings)
-    languages = sorted({service.language for service in result.services if service.language != "unknown"})
+    languages = sorted(
+        {service.language for service in result.services if service.language != "unknown"}
+    )
     edge_types = Counter(str(edge.get("type", "unknown")) for edge in result.graph.get("edges", []))
     repository_source = result.summary.get("repository_source", {})
     repo_name = (
@@ -97,7 +102,9 @@ def record_draft_from_scan(
         )
         metrics = metrics_report["metrics"]
         accuracy_mode = ResearchEvaluationAccuracyMode.GROUND_TRUTH
-        matched_benchmark_id = str(benchmark_match.get("system_id")) if benchmark_match.get("system_id") else None
+        matched_benchmark_id = (
+            str(benchmark_match.get("system_id")) if benchmark_match.get("system_id") else None
+        )
         matched_benchmark_name = (
             str(benchmark_match.get("system_name")) if benchmark_match.get("system_name") else None
         )
@@ -127,7 +134,9 @@ def record_draft_from_scan(
         expected_services=expected_services,
         detected_services=detected_services,
         expected_patterns=None,
-        detected_patterns=", ".join(f"{kind}: {count}" for kind, count in sorted(edge_types.items())),
+        detected_patterns=", ".join(
+            f"{kind}: {count}" for kind, count in sorted(edge_types.items())
+        ),
         total_findings=len(result.findings),
         critical_findings=severities.get(Severity.CRITICAL, 0),
         high_findings=severities.get(Severity.HIGH, 0),
@@ -277,14 +286,14 @@ def _draft_notes(
     accuracy_mode: ResearchEvaluationAccuracyMode,
 ) -> str:
     parts = [f"Automatically populated from scan {scan.id}."]
-    parts.append(
-        f"Commit/ref: {commit_ref}." if commit_ref else "Commit/ref: N/A."
-    )
+    parts.append(f"Commit/ref: {commit_ref}." if commit_ref else "Commit/ref: N/A.")
     parts.append("Services and findings were derived from the selected scan.")
     if accuracy_mode == ResearchEvaluationAccuracyMode.GROUND_TRUTH and benchmark_name:
         parts.append(f"TP/FP/FN were calculated from benchmark ground truth '{benchmark_name}'.")
     else:
-        parts.append("TP/FP/FN require manual validation because no matching ground-truth findings were available.")
+        parts.append(
+            "TP/FP/FN require manual validation because no matching ground-truth findings were available."
+        )
     if warnings:
         parts.append("Warnings: " + "; ".join(str(warning) for warning in warnings[:3]) + ".")
     return " ".join(parts)

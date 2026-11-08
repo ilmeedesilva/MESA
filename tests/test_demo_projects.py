@@ -3,7 +3,6 @@ from pathlib import Path
 from mesa.analysis import analyze_services
 from mesa.models import FindingType
 
-
 ROOT = Path(__file__).resolve().parents[1] / "demo-projects"
 
 
@@ -35,4 +34,7 @@ def test_demo_projects_show_before_and_after_improvement() -> None:
     assert FindingType.HARD_CODED_SERVICE_DEPENDENCY not in fixed_types
 
     assert len(broken.findings) > len(fixed.findings)
-    assert broken.summary["health_scores"]["system"]["score"] < fixed.summary["health_scores"]["system"]["score"]
+    assert (
+        broken.summary["health_scores"]["system"]["score"]
+        < fixed.summary["health_scores"]["system"]["score"]
+    )

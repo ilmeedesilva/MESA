@@ -75,7 +75,10 @@ class ChattyServiceDetector(Detector):
                         evidence_chain_item(
                             "classify_risk",
                             "Classified repeated synchronous call evidence as chatty service coupling.",
-                            data={"severity": _severity(len(calls)).value, "confidence": confidence},
+                            data={
+                                "severity": _severity(len(calls)).value,
+                                "confidence": confidence,
+                            },
                         ),
                     ],
                     confidence_reason=(
