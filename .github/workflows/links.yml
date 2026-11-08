@@ -21,7 +21,7 @@ jobs:
     name: Link check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Pull requests check links between files in the repository (including
       # #anchors), which is deterministic. The weekly run also checks external
       # links, which can fail for reasons outside the repository.
