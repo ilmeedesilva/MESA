@@ -1051,7 +1051,7 @@ def _governance_answer(
     for finding in violations[:2]:
         evidence.append(_finding_evidence(finding))
     suggestions = [
-        "Keep policy names plain and specific so evaluators can understand them quickly.",
+        "Keep policy names plain and specific so reviewers can understand them quickly.",
         "Start with a small set of high-value rules such as no cycles and no hard-coded service URLs.",
         "Treat policy violations as architecture review signals, not automatic proof of failure.",
     ]
@@ -1145,7 +1145,7 @@ def _policy_draft_answer(
         suggestions=suggestions
         or [
             "Validate whether each threshold reflects a real architectural constraint for this project.",
-            "Keep rule names short and understandable for evaluators.",
+            "Keep rule names short and understandable for reviewers.",
         ],
         follow_up_questions=[
             "Explain these policy suggestions.",
@@ -1203,7 +1203,7 @@ def _doc_answer(payload: AIExplainerRequest) -> AIExplainerResponse:
         ],
         suggestions=[f"Open {doc.path}" for doc in docs[:3]],
         follow_up_questions=[
-            "Show me the evaluator quick start.",
+            "Show me the getting started guide.",
             "How do I scan a public repository?",
             "Explain the findings guide.",
         ],

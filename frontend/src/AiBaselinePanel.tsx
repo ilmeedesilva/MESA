@@ -33,7 +33,7 @@ const SYSTEM_DESCRIPTIONS: Record<string, string> = {
 type ModelInfo = { label: string; rankNote: string; tier: "top" | "mid" | "unknown" };
 
 // Leaderboard positions are from the independent Vals AI SWE-bench Verified
-// leaderboard (results as of 1 September 2026), cited in the dissertation.
+// leaderboard (results as of 1 September 2026), as cited in the research.
 const MODEL_INFO: Record<string, ModelInfo> = {
   "claude-sonnet-5": {
     label: "Claude Sonnet 5",
