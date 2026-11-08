@@ -46,7 +46,10 @@ line-length = 100
 src = ["src", "tests"]
 # Sample services that the benchmarks scan are research inputs: formatting or
 # "fixing" them would change the line numbers recorded in findings.
-extend-exclude = ["tests/fixtures", "benchmarks", "demo-projects", "evaluation-results"]
+extend-exclude = [
+  "tests/fixtures", "benchmarks", "demo-projects", "evaluation-results",
+  "tools",  # coursework diagram script, removed by the repository clean-up
+]
 
 [tool.ruff.lint]
 # Pinned explicitly so a ruff upgrade can't silently widen (or narrow) what CI
@@ -70,6 +73,14 @@ ignore = [
 # Typer declares CLI arguments as call defaults by design.
 extend-immutable-calls = ["typer.Argument", "typer.Option"]
 
+
+[tool.coverage.run]
+source = ["mesa"]
+
+[tool.coverage.report]
+# Current level is 79.8%. Raise this as tests are added; never lower it.
+fail_under = 79
+show_missing = true
 
 [tool.mypy]
 python_version = "3.10"
