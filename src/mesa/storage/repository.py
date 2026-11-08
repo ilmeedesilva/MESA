@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 from uuid import uuid4
@@ -30,6 +30,9 @@ from mesa.models import (
     ScanRecord,
     SnapshotRecord,
 )
+
+# datetime.UTC only exists from Python 3.11; timezone.utc is the same object.
+UTC = timezone.utc
 
 
 def _project_setup_from_scan_result(
