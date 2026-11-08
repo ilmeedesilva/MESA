@@ -36,14 +36,47 @@ uvicorn mesa.api.main:app --reload
 
 ## Checks
 
-Run these before opening a pull request. CI runs the same ones.
+Run these before opening a pull request. CI runs the same ones on Linux, and a change only
+counts as passing once CI is green.
+
+Set up the git hooks once, so formatting and basic checks run on every commit:
 
 ```bash
-python -m pytest                    # tests
-python -m pytest --cov=mesa         # with coverage
-ruff check src tests                # lint
-cd frontend && npm run build        # type check and build the UI
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
 ```
+
+Backend (CI runs it on Python 3.10, 3.11, 3.12 and 3.13):
+
+```bash
+ruff check src tests            # lint
+ruff format --check src tests   # formatting (ruff format src tests to fix)
+mypy                            # type check (models, analysis, detectors)
+pytest --cov=mesa               # tests, with a coverage floor in pyproject.toml
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm ci                  # install exactly what package-lock.json pins
+npm run lint            # ESLint and TypeScript
+npm run format:check    # Prettier (npm run format to fix)
+npm test                # Vitest unit tests
+npm run build
+```
+
+Repository:
+
+```bash
+python scripts/check_repo_paths.py   # no machine-specific paths, no case-only path clashes
+```
+
+Use paths relative to the repository root, a CLI option or an environment variable, never a
+path from your own machine. Rename a file to a different letter case in two steps
+(`git mv Name.md tmp.md && git mv tmp.md name.md`), because macOS and Windows filesystems
+ignore case.
 
 ## Where things are
 

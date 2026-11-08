@@ -699,7 +699,7 @@ def _f1_score(precision: float, recall: float) -> float:
     existed, with zero overlap) - reusing that same 1.0 fallback here
     previously reported F1 = 1.0 for a total failure, found evaluating an
     LLM baseline that missed every expected finding on a real repository
-    (see docs/research/AI_BASELINE_COMPARISON.md)."""
+    (see docs/research/ai-baseline.md)."""
     if precision + recall == 0:
         return 0.0
     return 2 * precision * recall / (precision + recall)
