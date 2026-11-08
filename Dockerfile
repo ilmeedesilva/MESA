@@ -6,7 +6,6 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src ./src
 COPY benchmarks ./benchmarks
-COPY evaluation-results ./evaluation-results
 COPY tests ./tests
 
 RUN pip install --no-cache-dir -e .

@@ -77,7 +77,10 @@ def gate(
 def evaluate(
     benchmark: Path = typer.Argument(..., help="Ground-truth benchmark YAML file."),
     output_dir: Path = typer.Option(
-        Path("evaluation-results"), "--output-dir", "-o", help="Directory for CSV/JSON metrics."
+        Path("benchmarks/results/latest"),
+        "--output-dir",
+        "-o",
+        help="Directory for CSV/JSON metrics.",
     ),
     chatty_threshold: int = typer.Option(3, help="Static call-site threshold for chatty services."),
 ) -> None:
@@ -125,7 +128,7 @@ def evaluate_ai_baseline(
         "openai", "--provider", help="Which LLM API to call: openai or anthropic."
     ),
     output_dir: Path = typer.Option(
-        Path("evaluation-results/ai-baseline-comparison"),
+        Path("benchmarks/results/latest/ai-baseline"),
         "--output-dir",
         "-o",
         help="Directory for JSON/Markdown results.",

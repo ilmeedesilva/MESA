@@ -672,7 +672,7 @@ def get_ai_baseline_comparison() -> dict:
             detail=(
                 "No AI baseline comparison results found. Run "
                 "`mesa evaluate-ai-baseline <benchmark.yml> --runs 5 --provider anthropic|openai` "
-                "and export to evaluation-results/ai-baseline-comparison/ first."
+                "and export to benchmarks/results/v0.1.0-research/ai-baseline/claude-sonnet-5/ first."
             ),
         )
     return report
@@ -687,7 +687,7 @@ def get_ai_baseline_comparisons() -> dict:
             detail=(
                 "No AI baseline comparison results found. Run "
                 "`mesa evaluate-ai-baseline <benchmark.yml> --runs 5 --provider anthropic|openai` "
-                "with a separate --output-dir per model, under evaluation-results/ai-baseline-comparison*/."
+                "with a separate --output-dir per model, under benchmarks/results/v0.1.0-research/ai-baseline/<model>/."
             ),
         )
     return {"reports": reports}

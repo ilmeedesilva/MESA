@@ -584,7 +584,7 @@ export function AiBaselinePanel() {
           <pre className="aiBaselineCliHint">
             MESA_ANTHROPIC_MODEL=claude-opus-5 mesa evaluate-ai-baseline benchmarks/ground_truth.yml --systems
             god-service,cyclic-dependencies --runs 5 --provider anthropic --output-dir
-            evaluation-results/ai-baseline-comparison-opus5
+            benchmarks/results/latest/ai-baseline/claude-opus-5
           </pre>
           Then reload this page.
         </div>

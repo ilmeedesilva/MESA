@@ -20,3 +20,6 @@ benchmarks/real-repos/*
 
 dissertation/
 dissertation_output/
+
+# New evaluation runs (committed research results live in benchmarks/results/v0.1.0-research/)
+benchmarks/results/latest/
