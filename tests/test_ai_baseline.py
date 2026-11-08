@@ -36,7 +36,9 @@ def test_compare_labels_reuses_mesa_matching_rules() -> None:
     assert result["metrics"]["true_positives"] == 1
     assert result["metrics"]["precision"] == 0.5
     assert result["metrics"]["recall"] == 1.0
-    assert result["false_positives"] == [{"type": "CHATTY_SERVICE", "services": ["order-service", "payment-service"]}]
+    assert result["false_positives"] == [
+        {"type": "CHATTY_SERVICE", "services": ["order-service", "payment-service"]}
+    ]
     assert result["false_negatives"] == []
 
 
@@ -279,8 +281,10 @@ def test_export_ai_baseline_merges_across_separate_benchmark_files(tmp_path) -> 
                 "recall": {"mean": 0.4, "stdev": 0.0},
                 "f1_score": {"mean": 0.4, "stdev": 0.0},
                 "determinism": {
-                    "exact_match_rate": 1.0, "mean_pairwise_jaccard": 1.0,
-                    "distinct_result_sets": 1, "run_count": 5,
+                    "exact_match_rate": 1.0,
+                    "mean_pairwise_jaccard": 1.0,
+                    "distinct_result_sets": 1,
+                    "run_count": 5,
                 },
             }
         ],
@@ -298,8 +302,10 @@ def test_export_ai_baseline_merges_across_separate_benchmark_files(tmp_path) -> 
                 "recall": {"mean": 0.0, "stdev": 0.0},
                 "f1_score": {"mean": 0.0, "stdev": 0.0},
                 "determinism": {
-                    "exact_match_rate": 0.6, "mean_pairwise_jaccard": 0.55,
-                    "distinct_result_sets": 3, "run_count": 5,
+                    "exact_match_rate": 0.6,
+                    "mean_pairwise_jaccard": 0.55,
+                    "distinct_result_sets": 3,
+                    "run_count": 5,
                 },
             }
         ],
@@ -323,7 +329,9 @@ def test_run_ai_baseline_records_the_model_used(monkeypatch, tmp_path) -> None:
     class _FakeMessages:
         def create(self, **kwargs):
             requested_models.append(kwargs["model"])
-            return SimpleNamespace(content=[SimpleNamespace(type="text", text=json.dumps({"findings": []}))])
+            return SimpleNamespace(
+                content=[SimpleNamespace(type="text", text=json.dumps({"findings": []}))]
+            )
 
     class _FakeAnthropicClient:
         def __init__(self, *args, **kwargs) -> None:

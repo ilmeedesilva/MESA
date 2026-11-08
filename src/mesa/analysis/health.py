@@ -38,7 +38,9 @@ def calculate_health_scores(
     graph: nx.MultiDiGraph, findings: list[Finding], god_service_scores: list[dict[str, Any]]
 ) -> dict[str, Any]:
     """Calculate service, domain, and system architectural health scores."""
-    services = sorted(node for node, data in graph.nodes(data=True) if data.get("type") == "service")
+    services = sorted(
+        node for node, data in graph.nodes(data=True) if data.get("type") == "service"
+    )
     finding_counts = _finding_counts(findings)
     god_scores = {score["service"]: float(score["score"]) for score in god_service_scores}
     service_scores = [
@@ -130,7 +132,10 @@ def _domain_scores(service_scores: list[HealthScore]) -> list[HealthScore]:
     domain_scores: list[HealthScore] = []
     for domain, scores in sorted(grouped.items()):
         breakdown = _round_breakdown(
-            {dimension: mean(score.breakdown[dimension] for score in scores) for dimension in DIMENSIONS}
+            {
+                dimension: mean(score.breakdown[dimension] for score in scores)
+                for dimension in DIMENSIONS
+            }
         )
         numeric = _weighted_score(breakdown)
         weak_dimensions = _weak_dimensions(breakdown)
@@ -155,7 +160,10 @@ def _system_score(
         breakdown = {dimension: 100.0 for dimension in DIMENSIONS}
     else:
         breakdown = _round_breakdown(
-            {dimension: mean(score.breakdown[dimension] for score in service_scores) for dimension in DIMENSIONS}
+            {
+                dimension: mean(score.breakdown[dimension] for score in service_scores)
+                for dimension in DIMENSIONS
+            }
         )
 
     systemic_penalty = 0.0
@@ -164,7 +172,9 @@ def _system_score(
     if any(finding.type == FindingType.SHARED_DATABASE for finding in findings):
         systemic_penalty += 5.0
     if len(domain_scores) > 1:
-        domain_spread = max(score.score for score in domain_scores) - min(score.score for score in domain_scores)
+        domain_spread = max(score.score for score in domain_scores) - min(
+            score.score for score in domain_scores
+        )
         systemic_penalty += min(domain_spread / 10, 5.0)
 
     numeric = max(round(_weighted_score(breakdown) - systemic_penalty, 2), 0.0)
@@ -232,7 +242,11 @@ def _grade(score: float) -> str:
 
 
 def _weak_dimensions(breakdown: dict[str, float]) -> list[str]:
-    return [dimension for dimension, score in sorted(breakdown.items(), key=lambda item: item[1]) if score < 70]
+    return [
+        dimension
+        for dimension, score in sorted(breakdown.items(), key=lambda item: item[1])
+        if score < 70
+    ]
 
 
 def _explanation(scope: str, target: str, score: float, weak_dimensions: list[str]) -> str:

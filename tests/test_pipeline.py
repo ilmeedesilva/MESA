@@ -49,8 +49,6 @@ def test_detects_shared_database() -> None:
     assert any(finding.type == FindingType.SHARED_DATABASE for finding in result.findings)
 
 
-
-
 def test_graph_edges_keep_service_source() -> None:
     result = analyze_services(
         [
@@ -63,7 +61,6 @@ def test_graph_edges_keep_service_source() -> None:
     assert api_edges
     assert all(isinstance(edge["source"], str) for edge in api_edges)
     assert all("source_location" in edge for edge in api_edges)
-
 
 
 def test_neo4j_dependency_projection_includes_api_and_shared_database_edges() -> None:
@@ -89,7 +86,6 @@ def test_neo4j_dependency_projection_includes_api_and_shared_database_edges() ->
         dependency for dependency in dependencies if dependency["kind"] == "shared_database"
     )
     assert shared_dependency["database"] == "postgres://db/orders"
-
 
 
 def test_detects_hard_coded_service_dependencies() -> None:
@@ -119,8 +115,7 @@ def test_hard_coded_dependency_detector_avoids_external_urls() -> None:
     result = analyze_services([str(ROOT / "hardcoded" / "clean-service")])
 
     assert not any(
-        finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
-        for finding in result.findings
+        finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY for finding in result.findings
     )
 
 
@@ -188,7 +183,9 @@ def test_stem_matches_other_service_ignores_self_and_matches_hosted_variants() -
     other_names = {"discovery-service"}
 
     assert _stem_matches_other_service(Path("config-service/discovery-service.yml"), other_names)
-    assert _stem_matches_other_service(Path("config-service/discovery-service-docker.yml"), other_names)
+    assert _stem_matches_other_service(
+        Path("config-service/discovery-service-docker.yml"), other_names
+    )
     assert not _stem_matches_other_service(Path("discovery-service/discovery-service.yml"), set())
     assert not _stem_matches_other_service(Path("config-service/application.yml"), other_names)
 
@@ -207,7 +204,9 @@ def test_config_server_hosted_files_do_not_create_false_chatty_or_cyclic_finding
     assert FindingType.CYCLIC_DEPENDENCY not in finding_types
 
     hard_coded = [
-        finding for finding in result.findings if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
+        finding
+        for finding in result.findings
+        if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
     ]
     assert any(
         "discovery-service:8061" in item.get("value", "")
@@ -225,16 +224,21 @@ def test_god_service_scoring_thresholds() -> None:
                 root_path="/tmp/platform-service",
                 file_count=22,
                 domain_keywords=[
-                    "orders", "payments", "users", "inventory", "shipments",
-                    "invoices", "catalog", "returns", "analytics",
+                    "orders",
+                    "payments",
+                    "users",
+                    "inventory",
+                    "shipments",
+                    "invoices",
+                    "catalog",
+                    "returns",
+                    "analytics",
                 ],
             ),
             ServiceFacts(name="small-service", root_path="/tmp/small-service", file_count=1),
         ]
     )
-    graph.nodes["platform-service"].update(
-        endpoint_count=10, database_count=3, linked_findings=5
-    )
+    graph.nodes["platform-service"].update(endpoint_count=10, database_count=3, linked_findings=5)
     graph.add_edge("small-service", "platform-service", type="api_call")
     graph.add_edge("platform-service", "small-service", type="api_call")
 
@@ -261,11 +265,12 @@ def test_detects_god_service_risk() -> None:
     scores = {score["service"]: score for score in result.summary["god_service_scores"]}
     assert scores["platform-service"]["score"] >= 70
     assert scores["order-service"]["score"] < scores["platform-service"]["score"]
-    god_findings = [finding for finding in result.findings if finding.type == FindingType.GOD_SERVICE]
+    god_findings = [
+        finding for finding in result.findings if finding.type == FindingType.GOD_SERVICE
+    ]
     assert god_findings
     assert god_findings[0].services == ["platform-service"]
     assert "decreases" in god_findings[0].recommendation
-
 
 
 def test_health_scores_are_generated_and_explainable() -> None:
@@ -383,7 +388,8 @@ def test_recommendations_work_without_llm_configuration(monkeypatch) -> None:
     result = analyze_services([str(ROOT / "hardcoded" / "order-service")])
 
     hardcoded = next(
-        finding for finding in result.findings
+        finding
+        for finding in result.findings
         if finding.type == FindingType.HARD_CODED_SERVICE_DEPENDENCY
     )
     recommendation = hardcoded.recommendations[0]
@@ -417,14 +423,20 @@ def test_extracts_real_repo_style_service_facts() -> None:
 
     frontend = services["frontend-service"]
     assert frontend.language == "typescript"
-    assert any(endpoint.path == "/home" and endpoint.method == "GET" for endpoint in frontend.endpoints)
+    assert any(
+        endpoint.path == "/home" and endpoint.method == "GET" for endpoint in frontend.endpoints
+    )
     assert any(call.target_hint == "catalog-service" for call in frontend.calls)
     assert any(library.name == "express" for library in frontend.libraries)
 
     catalog = services["catalog-service"]
     assert catalog.language == "java"
-    assert any(endpoint.path == "/products" and endpoint.method == "GET" for endpoint in catalog.endpoints)
-    assert any(endpoint.path == "/products" and endpoint.method == "POST" for endpoint in catalog.endpoints)
+    assert any(
+        endpoint.path == "/products" and endpoint.method == "GET" for endpoint in catalog.endpoints
+    )
+    assert any(
+        endpoint.path == "/products" and endpoint.method == "POST" for endpoint in catalog.endpoints
+    )
     assert any(
         library.name == "org.springframework.boot:spring-boot-starter-web"
         for library in catalog.libraries
@@ -460,18 +472,28 @@ def test_recall_stress_fixture_finds_every_interleaved_anti_pattern() -> None:
     }
 
     cyclic = next(f for f in result.findings if f.type == FindingType.CYCLIC_DEPENDENCY)
-    assert set(cyclic.services) == {"checkout-service", "billing-gateway-service", "fulfillment-service"}
+    assert set(cyclic.services) == {
+        "checkout-service",
+        "billing-gateway-service",
+        "fulfillment-service",
+    }
 
     chatty = next(f for f in result.findings if f.type == FindingType.CHATTY_SERVICE)
     assert set(chatty.services) == {"alert-service", "profile-service"}
 
     shared_db = next(f for f in result.findings if f.type == FindingType.SHARED_DATABASE)
-    assert set(shared_db.services) == {"checkout-service", "billing-gateway-service", "ledger-service"}
+    assert set(shared_db.services) == {
+        "checkout-service",
+        "billing-gateway-service",
+        "ledger-service",
+    }
 
     god_finding = next(f for f in result.findings if f.type == FindingType.GOD_SERVICE)
     assert god_finding.services == ["platform-hub-service"]
     god_score = next(
-        score for score in result.summary["god_service_scores"] if score["service"] == "platform-hub-service"
+        score
+        for score in result.summary["god_service_scores"]
+        if score["service"] == "platform-hub-service"
     )
     assert god_score["score"] >= 70.0
 
@@ -492,8 +514,12 @@ def test_go_extraction_detects_endpoints_calls_and_cross_service_cycle() -> None
 
     inventory = services["inventory-service"]
     assert inventory.language == "go"
-    assert any(endpoint.path == "/items" and endpoint.method == "GET" for endpoint in inventory.endpoints)
-    assert any(call.target_hint == "orders-service" and call.method == "GRPC" for call in inventory.calls)
+    assert any(
+        endpoint.path == "/items" and endpoint.method == "GET" for endpoint in inventory.endpoints
+    )
+    assert any(
+        call.target_hint == "orders-service" and call.method == "GRPC" for call in inventory.calls
+    )
 
     finding_types = {finding.type for finding in result.findings}
     assert FindingType.CYCLIC_DEPENDENCY in finding_types

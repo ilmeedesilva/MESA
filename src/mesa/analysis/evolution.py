@@ -24,18 +24,28 @@ def compare_scan_results(
     base_snapshot = _snapshot(base_result)
     target_snapshot = _snapshot(target_result)
 
-    new_risks = _finding_summaries(target_snapshot["findings"] - base_snapshot["findings"], target_result.findings)
-    resolved_risks = _finding_summaries(base_snapshot["findings"] - target_snapshot["findings"], base_result.findings)
+    new_risks = _finding_summaries(
+        target_snapshot["findings"] - base_snapshot["findings"], target_result.findings
+    )
+    resolved_risks = _finding_summaries(
+        base_snapshot["findings"] - target_snapshot["findings"], base_result.findings
+    )
     worsened_risks = _worsened_risks(base_result.findings, target_result.findings)
 
-    new_dependencies = _dependency_summaries(target_snapshot["dependencies"] - base_snapshot["dependencies"])
-    removed_dependencies = _dependency_summaries(base_snapshot["dependencies"] - target_snapshot["dependencies"])
+    new_dependencies = _dependency_summaries(
+        target_snapshot["dependencies"] - base_snapshot["dependencies"]
+    )
+    removed_dependencies = _dependency_summaries(
+        base_snapshot["dependencies"] - target_snapshot["dependencies"]
+    )
     new_cycles = _cycle_summaries(target_snapshot["cycles"] - base_snapshot["cycles"])
     removed_cycles = _cycle_summaries(base_snapshot["cycles"] - target_snapshot["cycles"])
 
     score_trend = _score_trend(base_result, target_result)
     service_level_changes = _service_level_changes(base_result, target_result)
-    risk_trend = _risk_trend(base_result.findings, target_result.findings, new_risks, resolved_risks, worsened_risks)
+    risk_trend = _risk_trend(
+        base_result.findings, target_result.findings, new_risks, resolved_risks, worsened_risks
+    )
 
     recommendations = _recommendations(
         new_risks=new_risks,
@@ -58,7 +68,9 @@ def compare_scan_results(
             "removed_services": sorted(base_snapshot["services"] - target_snapshot["services"]),
             "dependency_delta": len(new_dependencies) - len(removed_dependencies),
             "risk_delta": len(new_risks) - len(resolved_risks),
-            "summary": _summary_sentence(new_risks, resolved_risks, new_dependencies, removed_dependencies, score_trend),
+            "summary": _summary_sentence(
+                new_risks, resolved_risks, new_dependencies, removed_dependencies, score_trend
+            ),
         },
         risk_trend=risk_trend,
         score_trend=score_trend,
@@ -74,9 +86,15 @@ def compare_scan_results(
 def _snapshot(result: AnalysisResult) -> dict[str, Any]:
     return {
         "services": {service.name for service in result.services},
-        "dependencies": {_dependency_key(edge) for edge in result.graph.get("edges", []) if _dependency_key(edge)},
+        "dependencies": {
+            _dependency_key(edge) for edge in result.graph.get("edges", []) if _dependency_key(edge)
+        },
         "findings": {_finding_key(finding) for finding in result.findings},
-        "cycles": {_cycle_key(finding) for finding in result.findings if finding.type == FindingType.CYCLIC_DEPENDENCY},
+        "cycles": {
+            _cycle_key(finding)
+            for finding in result.findings
+            if finding.type == FindingType.CYCLIC_DEPENDENCY
+        },
     }
 
 
@@ -101,7 +119,9 @@ def _cycle_key(finding: Finding) -> tuple[str, ...]:
     return tuple(sorted(finding.services))
 
 
-def _finding_summaries(keys: set[tuple[str, tuple[str, ...]]], findings: list[Finding]) -> list[dict[str, Any]]:
+def _finding_summaries(
+    keys: set[tuple[str, tuple[str, ...]]], findings: list[Finding]
+) -> list[dict[str, Any]]:
     by_key = {_finding_key(finding): finding for finding in findings}
     summaries = []
     for key in sorted(keys):
@@ -112,7 +132,9 @@ def _finding_summaries(keys: set[tuple[str, tuple[str, ...]]], findings: list[Fi
                 "services": list(key[1]),
                 "severity": finding.severity.value if finding else "UNKNOWN",
                 "confidence": finding.confidence if finding else 0.0,
-                "description": finding.description if finding else "Risk changed between snapshots.",
+                "description": finding.description
+                if finding
+                else "Risk changed between snapshots.",
             }
         )
     return summaries
@@ -129,7 +151,9 @@ def _cycle_summaries(keys: set[tuple[str, ...]]) -> list[dict[str, Any]]:
     return [{"services": list(cycle), "length": len(cycle)} for cycle in sorted(keys)]
 
 
-def _worsened_risks(base_findings: list[Finding], target_findings: list[Finding]) -> list[dict[str, Any]]:
+def _worsened_risks(
+    base_findings: list[Finding], target_findings: list[Finding]
+) -> list[dict[str, Any]]:
     base_by_key = {_finding_key(finding): finding for finding in base_findings}
     target_by_key = {_finding_key(finding): finding for finding in target_findings}
     worsened = []
@@ -164,11 +188,15 @@ def _score_trend(base_result: AnalysisResult, target_result: AnalysisResult) -> 
             continue
         delta = round(after - before, 2)
         if abs(delta) >= 0.01:
-            service_deltas.append({"service": key[1], "previous": before, "current": after, "delta": delta})
+            service_deltas.append(
+                {"service": key[1], "previous": before, "current": after, "delta": delta}
+            )
     return {
         "system_previous": previous,
         "system_current": current,
-        "system_delta": round(current - previous, 2) if previous is not None and current is not None else None,
+        "system_delta": round(current - previous, 2)
+        if previous is not None and current is not None
+        else None,
         "improved_services": [item for item in service_deltas if item["delta"] > 0],
         "worsened_services": [item for item in service_deltas if item["delta"] < 0],
     }
@@ -179,19 +207,27 @@ def _scores_by_scope_target(result: AnalysisResult) -> dict[tuple[str, str], flo
     scores = {}
     for scope in ("service", "domain"):
         for score in health.get(scope, []):
-            scores[(str(score.get("scope", scope)), str(score.get("target", "")))] = float(score.get("score", 0.0))
+            scores[(str(score.get("scope", scope)), str(score.get("target", "")))] = float(
+                score.get("score", 0.0)
+            )
     system = health.get("system")
     if system:
         scores[("system", str(system.get("target", "system")))] = float(system.get("score", 0.0))
     return scores
 
 
-def _service_level_changes(base_result: AnalysisResult, target_result: AnalysisResult) -> list[dict[str, Any]]:
+def _service_level_changes(
+    base_result: AnalysisResult, target_result: AnalysisResult
+) -> list[dict[str, Any]]:
     base_services = {service.name: service for service in base_result.services}
     target_services = {service.name: service for service in target_result.services}
     finding_counts = {
-        "base": Counter(service for finding in base_result.findings for service in finding.services),
-        "target": Counter(service for finding in target_result.findings for service in finding.services),
+        "base": Counter(
+            service for finding in base_result.findings for service in finding.services
+        ),
+        "target": Counter(
+            service for finding in target_result.findings for service in finding.services
+        ),
     }
     changes = []
     for service in sorted(base_services.keys() | target_services.keys()):
@@ -211,8 +247,10 @@ def _service_level_changes(base_result: AnalysisResult, target_result: AnalysisR
                     "status": status,
                     "file_delta": file_delta,
                     "finding_delta": finding_delta,
-                    "endpoint_delta": (len(after.endpoints) if after else 0) - (len(before.endpoints) if before else 0),
-                    "database_delta": (len(after.databases) if after else 0) - (len(before.databases) if before else 0),
+                    "endpoint_delta": (len(after.endpoints) if after else 0)
+                    - (len(before.endpoints) if before else 0),
+                    "database_delta": (len(after.databases) if after else 0)
+                    - (len(before.databases) if before else 0),
                 }
             )
     return changes
@@ -243,17 +281,32 @@ def _risk_trend(
 def _recommendations(**context: Any) -> list[str]:
     recommendations = []
     if context["new_cycles"]:
-        recommendations.append("Prioritize newly introduced dependency cycles before further feature work.")
+        recommendations.append(
+            "Prioritize newly introduced dependency cycles before further feature work."
+        )
     if context["new_dependencies"]:
-        recommendations.append("Review new cross-service dependencies and confirm they preserve deployment independence.")
+        recommendations.append(
+            "Review new cross-service dependencies and confirm they preserve deployment independence."
+        )
     if context["worsened_risks"]:
-        recommendations.append("Investigate risks whose severity increased and assign remediation owners.")
-    if context["score_trend"].get("system_delta") is not None and context["score_trend"]["system_delta"] < 0:
-        recommendations.append("System health decreased; compare changed services and dependencies before accepting the architecture baseline.")
+        recommendations.append(
+            "Investigate risks whose severity increased and assign remediation owners."
+        )
+    if (
+        context["score_trend"].get("system_delta") is not None
+        and context["score_trend"]["system_delta"] < 0
+    ):
+        recommendations.append(
+            "System health decreased; compare changed services and dependencies before accepting the architecture baseline."
+        )
     if context["resolved_risks"] and not recommendations:
-        recommendations.append("Architecture risk improved; keep the current refactoring direction and monitor the next snapshot.")
+        recommendations.append(
+            "Architecture risk improved; keep the current refactoring direction and monitor the next snapshot."
+        )
     if not recommendations:
-        recommendations.append("No major architectural deterioration detected between these snapshots.")
+        recommendations.append(
+            "No major architectural deterioration detected between these snapshots."
+        )
     return recommendations
 
 
@@ -265,7 +318,9 @@ def _summary_sentence(
     score_trend: dict[str, Any],
 ) -> str:
     delta = score_trend.get("system_delta")
-    score_text = "system score unchanged" if delta in (None, 0) else f"system score changed by {delta:+.1f}"
+    score_text = (
+        "system score unchanged" if delta in (None, 0) else f"system score changed by {delta:+.1f}"
+    )
     return (
         f"{len(new_risks)} new risks, {len(resolved_risks)} resolved risks, "
         f"{len(new_dependencies)} new dependencies, {len(removed_dependencies)} removed dependencies; {score_text}."

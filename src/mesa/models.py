@@ -517,7 +517,9 @@ class ResearchEvaluationRecord(ResearchEvaluationRecordBase):
 
 class ResearchEvaluationDraft(ResearchEvaluationRecordBase):
     project_id: str
-    accuracy_mode: ResearchEvaluationAccuracyMode = ResearchEvaluationAccuracyMode.MANUAL_VALIDATION_REQUIRED
+    accuracy_mode: ResearchEvaluationAccuracyMode = (
+        ResearchEvaluationAccuracyMode.MANUAL_VALIDATION_REQUIRED
+    )
     matched_benchmark_id: str | None = None
     matched_benchmark_name: str | None = None
     precision: float | None = None

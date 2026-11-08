@@ -66,7 +66,6 @@ _LIVE_AI_SCHEMA = {
 }
 
 
-
 @dataclass(frozen=True)
 class _DocPage:
     path: str
@@ -107,15 +106,11 @@ def grounded_response_for_request(
     policies: list[PolicyRecord],
     comparison: EvolutionReport | None,
 ) -> AIExplainerResponse:
-    intent = intent or _resolve_intent(
-        payload, result is not None, comparison is not None
-    )
+    intent = intent or _resolve_intent(payload, result is not None, comparison is not None)
     if intent == AIExplainerIntent.DOC_QA:
         return _doc_answer(payload)
     if result is None and intent != AIExplainerIntent.COMPARE_SCANS:
-        return _missing_scan_response(
-            intent, payload.question or "No scan question provided."
-        )
+        return _missing_scan_response(intent, payload.question or "No scan question provided.")
     if intent == AIExplainerIntent.SCAN_SUMMARY:
         return _scan_summary_answer(result, scores)
     if intent == AIExplainerIntent.FINDING_EXPLANATION:
@@ -163,9 +158,7 @@ def finalize_response_with_live_ai(
             update={
                 "source": "mesa-grounded-explainer-fallback",
                 "limitations": grounded_response.limitations
-                + [
-                    f"Live AI fallback was used because the OpenAI request failed: {error}"
-                ],
+                + [f"Live AI fallback was used because the OpenAI request failed: {error}"],
             }
         )
 
@@ -179,9 +172,7 @@ def finalize_response_with_live_ai(
             update={
                 "source": "mesa-grounded-explainer-fallback",
                 "limitations": grounded_response.limitations
-                + [
-                    "Live AI fallback was used because no structured OpenAI response was returned."
-                ],
+                + ["Live AI fallback was used because no structured OpenAI response was returned."],
             }
         )
 
@@ -220,17 +211,13 @@ def stream_answer_text(
         return fallback, list(_chunk_text(fallback.answer))
 
     try:
-        streamed_chunks, answer = _stream_openai_answer_text(
-            payload, grounded_response, api_key
-        )
+        streamed_chunks, answer = _stream_openai_answer_text(payload, grounded_response, api_key)
     except Exception as error:
         fallback = grounded_response.model_copy(
             update={
                 "source": "mesa-grounded-explainer-fallback",
                 "limitations": grounded_response.limitations
-                + [
-                    f"Live AI fallback was used because the OpenAI stream failed: {error}"
-                ],
+                + [f"Live AI fallback was used because the OpenAI stream failed: {error}"],
             }
         )
         logger.warning(
@@ -270,9 +257,7 @@ def ai_status(*, probe: bool = True) -> AIExplainerStatus:
     if _hybrid_mode_enabled() and _ai_provider() == "anthropic":
         return _anthropic_status(probe=probe)
     mode = os.getenv("MESA_AI_MODE", "grounded").lower()
-    base_url = os.getenv("MESA_OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip(
-        "/"
-    )
+    base_url = os.getenv("MESA_OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     model = os.getenv("MESA_OPENAI_MODEL", "gpt-5.4-mini")
     live_enabled = _hybrid_mode_enabled()
     api_key = _openai_api_key()
@@ -348,9 +333,7 @@ def _call_openai_responses_api(
     grounded_response: AIExplainerResponse,
     api_key: str,
 ) -> AIExplainerResponse | None:
-    base_url = os.getenv("MESA_OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip(
-        "/"
-    )
+    base_url = os.getenv("MESA_OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     model = os.getenv("MESA_OPENAI_MODEL", "gpt-5.4-mini")
     timeout_seconds = float(os.getenv("MESA_OPENAI_TIMEOUT_SECONDS", "20"))
 
@@ -428,17 +411,14 @@ def _apply_live_ai_json(
             "limitations": _merge_lists(
                 grounded_response.limitations, parsed["limitations"], limit=5
             ),
-            "policy_document": parsed.get("policy_document")
-            or grounded_response.policy_document,
+            "policy_document": parsed.get("policy_document") or grounded_response.policy_document,
             "confidence": AIExplainerConfidence(parsed["confidence"]),
             "source": source,
         }
     )
 
 
-def _probe_openai_status(
-    api_key: str, base_url: str, model: str
-) -> tuple[AIConnectionState, str]:
+def _probe_openai_status(api_key: str, base_url: str, model: str) -> tuple[AIConnectionState, str]:
     request = urllib_request.Request(
         f"{base_url}/models/{model}",
         headers={"Authorization": f"Bearer {api_key}"},
@@ -488,9 +468,7 @@ def _stream_openai_answer_text(
     grounded_response: AIExplainerResponse,
     api_key: str,
 ) -> tuple[list[str], str]:
-    base_url = os.getenv("MESA_OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip(
-        "/"
-    )
+    base_url = os.getenv("MESA_OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     model = os.getenv("MESA_OPENAI_MODEL", "gpt-5.4-mini")
     timeout_seconds = float(os.getenv("MESA_OPENAI_TIMEOUT_SECONDS", "20"))
     prompt = _build_live_ai_stream_prompt(payload, grounded_response)
@@ -570,9 +548,7 @@ def _build_live_ai_prompt(
         "doc_query": payload.doc_query,
         "grounded_title": grounded_response.title,
         "grounded_answer": grounded_response.answer,
-        "evidence": [
-            item.model_dump(mode="json") for item in grounded_response.evidence
-        ],
+        "evidence": [item.model_dump(mode="json") for item in grounded_response.evidence],
         "suggestions": grounded_response.suggestions,
         "follow_up_questions": grounded_response.follow_up_questions,
         "limitations": grounded_response.limitations,
@@ -593,9 +569,7 @@ def _build_live_ai_stream_prompt(
         "question": payload.question,
         "title": grounded_response.title,
         "answer": grounded_response.answer,
-        "evidence": [
-            item.model_dump(mode="json") for item in grounded_response.evidence
-        ],
+        "evidence": [item.model_dump(mode="json") for item in grounded_response.evidence],
         "limitations": grounded_response.limitations,
     }
     return (
@@ -634,9 +608,7 @@ def _extract_output_text(payload_json: dict[str, object]) -> str:
 
 def _looks_like_placeholder_key(api_key: str) -> bool:
     lowered = api_key.strip().lower()
-    return (
-        lowered in _PLACEHOLDER_KEY_FRAGMENTS or "your_api" in lowered or "*" in api_key
-    )
+    return lowered in _PLACEHOLDER_KEY_FRAGMENTS or "your_api" in lowered or "*" in api_key
 
 
 def _api_key_hint(api_key: str | None) -> str | None:
@@ -740,9 +712,7 @@ def _resolve_intent(
         )
     ):
         return AIExplainerIntent.PRIORITIZE_FIXES
-    if any(
-        token in question for token in ("health", "score", "weakest dimension", "grade")
-    ):
+    if any(token in question for token in ("health", "score", "weakest dimension", "grade")):
         return AIExplainerIntent.HEALTH_SCORE_EXPLANATION
     if any(token in question for token in ("policy", "governance", "rule", "yaml")):
         return AIExplainerIntent.GOVERNANCE_POLICY_HELP
@@ -761,14 +731,10 @@ def _resolve_intent(
     return AIExplainerIntent.SCAN_SUMMARY if has_scan else AIExplainerIntent.DOC_QA
 
 
-def _scan_summary_answer(
-    result: AnalysisResult, scores: list[HealthScore]
-) -> AIExplainerResponse:
+def _scan_summary_answer(result: AnalysisResult, scores: list[HealthScore]) -> AIExplainerResponse:
     ordered = _prioritized_findings(result.findings)
     top = ordered[:3]
-    system_score = _score_for(scores, "system", "system") or _summary_system_score(
-        result
-    )
+    system_score = _score_for(scores, "system", "system") or _summary_system_score(result)
     evidence = [
         AIExplainerEvidence(
             kind="scan",
@@ -817,15 +783,11 @@ def _scan_summary_answer(
             "This summary is based on static analysis evidence only.",
             "MESA highlights likely architecture risks, not confirmed runtime incidents.",
         ],
-        confidence=(
-            AIExplainerConfidence.HIGH if top else AIExplainerConfidence.MODERATE
-        ),
+        confidence=(AIExplainerConfidence.HIGH if top else AIExplainerConfidence.MODERATE),
     )
 
 
-def _finding_answer(
-    payload: AIExplainerRequest, result: AnalysisResult
-) -> AIExplainerResponse:
+def _finding_answer(payload: AIExplainerRequest, result: AnalysisResult) -> AIExplainerResponse:
     finding = _find_finding(result.findings, payload.finding_id)
     if finding is None:
         return AIExplainerResponse(
@@ -835,9 +797,7 @@ def _finding_answer(
             evidence=[],
             suggestions=["Select a finding from the dashboard and try again."],
             follow_up_questions=["Summarize this scan.", "What should I fix first?"],
-            limitations=[
-                "The requested finding id was not present in the loaded scan."
-            ],
+            limitations=["The requested finding id was not present in the loaded scan."],
             confidence=AIExplainerConfidence.LOW,
         )
 
@@ -865,9 +825,7 @@ def _finding_answer(
         answer=answer,
         evidence=evidence,
         suggestions=(
-            recommendation.refactoring_steps[:3]
-            if recommendation
-            else [finding.recommendation]
+            recommendation.refactoring_steps[:3] if recommendation else [finding.recommendation]
         ),
         follow_up_questions=[
             "What should I fix first overall?",
@@ -948,16 +906,12 @@ def _health_answer(
                 "Try the system health summary or choose a service score from the results panel."
             ],
             follow_up_questions=["Summarize this scan.", "What should I fix first?"],
-            limitations=[
-                "The requested score target was not present in the scan summary."
-            ],
+            limitations=["The requested score target was not present in the scan summary."],
             confidence=AIExplainerConfidence.LOW,
         )
 
     weakest = sorted(score.breakdown.items(), key=lambda item: item[1])[:3]
-    weak_text = ", ".join(
-        f"{_pretty_label(name)} ({value:.0f})" for name, value in weakest
-    )
+    weak_text = ", ".join(f"{_pretty_label(name)} ({value:.0f})" for name, value in weakest)
     return AIExplainerResponse(
         intent=AIExplainerIntent.HEALTH_SCORE_EXPLANATION,
         title=f"{_pretty_label(score.scope)} health for {score.target}",
@@ -1112,12 +1066,8 @@ def _governance_answer(
             "How do I write better policy rules?",
             "Summarize this scan.",
         ],
-        limitations=[
-            "Governance checks depend on the rules you configured for the project."
-        ],
-        confidence=(
-            AIExplainerConfidence.HIGH if policies else AIExplainerConfidence.MODERATE
-        ),
+        limitations=["Governance checks depend on the rules you configured for the project."],
+        confidence=(AIExplainerConfidence.HIGH if policies else AIExplainerConfidence.MODERATE),
     )
 
 
@@ -1169,9 +1119,7 @@ def _policy_draft_answer(
                 "    description: Prevent direct service dependency cycles.",
             ]
         )
-        suggestions.append(
-            "Start with one or two high-value policy rules before adding more."
-        )
+        suggestions.append("Start with one or two high-value policy rules before adding more.")
 
     return AIExplainerResponse(
         intent=AIExplainerIntent.POLICY_WRITING_ASSISTANCE,
@@ -1209,9 +1157,7 @@ def _policy_draft_answer(
             "Policy drafts should be reviewed by a human before enforcement.",
         ],
         policy_document="\n".join(draft_lines) + "\n",
-        confidence=(
-            AIExplainerConfidence.MODERATE if findings else AIExplainerConfidence.LOW
-        ),
+        confidence=(AIExplainerConfidence.MODERATE if findings else AIExplainerConfidence.LOW),
     )
 
 
@@ -1268,9 +1214,7 @@ def _doc_answer(payload: AIExplainerRequest) -> AIExplainerResponse:
     )
 
 
-def _missing_scan_response(
-    intent: AIExplainerIntent, question: str
-) -> AIExplainerResponse:
+def _missing_scan_response(intent: AIExplainerIntent, question: str) -> AIExplainerResponse:
     docs = _search_docs(question or "user guide")
     evidence = [
         AIExplainerEvidence(
@@ -1339,9 +1283,7 @@ def _resolve_score(
     return None
 
 
-def _score_for(
-    scores: list[HealthScore], scope: str, target: str
-) -> HealthScore | None:
+def _score_for(scores: list[HealthScore], scope: str, target: str) -> HealthScore | None:
     for score in scores:
         if score.scope == scope and score.target == target:
             return score
@@ -1438,9 +1380,7 @@ def _short_evidence_phrase(finding: Finding) -> str:
     )
 
 
-def _top_suggestions_from_findings(
-    findings: list[Finding], limit: int = 3
-) -> list[str]:
+def _top_suggestions_from_findings(findings: list[Finding], limit: int = 3) -> list[str]:
     suggestions: list[str] = []
     for finding in findings:
         if finding.recommendations:
@@ -1610,9 +1550,7 @@ def _anthropic_request(prompt: str, system: str) -> dict:
     }
 
 
-def _anthropic_fallback(
-    grounded_response: AIExplainerResponse, reason: str
-) -> AIExplainerResponse:
+def _anthropic_fallback(grounded_response: AIExplainerResponse, reason: str) -> AIExplainerResponse:
     logger.warning(
         "MESA AI fallback: Claude request failed for intent=%s model=%s error=%s",
         grounded_response.intent.value,
@@ -1736,16 +1674,25 @@ def _anthropic_status(*, probe: bool) -> AIExplainerStatus:
             f"Live AI is ready. Anthropic accepted the configured key for model {model}.",
         )
     except anthropic.AuthenticationError:
-        state, message = AIConnectionState.INVALID_API_KEY, "Anthropic rejected the configured API key."
+        state, message = (
+            AIConnectionState.INVALID_API_KEY,
+            "Anthropic rejected the configured API key.",
+        )
     except anthropic.PermissionDeniedError:
-        state, message = AIConnectionState.ACCESS_DENIED, "Anthropic denied access to this model or account."
+        state, message = (
+            AIConnectionState.ACCESS_DENIED,
+            "Anthropic denied access to this model or account.",
+        )
     except anthropic.NotFoundError:
         state, message = (
             AIConnectionState.MODEL_UNAVAILABLE,
             f"The configured model '{model}' was not available from Anthropic.",
         )
     except anthropic.APIStatusError as error:
-        state, message = AIConnectionState.CONNECTION_ERROR, f"Anthropic probe failed with HTTP {error.status_code}."
+        state, message = (
+            AIConnectionState.CONNECTION_ERROR,
+            f"Anthropic probe failed with HTTP {error.status_code}.",
+        )
     except anthropic.APIConnectionError as error:
         state, message = AIConnectionState.CONNECTION_ERROR, f"Could not reach Anthropic: {error}"
     return AIExplainerStatus(**base, state=state, message=message)

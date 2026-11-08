@@ -65,7 +65,6 @@ def _count_by(items: list, attr: str) -> dict[str, int]:
     return counts
 
 
-
 def _attach_linked_finding_counts(graph, findings: list) -> None:
     counts: dict[str, int] = {}
     for finding in findings:

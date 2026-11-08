@@ -35,4 +35,7 @@ def test_demo_projects_show_before_and_after_improvement() -> None:
     assert FindingType.HARD_CODED_SERVICE_DEPENDENCY not in fixed_types
 
     assert len(broken.findings) > len(fixed.findings)
-    assert broken.summary["health_scores"]["system"]["score"] < fixed.summary["health_scores"]["system"]["score"]
+    assert (
+        broken.summary["health_scores"]["system"]["score"]
+        < fixed.summary["health_scores"]["system"]["score"]
+    )

@@ -264,7 +264,9 @@ def run_ai_baseline(
     """
     caller = _PROVIDER_CALLERS.get(provider)
     if caller is None:
-        raise ValueError(f"Unknown provider '{provider}'; expected one of {sorted(_PROVIDER_CALLERS)}.")
+        raise ValueError(
+            f"Unknown provider '{provider}'; expected one of {sorted(_PROVIDER_CALLERS)}."
+        )
 
     resolved_key = api_key
     if resolved_key is None:
@@ -373,9 +375,12 @@ def _merge_ai_baseline_reports(
     existing: dict[str, Any] | None, new_report: dict[str, Any]
 ) -> dict[str, Any]:
     if existing is None:
-        return {**new_report, "systems": [
-            {"benchmark": new_report["benchmark"], **system} for system in new_report["systems"]
-        ]}
+        return {
+            **new_report,
+            "systems": [
+                {"benchmark": new_report["benchmark"], **system} for system in new_report["systems"]
+            ],
+        }
 
     systems_by_id = {system["id"]: system for system in existing.get("systems", [])}
     for system in new_report["systems"]:

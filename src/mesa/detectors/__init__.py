@@ -12,4 +12,3 @@ __all__ = [
     "score_god_services",
     "SharedDatabaseDetector",
 ]
-

@@ -11,4 +11,3 @@ class Detector(ABC):
     @abstractmethod
     def detect(self, graph: nx.MultiDiGraph) -> list[Finding]:
         raise NotImplementedError
-

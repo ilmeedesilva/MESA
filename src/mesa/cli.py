@@ -52,7 +52,9 @@ def gate(
         help="Optional previous MESA JSON report for new-risk comparison.",
     ),
     output: Path | None = typer.Option(None, "--output", "-o", help="Write gate JSON to file."),
-    fail: bool = typer.Option(True, "--fail/--no-fail", help="Exit with code 1 when the gate fails."),
+    fail: bool = typer.Option(
+        True, "--fail/--no-fail", help="Exit with code 1 when the gate fails."
+    ),
 ) -> None:
     result = analyze_services([str(path) for path in service_paths], chatty_threshold)
     baseline = _load_analysis_report(baseline_report) if baseline_report else None
@@ -74,7 +76,9 @@ def gate(
 @app.command()
 def evaluate(
     benchmark: Path = typer.Argument(..., help="Ground-truth benchmark YAML file."),
-    output_dir: Path = typer.Option(Path("evaluation-results"), "--output-dir", "-o", help="Directory for CSV/JSON metrics."),
+    output_dir: Path = typer.Option(
+        Path("evaluation-results"), "--output-dir", "-o", help="Directory for CSV/JSON metrics."
+    ),
     chatty_threshold: int = typer.Option(3, help="Static call-site threshold for chatty services."),
 ) -> None:
     report = evaluate_benchmark(benchmark, chatty_threshold=chatty_threshold)
@@ -111,11 +115,20 @@ def evaluate(
 @app.command("evaluate-ai-baseline")
 def evaluate_ai_baseline(
     benchmark: Path = typer.Argument(..., help="Ground-truth benchmark YAML file."),
-    systems: str = typer.Option(..., "--systems", help="Comma-separated system ids to run, e.g. god-service,cyclic-dependencies."),
+    systems: str = typer.Option(
+        ...,
+        "--systems",
+        help="Comma-separated system ids to run, e.g. god-service,cyclic-dependencies.",
+    ),
     runs: int = typer.Option(5, "--runs", help="Number of repeated runs per system."),
-    provider: str = typer.Option("openai", "--provider", help="Which LLM API to call: openai or anthropic."),
+    provider: str = typer.Option(
+        "openai", "--provider", help="Which LLM API to call: openai or anthropic."
+    ),
     output_dir: Path = typer.Option(
-        Path("evaluation-results/ai-baseline-comparison"), "--output-dir", "-o", help="Directory for JSON/Markdown results."
+        Path("evaluation-results/ai-baseline-comparison"),
+        "--output-dir",
+        "-o",
+        help="Directory for JSON/Markdown results.",
     ),
 ) -> None:
     """Prompt a general-purpose LLM directly (no MESA) against the same benchmark

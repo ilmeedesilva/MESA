@@ -144,7 +144,11 @@ def rule_based_recommendations(finding: Finding) -> list[FindingRecommendation]:
         ]
 
     if finding.type == FindingType.GOVERNANCE_POLICY_VIOLATION:
-        policy_name = finding.evidence[0].get("policy_name", "architecture policy") if finding.evidence else "architecture policy"
+        policy_name = (
+            finding.evidence[0].get("policy_name", "architecture policy")
+            if finding.evidence
+            else "architecture policy"
+        )
         return [
             FindingRecommendation(
                 root_cause=(
@@ -237,7 +241,10 @@ def _llm_refine_if_enabled(
     _ = ChatPromptTemplate
     _ = END
     _ = StateGraph
-    return [recommendation.model_copy(update={"source": "rule-based-llm-ready"}) for recommendation in recommendations]
+    return [
+        recommendation.model_copy(update={"source": "rule-based-llm-ready"})
+        for recommendation in recommendations
+    ]
 
 
 def _affected_files(evidence: list[dict[str, Any]]) -> list[str]:

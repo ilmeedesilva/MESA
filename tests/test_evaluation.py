@@ -38,8 +38,15 @@ def test_evaluation_runner_calculates_research_metrics() -> None:
     assert report["explanations"]["overall"]["helpfulness_score"] is not None
     assert report["recommendations"]["overall"]["system_count"] >= 1
     assert report["recommendations"]["overall"]["usefulness_score"] is not None
-    assert report["evaluation_notes"]["track_summary"]["detector_quality_is_separate_from_explanation_quality"] is True
-    phase_i_system = next(system for system in report["phase_i_systems"] if system["id"] == "chatty-services")
+    assert (
+        report["evaluation_notes"]["track_summary"][
+            "detector_quality_is_separate_from_explanation_quality"
+        ]
+        is True
+    )
+    phase_i_system = next(
+        system for system in report["phase_i_systems"] if system["id"] == "chatty-services"
+    )
     assert phase_i_system["discovery"]["predicted_candidates"]
     assert phase_i_system["explanations"]["cases"]
     assert phase_i_system["recommendations"]["finding_count"] >= 1
@@ -73,7 +80,10 @@ def test_list_available_benchmarks_includes_known_files_and_excludes_template() 
 
 
 def test_resolve_benchmark_path_rejects_unlisted_and_traversal_ids() -> None:
-    assert resolve_benchmark_path("ground_truth") == (ROOT / "benchmarks" / "ground_truth.yml").resolve()
+    assert (
+        resolve_benchmark_path("ground_truth")
+        == (ROOT / "benchmarks" / "ground_truth.yml").resolve()
+    )
     assert resolve_benchmark_path("public_repo_manual_review_template") is None
     assert resolve_benchmark_path("../pyproject") is None
     assert resolve_benchmark_path("does-not-exist") is None
@@ -119,7 +129,14 @@ def test_find_matching_ground_truth_system_searches_every_registered_benchmark()
     assert match["system_id"] == "cyclic-dependencies"
 
     sock_shop_services = [
-        "catalogue", "carts", "orders", "payment", "shipping", "user", "queue-master", "front-end",
+        "catalogue",
+        "carts",
+        "orders",
+        "payment",
+        "shipping",
+        "user",
+        "queue-master",
+        "front-end",
     ]
     sock_shop_paths = [
         str((benchmarks_dir / "real-repos" / "sock-shop" / name).resolve())
@@ -156,10 +173,14 @@ def test_benchmarks_dir_honours_mesa_workspace_root_override(monkeypatch) -> Non
     assert missing_benchmark_service_paths(ROOT / "benchmarks" / "ground_truth.yml") == []
 
 
-def test_load_ai_baseline_comparison_returns_none_when_no_report_exists(tmp_path, monkeypatch) -> None:
+def test_load_ai_baseline_comparison_returns_none_when_no_report_exists(
+    tmp_path, monkeypatch
+) -> None:
     import mesa.evaluation.runner as runner_module
 
-    monkeypatch.setattr(runner_module, "AI_BASELINE_COMPARISON_PATH", tmp_path / "does_not_exist.json")
+    monkeypatch.setattr(
+        runner_module, "AI_BASELINE_COMPARISON_PATH", tmp_path / "does_not_exist.json"
+    )
 
     assert load_ai_baseline_comparison() is None
 
@@ -176,26 +197,38 @@ def test_load_ai_baseline_comparison_reads_the_exported_report(tmp_path, monkeyp
     assert report == {"benchmark": "ground_truth.yml", "systems": []}
 
 
-def test_load_ai_baseline_comparisons_reads_one_report_per_model_directory(tmp_path, monkeypatch) -> None:
+def test_load_ai_baseline_comparisons_reads_one_report_per_model_directory(
+    tmp_path, monkeypatch
+) -> None:
     import mesa.evaluation.runner as runner_module
     from mesa.evaluation import load_ai_baseline_comparisons
 
-    for directory, model in (("ai-baseline-comparison", "claude-sonnet-5"), ("ai-baseline-comparison-opus5", "claude-opus-5")):
+    for directory, model in (
+        ("ai-baseline-comparison", "claude-sonnet-5"),
+        ("ai-baseline-comparison-opus5", "claude-opus-5"),
+    ):
         (tmp_path / directory).mkdir()
         (tmp_path / directory / "ai_baseline_comparison.json").write_text(
             f'{{"model": "{model}", "systems": []}}', encoding="utf-8"
         )
     (tmp_path / "ai-baseline-comparison-broken").mkdir()
-    (tmp_path / "ai-baseline-comparison-broken" / "ai_baseline_comparison.json").write_text("{", encoding="utf-8")
+    (tmp_path / "ai-baseline-comparison-broken" / "ai_baseline_comparison.json").write_text(
+        "{", encoding="utf-8"
+    )
     monkeypatch.setattr(runner_module, "EVALUATION_RESULTS_DIR", tmp_path)
 
     reports = load_ai_baseline_comparisons()
 
     assert [report["model"] for report in reports] == ["claude-sonnet-5", "claude-opus-5"]
-    assert [report["results_dir"] for report in reports] == ["ai-baseline-comparison", "ai-baseline-comparison-opus5"]
+    assert [report["results_dir"] for report in reports] == [
+        "ai-baseline-comparison",
+        "ai-baseline-comparison-opus5",
+    ]
 
 
-def test_load_ai_baseline_comparisons_returns_empty_list_when_nothing_exported(tmp_path, monkeypatch) -> None:
+def test_load_ai_baseline_comparisons_returns_empty_list_when_nothing_exported(
+    tmp_path, monkeypatch
+) -> None:
     import mesa.evaluation.runner as runner_module
     from mesa.evaluation import load_ai_baseline_comparisons
 

@@ -150,7 +150,9 @@ def _score_service(
     data = graph.nodes[service_name]
     metrics = _metrics_for(graph, service_name, service_names, data)
     contributions = {
-        "api_exposure": _weighted(metrics["api_count"], NORMALIZERS["api_count"], WEIGHTS["api_exposure"]),
+        "api_exposure": _weighted(
+            metrics["api_count"], NORMALIZERS["api_count"], WEIGHTS["api_exposure"]
+        ),
         "inbound_dependencies": _weighted(
             metrics["inbound_dependencies"],
             NORMALIZERS["inbound_dependencies"],
@@ -164,7 +166,9 @@ def _score_service(
         "database_ownership": _weighted(
             metrics["database_count"], NORMALIZERS["database_count"], WEIGHTS["database_ownership"]
         ),
-        "file_volume": _weighted(metrics["file_count"], NORMALIZERS["file_count"], WEIGHTS["file_volume"]),
+        "file_volume": _weighted(
+            metrics["file_count"], NORMALIZERS["file_count"], WEIGHTS["file_volume"]
+        ),
         "domain_breadth": _weighted(
             metrics["domain_keyword_count"],
             NORMALIZERS["domain_keyword_count"],
@@ -194,18 +198,22 @@ def _metrics_for(
     inbound_sources = {
         source
         for source, _, edge_data in graph.in_edges(service_name, data=True)
-        if graph.nodes[source].get("type") == "service" and edge_data.get("type") in _SERVICE_EDGE_TYPES
+        if graph.nodes[source].get("type") == "service"
+        and edge_data.get("type") in _SERVICE_EDGE_TYPES
     }
     outbound_targets = {
         target
         for _, target, edge_data in graph.out_edges(service_name, data=True)
-        if graph.nodes[target].get("type") == "service" and edge_data.get("type") in _SERVICE_EDGE_TYPES
+        if graph.nodes[target].get("type") == "service"
+        and edge_data.get("type") in _SERVICE_EDGE_TYPES
     }
     linked_findings = int(data.get("linked_findings", 0))
     service_count = max(len(service_names), 1)
     centrality_score = 0.0
     if service_count > 1:
-        centrality_score = min((len(inbound_sources) + len(outbound_targets)) / (2 * (service_count - 1)), 1.0)
+        centrality_score = min(
+            (len(inbound_sources) + len(outbound_targets)) / (2 * (service_count - 1)), 1.0
+        )
 
     domain_keywords = data.get("domain_keywords", []) or []
     return {
@@ -252,13 +260,17 @@ def _explanation(service_name: str, metrics: dict[str, Any]) -> str:
     if metrics["linked_findings"] >= 2:
         drivers.append(f"is linked to {metrics['linked_findings']} existing findings")
     if not drivers:
-        drivers.append("has moderate architectural breadth but remains below the high-risk threshold")
+        drivers.append(
+            "has moderate architectural breadth but remains below the high-risk threshold"
+        )
     return f"{service_name} " + ", ".join(drivers) + "."
 
 
 def _recommendation(service_name: str, metrics: dict[str, Any]) -> str:
     domains = metrics.get("domain_keywords", [])[:6]
-    domain_hint = f" Start by grouping capabilities around: {', '.join(domains)}." if domains else ""
+    domain_hint = (
+        f" Start by grouping capabilities around: {', '.join(domains)}." if domains else ""
+    )
     return (
         f"Review {service_name} for responsibility boundaries. Split cohesive capabilities into "
         "separate services or modules, move read-heavy APIs behind query/read models, reduce direct "

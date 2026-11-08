@@ -18,7 +18,11 @@ from mesa.analysis.explainer import (
 )
 from mesa.analysis.fitness_gate import evaluate_architecture_gate
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
-from mesa.analysis.research_records import export_records, record_create_from_scan, record_draft_from_scan
+from mesa.analysis.research_records import (
+    export_records,
+    record_create_from_scan,
+    record_draft_from_scan,
+)
 from mesa.analysis.roadmap import build_remediation_roadmap
 from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.evaluation import (
@@ -171,7 +175,7 @@ def export_research_records(request: Request, format: str = "csv"):
     if export_format == "json":
         return json.loads(content)
     media_type = "text/csv" if export_format == "csv" else "text/markdown"
-    filename = f"mesa-research-records.{ 'csv' if export_format == 'csv' else 'md' }"
+    filename = f"mesa-research-records.{'csv' if export_format == 'csv' else 'md'}"
     return PlainTextResponse(
         content,
         media_type=media_type,
@@ -204,7 +208,11 @@ def delete_research_record(record_id: str, request: Request) -> None:
         raise HTTPException(status_code=404, detail="Research record not found")
 
 
-@app.post("/research-records/from-scan/{scan_id}", response_model=ResearchEvaluationRecord, status_code=201)
+@app.post(
+    "/research-records/from-scan/{scan_id}",
+    response_model=ResearchEvaluationRecord,
+    status_code=201,
+)
 def create_research_record_from_scan(scan_id: str, request: Request) -> ResearchEvaluationRecord:
     repository = get_repository(request)
     scan = repository.get_scan(scan_id)
@@ -247,8 +255,6 @@ def update_project_setup(project_id: str, payload: ProjectSetup, request: Reques
     if repository.get_project(project_id) is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return repository.upsert_project_setup(project_id, payload)
-
-
 
 
 @app.get("/projects/{project_id}/policies", response_model=list[PolicyRecord])
@@ -295,7 +301,9 @@ def import_project_policies(
 
 
 @app.post("/projects/{project_id}/scans", response_model=PersistedScanResult, status_code=201)
-def run_project_scan(project_id: str, payload: RunScanRequest, request: Request) -> PersistedScanResult:
+def run_project_scan(
+    project_id: str, payload: RunScanRequest, request: Request
+) -> PersistedScanResult:
     repository = get_repository(request)
     if repository.get_project(project_id) is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -430,8 +438,6 @@ def get_scan_history(project_id: str, request: Request) -> list[ScanRecord]:
     return repository.list_scans(project_id)
 
 
-
-
 @app.get("/projects/{project_id}/snapshots", response_model=list[SnapshotRecord])
 def get_project_snapshots(project_id: str, request: Request) -> list[SnapshotRecord]:
     repository = get_repository(request)
@@ -454,7 +460,9 @@ def get_project_evolution_timeline(project_id: str, request: Request) -> list[Ev
         if previous_result is None or current_result is None:
             continue
         reports.append(
-            compare_scan_results(project_id, previous.id, previous_result, current.id, current_result)
+            compare_scan_results(
+                project_id, previous.id, previous_result, current.id, current_result
+            )
         )
     return reports
 
@@ -481,7 +489,9 @@ def compare_project_snapshots(
     target_result = repository.get_scan_result(target_scan_id)
     if base_result is None or target_result is None:
         raise HTTPException(status_code=404, detail="Scan report not found")
-    return compare_scan_results(project_id, base_scan_id, base_result, target_scan_id, target_result)
+    return compare_scan_results(
+        project_id, base_scan_id, base_result, target_scan_id, target_result
+    )
 
 
 @app.get("/scans/{scan_id}", response_model=PersistedScanResult)
@@ -596,7 +606,9 @@ def get_scan_dependency_paths(
     repository = get_repository(request)
     if repository.get_scan(scan_id) is None:
         raise HTTPException(status_code=404, detail="Scan not found")
-    return require_architecture_store(request).find_dependency_paths(scan_id, source, target, max_depth)
+    return require_architecture_store(request).find_dependency_paths(
+        scan_id, source, target, max_depth
+    )
 
 
 @app.get("/scans/{scan_id}/graph/cycles")

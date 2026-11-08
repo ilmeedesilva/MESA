@@ -141,11 +141,15 @@ def discover_service_candidates(root_path: Path) -> list[ServiceDiscoveryCandida
 
         inferred_by_suffix = _LANGUAGE_BY_SUFFIX.get(file_path.suffix.lower())
         if inferred_by_suffix:
-            candidate.language_votes[inferred_by_suffix] = candidate.language_votes.get(inferred_by_suffix, 0) + 1
+            candidate.language_votes[inferred_by_suffix] = (
+                candidate.language_votes.get(inferred_by_suffix, 0) + 1
+            )
 
         _add_content_signals(root_path, file_path, candidate, accumulators)
 
-        if not candidate.name_pattern_boost_applied and _looks_like_service_directory(file_path.parent.name):
+        if not candidate.name_pattern_boost_applied and _looks_like_service_directory(
+            file_path.parent.name
+        ):
             _add_signal(
                 candidate,
                 0.08,
@@ -195,7 +199,10 @@ def _candidate_path_for_file(root_path: Path, file_path: Path) -> Path:
 def _is_nested_deployment_manifest(file_path: Path) -> bool:
     if file_path.suffix.lower() not in {".yml", ".yaml"}:
         return False
-    return any(part.lower() in {"k8s", "kubernetes", "manifests", "deployments"} for part in file_path.parts)
+    return any(
+        part.lower() in {"k8s", "kubernetes", "manifests", "deployments"}
+        for part in file_path.parts
+    )
 
 
 def _add_signal(
@@ -243,7 +250,9 @@ def _add_content_signals(
                 manifest=file_path.name,
             )
 
-    if file_path.suffix.lower() in {".yml", ".yaml"} and _looks_like_kubernetes_manifest(lowered_content):
+    if file_path.suffix.lower() in {".yml", ".yaml"} and _looks_like_kubernetes_manifest(
+        lowered_content
+    ):
         _add_signal(
             candidate,
             0.22,
@@ -255,9 +264,15 @@ def _add_content_signals(
     if lowered_name == "package.json":
         package_signal = _package_framework_signal(lowered_content)
         if package_signal:
-            language = "typescript" if "typescript" in lowered_content or "@nestjs/" in lowered_content else "javascript"
+            language = (
+                "typescript"
+                if "typescript" in lowered_content or "@nestjs/" in lowered_content
+                else "javascript"
+            )
             candidate.language_votes[language] = candidate.language_votes.get(language, 0) + 3
-            _add_signal(candidate, 0.28, "framework_matches", package_signal, manifest=file_path.name)
+            _add_signal(
+                candidate, 0.28, "framework_matches", package_signal, manifest=file_path.name
+            )
 
     if lowered_name == "pom.xml" and "spring-boot" in lowered_content:
         candidate.language_votes["java"] = candidate.language_votes.get("java", 0) + 3
@@ -313,9 +328,8 @@ def _materialize_candidate(candidate: _CandidateAccumulator) -> ServiceDiscovery
         absolute_path=candidate.absolute_path,
         language=language,
         confidence=confidence,
-        selected_by_default=confidence >= _DEFAULT_SELECTION_CONFIDENCE or (
-            bool(candidate.manifests) and bool(candidate.entrypoints)
-        ),
+        selected_by_default=confidence >= _DEFAULT_SELECTION_CONFIDENCE
+        or (bool(candidate.manifests) and bool(candidate.entrypoints)),
         reasons=reasons,
         manifests=sorted(set(candidate.manifests)),
         entrypoints=sorted(set(candidate.entrypoints)),
@@ -324,9 +338,7 @@ def _materialize_candidate(candidate: _CandidateAccumulator) -> ServiceDiscovery
 
 
 def _category_bonus(candidate: _CandidateAccumulator) -> float:
-    signal_categories = sum(
-        1 for count in candidate.signal_counts.values() if count > 0
-    )
+    signal_categories = sum(1 for count in candidate.signal_counts.values() if count > 0)
     if signal_categories >= 4:
         return 0.12
     if signal_categories >= 2:
@@ -342,10 +354,17 @@ def _winning_language(language_votes: dict[str, int]) -> str:
 
 def _looks_like_service_directory(name: str) -> bool:
     lowered = name.lower()
-    return lowered.endswith("-service") or lowered.endswith("-svc") or lowered.endswith("service") or lowered.endswith("api")
+    return (
+        lowered.endswith("-service")
+        or lowered.endswith("-svc")
+        or lowered.endswith("service")
+        or lowered.endswith("api")
+    )
 
 
-def _docker_compose_service_contexts(root_path: Path, compose_file: Path, content: str) -> list[Path]:
+def _docker_compose_service_contexts(
+    root_path: Path, compose_file: Path, content: str
+) -> list[Path]:
     contexts: list[Path] = []
     lines = content.splitlines()
     for index, line in enumerate(lines):
@@ -357,7 +376,7 @@ def _docker_compose_service_contexts(root_path: Path, compose_file: Path, conten
             continue
         indent = len(line) - len(line.lstrip(" "))
         block_lines: list[str] = []
-        for nested in lines[index + 1:]:
+        for nested in lines[index + 1 :]:
             if not nested.strip():
                 continue
             nested_indent = len(nested) - len(nested.lstrip(" "))
@@ -415,7 +434,12 @@ def _looks_like_openapi_file(file_path: Path, content: str) -> bool:
     lowered_name = file_path.name.lower()
     if lowered_name.startswith("openapi") or lowered_name.startswith("swagger"):
         return True
-    return "openapi:" in content or '"openapi"' in content or "swagger:" in content or '"swagger"' in content
+    return (
+        "openapi:" in content
+        or '"openapi"' in content
+        or "swagger:" in content
+        or '"swagger"' in content
+    )
 
 
 def _contains_service_port_config(content: str) -> bool:
@@ -429,11 +453,21 @@ def _contains_environment_config(content: str) -> bool:
 
 
 def _contains_database_config(content: str) -> bool:
-    return any(token in content for token in ["postgres://", "postgresql://", "mysql://", "mongodb://", "redis://", "jdbc:"])
+    return any(
+        token in content
+        for token in ["postgres://", "postgresql://", "mysql://", "mongodb://", "redis://", "jdbc:"]
+    )
 
 
 def _is_small_text_file(file_path: Path) -> bool:
-    if file_path.suffix.lower() not in {".json", ".xml", ".yml", ".yaml", ".properties", ".env"} and file_path.name not in {
+    if file_path.suffix.lower() not in {
+        ".json",
+        ".xml",
+        ".yml",
+        ".yaml",
+        ".properties",
+        ".env",
+    } and file_path.name not in {
         "package.json",
         "pom.xml",
         "Dockerfile",

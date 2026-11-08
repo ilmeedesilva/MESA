@@ -31,12 +31,27 @@ SERVICE_HOST_PATTERN = re.compile(
     r"^[a-z0-9][a-z0-9-]*(?:-service|-svc|service)(?:\..*)?$", re.IGNORECASE
 )
 ANALYZED_TEXT_SUFFIXES = {
-    ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".go", ".yml", ".yaml",
-    ".properties", ".json", ".xml",
+    ".py",
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".java",
+    ".go",
+    ".yml",
+    ".yaml",
+    ".properties",
+    ".json",
+    ".xml",
 }
 ANALYZED_TEXT_FILENAMES = {
-    ".env", "docker-compose.yml", "docker-compose.yaml", "application.yml",
-    "application.yaml", "package.json", "pom.xml",
+    ".env",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "application.yml",
+    "application.yaml",
+    "package.json",
+    "pom.xml",
 }
 _LANGUAGE_MANIFEST_FILES = {
     "go.mod": "go",
@@ -55,10 +70,36 @@ _LANGUAGE_SUFFIXES = {
     ".go": "go",
 }
 DOMAIN_STOPWORDS = {
-    "api", "app", "application", "base", "client", "config", "controller", "data",
-    "database", "db", "docker", "env", "error", "handler", "http", "internal", "main",
-    "model", "module", "payload", "request", "response", "route", "service", "src",
-    "test", "tests", "url", "utils", "view",
+    "api",
+    "app",
+    "application",
+    "base",
+    "client",
+    "config",
+    "controller",
+    "data",
+    "database",
+    "db",
+    "docker",
+    "env",
+    "error",
+    "handler",
+    "http",
+    "internal",
+    "main",
+    "model",
+    "module",
+    "payload",
+    "request",
+    "response",
+    "route",
+    "service",
+    "src",
+    "test",
+    "tests",
+    "url",
+    "utils",
+    "view",
 }
 ENV_PATTERN = re.compile(
     r"^\s*(?:export\s+)?(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<value>[^#\n]+)",
@@ -246,7 +287,11 @@ def extract_service_facts(
             _extract_openapi_file(file_path, facts)
         if _is_analyzed_text_file(file_path):
             _extract_hard_coded_dependencies(file_path, facts)
-        if file_path.name.startswith(".env") or file_path.suffix in {".yml", ".yaml", ".properties"}:
+        if file_path.name.startswith(".env") or file_path.suffix in {
+            ".yml",
+            ".yaml",
+            ".properties",
+        }:
             hosts_other_service_config = _stem_matches_other_service(file_path, other_service_names)
             _extract_text_config(file_path, facts, include_urls=not hosts_other_service_config)
 
@@ -303,7 +348,9 @@ def _domain_keywords_for(root: Path, facts: ServiceFacts) -> list[str]:
         if database.database:
             keywords.update(_tokens_from(database.database))
 
-    return sorted(keyword for keyword in keywords - service_tokens if keyword not in DOMAIN_STOPWORDS)
+    return sorted(
+        keyword for keyword in keywords - service_tokens if keyword not in DOMAIN_STOPWORDS
+    )
 
 
 def _tokens_from(value: str) -> set[str]:
@@ -434,7 +481,9 @@ def _extract_python_file(file_path: Path, facts: ServiceFacts) -> None:
             if call:
                 facts.calls.append(call)
 
-    _extract_text_config(file_path, facts, text=source, include_urls=False, include_environment=False)
+    _extract_text_config(
+        file_path, facts, text=source, include_urls=False, include_environment=False
+    )
 
 
 def _extract_javascript_file(file_path: Path, facts: ServiceFacts) -> None:
@@ -481,7 +530,9 @@ def _extract_javascript_file(file_path: Path, facts: ServiceFacts) -> None:
             )
         )
 
-    _extract_text_config(file_path, facts, text=content, include_urls=False, include_environment=False)
+    _extract_text_config(
+        file_path, facts, text=content, include_urls=False, include_environment=False
+    )
 
 
 def _extract_java_file(file_path: Path, facts: ServiceFacts) -> None:
@@ -516,7 +567,9 @@ def _extract_java_file(file_path: Path, facts: ServiceFacts) -> None:
             )
         )
 
-    _extract_text_config(file_path, facts, text=content, include_urls=False, include_environment=False)
+    _extract_text_config(
+        file_path, facts, text=content, include_urls=False, include_environment=False
+    )
 
 
 def _extract_go_file(file_path: Path, facts: ServiceFacts) -> None:
@@ -576,7 +629,9 @@ def _extract_go_file(file_path: Path, facts: ServiceFacts) -> None:
             )
         )
 
-    _extract_text_config(file_path, facts, text=content, include_urls=False, include_environment=False)
+    _extract_text_config(
+        file_path, facts, text=content, include_urls=False, include_environment=False
+    )
 
 
 def _extract_openapi_file(file_path: Path, facts: ServiceFacts) -> None:
@@ -586,7 +641,7 @@ def _extract_openapi_file(file_path: Path, facts: ServiceFacts) -> None:
         return
     for match in re.finditer(r"^\s{2,}(?P<path>/[A-Za-z0-9_./{}-]+):\s*$", content, re.MULTILINE):
         path = match.group("path")
-        block = content[match.end(): match.end() + 400]
+        block = content[match.end() : match.end() + 400]
         methods = [
             method.upper()
             for method in HTTP_METHODS
@@ -787,7 +842,9 @@ def _extract_hard_coded_dependencies(file_path: Path, facts: ServiceFacts) -> No
         return
 
     scan_content = (
-        _strip_c_style_comments(content) if file_path.suffix in _C_STYLE_COMMENT_SUFFIXES else content
+        _strip_c_style_comments(content)
+        if file_path.suffix in _C_STYLE_COMMENT_SUFFIXES
+        else content
     )
 
     file_type = _file_type(file_path)
@@ -868,7 +925,7 @@ def _classify_hard_coded_host(host: str) -> str | None:
 
 
 def _inside_url(content: str, start: int) -> bool:
-    prefix = content[max(0, start - 10):start]
+    prefix = content[max(0, start - 10) : start]
     return "://" in prefix
 
 

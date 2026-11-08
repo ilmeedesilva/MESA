@@ -35,7 +35,11 @@ def parse_policy_document(content: str) -> list[PolicyCreate]:
         raise ValueError("Policy document must contain a policies list")
     normalized = []
     for policy in policies:
-        if isinstance(policy, dict) and "severity" in policy and isinstance(policy["severity"], str):
+        if (
+            isinstance(policy, dict)
+            and "severity" in policy
+            and isinstance(policy["severity"], str)
+        ):
             policy = {**policy, "severity": policy["severity"].upper()}
         normalized.append(PolicyCreate.model_validate(policy))
     return normalized
@@ -72,14 +76,18 @@ def _evaluate_service_policy(
     for service, metrics in sorted(service_metrics.items()):
         actual = metrics.get(metric, 0)
         if not _OPERATORS[op](actual, expected):
-            findings.append(_policy_finding(policy, metric, op, expected, actual, services=[service]))
+            findings.append(
+                _policy_finding(policy, metric, op, expected, actual, services=[service])
+            )
     return findings
 
 
 def _global_metrics(result: AnalysisResult) -> dict[str, Any]:
     findings_by_type = result.summary.get("findings_by_type", {})
     endpoints = [endpoint for service in result.services for endpoint in service.endpoints]
-    versioned_endpoints = [endpoint for endpoint in endpoints if re.search(r"/v\d+(?:/|$)", endpoint.path)]
+    versioned_endpoints = [
+        endpoint for endpoint in endpoints if re.search(r"/v\d+(?:/|$)", endpoint.path)
+    ]
     libraries_by_name: dict[str, set[str]] = {}
     for service in result.services:
         for library in service.libraries:
@@ -87,18 +95,26 @@ def _global_metrics(result: AnalysisResult) -> dict[str, Any]:
     shared_library_count = sum(1 for users in libraries_by_name.values() if len(users) > 1)
     return {
         "dependency_cycle_count": int(findings_by_type.get(FindingType.CYCLIC_DEPENDENCY.value, 0)),
-        "shared_database_violation_count": int(findings_by_type.get(FindingType.SHARED_DATABASE.value, 0)),
-        "hard_coded_service_url_count": int(findings_by_type.get(FindingType.HARD_CODED_SERVICE_DEPENDENCY.value, 0)),
+        "shared_database_violation_count": int(
+            findings_by_type.get(FindingType.SHARED_DATABASE.value, 0)
+        ),
+        "hard_coded_service_url_count": int(
+            findings_by_type.get(FindingType.HARD_CODED_SERVICE_DEPENDENCY.value, 0)
+        ),
         "god_service_count": int(findings_by_type.get(FindingType.GOD_SERVICE.value, 0)),
         "finding_count": len(result.findings),
         "service_count": len(result.services),
-        "api_versioning_required": len(endpoints) == 0 or len(versioned_endpoints) == len(endpoints),
+        "api_versioning_required": len(endpoints) == 0
+        or len(versioned_endpoints) == len(endpoints),
         "unapproved_shared_library_count": shared_library_count,
     }
 
 
 def _service_metrics(result: AnalysisResult) -> dict[str, dict[str, Any]]:
-    services = {service.name: {"outbound_dependencies": 0, "inbound_dependencies": 0} for service in result.services}
+    services = {
+        service.name: {"outbound_dependencies": 0, "inbound_dependencies": 0}
+        for service in result.services
+    }
     outbound: dict[str, set[str]] = {service: set() for service in services}
     inbound: dict[str, set[str]] = {service: set() for service in services}
     service_names = set(services)

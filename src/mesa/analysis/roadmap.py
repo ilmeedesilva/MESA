@@ -42,10 +42,17 @@ _EXECUTION_BONUS = {
 }
 
 _IMPACTED_DIMENSIONS = {
-    FindingType.HARD_CODED_SERVICE_DEPENDENCY: ["hard_coded_dependency_risk", "deployment_independence"],
+    FindingType.HARD_CODED_SERVICE_DEPENDENCY: [
+        "hard_coded_dependency_risk",
+        "deployment_independence",
+    ],
     FindingType.CHATTY_SERVICE: ["coupling", "api_complexity", "deployment_independence"],
     FindingType.CYCLIC_DEPENDENCY: ["cyclic_dependencies", "coupling", "deployment_independence"],
-    FindingType.SHARED_DATABASE: ["shared_database_usage", "ownership_clarity", "deployment_independence"],
+    FindingType.SHARED_DATABASE: [
+        "shared_database_usage",
+        "ownership_clarity",
+        "deployment_independence",
+    ],
     FindingType.GOD_SERVICE: ["god_service_risk", "cohesion", "coupling", "ownership_clarity"],
     FindingType.GOVERNANCE_POLICY_VIOLATION: ["deployment_independence", "ownership_clarity"],
 }
@@ -81,7 +88,9 @@ def build_remediation_roadmap(scan_id: str, result: AnalysisResult) -> Remediati
 
     dependencies = _derive_dependencies(actions)
     for action in actions:
-        action.dependencies = [item.depends_on for item in dependencies if item.action_id == action.id]
+        action.dependencies = [
+            item.depends_on for item in dependencies if item.action_id == action.id
+        ]
 
     ordered_actions = _ordered_actions(actions, dependencies)
     for rank, action in enumerate(ordered_actions, start=1):
@@ -92,9 +101,15 @@ def build_remediation_roadmap(scan_id: str, result: AnalysisResult) -> Remediati
         generated_from_finding_count=len(findings),
         system_health_score=system_score,
         summary=_roadmap_summary(findings, ordered_actions, system_score),
-        quick_wins=[action for action in ordered_actions if action.bucket == RoadmapBucket.QUICK_WIN],
-        medium_term_changes=[action for action in ordered_actions if action.bucket == RoadmapBucket.MEDIUM_TERM],
-        high_effort_refactors=[action for action in ordered_actions if action.bucket == RoadmapBucket.HIGH_EFFORT],
+        quick_wins=[
+            action for action in ordered_actions if action.bucket == RoadmapBucket.QUICK_WIN
+        ],
+        medium_term_changes=[
+            action for action in ordered_actions if action.bucket == RoadmapBucket.MEDIUM_TERM
+        ],
+        high_effort_refactors=[
+            action for action in ordered_actions if action.bucket == RoadmapBucket.HIGH_EFFORT
+        ],
         suggested_order=[
             RoadmapPlanStep(
                 order=index,
@@ -122,7 +137,9 @@ def _cluster_key(finding: Finding) -> tuple[Any, ...]:
     if finding.type == FindingType.CHATTY_SERVICE:
         evidence = finding.evidence[0] if finding.evidence else {}
         caller = str(evidence.get("caller", finding.services[0] if finding.services else "unknown"))
-        callee = str(evidence.get("callee", finding.services[-1] if finding.services else "unknown"))
+        callee = str(
+            evidence.get("callee", finding.services[-1] if finding.services else "unknown")
+        )
         return ("chatty", caller, callee)
     if finding.type == FindingType.CYCLIC_DEPENDENCY:
         cycle = tuple(sorted(_cycle_services(finding)))
@@ -152,7 +169,9 @@ def _build_action(
     primary_type = findings[0].type
     bucket = _BUCKET_BY_TYPE[primary_type]
     affected_services = sorted({service for finding in findings for service in finding.services})
-    recommendations = [recommendation for finding in findings for recommendation in finding.recommendations[:1]]
+    recommendations = [
+        recommendation for finding in findings for recommendation in finding.recommendations[:1]
+    ]
     title, summary, rationale, suggested_order_reason = _action_text(
         primary_type=primary_type,
         findings=findings,
@@ -166,8 +185,12 @@ def _build_action(
     ] or _IMPACTED_DIMENSIONS.get(primary_type, [])[:2]
     average_confidence = round(mean(finding.confidence for finding in findings), 2)
     max_severity = max(findings, key=lambda finding: _SEVERITY_RANK[finding.severity]).severity
-    max_centrality = round(max((centrality.get(service, 0.0) for service in affected_services), default=0.0), 2)
-    max_linked_findings = max((linked_findings.get(service, 0) for service in affected_services), default=len(findings))
+    max_centrality = round(
+        max((centrality.get(service, 0.0) for service in affected_services), default=0.0), 2
+    )
+    max_linked_findings = max(
+        (linked_findings.get(service, 0) for service in affected_services), default=len(findings)
+    )
     service_health = _service_health_pressure(affected_services, service_scores, system_score)
     priority_score = _priority_score(
         primary_type=primary_type,
@@ -193,7 +216,9 @@ def _build_action(
         estimated_difficulty=estimated_difficulty,
         affected_services=affected_services,
         related_findings=related_findings,
-        related_finding_types=sorted({finding.type for finding in findings}, key=lambda item: item.value),
+        related_finding_types=sorted(
+            {finding.type for finding in findings}, key=lambda item: item.value
+        ),
         metrics={
             "finding_count": len(findings),
             "max_severity": max_severity.value,
@@ -242,7 +267,11 @@ def _action_text(
         evidence = findings[0].evidence[0] if findings[0].evidence else {}
         caller = str(evidence.get("caller", services[0] if services else "caller"))
         callee = str(evidence.get("callee", services[-1] if services else "callee"))
-        call_count = sum(int(finding.evidence[0].get("call_count", 0)) for finding in findings if finding.evidence)
+        call_count = sum(
+            int(finding.evidence[0].get("call_count", 0))
+            for finding in findings
+            if finding.evidence
+        )
         return (
             f"Reduce chatty traffic between {caller} and {callee}",
             f"Consolidate repeated synchronous calls between {caller} and {callee} into coarser APIs, events, or read models.",
@@ -287,7 +316,9 @@ def _action_text(
     )
 
 
-def _expected_benefit(recommendations: list[FindingRecommendation], primary_type: FindingType) -> str:
+def _expected_benefit(
+    recommendations: list[FindingRecommendation], primary_type: FindingType
+) -> str:
     if recommendations:
         return recommendations[0].expected_impact
     fallback = {
@@ -330,13 +361,17 @@ def _build_playbook(
         verification_checks=_playbook_verification(primary_type, services),
         rollback_plan=_playbook_rollback(primary_type),
         risks=_playbook_risks(primary_type),
-        estimated_effort=_playbook_effort(primary_type, estimated_difficulty, len(findings), len(services)),
+        estimated_effort=_playbook_effort(
+            primary_type, estimated_difficulty, len(findings), len(services)
+        ),
         related_services=services,
         related_findings=related_findings,
     )
 
 
-def _playbook_strategy(primary_type: FindingType, findings: list[Finding], service_text: str) -> str:
+def _playbook_strategy(
+    primary_type: FindingType, findings: list[Finding], service_text: str
+) -> str:
     if primary_type == FindingType.HARD_CODED_SERVICE_DEPENDENCY:
         return (
             "Move endpoint values out of source code into environment-specific configuration, "
@@ -658,7 +693,9 @@ def _playbook_verification(primary_type: FindingType, services: list[str]) -> li
         ],
     }
     affected = f" for {_service_text(services)}" if services else ""
-    return checks[primary_type] + [f"Review the after-scan with the owning team{affected} before closing the action."]
+    return checks[primary_type] + [
+        f"Review the after-scan with the owning team{affected} before closing the action."
+    ]
 
 
 def _playbook_rollback(primary_type: FindingType) -> list[str]:
@@ -760,11 +797,16 @@ def _priority_score(
     linked_component = min(max_linked_findings, 5) / 5 * 10
     health_component = service_health_pressure * 14
     spread_component = min(len(findings), 4) / 4 * 4
-    structural_bonus = 4.0 if primary_type in {
-        FindingType.CYCLIC_DEPENDENCY,
-        FindingType.SHARED_DATABASE,
-        FindingType.GOD_SERVICE,
-    } else 0.0
+    structural_bonus = (
+        4.0
+        if primary_type
+        in {
+            FindingType.CYCLIC_DEPENDENCY,
+            FindingType.SHARED_DATABASE,
+            FindingType.GOD_SERVICE,
+        }
+        else 0.0
+    )
     return round(
         min(
             severity_component
@@ -790,7 +832,10 @@ def _derive_dependencies(actions: list[RoadmapAction]) -> list[RoadmapDependency
                 continue
             candidate_type = _primary_type(candidate)
             overlap = set(action.affected_services) & set(candidate.affected_services)
-            if primary_type == FindingType.GOVERNANCE_POLICY_VIOLATION and candidate_type != FindingType.GOVERNANCE_POLICY_VIOLATION:
+            if (
+                primary_type == FindingType.GOVERNANCE_POLICY_VIOLATION
+                and candidate_type != FindingType.GOVERNANCE_POLICY_VIOLATION
+            ):
                 if overlap or not action.affected_services:
                     dependencies.append(
                         RoadmapDependency(
@@ -845,17 +890,17 @@ def _ordered_actions(
 ) -> list[RoadmapAction]:
     pending = {action.id: action for action in actions}
     remaining = {
-        action.id: {dependency.depends_on for dependency in dependencies if dependency.action_id == action.id}
+        action.id: {
+            dependency.depends_on
+            for dependency in dependencies
+            if dependency.action_id == action.id
+        }
         for action in actions
     }
     ordered: list[RoadmapAction] = []
 
     while pending:
-        ready = [
-            action
-            for action_id, action in pending.items()
-            if not remaining.get(action_id)
-        ]
+        ready = [action for action_id, action in pending.items() if not remaining.get(action_id)]
         if not ready:
             ready = list(pending.values())
         ready.sort(
@@ -879,7 +924,11 @@ def _roadmap_summary(
     findings: list[Finding], ordered_actions: list[RoadmapAction], system_score: float | None
 ) -> str:
     top_action = ordered_actions[0]
-    score_text = f" with a current system health score of {system_score:.1f}/100" if system_score is not None else ""
+    score_text = (
+        f" with a current system health score of {system_score:.1f}/100"
+        if system_score is not None
+        else ""
+    )
     return (
         f"MESA grouped {len(findings)} findings into {len(ordered_actions)} remediation actions{score_text}. "
         f"Start with '{top_action.title}', then follow the suggested order to combine quick wins and deeper structural fixes."
@@ -902,9 +951,7 @@ def _system_health_context(result: AnalysisResult) -> tuple[float | None, list[s
     score = float(system.get("score", 0.0))
     breakdown = system.get("breakdown", {})
     weak_dimensions = [
-        str(dimension)
-        for dimension, value in breakdown.items()
-        if float(value) < 70.0
+        str(dimension) for dimension, value in breakdown.items() if float(value) < 70.0
     ]
     return score, weak_dimensions
 
@@ -938,7 +985,11 @@ def _service_health_pressure(
     system_score: float | None,
 ) -> float:
     if services:
-        scores = [service_scores.get(service) for service in services if service_scores.get(service) is not None]
+        scores = [
+            service_scores.get(service)
+            for service in services
+            if service_scores.get(service) is not None
+        ]
         if scores:
             return max(0.0, 1 - (mean(scores) / 100.0))
     if system_score is None:
