@@ -3,3 +3,6 @@
 
 # style: format Python code with ruff format
 0c8e9237d82cdb863438fe3b8f628bf4547156ab
+
+# style(frontend): format with Prettier
+6115aaa515c7a1928c13cea81a40ab913cbfd36f
