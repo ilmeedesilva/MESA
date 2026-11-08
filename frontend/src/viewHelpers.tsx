@@ -68,11 +68,16 @@ export function buildGraphElements(nodes: GraphNode[], edges: AggregatedEdge[]) 
 
 export function calculateArchitecturePositions(nodes: GraphNode[], edges: AggregatedEdge[]) {
   const positions = new Map<string, { x: number; y: number }>();
-  const serviceNodes = nodes.filter((node) => (node.type ?? "service") === "service").sort((a, b) => a.id.localeCompare(b.id));
+  const serviceNodes = nodes
+    .filter((node) => (node.type ?? "service") === "service")
+    .sort((a, b) => a.id.localeCompare(b.id));
   const serviceIds = serviceNodes.map((node) => node.id);
   const serviceIdByName = new Map(serviceNodes.map((node) => [node.serviceName ?? node.label ?? node.id, node.id]));
   const apiNodes = nodes.filter((node) => node.type === "api").sort((a, b) => a.id.localeCompare(b.id));
-  const databaseNodes = nodes.filter((node) => node.type === "database").map((node) => node.id).sort();
+  const databaseNodes = nodes
+    .filter((node) => node.type === "database")
+    .map((node) => node.id)
+    .sort();
   const supportNodes = nodes
     .filter((node) => !["service", "api", "database"].includes(node.type ?? "service"))
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -121,9 +126,13 @@ export function calculateArchitecturePositions(nodes: GraphNode[], edges: Aggreg
   }
 
   supportNodes.forEach((node, index) => {
-    const ownerPosition = node.serviceName ? positions.get(serviceIdByName.get(node.serviceName) ?? node.serviceName) : null;
+    const ownerPosition = node.serviceName
+      ? positions.get(serviceIdByName.get(node.serviceName) ?? node.serviceName)
+      : null;
     positions.set(node.id, {
-      x: ownerPosition ? clamp(ownerPosition.x - 120, 85, canvas.width - 85) : distribute(index, supportNodes.length, 130, canvas.width - 130),
+      x: ownerPosition
+        ? clamp(ownerPosition.x - 120, 85, canvas.width - 85)
+        : distribute(index, supportNodes.length, 130, canvas.width - 130),
       y: ownerPosition ? clamp(ownerPosition.y + 112, 110, canvas.height - 110) : canvas.height * 0.18
     });
   });
@@ -157,13 +166,25 @@ export function groupNodesByService(nodes: GraphNode[]) {
   return grouped;
 }
 
-export function placeColumn(items: string[], x: number, yStart: number, yEnd: number, positions: Map<string, { x: number; y: number }>) {
+export function placeColumn(
+  items: string[],
+  x: number,
+  yStart: number,
+  yEnd: number,
+  positions: Map<string, { x: number; y: number }>
+) {
   items.forEach((item, index) => {
     positions.set(item, { x, y: distribute(index, items.length, yStart, yEnd) });
   });
 }
 
-export function placeRow(items: string[], xStart: number, xEnd: number, y: number, positions: Map<string, { x: number; y: number }>) {
+export function placeRow(
+  items: string[],
+  xStart: number,
+  xEnd: number,
+  y: number,
+  positions: Map<string, { x: number; y: number }>
+) {
   items.forEach((item, index) => {
     positions.set(item, { x: distribute(index, items.length, xStart, xEnd), y });
   });
@@ -221,7 +242,11 @@ export function graphFromReport(result: AnalysisResult, scores: HealthScore[]): 
   };
 }
 
-export function graphFromDigitalTwin(twin: DigitalTwinGraph, result: AnalysisResult, scores: HealthScore[]): DisplayGraph {
+export function graphFromDigitalTwin(
+  twin: DigitalTwinGraph,
+  result: AnalysisResult,
+  scores: HealthScore[]
+): DisplayGraph {
   const rawNodeById = new Map(twin.nodes.map((node) => [node.element_id, node]));
   const apiCountsByService = new Map<string, number>();
   const apiBundleByRawId = new Map<string, string>();
@@ -270,16 +295,22 @@ export function graphFromDigitalTwin(twin: DigitalTwinGraph, result: AnalysisRes
       };
     })
     .filter((item) => item.source !== item.target && nodeById.has(item.source) && nodeById.has(item.target))
-    .map((item) => enrichEdge({
-      source: item.source,
-      target: item.target,
-      type: normalizeRelationshipType(item.relationship.type),
-      evidence: {
-        ...item.relationship.properties,
-        source_node_type: item.sourceRaw ? primaryGraphType(item.sourceRaw.labels) : undefined,
-        target_node_type: item.targetRaw ? primaryGraphType(item.targetRaw.labels) : undefined
-      }
-    }, result.findings, nodeById));
+    .map((item) =>
+      enrichEdge(
+        {
+          source: item.source,
+          target: item.target,
+          type: normalizeRelationshipType(item.relationship.type),
+          evidence: {
+            ...item.relationship.properties,
+            source_node_type: item.sourceRaw ? primaryGraphType(item.sourceRaw.labels) : undefined,
+            target_node_type: item.targetRaw ? primaryGraphType(item.targetRaw.labels) : undefined
+          }
+        },
+        result.findings,
+        nodeById
+      )
+    );
   return { source: "digital-twin", nodes, edges };
 }
 
@@ -340,7 +371,11 @@ export function primaryGraphType(labels: string[]) {
 
 export function serviceNameForNode(type: string, properties: Record<string, unknown>) {
   if (type === "service") return propertyString(properties, "name");
-  return propertyString(properties, "service") ?? propertyString(properties, "owner") ?? propertyString(properties, "service_name");
+  return (
+    propertyString(properties, "service") ??
+    propertyString(properties, "owner") ??
+    propertyString(properties, "service_name")
+  );
 }
 
 export function labelForDigitalTwinNode(type: string, properties: Record<string, unknown>, fallback: string) {
@@ -353,12 +388,17 @@ export function labelForDigitalTwinNode(type: string, properties: Record<string,
   if (type === "config") return propertyString(properties, "name") ?? propertyString(properties, "key") ?? "config";
   if (type === "library") return propertyString(properties, "name") ?? "library";
   if (type === "message_broker") return propertyString(properties, "name") ?? "broker";
-  if (type === "environment_variable") return propertyString(properties, "name") ?? propertyString(properties, "key") ?? "env var";
+  if (type === "environment_variable")
+    return propertyString(properties, "name") ?? propertyString(properties, "key") ?? "env var";
   return propertyString(properties, "name") ?? propertyString(properties, "key") ?? formatNodeLabel(fallback, type);
 }
 
 export function databaseLabel(properties: Record<string, unknown>, fallback: string) {
-  const value = propertyString(properties, "database") ?? propertyString(properties, "name") ?? propertyString(properties, "url") ?? fallback;
+  const value =
+    propertyString(properties, "database") ??
+    propertyString(properties, "name") ??
+    propertyString(properties, "url") ??
+    fallback;
   return value.replace(/^db:/, "").split("/").pop() ?? value;
 }
 
@@ -409,7 +449,11 @@ export function edgeRisk(edgeType: string, findings: Finding[]) {
   return "none";
 }
 
-export function selectionForNode(data: Record<string, unknown>, findings: Finding[], scores: HealthScore[]): GraphSelection {
+export function selectionForNode(
+  data: Record<string, unknown>,
+  findings: Finding[],
+  scores: HealthScore[]
+): GraphSelection {
   const service = String(data.serviceName ?? data.id);
   const linkedFindings = findingsForService(findings, service);
   return {
@@ -423,7 +467,11 @@ export function selectionForNode(data: Record<string, unknown>, findings: Findin
   };
 }
 
-export function selectionForEdge(data: Record<string, unknown>, nodes: GraphNode[], findings: Finding[]): GraphSelection {
+export function selectionForEdge(
+  data: Record<string, unknown>,
+  nodes: GraphNode[],
+  findings: Finding[]
+): GraphSelection {
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const source = nodeById.get(String(data.source));
   const target = nodeById.get(String(data.target));
@@ -446,7 +494,7 @@ export function propertyString(properties: Record<string, unknown>, key: string)
 }
 
 export function propertyRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
 export function normalizeRelationshipType(type: string) {
@@ -509,7 +557,9 @@ export function renderMarkdown(markdown: string) {
       }
       blocks.push(
         <ul key={`ul-${index}`}>
-          {items.map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>)}
+          {items.map((item, itemIndex) => (
+            <li key={`${item}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
+          ))}
         </ul>
       );
       continue;
@@ -523,7 +573,9 @@ export function renderMarkdown(markdown: string) {
       }
       blocks.push(
         <ol key={`ol-${index}`}>
-          {items.map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>)}
+          {items.map((item, itemIndex) => (
+            <li key={`${item}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
+          ))}
         </ol>
       );
       continue;
@@ -588,7 +640,9 @@ export function Metric({
     `metricValue-${kind}`,
     valueLength > 18 ? "long" : "",
     valueLength > 30 ? "xlong" : ""
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <article
       className={`metric ${tone ?? ""} ${featured ? "featured" : ""} ${wide ? "wide" : ""}`}
@@ -600,7 +654,11 @@ export function Metric({
         <strong className={valueClassName}>{value}</strong>
       )}
       <span>{label}</span>
-      {detail ? <small className={`detailLines-${detailLines}`} title={detail}>{detail}</small> : null}
+      {detail ? (
+        <small className={`detailLines-${detailLines}`} title={detail}>
+          {detail}
+        </small>
+      ) : null}
       {expandableDetail && fullDetail ? (
         <>
           <button
@@ -665,7 +723,9 @@ export function filterFindings(findings: Finding[], filters: Filters) {
 export function buildFilterOptions(findings: Finding[]) {
   return {
     types: [...new Set(findings.map((finding) => finding.type))].sort(),
-    severities: [...new Set(findings.map((finding) => finding.severity))].sort((a, b) => severityRank[b] - severityRank[a]),
+    severities: [...new Set(findings.map((finding) => finding.severity))].sort(
+      (a, b) => severityRank[b] - severityRank[a]
+    ),
     services: [...new Set(findings.flatMap((finding) => finding.services))].sort()
   };
 }
@@ -707,7 +767,10 @@ export function aiAnswerProvider(source?: string) {
 }
 
 export function servicePathsFromText(value: string) {
-  return value.split("\n").map((item) => item.trim()).filter(Boolean);
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 export function policyDocumentFromRecords(policies: PolicyRecord[]) {
@@ -764,9 +827,10 @@ export function draftMetricPreview(record: ResearchEvaluationRecord) {
   }
   const precision = tp + fp > 0 ? tp / (tp + fp) : null;
   const recall = tp + fn > 0 ? tp / (tp + fn) : null;
-  const f1 = precision !== null && recall !== null && precision + recall > 0
-    ? (2 * precision * recall) / (precision + recall)
-    : null;
+  const f1 =
+    precision !== null && recall !== null && precision + recall > 0
+      ? (2 * precision * recall) / (precision + recall)
+      : null;
   return { precision, recall, f1 };
 }
 
@@ -820,11 +884,7 @@ export function readSectionFromUrl(): AppSection {
   return value && knownSections.has(value as AppSection) ? (value as AppSection) : "overview";
 }
 
-export function syncAppStateToUrl(
-  projectId: string,
-  section: AppSection,
-  historyMode: "push" | "replace" = "replace"
-) {
+export function syncAppStateToUrl(projectId: string, section: AppSection, historyMode: "push" | "replace" = "replace") {
   const url = new URL(window.location.href);
   if (projectId) {
     url.searchParams.set("project", projectId);
@@ -875,7 +935,8 @@ export function formatEdgeLabel(type: string, count: number, risk = "none", find
     reads_from: "db read",
     writes_to: "db write"
   };
-  const shouldLabel = ["shared_database", "shares_database_with", "uses_database", "reads_from", "writes_to"].includes(type) || count > 2;
+  const shouldLabel =
+    ["shared_database", "shares_database_with", "uses_database", "reads_from", "writes_to"].includes(type) || count > 2;
   if (!shouldLabel) return "";
   const label = compactLabels[type] ?? type.replace(/_/g, " ");
   return count > 1 ? `${label} x${count}` : label;
@@ -968,20 +1029,30 @@ export function trimTrailingPunctuation(value: string) {
 }
 
 export function findingWhyItMatters(finding: Finding) {
-  if (finding.type.includes("GOD")) return "This service can become hard to change safely because too many responsibilities are concentrated in one place.";
-  if (finding.type.includes("CHATTY")) return "Frequent cross-service calls can slow requests down and make failures spread more easily between services.";
-  if (finding.type.includes("SHARED") || finding.type.includes("DATABASE")) return "Shared data ownership weakens service boundaries and makes independent releases more difficult.";
-  if (finding.type.includes("HARD_CODED")) return "Hard-coded dependencies reduce portability and make environment changes or service moves more fragile.";
-  if (finding.type.includes("CYCLE")) return "Dependency loops usually increase coupling and make it harder to isolate, test, and evolve services.";
+  if (finding.type.includes("GOD"))
+    return "This service can become hard to change safely because too many responsibilities are concentrated in one place.";
+  if (finding.type.includes("CHATTY"))
+    return "Frequent cross-service calls can slow requests down and make failures spread more easily between services.";
+  if (finding.type.includes("SHARED") || finding.type.includes("DATABASE"))
+    return "Shared data ownership weakens service boundaries and makes independent releases more difficult.";
+  if (finding.type.includes("HARD_CODED"))
+    return "Hard-coded dependencies reduce portability and make environment changes or service moves more fragile.";
+  if (finding.type.includes("CYCLE"))
+    return "Dependency loops usually increase coupling and make it harder to isolate, test, and evolve services.";
   return "This finding suggests a structural risk that could reduce maintainability, clarity, or service independence.";
 }
 
 export function findingLimitation(finding: Finding) {
-  if (finding.type.includes("CHATTY")) return "This does not prove the calls are always bad. It indicates a pattern worth validating against traffic, latency, and business workflow needs.";
-  if (finding.type.includes("SHARED") || finding.type.includes("DATABASE")) return "This does not prove the database schema is wrong. It highlights a likely ownership boundary that needs architectural review.";
-  if (finding.type.includes("HARD_CODED")) return "This does not prove runtime failures are happening now. It shows a portability and maintainability risk in the current implementation.";
-  if (finding.type.includes("GOD")) return "This does not prove the service is impossible to maintain. It signals that responsibility may be too concentrated and should be reviewed.";
-  if (finding.type.includes("CYCLE")) return "This does not prove every dependency in the cycle is unnecessary. It shows a loop that deserves closer design analysis.";
+  if (finding.type.includes("CHATTY"))
+    return "This does not prove the calls are always bad. It indicates a pattern worth validating against traffic, latency, and business workflow needs.";
+  if (finding.type.includes("SHARED") || finding.type.includes("DATABASE"))
+    return "This does not prove the database schema is wrong. It highlights a likely ownership boundary that needs architectural review.";
+  if (finding.type.includes("HARD_CODED"))
+    return "This does not prove runtime failures are happening now. It shows a portability and maintainability risk in the current implementation.";
+  if (finding.type.includes("GOD"))
+    return "This does not prove the service is impossible to maintain. It signals that responsibility may be too concentrated and should be reviewed.";
+  if (finding.type.includes("CYCLE"))
+    return "This does not prove every dependency in the cycle is unnecessary. It shows a loop that deserves closer design analysis.";
   return "This result is evidence of a likely architectural issue, not a complete explanation of all runtime behavior.";
 }
 
@@ -994,8 +1065,10 @@ export function confidenceLabel(confidence: number) {
 
 export function confidenceGuidance(confidence: number) {
   if (confidence >= 0.9) return "The detector found strong signals that consistently support this result.";
-  if (confidence >= 0.75) return "The detector found several supporting signals, but human review is still useful before acting.";
-  if (confidence >= 0.55) return "The result is plausible, though the evidence is lighter and should be reviewed carefully.";
+  if (confidence >= 0.75)
+    return "The detector found several supporting signals, but human review is still useful before acting.";
+  if (confidence >= 0.55)
+    return "The result is plausible, though the evidence is lighter and should be reviewed carefully.";
   return "Treat this as an early signal that needs manual confirmation before making architectural changes.";
 }
 
@@ -1018,7 +1091,9 @@ export function summarizeEvidence(evidence: Array<Record<string, unknown>>) {
       .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
       .slice(0, 3)
       .map(([key, value]) => `${formatType(key)}: ${String(value)}`);
-    return fragments.length > 0 ? fragments.join(" | ") : `Evidence item ${index + 1} contains nested detector metadata.`;
+    return fragments.length > 0
+      ? fragments.join(" | ")
+      : `Evidence item ${index + 1} contains nested detector metadata.`;
   });
 }
 
@@ -1034,8 +1109,15 @@ export function getHotspotService(findings: Finding[], scores: HealthScore[]) {
   const serviceCounts = new Map<string, { count: number; severity: string; score?: number }>();
   findings.forEach((finding) => {
     finding.services.forEach((service) => {
-      const current = serviceCounts.get(service) ?? { count: 0, severity: "low", score: serviceHealthScore(scores, service)?.score };
-      const nextSeverity = (severityRank[finding.severity] ?? 0) > (severityRank[current.severity] ?? 0) ? finding.severity : current.severity;
+      const current = serviceCounts.get(service) ?? {
+        count: 0,
+        severity: "low",
+        score: serviceHealthScore(scores, service)?.score
+      };
+      const nextSeverity =
+        (severityRank[finding.severity] ?? 0) > (severityRank[current.severity] ?? 0)
+          ? finding.severity
+          : current.severity;
       serviceCounts.set(service, {
         count: current.count + 1,
         severity: nextSeverity,
@@ -1043,13 +1125,14 @@ export function getHotspotService(findings: Finding[], scores: HealthScore[]) {
       });
     });
   });
-  const [service, meta] = [...serviceCounts.entries()].sort((left, right) => {
-    const countDelta = right[1].count - left[1].count;
-    if (countDelta !== 0) return countDelta;
-    const severityDelta = (severityRank[right[1].severity] ?? 0) - (severityRank[left[1].severity] ?? 0);
-    if (severityDelta !== 0) return severityDelta;
-    return (left[1].score ?? 100) - (right[1].score ?? 100);
-  })[0] ?? [];
+  const [service, meta] =
+    [...serviceCounts.entries()].sort((left, right) => {
+      const countDelta = right[1].count - left[1].count;
+      if (countDelta !== 0) return countDelta;
+      const severityDelta = (severityRank[right[1].severity] ?? 0) - (severityRank[left[1].severity] ?? 0);
+      if (severityDelta !== 0) return severityDelta;
+      return (left[1].score ?? 100) - (right[1].score ?? 100);
+    })[0] ?? [];
   if (!service || !meta) return null;
   return {
     service,
@@ -1059,9 +1142,11 @@ export function getHotspotService(findings: Finding[], scores: HealthScore[]) {
 }
 
 export function formatType(type: string) {
-  return type.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return type
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
-
 
 export function getHighestSeverity(findings: Finding[]) {
   if (findings.length === 0) return "None";
@@ -1156,7 +1241,8 @@ export const graphStyle: Array<{ selector: string; style: Record<string, string 
     }
   },
   {
-    selector: "node[type = 'config'], node[type = 'library'], node[type = 'message_broker'], node[type = 'environment_variable']",
+    selector:
+      "node[type = 'config'], node[type = 'library'], node[type = 'message_broker'], node[type = 'environment_variable']",
     style: {
       "background-color": "#64748b",
       "border-color": "#cbd5e1",
@@ -1223,7 +1309,8 @@ export const graphStyle: Array<{ selector: string; style: Record<string, string 
     }
   },
   {
-    selector: "edge[type = 'uses_database'], edge[type = 'reads_from'], edge[type = 'writes_to'], edge[type = 'shared_database'], edge[type = 'shares_database_with']",
+    selector:
+      "edge[type = 'uses_database'], edge[type = 'reads_from'], edge[type = 'writes_to'], edge[type = 'shared_database'], edge[type = 'shares_database_with']",
     style: {
       "line-color": "#7c3aed",
       "target-arrow-color": "#7c3aed",

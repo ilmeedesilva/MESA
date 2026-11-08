@@ -17,7 +17,9 @@ export function DimensionBars({ breakdown }: { breakdown: Record<string, number>
       {Object.entries(breakdown).map(([dimension, score]) => (
         <div key={dimension} className="dimensionRow">
           <span>{formatType(dimension)}</span>
-          <div><i style={{ width: `${score}%` }} /></div>
+          <div>
+            <i style={{ width: `${score}%` }} />
+          </div>
           <strong>{Math.round(score)}</strong>
         </div>
       ))}
@@ -45,7 +47,9 @@ export function RecommendationDetails({
     <section className="drawerSection recommendation structuredRecommendation">
       <div className="recommendationHeader">
         <strong>What to do first</strong>
-        <span>{recommendation.priority} priority - {recommendation.estimated_difficulty} difficulty</span>
+        <span>
+          {recommendation.priority} priority - {recommendation.estimated_difficulty} difficulty
+        </span>
       </div>
       <dl>
         <dt>Likely root cause</dt>
@@ -58,12 +62,16 @@ export function RecommendationDetails({
       {recommendation.affected_files.length > 0 ? (
         <div className="affectedFiles">
           <strong>Affected files</strong>
-          {recommendation.affected_files.slice(0, 5).map((file) => <code key={file}>{file}</code>)}
+          {recommendation.affected_files.slice(0, 5).map((file) => (
+            <code key={file}>{file}</code>
+          ))}
         </div>
       ) : null}
       <strong>Suggested refactoring steps</strong>
       <ol>
-        {recommendation.refactoring_steps.map((step) => <li key={step}>{step}</li>)}
+        {recommendation.refactoring_steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
       </ol>
       {interpretationMode === "research" ? <small>Recommendation source: {recommendation.source}</small> : null}
     </section>
@@ -84,7 +92,9 @@ export function FindingDrawer({
   return (
     <div className="drawerOverlay" onClick={onClose}>
       <aside className="drawer" onClick={(event) => event.stopPropagation()}>
-        <button className="drawerClose" onClick={onClose}>Close</button>
+        <button className="drawerClose" onClick={onClose}>
+          Close
+        </button>
         <div className="findingMeta">
           <span>{finding.id}</span>
           <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
@@ -99,10 +109,14 @@ export function FindingDrawer({
           <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
         ) : null}
         <div className="serviceChips">
-          {finding.services.map((service) => <span key={service}>{service}</span>)}
+          {finding.services.map((service) => (
+            <span key={service}>{service}</span>
+          ))}
         </div>
         <div className="drawerActionRow">
-          <button type="button" className="secondaryButton" onClick={onAskAI}>Ask AI About This</button>
+          <button type="button" className="secondaryButton" onClick={onAskAI}>
+            Ask AI About This
+          </button>
         </div>
         <section className="drawerSection">
           <h3>What MESA found</h3>
@@ -132,23 +146,31 @@ export function FindingDrawer({
                   <strong>{formatType(item.step)}</strong>
                   <span>{item.description}</span>
                   {item.source ? (
-                    <code>{item.source.file_path}{item.source.line_number ? `:${item.source.line_number}` : ""}</code>
+                    <code>
+                      {item.source.file_path}
+                      {item.source.line_number ? `:${item.source.line_number}` : ""}
+                    </code>
                   ) : null}
                 </li>
               ))}
             </ol>
           ) : (
             <ul className="evidenceBulletList">
-              {summarizeEvidence(finding.evidence).map((item) => <li key={item}>{item}</li>)}
+              {summarizeEvidence(finding.evidence).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
           )}
           <small className="supportText">
-            {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%). {finding.confidence_reason || confidenceGuidance(finding.confidence)}
+            {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%).{" "}
+            {finding.confidence_reason || confidenceGuidance(finding.confidence)}
           </small>
           {finding.source_files && finding.source_files.length > 0 ? (
             <div className="affectedFiles evidenceFiles">
               <strong>Source files</strong>
-              {finding.source_files.slice(0, 6).map((file) => <code key={file}>{file}</code>)}
+              {finding.source_files.slice(0, 6).map((file) => (
+                <code key={file}>{file}</code>
+              ))}
             </div>
           ) : null}
         </section>
@@ -161,7 +183,9 @@ export function FindingDrawer({
           <h3>What this does not prove</h3>
           {finding.limitations && finding.limitations.length > 0 ? (
             <ul className="evidenceBulletList">
-              {finding.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}
+              {finding.limitations.map((limitation) => (
+                <li key={limitation}>{limitation}</li>
+              ))}
             </ul>
           ) : (
             <p>{findingLimitation(finding)}</p>
@@ -170,14 +194,20 @@ export function FindingDrawer({
         {interpretationMode === "research" ? (
           <section className="drawerSection">
             <h3>Raw evidence ledger</h3>
-            <pre>{JSON.stringify({
-              detector_name: finding.detector_name,
-              rule_id: finding.rule_id,
-              evidence_chain: finding.evidence_chain,
-              source_files: finding.source_files,
-              related_services: finding.related_services,
-              evidence: finding.evidence
-            }, null, 2)}</pre>
+            <pre>
+              {JSON.stringify(
+                {
+                  detector_name: finding.detector_name,
+                  rule_id: finding.rule_id,
+                  evidence_chain: finding.evidence_chain,
+                  source_files: finding.source_files,
+                  related_services: finding.related_services,
+                  evidence: finding.evidence
+                },
+                null,
+                2
+              )}
+            </pre>
           </section>
         ) : null}
       </aside>

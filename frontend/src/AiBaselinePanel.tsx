@@ -37,12 +37,14 @@ type ModelInfo = { label: string; rankNote: string; tier: "top" | "mid" | "unkno
 const MODEL_INFO: Record<string, ModelInfo> = {
   "claude-sonnet-5": {
     label: "Claude Sonnet 5",
-    rankNote: "A typical mid-tier AI model: ranked 27th of 88 on the SWE-bench Verified coding leaderboard (Vals AI, Sept 2026).",
+    rankNote:
+      "A typical mid-tier AI model: ranked 27th of 88 on the SWE-bench Verified coding leaderboard (Vals AI, Sept 2026).",
     tier: "mid"
   },
   "claude-opus-5": {
     label: "Claude Opus 5",
-    rankNote: "The strongest AI model tested: ranked 1st of 88 on the SWE-bench Verified coding leaderboard (Vals AI, Sept 2026).",
+    rankNote:
+      "The strongest AI model tested: ranked 1st of 88 on the SWE-bench Verified coding leaderboard (Vals AI, Sept 2026).",
     tier: "top"
   }
 };
@@ -142,7 +144,9 @@ function buildPlainEnglishSummary(
       );
     }
   } else {
-    sentences.push(mesaError ?? "MESA's own score for this exact system could not be measured on this machine right now.");
+    sentences.push(
+      mesaError ?? "MESA's own score for this exact system could not be measured on this machine right now."
+    );
   }
 
   if (!deterministic) {
@@ -183,7 +187,8 @@ function SystemCard({
   const runF1s = system.runs.map((run) => run.metrics.f1_score);
   const benchmarkId = benchmarkIdFromPath(system.benchmark);
   const isRealRepo = isRealRepoBenchmark(system.benchmark);
-  const description = SYSTEM_DESCRIPTIONS[system.id] ?? (isRealRepo ? "Real, public repository." : "Synthetic test case.");
+  const description =
+    SYSTEM_DESCRIPTIONS[system.id] ?? (isRealRepo ? "Real, public repository." : "Synthetic test case.");
   const summary = buildPlainEnglishSummary(system, mesaReference, mesaError);
 
   return (
@@ -257,8 +262,9 @@ function SystemCard({
             F1
           </div>
           <div className="aiBaselineDeterminismNote">
-            {formatPercent(system.determinism.exact_match_rate)} exact-match · {system.determinism.mean_pairwise_jaccard.toFixed(2)}{" "}
-            mean overlap across {system.determinism.distinct_result_sets} distinct answer
+            {formatPercent(system.determinism.exact_match_rate)} exact-match ·{" "}
+            {system.determinism.mean_pairwise_jaccard.toFixed(2)} mean overlap across{" "}
+            {system.determinism.distinct_result_sets} distinct answer
             {system.determinism.distinct_result_sets === 1 ? "" : "s"} out of {system.runs.length} tries.
           </div>
         </div>
@@ -266,8 +272,8 @@ function SystemCard({
 
       <div className="aiBaselineRunStrip">
         <span className="aiBaselineRunStripLabel">
-          {modelLabel} accuracy (F1) on each of the {system.runs.length} identical attempts — the dashed line is where MESA
-          always sits (1.00, perfect)
+          {modelLabel} accuracy (F1) on each of the {system.runs.length} identical attempts — the dashed line is where
+          MESA always sits (1.00, perfect)
         </span>
         <div className="aiBaselineRunChart">
           <div className="aiBaselineRunReferenceLine" />
@@ -291,7 +297,10 @@ function SystemCard({
           {unstable.map((item, index) => (
             <div key={`unstable-${index}`} className="aiBaselineEvidenceCard">
               <code>{item.type}</code> — {item.services.join(", ")}
-              <span> — appeared in {item.occurrences} of {system.runs.length} runs</span>
+              <span>
+                {" "}
+                — appeared in {item.occurrences} of {system.runs.length} runs
+              </span>
             </div>
           ))}
         </div>
@@ -344,7 +353,9 @@ function Scoreboard({
               return (
                 <tr key={system.id}>
                   <th scope="row">
-                    <span className={`aiBaselineBadge ${isReal ? "real" : "synthetic"}`}>{isReal ? "Real" : "Synthetic"}</span>
+                    <span className={`aiBaselineBadge ${isReal ? "real" : "synthetic"}`}>
+                      {isReal ? "Real" : "Synthetic"}
+                    </span>
                     <span className="aiScoreboardSystemName">{SHORT_SYSTEM_NAMES[system.id] ?? system.name}</span>
                   </th>
                   <td className={`aiScoreCell ${mesa ? scoreTone(mesa.f1_score) : ""}`}>
@@ -401,7 +412,9 @@ function Scoreboard({
           const bestRealRecall = realSystems.length
             ? Math.max(...realSystems.map((system) => system.recall.mean))
             : null;
-          const fullyConsistent = report.systems.filter((system) => sameAnswerCount(system) === system.runs.length).length;
+          const fullyConsistent = report.systems.filter(
+            (system) => sameAnswerCount(system) === system.runs.length
+          ).length;
           return (
             <li key={`takeaway-${report.results_dir ?? report.model}`}>
               <strong>{info.label}</strong>
@@ -435,8 +448,8 @@ function ModelCards({ reports }: { reports: AiBaselineComparisonReport[] }) {
             <strong>{info.label}</strong>
             <p>{info.rankNote}</p>
             <p className="aiModelCardMeta">
-              Asked the identical question {report.runs_per_system} times per system, with the same anti-pattern list MESA
-              uses.
+              Asked the identical question {report.runs_per_system} times per system, with the same anti-pattern list
+              MESA uses.
             </p>
           </div>
         );
@@ -498,8 +511,11 @@ export function AiBaselinePanel() {
       api<BenchmarkEvaluationReport>(`/api/benchmarks/${benchmarkId}/evaluate`, { method: "POST" })
         .then((result) => {
           if (cancelled) return;
-          const byId = (result as unknown as { systems: Array<{ id: string; metrics: { precision: number; recall: number; f1_score: number } }> })
-            .systems;
+          const byId = (
+            result as unknown as {
+              systems: Array<{ id: string; metrics: { precision: number; recall: number; f1_score: number } }>;
+            }
+          ).systems;
           setMesaReferences((current) => {
             const next = { ...current };
             byId.forEach((system) => {
@@ -554,7 +570,8 @@ export function AiBaselinePanel() {
         </div>
         {reports.length > 0 ? (
           <span>
-            {reports.length} AI model{reports.length === 1 ? "" : "s"} tested · {reports[0].runs_per_system} runs per system
+            {reports.length} AI model{reports.length === 1 ? "" : "s"} tested · {reports[0].runs_per_system} runs per
+            system
           </span>
         ) : null}
       </div>
@@ -564,7 +581,11 @@ export function AiBaselinePanel() {
       {notGenerated ? (
         <div className="emptyInline">
           No AI baseline comparison has been exported yet. Run it from a terminal, with one output directory per model:
-          <pre className="aiBaselineCliHint">MESA_ANTHROPIC_MODEL=claude-opus-5 mesa evaluate-ai-baseline benchmarks/ground_truth.yml --systems god-service,cyclic-dependencies --runs 5 --provider anthropic --output-dir evaluation-results/ai-baseline-comparison-opus5</pre>
+          <pre className="aiBaselineCliHint">
+            MESA_ANTHROPIC_MODEL=claude-opus-5 mesa evaluate-ai-baseline benchmarks/ground_truth.yml --systems
+            god-service,cyclic-dependencies --runs 5 --provider anthropic --output-dir
+            evaluation-results/ai-baseline-comparison-opus5
+          </pre>
           Then reload this page.
         </div>
       ) : null}

@@ -161,7 +161,9 @@ export function FitnessGatePanel({ scanId, isDemo }: { scanId: string | null; is
               const label = ruleLabel(rule);
               return (
                 <div key={rule.rule_id} className={`gateRule ${rule.passed ? "passed" : "failed"}`}>
-                  <span className="gateRuleIcon" aria-hidden="true">{rule.passed ? "✓" : "✕"}</span>
+                  <span className="gateRuleIcon" aria-hidden="true">
+                    {rule.passed ? "✓" : "✕"}
+                  </span>
                   <div className="gateRuleBody">
                     <strong>{label.name}</strong>
                     <p>{rule.message}</p>

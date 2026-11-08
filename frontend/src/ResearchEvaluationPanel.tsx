@@ -98,8 +98,8 @@ export function ResearchEvaluationPanel({
           <div className="eyebrow">Research Evaluation</div>
           <h2>Project Scan Records</h2>
           <p>
-            Convert real repository scans into reusable evaluation records for your final report,
-            viva walkthrough, and demo evidence table.
+            Convert real repository scans into reusable evaluation records for your final report, viva walkthrough, and
+            demo evidence table.
           </p>
         </div>
         <div className="researchActions">
@@ -149,7 +149,9 @@ export function ResearchEvaluationPanel({
         {!selectedProjectId ? (
           <div className="emptyInline">Select a project first, then choose the scan you want to evaluate.</div>
         ) : history.length === 0 ? (
-          <div className="emptyInline">This project has no scans yet. Run a scan first, then come back here to create the evaluation record.</div>
+          <div className="emptyInline">
+            This project has no scans yet. Run a scan first, then come back here to create the evaluation record.
+          </div>
         ) : isLoadingDraft ? (
           <div className="emptyInline">Loading scan-derived evaluation values...</div>
         ) : draftError ? (
@@ -171,9 +173,21 @@ export function ResearchEvaluationPanel({
               <ResearchDraftMetric label="Services Expected" value={draft.expected_services ?? null} tone="neutral" />
               <ResearchDraftMetric label="Services Detected" value={draft.detected_services} tone="neutral" />
               <ResearchDraftMetric label="Findings" value={draft.total_findings} tone="neutral" />
-              <ResearchDraftMetric label="TP" value={draft.true_positives ?? null} tone={draft.true_positives == null ? "neutral" : "good"} />
-              <ResearchDraftMetric label="FP" value={draft.false_positives ?? null} tone={draft.false_positives == null ? "neutral" : "warn"} />
-              <ResearchDraftMetric label="FN" value={draft.false_negatives ?? null} tone={draft.false_negatives == null ? "neutral" : "warn"} />
+              <ResearchDraftMetric
+                label="TP"
+                value={draft.true_positives ?? null}
+                tone={draft.true_positives == null ? "neutral" : "good"}
+              />
+              <ResearchDraftMetric
+                label="FP"
+                value={draft.false_positives ?? null}
+                tone={draft.false_positives == null ? "neutral" : "warn"}
+              />
+              <ResearchDraftMetric
+                label="FN"
+                value={draft.false_negatives ?? null}
+                tone={draft.false_negatives == null ? "neutral" : "warn"}
+              />
               <ResearchDraftMetric label="Precision" value={formatMetricValue(draft.precision)} tone="good" />
               <ResearchDraftMetric label="Recall" value={formatMetricValue(draft.recall)} tone="good" />
               <ResearchDraftMetric label="F1" value={formatMetricValue(draft.f1_score)} tone="good" />
@@ -190,17 +204,53 @@ export function ResearchEvaluationPanel({
 
       <section className="researchSummaryGrid">
         <Metric label="Records" value={records.length} detail="Open-source project evaluations" kind="number" />
-        <Metric label="Report Ready" value={reportReadyCount} detail="Marked suitable for final paper/demo" kind="number" />
-        <Metric label="Avg Precision" value={formatMetricValue(averagePrecision)} detail="Calculated from saved records" kind="status" />
-        <Metric label="Avg Recall" value={formatMetricValue(averageRecall)} detail="Calculated from saved records" kind="status" />
+        <Metric
+          label="Report Ready"
+          value={reportReadyCount}
+          detail="Marked suitable for final paper/demo"
+          kind="number"
+        />
+        <Metric
+          label="Avg Precision"
+          value={formatMetricValue(averagePrecision)}
+          detail="Calculated from saved records"
+          kind="status"
+        />
+        <Metric
+          label="Avg Recall"
+          value={formatMetricValue(averageRecall)}
+          detail="Calculated from saved records"
+          kind="status"
+        />
       </section>
 
       <section className="researchExportBar">
         <span>{records.length} records available for export</span>
         <div>
-          <button type="button" className="secondaryButton" onClick={() => onExport("markdown")} disabled={isExporting || records.length === 0}>Markdown</button>
-          <button type="button" className="secondaryButton" onClick={() => onExport("csv")} disabled={isExporting || records.length === 0}>CSV</button>
-          <button type="button" className="secondaryButton" onClick={() => onExport("json")} disabled={isExporting || records.length === 0}>JSON</button>
+          <button
+            type="button"
+            className="secondaryButton"
+            onClick={() => onExport("markdown")}
+            disabled={isExporting || records.length === 0}
+          >
+            Markdown
+          </button>
+          <button
+            type="button"
+            className="secondaryButton"
+            onClick={() => onExport("csv")}
+            disabled={isExporting || records.length === 0}
+          >
+            CSV
+          </button>
+          <button
+            type="button"
+            className="secondaryButton"
+            onClick={() => onExport("json")}
+            disabled={isExporting || records.length === 0}
+          >
+            JSON
+          </button>
         </div>
       </section>
 
@@ -239,7 +289,9 @@ export function ResearchEvaluationPanel({
                     className={selectedRecord?.id === record.id ? "selected" : ""}
                     onClick={() => onSelectRecord(record.id)}
                   >
-                    <td><strong>{record.repo_name}</strong></td>
+                    <td>
+                      <strong>{record.repo_name}</strong>
+                    </td>
                     <td>{record.commit_ref || "N/A"}</td>
                     <td>{record.expected_services ?? "N/A"}</td>
                     <td>{record.detected_services}</td>
@@ -394,20 +446,46 @@ function ResearchRecordEditor({
         />
       </div>
       <div className="researchMetricPreview">
-        <span>Precision: <strong>{formatMetricValue(draftMetricPreview(draft).precision)}</strong> <em>Calculated</em></span>
-        <span>Recall: <strong>{formatMetricValue(draftMetricPreview(draft).recall)}</strong> <em>Calculated</em></span>
-        <span>F1: <strong>{formatMetricValue(draftMetricPreview(draft).f1)}</strong> <em>Calculated</em></span>
+        <span>
+          Precision: <strong>{formatMetricValue(draftMetricPreview(draft).precision)}</strong> <em>Calculated</em>
+        </span>
+        <span>
+          Recall: <strong>{formatMetricValue(draftMetricPreview(draft).recall)}</strong> <em>Calculated</em>
+        </span>
+        <span>
+          F1: <strong>{formatMetricValue(draftMetricPreview(draft).f1)}</strong> <em>Calculated</em>
+        </span>
       </div>
       <label htmlFor="expectedPatterns">Expected communication patterns</label>
-      <textarea id="expectedPatterns" value={draft.expected_patterns ?? ""} onChange={(event) => setDraft({ ...draft, expected_patterns: event.target.value })} />
+      <textarea
+        id="expectedPatterns"
+        value={draft.expected_patterns ?? ""}
+        onChange={(event) => setDraft({ ...draft, expected_patterns: event.target.value })}
+      />
       <label htmlFor="detectedPatterns">Detected communication patterns</label>
-      <textarea id="detectedPatterns" value={draft.detected_patterns ?? ""} onChange={(event) => setDraft({ ...draft, detected_patterns: event.target.value })} />
+      <textarea
+        id="detectedPatterns"
+        value={draft.detected_patterns ?? ""}
+        onChange={(event) => setDraft({ ...draft, detected_patterns: event.target.value })}
+      />
       <label htmlFor="researchNotes">Notes</label>
-      <textarea id="researchNotes" value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} />
+      <textarea
+        id="researchNotes"
+        value={draft.notes ?? ""}
+        onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
+      />
       <label htmlFor="researchLimitations">Limitations</label>
-      <textarea id="researchLimitations" value={draft.limitations ?? ""} onChange={(event) => setDraft({ ...draft, limitations: event.target.value })} />
+      <textarea
+        id="researchLimitations"
+        value={draft.limitations ?? ""}
+        onChange={(event) => setDraft({ ...draft, limitations: event.target.value })}
+      />
       <label htmlFor="researchRelevance">Research relevance</label>
-      <textarea id="researchRelevance" value={draft.research_relevance ?? ""} onChange={(event) => setDraft({ ...draft, research_relevance: event.target.value })} />
+      <textarea
+        id="researchRelevance"
+        value={draft.research_relevance ?? ""}
+        onChange={(event) => setDraft({ ...draft, research_relevance: event.target.value })}
+      />
       <label className="reportReadyToggle">
         <input
           type="checkbox"
@@ -441,7 +519,10 @@ function ResearchTextInput({
 }) {
   return (
     <label>
-      <span>{label}{status ? <em className="fieldStatus">{status}</em> : null}</span>
+      <span>
+        {label}
+        {status ? <em className="fieldStatus">{status}</em> : null}
+      </span>
       <input value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
@@ -460,7 +541,10 @@ function ResearchNumberInput({
 }) {
   return (
     <label>
-      <span>{label}{status ? <em className="fieldStatus">{status}</em> : null}</span>
+      <span>
+        {label}
+        {status ? <em className="fieldStatus">{status}</em> : null}
+      </span>
       <input
         type="number"
         min="0"
@@ -491,7 +575,14 @@ function ResearchDraftMetric({
 function fieldSourceLabel(
   field: keyof Pick<
     ResearchEvaluationRecord,
-    "repo_name" | "repo_url" | "commit_ref" | "project_type" | "expected_services" | "true_positives" | "false_positives" | "false_negatives"
+    | "repo_name"
+    | "repo_url"
+    | "commit_ref"
+    | "project_type"
+    | "expected_services"
+    | "true_positives"
+    | "false_positives"
+    | "false_negatives"
   >,
   record: ResearchEvaluationRecord,
   baselineDraft: ResearchEvaluationDraft | null

@@ -6,7 +6,14 @@ body {
   margin: 0;
   color: #0f172a;
   background: #f6f8fb;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 main {
@@ -51,7 +58,11 @@ button {
   line-height: 1.2;
   cursor: pointer;
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
-  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, opacity 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease,
+    opacity 180ms ease;
 }
 
 button:hover:not(:disabled) {
@@ -126,7 +137,10 @@ label {
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.96)),
     linear-gradient(180deg, #ffffff, #f8fbff);
   backdrop-filter: blur(18px);
-  transition: width 220ms ease, padding 220ms ease, box-shadow 220ms ease;
+  transition:
+    width 220ms ease,
+    padding 220ms ease,
+    box-shadow 220ms ease;
   overflow: hidden;
   box-shadow: inset -1px 0 0 rgba(219, 228, 240, 0.8);
 }
@@ -173,7 +187,9 @@ label {
   color: #64748b;
   font-size: 12px;
   line-height: 1.55;
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .sidebarToggle {
@@ -187,7 +203,10 @@ label {
   border-radius: 12px;
   background: linear-gradient(135deg, #0f172a, #172554);
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.2);
-  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
 }
 
 .sidebarToggle span {
@@ -312,7 +331,11 @@ label {
   background: transparent;
   box-shadow: none;
   text-align: left;
-  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .sidebarItem strong {
@@ -2610,7 +2633,11 @@ aside {
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 10px 24px rgba(148, 163, 184, 0.08);
   text-align: left;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
 }
 
 .modeButton strong {
@@ -2895,7 +2922,6 @@ aside {
   color: #64748b;
   font-size: 12px;
 }
-
 
 .evolutionPanel {
   padding: 16px;
@@ -3776,9 +3802,7 @@ aside {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.18) 1px, transparent 0),
-    #ffffff;
+  background: radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.18) 1px, transparent 0), #ffffff;
   background-size: 26px 26px;
 }
 
@@ -4133,7 +4157,10 @@ meter {
 
 .findingCard.clickable {
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
 }
 
 .findingCard.clickable:hover {
@@ -4566,7 +4593,6 @@ meter {
   .metric.wide {
     grid-column: span 8;
   }
-
 }
 
 @media (max-width: 860px) {
@@ -4681,7 +4707,6 @@ meter {
     grid-column: span 1;
     min-height: 120px;
   }
-
 }
 
 @media (max-width: 640px) {

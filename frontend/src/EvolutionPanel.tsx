@@ -35,7 +35,9 @@ export function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
                 <span>New cycles</span>
               </div>
             </div>
-            <p className="evolutionSentence">{String(latest.architecture_change_summary.summary ?? "No summary available.")}</p>
+            <p className="evolutionSentence">
+              {String(latest.architecture_change_summary.summary ?? "No summary available.")}
+            </p>
             {latest.recommendations.length ? (
               <div className="evolutionRecommendations">
                 <strong>Recommendation</strong>
@@ -50,13 +52,19 @@ export function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
               <span>{reports.length} snapshots</span>
             </div>
             <div className="evolutionTimeline">
-              {reports.slice().reverse().map((report) => (
-                <article key={`${report.base_scan_id}-${report.target_scan_id}`}>
-                  <strong>{`${shortId(report.base_scan_id)} -> ${shortId(report.target_scan_id)}`}</strong>
-                  <span>{report.risk_trend.new_risk_count ?? 0} new risks, {report.risk_trend.resolved_risk_count ?? 0} resolved</span>
-                  <small>{formatSigned(report.score_trend.system_delta)} health</small>
-                </article>
-              ))}
+              {reports
+                .slice()
+                .reverse()
+                .map((report) => (
+                  <article key={`${report.base_scan_id}-${report.target_scan_id}`}>
+                    <strong>{`${shortId(report.base_scan_id)} -> ${shortId(report.target_scan_id)}`}</strong>
+                    <span>
+                      {report.risk_trend.new_risk_count ?? 0} new risks, {report.risk_trend.resolved_risk_count ?? 0}{" "}
+                      resolved
+                    </span>
+                    <small>{formatSigned(report.score_trend.system_delta)} health</small>
+                  </article>
+                ))}
             </div>
           </div>
         </div>

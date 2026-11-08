@@ -104,17 +104,32 @@ export function AIExplainerPanel({
             {status ? (
               <small>
                 Mode: <code>{status.mode}</code> | Model: <code>{status.model}</code>
-                {status.api_key_hint ? <> | Key: <code>{status.api_key_hint}</code></> : null}
+                {status.api_key_hint ? (
+                  <>
+                    {" "}
+                    | Key: <code>{status.api_key_hint}</code>
+                  </>
+                ) : null}
               </small>
             ) : null}
           </div>
 
           <div className="aiPromptGrid">
-            <button type="button" className="aiQuickAction" onClick={() => onAsk("SCAN_SUMMARY")} disabled={!activeScan || isLoading}>
+            <button
+              type="button"
+              className="aiQuickAction"
+              onClick={() => onAsk("SCAN_SUMMARY")}
+              disabled={!activeScan || isLoading}
+            >
               <strong>Summarize this scan</strong>
               <span>Get a short explanation of the overall result.</span>
             </button>
-            <button type="button" className="aiQuickAction" onClick={() => onAsk("PRIORITIZE_FIXES", { question: "Explain simply what should be solved first." })} disabled={!activeScan || isLoading}>
+            <button
+              type="button"
+              className="aiQuickAction"
+              onClick={() => onAsk("PRIORITIZE_FIXES", { question: "Explain simply what should be solved first." })}
+              disabled={!activeScan || isLoading}
+            >
               <strong>What should I fix first?</strong>
               <span>Prioritize the most important architecture issues.</span>
             </button>
@@ -130,11 +145,17 @@ export function AIExplainerPanel({
             <button
               type="button"
               className="aiQuickAction"
-              onClick={() => onAsk("HEALTH_SCORE_EXPLANATION", { scoreTarget: systemScore ? `system:${systemScore.target}` : "system" })}
+              onClick={() =>
+                onAsk("HEALTH_SCORE_EXPLANATION", {
+                  scoreTarget: systemScore ? `system:${systemScore.target}` : "system"
+                })
+              }
               disabled={!activeScan || !systemScore || isLoading}
             >
               <strong>Explain the health score</strong>
-              <span>{systemScore ? `${systemScore.score.toFixed(1)}/100 ${systemScore.grade}` : "Available after a scan"}</span>
+              <span>
+                {systemScore ? `${systemScore.score.toFixed(1)}/100 ${systemScore.grade}` : "Available after a scan"}
+              </span>
             </button>
             <button
               type="button"
@@ -148,15 +169,32 @@ export function AIExplainerPanel({
               <strong>Compare with previous scan</strong>
               <span>{compareBaseScan ? `Against ${shortId(compareBaseScan.id)}` : "Need at least two scans"}</span>
             </button>
-            <button type="button" className="aiQuickAction" onClick={() => onAsk("GOVERNANCE_POLICY_HELP")} disabled={!activeScan || isLoading}>
+            <button
+              type="button"
+              className="aiQuickAction"
+              onClick={() => onAsk("GOVERNANCE_POLICY_HELP")}
+              disabled={!activeScan || isLoading}
+            >
               <strong>Explain governance</strong>
               <span>Review active rules and policy violations.</span>
             </button>
-            <button type="button" className="aiQuickAction" onClick={() => onAsk("POLICY_WRITING_ASSISTANCE")} disabled={!activeScan || isLoading}>
+            <button
+              type="button"
+              className="aiQuickAction"
+              onClick={() => onAsk("POLICY_WRITING_ASSISTANCE")}
+              disabled={!activeScan || isLoading}
+            >
               <strong>Draft policy YAML</strong>
               <span>Suggest governance rules from the current scan.</span>
             </button>
-            <button type="button" className="aiQuickAction" onClick={() => onAsk("DOC_QA", { question: "How do I use this tool?", docQuery: "How do I use this tool?" })} disabled={isLoading}>
+            <button
+              type="button"
+              className="aiQuickAction"
+              onClick={() =>
+                onAsk("DOC_QA", { question: "How do I use this tool?", docQuery: "How do I use this tool?" })
+              }
+              disabled={isLoading}
+            >
               <strong>Ask from docs</strong>
               <span>Use in-product documentation as the answer source.</span>
             </button>
@@ -183,7 +221,11 @@ export function AIExplainerPanel({
 
           <div className="aiHelperCard">
             <strong>Current policy editor</strong>
-            <span>{policyText.trim() ? "Policy YAML is loaded and ready for AI drafting help." : "No policy YAML loaded yet."}</span>
+            <span>
+              {policyText.trim()
+                ? "Policy YAML is loaded and ready for AI drafting help."
+                : "No policy YAML loaded yet."}
+            </span>
           </div>
         </div>
 
@@ -193,26 +235,30 @@ export function AIExplainerPanel({
           </div>
         ) : (
           <div className="aiResponseCard">
-          <div className="aiResponseHeader">
-            <div>
-              <div className="findingMeta">
-                <span>{response?.source ?? "streaming"}</span>
-                <strong className={`severity ${(response?.confidence ?? "MODERATE").toLowerCase()}`}>{response?.confidence ?? "MODERATE"}</strong>
+            <div className="aiResponseHeader">
+              <div>
+                <div className="findingMeta">
+                  <span>{response?.source ?? "streaming"}</span>
+                  <strong className={`severity ${(response?.confidence ?? "MODERATE").toLowerCase()}`}>
+                    {response?.confidence ?? "MODERATE"}
+                  </strong>
+                </div>
+                <div className={`aiAnswerBadge ${answerProvider.tone}`}>{answerProvider.label}</div>
+                <h3>{response?.title ?? "MESA is preparing the answer..."}</h3>
               </div>
-              <div className={`aiAnswerBadge ${answerProvider.tone}`}>
-                {answerProvider.label}
-              </div>
-              <h3>{response?.title ?? "MESA is preparing the answer..."}</h3>
+              <span className="modePill">{(response?.intent ?? "AUTO").replace(/_/g, " ")}</span>
             </div>
-            <span className="modePill">{(response?.intent ?? "AUTO").replace(/_/g, " ")}</span>
-          </div>
             <p className="aiAnswer">{streamingAnswer || response?.answer || "Waiting for response..."}</p>
 
             {response?.policy_document ? (
               <div className="aiPolicyDraftCard">
                 <div className="aiPolicyDraftHeader">
                   <strong>Suggested policy draft</strong>
-                  <button type="button" className="aiDraftActionButton" onClick={() => onApplyPolicyDraft(response.policy_document ?? "")}>
+                  <button
+                    type="button"
+                    className="aiDraftActionButton"
+                    onClick={() => onApplyPolicyDraft(response.policy_document ?? "")}
+                  >
                     Use this draft
                   </button>
                 </div>
@@ -238,7 +284,9 @@ export function AIExplainerPanel({
                 <strong>Suggestions</strong>
                 {response?.suggestions.length ? (
                   <ul className="aiList">
-                    {response.suggestions.map((item) => <li key={item}>{item}</li>)}
+                    {response.suggestions.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
                   </ul>
                 ) : (
                   <div className="emptyInline">No suggestions returned.</div>
@@ -248,7 +296,9 @@ export function AIExplainerPanel({
                 <strong>Limitations</strong>
                 {response?.limitations.length ? (
                   <ul className="aiList">
-                    {response.limitations.map((item) => <li key={item}>{item}</li>)}
+                    {response.limitations.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
                   </ul>
                 ) : (
                   <div className="emptyInline">No limitations returned.</div>
