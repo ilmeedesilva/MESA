@@ -31,17 +31,25 @@ jobs:
         run: pytest --cov=mesa --cov-report=term-missing
 
   frontend:
+    name: Frontend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: frontend/package.json
-      - name: Install frontend
-        working-directory: frontend
-        run: npm install
-      - name: Build frontend
-        working-directory: frontend
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install (from lockfile)
+        run: npm ci
+      - name: Lint and type check
+        run: npm run lint
+      - name: Check formatting
+        run: npm run format:check
+      - name: Unit tests
+        run: npm test
+      - name: Build
         run: npm run build
