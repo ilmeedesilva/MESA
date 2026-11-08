@@ -1,8 +1,8 @@
 import os
 import tarfile
 import time
-from pathlib import Path
 import zipfile
+from pathlib import Path
 
 import pytest
 

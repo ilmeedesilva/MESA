@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import time
 from datetime import UTC, datetime
 from pathlib import Path
-import time
 from typing import Protocol
 from uuid import uuid4
 
@@ -21,10 +21,10 @@ from mesa.models import (
     ProjectCreate,
     ProjectRecord,
     ProjectSetup,
+    RepoSourceMetadata,
     ResearchEvaluationRecord,
     ResearchEvaluationRecordCreate,
     ResearchEvaluationRecordUpdate,
-    RepoSourceMetadata,
     ScanJobRecord,
     ScanJobStatus,
     ScanRecord,

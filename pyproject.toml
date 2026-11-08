@@ -51,7 +51,22 @@ extend-exclude = ["tests/fixtures", "benchmarks", "demo-projects", "evaluation-r
 # enforces, the way an unpinned `ruff>=0.5` did between 0.15.15 and 0.16.7 here.
 # This is the rule set the codebase has actually been written and reviewed
 # against; broadening it is a deliberate follow-up, not an incidental one.
-select = ["E4", "E7", "E9", "F"]
+select = [
+  "E4", "E7", "E9", "F",  # pycodestyle errors and pyflakes (the original set)
+  "I",    # import sorting
+  "B",    # bugbear: likely bugs
+  "UP",   # pyupgrade: syntax for the supported Python versions
+  "SIM",  # simplifications
+  "C4",   # comprehensions
+  "RUF",  # ruff-specific checks
+]
+ignore = [
+  "RUF005",  # prefer [*a, b] over a + [b]: purely cosmetic, not worth churning detector code
+]
+
+[tool.ruff.lint.flake8-bugbear]
+# Typer declares CLI arguments as call defaults by design.
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
 
 
 [tool.setuptools.package-data]

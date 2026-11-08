@@ -3,7 +3,6 @@ from pathlib import Path
 from mesa.analysis import analyze_services
 from mesa.models import FindingType
 
-
 ROOT = Path(__file__).resolve().parents[1] / "demo-projects"
 
 

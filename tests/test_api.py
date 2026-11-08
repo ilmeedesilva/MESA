@@ -1,12 +1,12 @@
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from mesa.api.main import app
 from mesa.analysis import analyze_services
 from mesa.analysis import explainer as explainer_module
+from mesa.api.main import app
 from mesa.models import (
     AIExplainerIntent,
     AIExplainerRequest,

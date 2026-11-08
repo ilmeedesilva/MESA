@@ -11,7 +11,6 @@ from mesa.models import (
     Severity,
 )
 
-
 HIGH_RISK_COUPLING_TYPES = {
     FindingType.CHATTY_SERVICE,
     FindingType.HARD_CODED_SERVICE_DEPENDENCY,

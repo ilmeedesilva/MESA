@@ -971,7 +971,7 @@ def _service_centrality(result: AnalysisResult) -> dict[str, float]:
         if target in service_ids:
             degree[target] += 1
     if not degree:
-        return {service_id: 0.0 for service_id in service_ids}
+        return dict.fromkeys(service_ids, 0.0)
     max_degree = max(degree.values())
     return {
         service_id: round(degree.get(service_id, 0) / max(max_degree, 1), 2)

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import lru_cache
 import json
 import logging
 import os
-from pathlib import Path
 import re
+from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
@@ -684,19 +684,18 @@ def _resolve_intent(
         )
     ):
         return AIExplainerIntent.POLICY_WRITING_ASSISTANCE
-    if payload.base_scan_id or payload.target_scan_id or has_comparison:
-        if any(
-            token in question
-            for token in (
-                "compare",
-                "difference",
-                "changed",
-                "evolution",
-                "before",
-                "after",
-            )
-        ):
-            return AIExplainerIntent.COMPARE_SCANS
+    if (payload.base_scan_id or payload.target_scan_id or has_comparison) and any(
+        token in question
+        for token in (
+            "compare",
+            "difference",
+            "changed",
+            "evolution",
+            "before",
+            "after",
+        )
+    ):
+        return AIExplainerIntent.COMPARE_SCANS
     if any(
         token in question
         for token in (

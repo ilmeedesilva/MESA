@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
 import csv
 import json
 import os
-from pathlib import Path
 import re
+from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -481,7 +481,7 @@ def _build_explanation_request(check: dict[str, Any], result) -> AIExplainerRequ
     finding_id = None
     score_target = check.get("score_target")
     if "finding_type" in check:
-        target_services = set(str(item) for item in check.get("services", []))
+        target_services = {str(item) for item in check.get("services", [])}
         for finding in result.findings:
             if finding.type.value != str(check["finding_type"]):
                 continue
@@ -643,7 +643,7 @@ def _aggregate_named_metrics(
     if not items:
         return {
             "system_count": 0,
-            **{key: None for key in metrics_keys},
+            **dict.fromkeys(metrics_keys),
         }
     return {
         "system_count": len(items),

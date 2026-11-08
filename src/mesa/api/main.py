@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from itertools import pairwise
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,13 +19,13 @@ from mesa.analysis.explainer import (
 )
 from mesa.analysis.fitness_gate import evaluate_architecture_gate
 from mesa.analysis.governance import evaluate_policies, parse_policy_document
+from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.analysis.research_records import (
     export_records,
     record_create_from_scan,
     record_draft_from_scan,
 )
 from mesa.analysis.roadmap import build_remediation_roadmap
-from mesa.analysis.recommendations import enrich_findings_with_recommendations
 from mesa.evaluation import (
     evaluate_benchmark,
     list_available_benchmarks,
@@ -35,32 +36,32 @@ from mesa.evaluation import (
 )
 from mesa.ingestion import prepare_repository, preview_repository, resolve_service_paths
 from mesa.models import (
-    AIExplainerStatus,
     AIExplainerRequest,
     AIExplainerResponse,
+    AIExplainerStatus,
+    AnalysisRequest,
+    AnalysisResult,
     ArchitectureFitnessGateRequest,
     ArchitectureFitnessGateResult,
     ArchitectureGateThresholds,
-    AnalysisRequest,
-    AnalysisResult,
     EvolutionReport,
     Finding,
     HealthScore,
+    PersistedScanResult,
     PolicyCreate,
     PolicyDocument,
     PolicyRecord,
-    PersistedScanResult,
     ProjectCreate,
     ProjectRecord,
     ProjectSetup,
-    ResearchEvaluationDraft,
-    ResearchEvaluationRecord,
-    ResearchEvaluationRecordCreate,
-    ResearchEvaluationRecordUpdate,
     RemediationRoadmap,
     RepoScanPreview,
     RepoScanPreviewRequest,
     RepoScanRunRequest,
+    ResearchEvaluationDraft,
+    ResearchEvaluationRecord,
+    ResearchEvaluationRecordCreate,
+    ResearchEvaluationRecordUpdate,
     RunScanRequest,
     ScanJobRecord,
     ScanRecord,
@@ -392,7 +393,7 @@ def _execute_repo_scan_job(
     repository.mark_scan_job_running(job_id)
     try:
         persisted = _run_repo_scan(repository, architecture_store, project_id, payload)
-    except Exception as error:  # noqa: BLE001 - job failures must be recorded, not raised
+    except Exception as error:  # broad on purpose: job failures must be recorded, not raised
         repository.fail_scan_job(job_id, str(error))
         return
     repository.complete_scan_job(job_id, persisted.scan.id)
@@ -454,7 +455,7 @@ def get_project_evolution_timeline(project_id: str, request: Request) -> list[Ev
 
     scans = list(reversed(repository.list_scans(project_id)))
     reports: list[EvolutionReport] = []
-    for previous, current in zip(scans, scans[1:]):
+    for previous, current in pairwise(scans):
         previous_result = repository.get_scan_result(previous.id)
         current_result = repository.get_scan_result(current.id)
         if previous_result is None or current_result is None:

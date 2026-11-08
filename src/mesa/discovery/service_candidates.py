@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-import re
 
 from mesa.models import ServiceDiscoveryCandidate
 
@@ -385,10 +385,7 @@ def _docker_compose_service_contexts(
             block_lines.append(nested)
         block = "\n".join(block_lines)
         context = _compose_context_from_block(block)
-        if context is None:
-            candidate = root_path / service_name
-        else:
-            candidate = compose_file.parent / context
+        candidate = root_path / service_name if context is None else compose_file.parent / context
         resolved = candidate.resolve()
         try:
             resolved.relative_to(root_path.resolve())

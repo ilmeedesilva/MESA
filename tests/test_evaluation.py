@@ -166,7 +166,7 @@ def test_benchmarks_dir_honours_mesa_workspace_root_override(monkeypatch) -> Non
     monkeypatch.setenv("MESA_WORKSPACE_ROOT", fake_root)
     try:
         importlib.reload(runner_module)
-        assert runner_module.BENCHMARKS_DIR == Path(fake_root) / "benchmarks"
+        assert Path(fake_root) / "benchmarks" == runner_module.BENCHMARKS_DIR
     finally:
         monkeypatch.delenv("MESA_WORKSPACE_ROOT", raising=False)
         importlib.reload(runner_module)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from itertools import pairwise
+
 import networkx as nx
 
 from mesa.detectors.base import Detector
@@ -20,7 +22,7 @@ class CyclicDependencyDetector(Detector):
         for index, cycle in enumerate(_unique_cycles(call_graph), start=1):
             cycle_path = cycle + [cycle[0]]
             evidence = [{"cycle": cycle, "cycle_path": cycle_path, "cycle_length": len(cycle)}]
-            for source, target in zip(cycle_path, cycle_path[1:]):
+            for source, target in pairwise(cycle_path):
                 for edge in edge_evidence.get((source, target), []):
                     evidence.append(
                         {

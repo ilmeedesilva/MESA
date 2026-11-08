@@ -157,7 +157,7 @@ def _system_score(
     service_scores: list[HealthScore], domain_scores: list[HealthScore], findings: list[Finding]
 ) -> HealthScore:
     if not service_scores:
-        breakdown = {dimension: 100.0 for dimension in DIMENSIONS}
+        breakdown = dict.fromkeys(DIMENSIONS, 100.0)
     else:
         breakdown = _round_breakdown(
             {

@@ -368,7 +368,7 @@ def _resolve_relative_path(root_path: Path, raw_path: str) -> Path:
 
 
 def _summarize_repository(root_path: Path) -> tuple[dict[str, int], list[str], int]:
-    manifest_counts = {manifest: 0 for manifest in sorted(_MANIFEST_FILENAMES)}
+    manifest_counts = dict.fromkeys(sorted(_MANIFEST_FILENAMES), 0)
     top_level_entries = sorted(child.name for child in root_path.iterdir())[:40]
     file_count = 0
 
