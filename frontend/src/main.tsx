@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import cytoscape from "cytoscape";
 import { demoWorkspace } from "./demoData";
 import { ApiError, api, messageFor, pollScanJob, streamAIResponse } from "./api";
-import { DimensionBars, FindingDrawer } from "./FindingDrawer";
+import { FindingDrawer } from "./FindingDrawer";
 import { DocLinkButton } from "./DocLinkButton";
 import { HealthScoreView, RemediationRoadmapPanel } from "./RemediationRoadmapPanel";
 import { FitnessGatePanel } from "./FitnessGatePanel";
@@ -16,7 +16,6 @@ import { DocumentationPortal } from "./DocumentationPortal";
 import { GraphInspector, PublicDemoBanner } from "./GraphInspector";
 import { ResearchEvaluationPanel } from "./ResearchEvaluationPanel";
 import {
-  bucketLabel,
   demoPersistedScan,
   isDemoScan,
   isPublicDemoProject,
@@ -25,108 +24,52 @@ import {
 import {
   Metric,
   aggregateEdges,
-  aiAnswerProvider,
-  aiStatusLabel,
-  aiStatusTone,
-  averageMetric,
   buildFilterOptions,
   buildGraphElements,
-  calculateArchitecturePositions,
-  calculateDegrees,
-  clamp,
   compactMetricDetail,
   comparisonBaseScan,
-  confidenceGuidance,
-  confidenceLabel,
-  databaseLabel,
-  distribute,
   downloadTextFile,
-  draftMetricPreview,
-  edgeRisk,
-  emptyToNull,
-  enrichEdge,
   filterFindings,
-  findingLimitation,
-  findingWhyItMatters,
-  findingsForEdge,
-  findingsForService,
   flattenScores,
   formatDate,
-  formatEdgeLabel,
-  formatMetricValue,
-  formatNodeLabel,
-  formatSigned,
-  formatType,
   getHighestSeverity,
   getHotspotService,
   getMostUrgentFinding,
   gradeTone,
   graphFromDigitalTwin,
   graphFromReport,
-  graphRichnessScore,
   graphStyle,
-  groupNodesByService,
   isAbortError,
   isNotFoundError,
-  isRenderableGraph,
-  labelForDigitalTwinNode,
-  nodeFromDigitalTwin,
-  normalizeRelationshipType,
   normalizeResearchRecordPayload,
-  ownerForDatabase,
-  placeColumn,
-  placeRow,
   plainLanguageFindingTitle,
   policyDocumentFromRecords,
   preferredGraph,
-  primaryGraphType,
-  propertyRecord,
-  propertyString,
   readProjectIdFromUrl,
   readSectionFromUrl,
-  recommendationImpact,
   recommendationPreview,
-  renderHighlightedText,
-  renderInlineMarkdown,
-  renderMarkdown,
   resolveProjectSelection,
-  riskFromFindings,
   selectionForEdge,
   selectionForNode,
-  serviceHealthScore,
-  serviceNameForNode,
   servicePathsFromText,
   shortId,
-  strongerRisk,
-  summarizeEvidence,
   summaryFindingTitle,
-  syncAppStateToUrl,
-  tokenizeHighlightedText,
-  trimTrailingPunctuation
+  syncAppStateToUrl
 } from "./viewHelpers";
 import "./styles.css";
 
 import type {
-  AIExplainerEvidence,
   AIExplainerIntent,
   AIExplainerResponse,
   AIExplainerStatus,
-  AggregatedEdge,
   AnalysisResult,
   ApiAvailability,
   AppSection,
-  BenchmarkEvaluationReport,
-  BenchmarkListing,
-  BenchmarkMetrics,
   DigitalTwinGraph,
   DisplayGraph,
-  EvidenceChainItem,
   EvolutionReport,
   Filters,
   Finding,
-  FindingRecommendation,
-  GraphEdge,
-  GraphNode,
   GraphSelection,
   HealthScore,
   InterpretationMode,
@@ -135,19 +78,11 @@ import type {
   ProjectListStatus,
   ProjectRecord,
   ProjectSetup,
-  RefactoringPlaybook,
-  RefactoringPlaybookPhase,
   RemediationRoadmap,
   RepoScanPreview,
-  ResearchEvaluationDraft,
   ResearchEvaluationRecord,
-  RoadmapAction,
-  RoadmapBucket,
-  RoadmapDependency,
-  RoadmapPlanStep,
   ScanJobRecord,
   ScanRecord,
-  ServiceDiscoveryCandidate,
   WorkflowStep
 } from "./types";
 
@@ -792,59 +727,6 @@ function App() {
     }
     setPaths(selectedDiscoveryPaths.join("\n"));
     setError(null);
-  }
-
-  async function loadHistory(projectId: string, preferredScanId?: string) {
-    if (isPublicDemoProject(projectId)) {
-      setHistory(demoWorkspace.scans as unknown as ScanRecord[]);
-      setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
-      if (preferredScanId) return;
-      if (!activeScan && demoWorkspace.scans.length > 0) {
-        await loadScan(demoWorkspace.scans[0].id);
-      }
-      return;
-    }
-    setError(null);
-    try {
-      const scans = await api<ScanRecord[]>(`/api/projects/${projectId}/scans`);
-      setHistory(scans);
-      await loadEvolution(projectId);
-      if (preferredScanId) return;
-      if (!activeScan && scans.length > 0) {
-        await loadScan(scans[0].id);
-      }
-    } catch (caught) {
-      setHistory([]);
-      setEvolution([]);
-      setError(messageFor(caught, "Could not load scan history"));
-    }
-  }
-
-  async function loadEvolution(projectId: string) {
-    if (isPublicDemoProject(projectId)) {
-      setEvolution(demoWorkspace.evolution as unknown as EvolutionReport[]);
-      return;
-    }
-    try {
-      setEvolution(await api<EvolutionReport[]>(`/api/projects/${projectId}/evolution`));
-    } catch {
-      setEvolution([]);
-    }
-  }
-
-  async function loadPolicies(projectId: string) {
-    if (isPublicDemoProject(projectId)) {
-      setPolicyCount(demoWorkspace.policies.length);
-      setPolicyText(demoWorkspace.policyText);
-      return;
-    }
-    try {
-      const policies = await api<PolicyRecord[]>(`/api/projects/${projectId}/policies`);
-      setPolicyCount(policies.length);
-      if (policies.length > 0) setPolicyText(policyDocumentFromRecords(policies));
-    } catch {
-      setPolicyCount(0);
-    }
   }
 
   async function savePolicies() {
