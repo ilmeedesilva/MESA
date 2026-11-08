@@ -24,6 +24,27 @@ Body:
 {"service_paths": ["tests/fixtures/chatty/order-service", "tests/fixtures/chatty/user-service"]}
 ```
 
+## Allowed scan roots
+
+`POST /analyze` and `POST /projects/{project_id}/scans` only scan service paths that resolve
+inside an allowed scan root. Paths are resolved first (`..` removed, symlinks followed), so a
+`../` escape or a symlink pointing outside a root is rejected too. A rejected request returns
+`400` and nothing is stored:
+
+```json
+{"detail": "Service path is outside the allowed scan roots: /etc. Set MESA_ALLOWED_SCAN_ROOTS to allow other directories."}
+```
+
+| Setting | Allowed roots |
+| --- | --- |
+| `MESA_ALLOWED_SCAN_ROOTS` set | The listed directories, separated by `:` (`;` on Windows) |
+| Not set, `MESA_WORKSPACE_ROOT` set | That directory (`/workspace` in the Docker Compose setup) |
+| Neither set | The MESA repository root |
+
+Relative paths are resolved against the API server's working directory. Repository scans
+(`/repo-scans`) are already limited to the repository being scanned. The CLI is not affected:
+it scans paths on your own machine.
+
 ## Repository Ingestion Preview
 
 ```text
