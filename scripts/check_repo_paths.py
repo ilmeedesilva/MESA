@@ -35,7 +35,9 @@ MACHINE_PATH = re.compile(
         [
             r"(?<![\w.-])/" + _HOME + r"/[A-Za-z0-9._-]+",  # macOS home directory
             r"(?<![\w.-])/home/[A-Za-z0-9._-]+/",  # Linux home directory
-            r"\b[A-Za-z]:\\\\?" + _HOME + r"\\\\?",  # Windows user folder, C:\Users\ or C:\\Users\\
+            r"\b[A-Za-z]:\\\\?"
+            + _HOME
+            + r"\\\\?",  # Windows user folder, single or escaped backslashes
         ]
     )
 )
