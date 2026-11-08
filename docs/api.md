@@ -1,0 +1,215 @@
+# MESA API Documentation
+
+FastAPI interactive documentation is available at:
+
+```text
+http://localhost:8000/docs
+```
+
+## Health
+
+```text
+GET /health
+```
+
+## One-Off Analysis
+
+```text
+POST /analyze
+```
+
+Body:
+
+```json
+{"service_paths": ["tests/fixtures/chatty/order-service", "tests/fixtures/chatty/user-service"]}
+```
+
+## Allowed scan roots
+
+`POST /analyze` and `POST /projects/{project_id}/scans` only scan service paths that resolve
+inside an allowed scan root. Paths are resolved first (`..` removed, symlinks followed), so a
+`../` escape or a symlink pointing outside a root is rejected too. A rejected request returns
+`400` and nothing is stored:
+
+```json
+{"detail": "Service path is outside the allowed scan roots: /etc. Set MESA_ALLOWED_SCAN_ROOTS to allow other directories."}
+```
+
+| Setting | Allowed roots |
+| --- | --- |
+| `MESA_ALLOWED_SCAN_ROOTS` set | The listed directories, separated by `:` (`;` on Windows) |
+| Not set, `MESA_WORKSPACE_ROOT` set | That directory (`/workspace` in the Docker Compose setup) |
+| Neither set | The MESA repository root |
+
+Relative paths are resolved against the API server's working directory. Repository scans
+(`/repo-scans`) are already limited to the repository being scanned. The CLI is not affected:
+it scans paths on your own machine.
+
+## Repository Ingestion Preview
+
+```text
+POST /repo-scans/preview
+```
+
+Preview response now includes:
+
+- repository metadata
+- top-level entry summary
+- candidate service paths
+- `discovered_services` with:
+  - `service_name`
+  - `relative_path`
+  - `language`
+  - `confidence`
+  - `selected_by_default`
+  - `reasons`
+  - `manifests`
+  - `entrypoints`
+  - `signal_counts`
+
+Body examples:
+
+Local directory:
+
+```json
+{
+  "source_type": "LOCAL_PATH",
+  "location": "/workspace/tests/fixtures/chatty"
+}
+```
+
+Archive file:
+
+```json
+{
+  "source_type": "ARCHIVE_PATH",
+  "location": "/workspace/snapshots/chatty.zip"
+}
+```
+
+GitHub repository:
+
+```json
+{
+  "source_type": "GITHUB_URL",
+  "location": "https://github.com/example-org/example-repo",
+  "ref": "main"
+}
+```
+
+## Projects and Scans
+
+```text
+GET /projects
+POST /projects
+GET /projects/{project_id}
+GET /projects/{project_id}/setup
+PUT /projects/{project_id}/setup
+POST /projects/{project_id}/scans
+POST /projects/{project_id}/repo-scans
+GET /projects/{project_id}/scans
+GET /scans/{scan_id}
+GET /scans/{scan_id}/findings
+GET /scans/{scan_id}/scores
+GET /scans/{scan_id}/roadmap
+GET /scans/{scan_id}/gate
+POST /scans/{scan_id}/gate
+```
+
+Repository-backed project scan example:
+
+```json
+{
+  "source_type": "LOCAL_PATH",
+  "location": "/workspace/tests/fixtures/chatty",
+  "service_paths": ["order-service", "user-service"]
+}
+```
+
+Review step:
+
+- use the `discovered_services` array from the preview response as the review step before deciding which `service_paths` to send into the persisted repo scan
+
+## Graph APIs
+
+```text
+GET /scans/{scan_id}/graph
+GET /scans/{scan_id}/graph/paths?source=<service>&target=<service>
+GET /scans/{scan_id}/graph/cycles
+GET /scans/{scan_id}/graph/centrality
+GET /scans/{scan_id}/graph/shared-databases
+GET /scans/{scan_id}/graph/high-risk-clusters
+```
+
+## Evolution APIs
+
+```text
+GET /projects/{project_id}/snapshots
+GET /projects/{project_id}/evolution
+GET /projects/{project_id}/evolution/compare?base_scan_id=<old>&target_scan_id=<new>
+```
+
+## Remediation Roadmap
+
+```text
+GET /scans/{scan_id}/roadmap
+```
+
+The roadmap groups multiple findings into:
+
+- quick wins
+- medium-term changes
+- high-effort refactors
+- suggested execution order
+- dependencies between actions
+
+## Architecture Fitness Gate
+
+```text
+GET /scans/{scan_id}/gate
+POST /scans/{scan_id}/gate
+```
+
+The default gate evaluates whether a scan is suitable for CI/CD promotion. It checks:
+
+- minimum system health score
+- maximum critical findings
+- cyclic dependencies
+- governance policy violations
+- high-risk service coupling
+
+Custom threshold example:
+
+```json
+{
+  "thresholds": {
+    "minimum_health_score": 80,
+    "maximum_critical_findings": 0,
+    "allow_new_cyclic_dependencies": false,
+    "allow_governance_violations": false,
+    "allow_new_high_risk_coupling": false
+  }
+}
+```
+
+## Governance APIs
+
+```text
+GET /projects/{project_id}/policies
+POST /projects/{project_id}/policies
+PUT /projects/{project_id}/policies/{policy_id}
+POST /projects/{project_id}/policies/import
+```
+
+Policy import body:
+
+```json
+{
+  "content": "policies:
+  - id: no-cycles
+    name: No cyclic dependencies
+    rule: dependency_cycle_count == 0
+    severity: critical
+"
+}
+```

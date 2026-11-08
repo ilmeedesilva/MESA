@@ -2,7 +2,7 @@
 
 This demo repository is the improved version of `myservice-broken`.
 
-Use it for the second MESA scan in your demo or viva after showing the initial issues.
+Use it for the second MESA scan in a demo, after showing the initial issues.
 
 Expected outcome:
 
@@ -22,3 +22,5 @@ Services:
 - `payment-service`
 - `user-service`
 - `platform-service`
+
+The `.env` files in this demo are intentional: they hold a fake shared database URL so that MESA has a shared database to detect. They contain no real credentials.

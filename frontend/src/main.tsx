@@ -218,7 +218,7 @@ function App() {
   const [streamingAnswer, setStreamingAnswer] = React.useState("");
   const [aiStatus, setAiStatus] = React.useState<AIExplainerStatus | null>(null);
   const [isCheckingAIStatus, setIsCheckingAIStatus] = React.useState(false);
-  const [selectedDocSlug, setSelectedDocSlug] = React.useState("evaluator-quick-start");
+  const [selectedDocSlug, setSelectedDocSlug] = React.useState("user-guide");
   const [docsQuery, setDocsQuery] = React.useState("");
   const [docsCategory, setDocsCategory] = React.useState("ALL");
   const [filters, setFilters] = React.useState<Filters>({
@@ -1691,7 +1691,7 @@ function App() {
               </p>
             </div>
             <div className="docLinks">
-              <DocLinkButton label="Evaluator quick start" onClick={() => openDoc("evaluator-quick-start")} />
+              <DocLinkButton label="Getting started" onClick={() => openDoc("user-guide")} />
               <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
             </div>
           </section>
@@ -1829,7 +1829,7 @@ function App() {
                 long scrolling page.
               </p>
               <div className="docLinks">
-                <DocLinkButton label="Evaluator quick start" onClick={() => openDoc("evaluator-quick-start")} />
+                <DocLinkButton label="Getting started" onClick={() => openDoc("user-guide")} />
                 <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
               </div>
             </div>
@@ -2084,7 +2084,7 @@ function App() {
   }
 
   const globalScanHistoryRail = renderGlobalScanHistoryRail();
-  // The AI Baseline page is shown on its own (e.g. during the viva), so the
+  // The AI Baseline page is shown on its own (e.g. in a presentation), so the
   // workspace banners and interpretation controls are hidden there.
   const isStandaloneSection = currentSection === "ai-baseline";
 
@@ -2149,7 +2149,7 @@ function App() {
                 <div className="eyebrow">Demo Workspace</div>
                 <p>
                   {isPublicDemoMode
-                    ? "You are browsing the embedded evaluator demo."
+                    ? "You are browsing the embedded demo data."
                     : "Load the embedded public demo when you want a safe example project."}
                 </p>
               </div>

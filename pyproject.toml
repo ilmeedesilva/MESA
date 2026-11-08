@@ -46,10 +46,7 @@ line-length = 100
 src = ["src", "tests"]
 # Sample services that the benchmarks scan are research inputs: formatting or
 # "fixing" them would change the line numbers recorded in findings.
-extend-exclude = [
-  "tests/fixtures", "benchmarks", "demo-projects", "evaluation-results",
-  "tools",  # coursework diagram script, removed by the repository clean-up
-]
+extend-exclude = ["tests/fixtures", "benchmarks", "demo-projects", "evaluation-results"]
 
 [tool.ruff.lint]
 # Pinned explicitly so a ruff upgrade can't silently widen (or narrow) what CI

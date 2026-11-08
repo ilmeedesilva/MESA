@@ -31,10 +31,12 @@ LabelKey = tuple[str, tuple[str, ...]]
 _WORKSPACE_ROOT = Path(os.getenv("MESA_WORKSPACE_ROOT", str(Path(__file__).resolve().parents[3])))
 BENCHMARKS_DIR = _WORKSPACE_ROOT / "benchmarks"
 DEFAULT_BENCHMARK_PATH = BENCHMARKS_DIR / "ground_truth.yml"
-EVALUATION_RESULTS_DIR = _WORKSPACE_ROOT / "evaluation-results"
-AI_BASELINE_COMPARISON_PATH = (
-    EVALUATION_RESULTS_DIR / "ai-baseline-comparison" / "ai_baseline_comparison.json"
-)
+# Committed results of the research version (v0.1.0-research). These are the
+# record behind the published numbers and are never rewritten; new runs go to
+# benchmarks/results/latest/ (gitignored) unless an output dir is given.
+RESEARCH_RESULTS_DIR = BENCHMARKS_DIR / "results" / "v0.1.0-research"
+AI_BASELINE_DIR = RESEARCH_RESULTS_DIR / "ai-baseline"
+AI_BASELINE_COMPARISON_PATH = AI_BASELINE_DIR / "claude-sonnet-5" / "ai_baseline_comparison.json"
 _LISTABLE_BENCHMARK_PATTERNS = ("ground_truth.yml", "real_repo_*.yml")
 _BENCHMARK_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -99,14 +101,12 @@ def load_ai_baseline_comparisons() -> list[dict[str, Any]]:
     """Read every exported AI baseline run, one per results directory.
 
     Each `mesa evaluate-ai-baseline` model run is exported to its own
-    evaluation-results/ai-baseline-comparison*/ directory (exports merge by
+    benchmarks/results/v0.1.0-research/ai-baseline/<model>/ directory (exports merge by
     system id, so two models sharing a directory would overwrite each other).
     Unreadable files are skipped; returns [] when nothing has been exported.
     """
     reports: list[dict[str, Any]] = []
-    for path in sorted(
-        EVALUATION_RESULTS_DIR.glob("ai-baseline-comparison*/ai_baseline_comparison.json")
-    ):
+    for path in sorted(AI_BASELINE_DIR.glob("*/ai_baseline_comparison.json")):
         try:
             report = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -699,7 +699,7 @@ def _f1_score(precision: float, recall: float) -> float:
     existed, with zero overlap) - reusing that same 1.0 fallback here
     previously reported F1 = 1.0 for a total failure, found evaluating an
     LLM baseline that missed every expected finding on a real repository
-    (see docs/research/AI_BASELINE_COMPARISON.md)."""
+    (see docs/research/ai-baseline.md)."""
     if precision + recall == 0:
         return 0.0
     return 2 * precision * recall / (precision + recall)

@@ -1,7 +1,7 @@
 # Reproducing the research results
 
-This guide reproduces the detection and discovery results reported in the MESA dissertation
-and the conference paper: 76/76 seeded findings, and 30/30 hard-coded dependencies across
+This guide reproduces the detection and discovery results reported in the MESA research report
+and conference paper: 76/76 seeded findings, and 30/30 hard-coded dependencies across
 three public repositories with no false positives.
 
 ## Which version
@@ -34,15 +34,19 @@ python scripts/fetch_benchmark_repos.py   # downloads the 10 pinned repos, check
 
 export PYTHONHASHSEED=0                   # fixed ordering of findings (see note below)
 
-mesa evaluate benchmarks/ground_truth.yml               -o /tmp/repro/synthetic
-mesa evaluate benchmarks/real_repo_online_boutique.yml  -o /tmp/repro/online-boutique
-mesa evaluate benchmarks/real_repo_spring_sample.yml    -o /tmp/repro/spring-sample
-mesa evaluate benchmarks/real_repo_sockshop.yml         -o /tmp/repro/sockshop
+mesa evaluate benchmarks/ground_truth.yml               -o benchmarks/results/latest/repro/synthetic
+mesa evaluate benchmarks/real_repo_online_boutique.yml  -o benchmarks/results/latest/repro/online-boutique
+mesa evaluate benchmarks/real_repo_spring_sample.yml    -o benchmarks/results/latest/repro/spring-sample
+mesa evaluate benchmarks/real_repo_sockshop.yml         -o benchmarks/results/latest/repro/sockshop
 ```
 
-Compare each `mesa_evaluation_results.json` with the committed file in
-`evaluation-results/` (`.` for synthetic, `real-repo-online-boutique`,
-`real-repo-spring-sample`, `real-repo-sockshop`).
+Compare each `mesa_evaluation_results.json` with the committed file for the same benchmark.
+
+> **Where the committed results are.** At the tag `v0.1.0-research` they are in
+> `evaluation-results/` (`.` for synthetic, `real-repo-online-boutique`,
+> `real-repo-spring-sample`, `real-repo-sockshop`). Later versions moved the same files,
+> unchanged, to `benchmarks/results/v0.1.0-research/` (`synthetic/` plus the same three
+> folders). Use the paths that match the version you checked out.
 
 The fetch script downloads each repository at the commit listed in
 `scripts/fetch_benchmark_repos.py` and lays it out under `benchmarks/real-repos/`. Only `src/`
@@ -61,7 +65,8 @@ without downloading.
 | Real repositories, combined | 30 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 | |
 
 Verified on 2026-11-08 from a fresh fetch, in the environment recorded in
-[`evaluation-results/ENVIRONMENT.md`](../../evaluation-results/ENVIRONMENT.md):
+[`ENVIRONMENT.md`](../../benchmarks/results/v0.1.0-research/ENVIRONMENT.md)
+(`evaluation-results/ENVIRONMENT.md` at the tag):
 
 - **Seeded benchmark and Sock Shop** reproduce the committed result files byte for byte. With
   `PYTHONHASHSEED=0` this holds on every run.
@@ -75,7 +80,7 @@ Verified on 2026-11-08 from a fresh fetch, in the environment recorded in
   in the committed files. The re-run also includes an *Explanation Quality* section that is
   empty in the committed files. Those files were generated in commit `30a6cc8` (now rewritten)
   shortly before `explanation_checks` were added to the two benchmark manifests, and were not
-  regenerated afterwards. The re-run values match dissertation Table 5.8:
+  regenerated afterwards. The re-run values match Table 5.8 of the research report:
 
   | Repository | Helpfulness | Grounding | Coverage |
   | --- | --- | --- | --- |
@@ -91,12 +96,14 @@ unset when reproducing.
 
 ## AI-baseline comparison: recorded, not re-run
 
-The LLM comparison (dissertation Section 5.6.4, paper Table IV) is **not** part of this
+The LLM comparison (research report Section 5.6.4, paper Table IV) is **not** part of this
 reproduction. Re-running it makes paid API calls, and model output varies between runs, which
 is what the study measured. The recorded outputs are the record:
 
-- `evaluation-results/ai-baseline-comparison/`: Claude Sonnet 5, run 2026-09-24
-- `evaluation-results/ai-baseline-comparison-opus5/`: Claude Opus 5, run 2026-10-13
+- Claude Sonnet 5, run 2026-09-24: `benchmarks/results/v0.1.0-research/ai-baseline/claude-sonnet-5/`
+  (`evaluation-results/ai-baseline-comparison/` at the tag)
+- Claude Opus 5, run 2026-10-13: `benchmarks/results/v0.1.0-research/ai-baseline/claude-opus-5/`
+  (`evaluation-results/ai-baseline-comparison-opus5/` at the tag)
 
 Each JSON file records the provider, the model identifier, the number of runs per system, and
 the per-run and summary scores for every system. The prompt is in
@@ -105,5 +112,6 @@ the per-run and summary scores for every system. The prompt is in
 ## Later versions
 
 Later MESA versions change discovery, extraction and matching, and may give different numbers.
-The results in the dissertation and paper always refer to `v0.1.0-research`. Results for later
-versions are stored in their own folders and never overwrite the files above.
+The results in the research report and paper always refer to `v0.1.0-research`. Results for later
+versions are stored in their own folders under `benchmarks/results/` and never overwrite the
+files above. New runs default to the gitignored `benchmarks/results/latest/`.

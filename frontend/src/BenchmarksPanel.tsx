@@ -116,7 +116,7 @@ export function BenchmarksPanel() {
 
           {report.evaluation_notes.systems_with_notes.length > 0 ? (
             <div className="benchmarksNotes">
-              <strong>Evaluator notes and known limitations</strong>
+              <strong>Reviewer notes and known limitations</strong>
               {report.evaluation_notes.systems_with_notes.map((system) => (
                 <div key={system.id} className="benchmarksNoteCard">
                   <strong>{system.id}</strong>

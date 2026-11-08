@@ -78,7 +78,7 @@ export function localDemoAIResponse({
       ],
       suggestions: [
         "Open the full documentation page from inside MESA.",
-        "Use the evaluator quick start if you are reviewing the demo."
+        "Start with the Getting Started guide if you are new to MESA."
       ],
       follow_up_questions: ["How do I use this demo?", "What should I look at first in the results?"],
       limitations: ["This answer is from embedded documentation, not the live backend."],
@@ -208,7 +208,7 @@ export function localDemoAIResponse({
       ],
       suggestions: [
         "Save the current draft into a live project when the backend is available.",
-        "Keep policy names simple and specific for evaluators."
+        "Keep policy names simple and specific so reviewers understand them."
       ],
       follow_up_questions: ["Explain governance simply.", "What should I fix first?"],
       limitations: ["Draft generation is static in public demo mode."],

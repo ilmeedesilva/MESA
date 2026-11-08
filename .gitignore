@@ -1,22 +1,43 @@
+# Python
 .venv/
 venv/
 __pycache__/
-.pytest_cache/
 *.pyc
 *.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Coverage
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 
+# Frontend
 node_modules/
-frontend/node_modules/
 frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+# Generated from docs/ by frontend/scripts/generate-docs-bundle.mjs before every dev/build
+frontend/src/generated-docs.ts
 
-.DS_Store
+# Environment files: only the documented example and the demo fixtures are committed
 .env
+.env.*
+!.env.example
 !demo-projects/**/.env
+!tests/fixtures/**/.env
 
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Benchmark sources are fetched by scripts/fetch_benchmark_repos.py, never committed
 benchmarks/real-repos/*
 !benchmarks/real-repos/README.md
 
-dissertation/
-dissertation_output/
+# New evaluation runs (committed research results live in benchmarks/results/v0.1.0-research/)
+benchmarks/results/latest/

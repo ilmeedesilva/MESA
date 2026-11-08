@@ -1,220 +1,84 @@
 # MESA
 
-MESA is an architecture intelligence platform for microservice systems.
+Static analysis that finds architecture problems **between** microservices: dependency cycles,
+shared databases, chatty calls, hard-coded service addresses and services that do too much.
 
-Current implementation:
+Most static analysers look at one repository at a time, and tracing tools need a deployed
+system with real traffic. MESA reads the code and configuration of several services together,
+builds a graph of how they interact, and reports anti-patterns with the file and line that
+caused each one, before anything is deployed. It never runs the code it scans.
 
-- performs cross-service static analysis
-- detects architectural anti-patterns from source and configuration evidence
-- builds a graph-based architectural view of a system
-- calculates health scores and recommendations
-- supports governance policies, scan history, and evolution analysis
+## What MESA detects
 
-Target product direction:
+| Problem | Example | Why it matters |
+| --- | --- | --- |
+| Cyclic Dependency | `order -> payment -> order` | Services in a cycle cannot be deployed independently |
+| Shared Database | Two services use `postgresql://db:5432/app` | A schema change in one service can break another |
+| Chatty Service | `order-service` calls `user-service` from 8 places | Fine-grained synchronous calls add coupling and latency |
+| Hard-Coded Service Dependency | `http://user-service:8080` in source code | Deployments are tied to fixed addresses |
+| God Service | One service owns most endpoints, data and dependencies | Change concentrates in one place |
 
-- dynamic public repository intake
-- automatic service discovery
-- guided workflow for non-expert users
-- integrated documentation portal
-- optional AI-assisted explanation grounded in MESA evidence
+Each finding includes its evidence, a confidence rationale, what it does not prove, and a
+recommendation. Findings feed a health score, governance policies, a remediation roadmap and a
+pass/fail gate for CI. Details: [Detectors](docs/detectors.md).
 
-See [docs/guides/PRODUCT_VISION.md](docs/guides/PRODUCT_VISION.md), [docs/guides/USER_PERSONAS_AND_FLOWS.md](docs/guides/USER_PERSONAS_AND_FLOWS.md), [docs/guides/FEATURE_SCOPE_AND_RELEASE_PLAN.md](docs/guides/FEATURE_SCOPE_AND_RELEASE_PLAN.md), and [docs/guides/PRODUCT_LANGUAGE_AND_TERMINOLOGY.md](docs/guides/PRODUCT_LANGUAGE_AND_TERMINOLOGY.md) for the Phase 1 product foundation.
-
-Current vertical slice:
-
-- Python/FastAPI backend.
-- CLI workflow for reproducible research evaluation.
-- Static extraction for Python services, environment/config files, and simple HTTP call evidence.
-- NetworkX graph model plus Neo4j architecture graph persistence for persistent scans.
-- Detectors for Chatty Services, Cyclic Dependencies, Shared Database, God Service, and Hard-Coded Service Dependencies.
-- React + TypeScript frontend scaffold with Cytoscape.js.
-
-## Quick Start
+## Quick start
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e .
+
+# Analyze some services
 mesa analyze tests/fixtures/chatty/order-service tests/fixtures/chatty/user-service
-uvicorn mesa.api.main:app --reload
+
+# Pass/fail gate for CI (exit code 1 on failure)
+mesa gate tests/fixtures/cycle/order-service tests/fixtures/cycle/payment-service
 ```
 
-## Run Tests
-
-```bash
-pytest
-ruff check src tests
-```
-
-CI runs both, plus `pytest --cov=mesa --cov-report=term-missing` for a coverage report (currently ~80% overall; the CLI and the Postgres/Neo4j storage backends are the least-covered areas since the test suite exercises the in-memory repository).
-
-## Public Demo Experience
-
-Phase J adds a backend-free public demo experience inside the frontend.
-
-If the live API is unavailable, the UI can still load:
-
-- embedded demo scans
-- embedded documentation
-- roadmap, graph, and score examples
-- evaluator walkthrough guidance
-
-See `docs/guides/PUBLIC_DEMO_GUIDE.md` for the public-demo workflow.
-
-
-
-## Persistent API Workflow
-
-Phase 1 adds PostgreSQL-backed project and scan persistence. Start the full stack with:
+Full stack with the web UI, PostgreSQL and Neo4j:
 
 ```bash
 docker compose up --build
 ```
 
-Then use `http://localhost:8000/docs` to create projects, run persistent scans, view scan history, and retrieve findings after restart. See `docs/architecture/PHASE_1_PERSISTENCE_FOUNDATION.md` for the full guide.
-
-
-## Neo4j Architecture Graph
-
-Phase 2 adds a Neo4j-backed architectural digital twin for persistent scans. Start the full stack with:
-
-```bash
-docker compose up --build
-```
-
-Then create a project and run `POST /projects/{project_id}/scans` from `http://localhost:8000/docs`. Use the returned scan id with:
-
-```text
-GET /scans/{scan_id}/graph
-GET /scans/{scan_id}/graph/paths?source=order-service&target=user-service
-GET /scans/{scan_id}/graph/cycles
-GET /scans/{scan_id}/graph/centrality
-GET /scans/{scan_id}/graph/shared-databases
-GET /scans/{scan_id}/graph/high-risk-clusters
-```
-
-Neo4j Browser is available at `http://localhost:7474` with `neo4j` / `mesa-password` in the development stack. See `docs/architecture/PHASE_2_NEO4J_ARCHITECTURE_GRAPH.md` for the full Phase 2 guide.
-
-
-## Hard-Coded Service Dependencies
-
-Phase 3 detects service URLs, private IP endpoints, local ports, and service-like hostnames embedded in source or configuration files. Findings use the type `HARD_CODED_SERVICE_DEPENDENCY` and are returned by both `/analyze` and persistent scan endpoints. See `docs/architecture/PHASE_3_HARD_CODED_SERVICE_DEPENDENCIES.md` for detection heuristics and test fixtures.
-
-
-## God Service Scores
-
-Phase 4 adds a weighted God Service score for every analyzed service. Scores are returned in `summary.god_service_scores`; high-risk services also produce `GOD_SERVICE` findings with decomposition recommendations. See `docs/architecture/PHASE_4_GOD_SERVICE_DETECTOR.md` for the scoring model, thresholds, and test workflow.
-
-
-## Architectural Health Scores
-
-Phase 5 adds service-level, domain-level, and system-level architectural health scores. Scores are returned in `summary.health_scores`, persisted in the `scores` table, and exposed through `GET /scans/{scan_id}/scores`. See `docs/architecture/PHASE_5_ARCHITECTURAL_HEALTH_SCORE.md` for dimensions, weights, grades, and test workflow.
-
-
-## Scan History and Findings Dashboard
-
-Phase 6 adds a persistent frontend workflow for project creation, scan execution, scan history, findings filtering, finding detail inspection, and health score review. See `docs/architecture/PHASE_6_SCAN_HISTORY_AND_FINDINGS_DASHBOARD.md` for the dashboard workflow and limitations.
-
-
-## Architecture Graph Dashboard
-
-Phase 7 renders the persisted Neo4j architecture graph as an interactive architectural digital twin: services, per-service API groups, databases, and supporting resources as distinct node types, with risk-highlighted edges linked back to findings. Clicking a node or edge opens an inspector with ownership, linked findings, and health context. See `docs/architecture/PHASE_7_ARCHITECTURE_GRAPH_DASHBOARD.md`.
-
-
-## Architecture Snapshots and Evolution Tracking
-
-Phase 8 compares scan N with scan N+1 to detect architectural drift over time.
-
-```text
-GET /projects/{project_id}/snapshots
-GET /projects/{project_id}/evolution
-GET /projects/{project_id}/evolution/compare?base_scan_id=<scan_id>&target_scan_id=<scan_id>
-```
-
-Each comparison reports architecture change summary, risk trend, score trend, new/removed dependencies, and new/removed cycles. See `docs/architecture/PHASE_8_ARCHITECTURE_SNAPSHOTS_AND_EVOLUTION.md`.
-
-
-## Recommendation Layer
-
-Phase 9 attaches a structured, evidence-grounded recommendation to every finding: root cause, architectural consequence, affected services/files, refactoring steps, expected impact, priority, and estimated difficulty, covering all implemented detectors. See `docs/architecture/PHASE_9_RECOMMENDATION_LAYER.md`.
-
-
-## Governance Policy Engine
-
-Phase 10 lets a project define its own architecture rules and have MESA enforce them at scan time; violations are returned as normal findings with recommendations.
-
-```text
-GET /projects/{project_id}/policies
-POST /projects/{project_id}/policies
-PUT /projects/{project_id}/policies/{policy_id}
-POST /projects/{project_id}/policies/import
-```
-
-See `docs/architecture/PHASE_10_GOVERNANCE_POLICY_ENGINE.md` for the YAML/JSON policy format.
-
-
-## Evaluation Runner
-
-Phase 11 adds a repeatable evaluation runner that scores MESA's own detector output against ground-truth benchmark labels (precision/recall/F1, CSV/JSON/Markdown export):
-
-```bash
-mesa evaluate benchmarks/ground_truth.yml --output-dir evaluation-results
-```
-
-See `docs/architecture/PHASE_11_EVALUATION_RUNNER.md`.
-
-
-## Secure Scan Intake Hardening
-
-Phase 13 hardens archive/GitHub-URL ingestion: decompressed-size and file-count caps, rejection of tar symlink/hardlink/device members, and a TTL sweep of extracted workspaces, on top of the existing zip-slip/path-traversal protection. See `docs/architecture/PHASE_13_SECURE_SCAN_INTAKE.md`.
-
-
-## Async Scan Job System
-
-Phase 14 runs repository-backed scans (archive or GitHub URL) as a background job instead of blocking the request:
-
-```text
-POST /projects/{project_id}/repo-scans/async
-GET /scan-jobs/{job_id}
-```
-
-The guided scan workflow's repository-backed submit path uses this automatically. See `docs/architecture/PHASE_14_ASYNC_SCAN_JOB_SYSTEM.md`.
-
-
-## Real Repository Evaluation
-
-Phase 15 evaluates MESA against manually reviewed, real, third-party repositories (`GoogleCloudPlatform/microservices-demo`, `piomin/sample-spring-microservices-new`) rather than only synthetic fixtures, with full TP/FP/FN reasoning recorded in `benchmarks/real_repo_*.yml`. See `docs/architecture/PHASE_15_REAL_REPOSITORY_EVALUATION.md` and `docs/research/EVALUATION_SETUP_AND_RESULTS.md` for results.
-
-
-## Benchmark Evaluation API and UI
-
-Phase 16 exposes the evaluation runner over the API and a frontend `Benchmarks` page, so ground-truth precision/recall/F1 can be run without a terminal:
-
-```text
-GET /benchmarks
-POST /benchmarks/{benchmark_id}/evaluate
-```
-
-See `docs/architecture/PHASE_16_BENCHMARK_EVALUATION_API_AND_UI.md`.
-
-## Detector Fixes and Language Coverage (Phases 17–20)
-
-Phase 17 fixes a Config Server misattribution: MESA no longer reads a hosted config file's URLs (e.g. `config-service/discovery-service.yml`) as the hosting service's own outbound calls, removing false `CHATTY_SERVICE`/`CYCLIC_DEPENDENCY` findings on Spring Cloud Config-based systems. See `docs/architecture/PHASE_17_CONFIG_SERVER_MISATTRIBUTION_FIX.md`.
-
-Phase 18 downgrades hard-coded-dependency findings for known observability/infra sidecar addresses (OpenTelemetry, Prometheus, Jaeger, Consul, Vault) to `LOW` severity with a `likely_infrastructure_address` flag, configurable via `MESA_INFRA_PORT_ALLOWLIST`. See `docs/architecture/PHASE_18_INFRA_ADDRESS_DOWNGRADE.md`.
-
-Phase 19 adds a synthetic recall-stress-test fixture (8 services, 5 anti-pattern types deliberately interleaved in one scan) to test whether co-occurring patterns mask each other. See `docs/architecture/PHASE_19_RECALL_STRESS_TEST.md`.
-
-Phase 20 adds MVP Go language support (regex-based extraction, matching the existing per-language style), closing a real discovery gap found evaluating Online Boutique. See `docs/architecture/PHASE_20_GO_LANGUAGE_SUPPORT.md`.
-
-Real-repository evaluation (Phase 15) was extended with a third repository, Sock Shop (`microservices-demo` org, 8 services split across 8 separate repos) — originally a deliberately different kind of result from Online Boutique and the Spring sample: 17 of 21 findings were false positives traced to test fixtures, API-contract mocks, and code comments. Evaluating it surfaced and fixed six real bugs in total: language misdetection, a `db_type` string-normalization bug, two bugs blocking ground-truth auto-matching for real repositories, and — closing the precision gap itself — comment-stripping and test/mock-tooling-directory exclusion in the hard-coded-dependency and shared-database detectors. Sock Shop now scores 1.0000/1.0000/1.0000, and combined across all three real repositories MESA scores 30/30/30 (0 false positives, 0 false negatives). See `benchmarks/real_repo_sockshop.yml`.
-
-## AI Baseline Comparison
-
-An empirical comparison of MESA's deterministic static analysis against two general-purpose LLMs (Claude Sonnet 5 and Claude Opus 5) prompted directly with MESA's own anti-pattern taxonomy, run 5 times per benchmark system to measure both accuracy and output determinism:
-
-```text
-mesa evaluate-ai-baseline <benchmark.yml> --systems <ids> --runs 5 --provider openai|anthropic
-```
-
-On the two real repositories tested (`spring-sample`, `sock-shop`), neither model found more than 25% of the labelled findings (Sonnet 5: F1 0.00 and 0.40; Opus 5, ranked 1st on SWE-bench Verified: F1 0.39 on both), and neither model was fully deterministic across all systems, against MESA's 1.0000 with identical output every run. See `docs/research/AI_BASELINE_COMPARISON.md` for the full methodology and results.
+Then open `http://localhost:5173` for the UI and `http://localhost:8000/docs` for the API. With no
+backend running, the UI loads built-in demo data.
+
+## Results
+
+Evaluated on eight seeded systems and three public microservice repositories (Google's Online
+Boutique, a Spring Boot sample and Sock Shop):
+
+- **Seeded benchmark:** 76 of 76 expected findings, no false positives.
+- **Real repositories:** 30 of 30 labelled hard-coded dependencies, no false positives, after two
+  context fixes found during the evaluation. Under 0.6 seconds per system.
+- **Compared with general-purpose LLMs:** Claude Sonnet 5 and Claude Opus 5, given the same
+  taxonomy and source, found at most 25% of the labelled dependencies in the real repositories,
+  and neither gave the same answer on every run. MESA's output is identical on every run.
+
+Limitations: MESA only sees values written literally in the files, so addresses built at runtime
+are missed, and real-repository validation so far covers one anti-pattern type. See
+[Evaluation](docs/research/evaluation.md), [AI baseline](docs/research/ai-baseline.md) and
+[Methodology and threats to validity](docs/research/methodology.md).
+
+## Documentation
+
+| | |
+| --- | --- |
+| [User guide](docs/user-guide.md) | Running scans and reading results |
+| [How MESA works](docs/architecture.md) | Pipeline, interfaces, storage |
+| [Detectors](docs/detectors.md) | Rules, thresholds and limits for each detector |
+| [Concepts](docs/concepts.md) | Short glossary |
+| [Guides](docs/guides/) | Installation, scanning, findings, health score, governance, CI gate, AI explainer, demo |
+| [API](docs/api.md) | REST endpoints (live reference at `/docs`) |
+| [Contributing](CONTRIBUTING.md) | Development setup, checks, adding a detector |
+| [Changelog](CHANGELOG.md) | Release history |
+
+## Research
+
+The research results come from the version tagged
+[`v0.1.0-research`](https://github.com/ilmeedesilva/MESA/releases/tag/v0.1.0-research).
+[REPRODUCE.md](docs/research/REPRODUCE.md) gives the exact commands and expected numbers, and
+the committed results are in [`benchmarks/results/v0.1.0-research/`](benchmarks/results/v0.1.0-research/).
+
+MESA began as my BSc (Hons) Computing final-year research project.

@@ -98,8 +98,7 @@ export function ResearchEvaluationPanel({
           <div className="eyebrow">Research Evaluation</div>
           <h2>Project Scan Records</h2>
           <p>
-            Convert real repository scans into reusable evaluation records for your final report, viva walkthrough, and
-            demo evidence table.
+            Convert real repository scans into reusable evaluation records for reports, reviews, and an evidence table.
           </p>
         </div>
         <div className="researchActions">

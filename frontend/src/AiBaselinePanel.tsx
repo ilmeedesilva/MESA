@@ -33,7 +33,7 @@ const SYSTEM_DESCRIPTIONS: Record<string, string> = {
 type ModelInfo = { label: string; rankNote: string; tier: "top" | "mid" | "unknown" };
 
 // Leaderboard positions are from the independent Vals AI SWE-bench Verified
-// leaderboard (results as of 1 September 2026), cited in the dissertation.
+// leaderboard (results as of 1 September 2026), as cited in the research.
 const MODEL_INFO: Record<string, ModelInfo> = {
   "claude-sonnet-5": {
     label: "Claude Sonnet 5",
@@ -584,7 +584,7 @@ export function AiBaselinePanel() {
           <pre className="aiBaselineCliHint">
             MESA_ANTHROPIC_MODEL=claude-opus-5 mesa evaluate-ai-baseline benchmarks/ground_truth.yml --systems
             god-service,cyclic-dependencies --runs 5 --provider anthropic --output-dir
-            evaluation-results/ai-baseline-comparison-opus5
+            benchmarks/results/latest/ai-baseline/claude-opus-5
           </pre>
           Then reload this page.
         </div>

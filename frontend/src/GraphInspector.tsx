@@ -31,15 +31,15 @@ export function PublicDemoBanner({
           <strong>Public demo mode is active</strong>
           <span>
             The live backend is not connected, so MESA loaded embedded example scans, roadmap data, docs, and a guided
-            evaluator-friendly walkthrough.
+            tour.
           </span>
         </div>
         <div className="publicDemoActions">
           <button type="button" className="workflowToggle" onClick={() => onOpenDoc("public-demo-guide")}>
             Demo guide
           </button>
-          <button type="button" className="workflowToggle" onClick={() => onOpenDoc("evaluator-quick-start")}>
-            Evaluator walkthrough
+          <button type="button" className="workflowToggle" onClick={() => onOpenDoc("user-guide")}>
+            Take the tour
           </button>
         </div>
       </section>

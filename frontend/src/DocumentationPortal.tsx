@@ -37,7 +37,7 @@ export function DocumentationPortal({
           <div>
             <div className="eyebrow">Documentation Portal</div>
             <h2>Learn MESA from inside the product</h2>
-            <p>{`Search ${docsCatalog.length} pages covering guides, methodology, limitations, API notes, and evaluator walkthroughs.`}</p>
+            <p>{`Search ${docsCatalog.length} pages covering guides, methodology, limitations, API notes, and a guided tour.`}</p>
           </div>
           <button type="button" className="workflowToggle" onClick={onBackToAnalysis}>
             Back to analysis
@@ -66,9 +66,9 @@ export function DocumentationPortal({
         <div className="docsQuickLinks">
           <strong>Quick links</strong>
           <div className="docLinks">
-            <DocLinkButton label="Evaluator quick start" onClick={() => onSelectDoc("evaluator-quick-start")} />
-            <DocLinkButton label="User guide" onClick={() => onSelectDoc("user-guide")} />
-            <DocLinkButton label="Demo guide" onClick={() => onSelectDoc("demo-guide")} />
+            <DocLinkButton label="Getting started" onClick={() => onSelectDoc("user-guide")} />
+            <DocLinkButton label="Detectors" onClick={() => onSelectDoc("detectors")} />
+            <DocLinkButton label="Demo guide" onClick={() => onSelectDoc("public-demo-guide")} />
           </div>
         </div>
 
