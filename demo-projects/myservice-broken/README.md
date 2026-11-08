@@ -14,7 +14,7 @@ Expected MESA findings include:
 
 Recommended scan root:
 
-`/Users/ilmeedesilva/MESA/demo-projects/myservice-broken`
+`demo-projects/myservice-broken`
 
 Services:
 

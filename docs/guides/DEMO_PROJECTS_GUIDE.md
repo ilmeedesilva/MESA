@@ -6,8 +6,8 @@ This guide explains how to use the built-in demo repositories for a before-and-a
 
 ## Available Demo Repositories
 
-- broken version: `/Users/ilmeedesilva/MESA/demo-projects/myservice-broken`
-- fixed version: `/Users/ilmeedesilva/MESA/demo-projects/myservice-fixed`
+- broken version: `demo-projects/myservice-broken`
+- fixed version: `demo-projects/myservice-fixed`
 
 ## What The Broken Version Demonstrates
 
@@ -32,14 +32,14 @@ This guide explains how to use the built-in demo repositories for a before-and-a
 3. In the repository input, choose `Local path`.
 4. Enter the broken repo path:
 
-`/Users/ilmeedesilva/MESA/demo-projects/myservice-broken`
+`demo-projects/myservice-broken`
 
 5. Preview discovery and select the discovered services.
 6. Run the first scan.
 7. Review findings, graph, health score, and scan history.
 8. Run a second scan using the fixed repo path:
 
-`/Users/ilmeedesilva/MESA/demo-projects/myservice-fixed`
+`demo-projects/myservice-fixed`
 
 9. Compare the second scan against the first one.
 
