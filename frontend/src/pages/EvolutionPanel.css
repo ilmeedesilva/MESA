@@ -1,5 +1,5 @@
 .evolutionPanel {
-  padding: 16px;
+  padding: var(--space-4);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-sm);
   background: var(--white);
@@ -9,13 +9,13 @@
 .evolutionSummary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .evolutionGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  gap: 16px;
+  gap: var(--space-4);
   align-items: start;
 }
 
@@ -25,7 +25,7 @@
 }
 
 .evolutionSecondary {
-  padding: 14px;
+  padding: var(--space-3-5);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-md);
   background: var(--slate-50);
@@ -35,8 +35,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: var(--space-2-5);
+  margin-bottom: var(--space-2-5);
 }
 
 .evolutionSecondaryHeader strong {
@@ -50,7 +50,7 @@
 }
 
 .evolutionSummary div {
-  padding: 12px 10px;
+  padding: var(--space-3) var(--space-2-5);
   border-radius: var(--radius-sm);
   background: var(--slate-50);
   border: 1px solid var(--slate-200);
@@ -67,21 +67,21 @@
 .evolutionTimeline span,
 .evolutionTimeline small {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--slate-500);
   font-size: 12px;
   font-weight: 800;
 }
 
 .evolutionSentence {
-  margin-top: 12px;
+  margin-top: var(--space-3);
   color: var(--slate-600);
   line-height: 1.45;
 }
 
 .evolutionRecommendations {
-  margin-top: 12px;
-  padding: 10px 12px;
+  margin-top: var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   border-left: 3px solid var(--blue-600);
   border-radius: 0 8px 8px 0;
   background: var(--blue-50);
@@ -93,7 +93,7 @@
 }
 
 .evolutionRecommendations span {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--slate-600);
   line-height: 1.45;
 }
@@ -101,11 +101,11 @@
 .evolutionTimeline {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .evolutionTimeline article {
-  padding: 10px 12px;
+  padding: var(--space-2-5) var(--space-3);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-sm);
   background: var(--white);

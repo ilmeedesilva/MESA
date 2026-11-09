@@ -1,7 +1,7 @@
 .aiExplainerPanel {
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: var(--space-3-5);
+  padding: var(--space-4-5);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-2xl);
   background: linear-gradient(180deg, var(--white), var(--surface-tint));
@@ -10,13 +10,13 @@
 
 .aiAskPane {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .aiConnectionBanner {
   display: grid;
-  gap: 6px;
-  padding: 12px 14px;
+  gap: var(--space-1-5);
+  padding: var(--space-3) var(--space-3-5);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   background: var(--white);
@@ -45,7 +45,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .aiExplainerHeader h2 {
@@ -64,7 +64,7 @@
   display: grid;
   gap: 5px;
   min-width: 180px;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3-5);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   background: var(--slate-50);
@@ -82,7 +82,7 @@
 .aiQuickAction {
   display: grid;
   gap: 5px;
-  padding: 12px;
+  padding: var(--space-3);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   color: var(--slate-900);
@@ -103,8 +103,8 @@
 
 .aiQuestionBar {
   display: grid;
-  gap: 8px;
-  padding: 14px;
+  gap: var(--space-2);
+  padding: var(--space-3-5);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-lg);
   background: var(--white);
@@ -113,7 +113,7 @@
 .aiQuestionControls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  gap: var(--space-2-5);
   align-items: center;
 }
 
@@ -122,7 +122,7 @@
 }
 
 .aiEmptyState {
-  padding: 16px;
+  padding: var(--space-4);
   border: 1px dashed var(--slate-300);
   border-radius: var(--radius-lg);
   color: var(--slate-500);
@@ -133,7 +133,7 @@
 .aiHelperCard {
   display: grid;
   gap: 5px;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3-5);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-lg);
   background: var(--white);
@@ -151,8 +151,8 @@
 
 .aiResponseCard {
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: var(--space-3-5);
+  padding: var(--space-4);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-xl);
   background: var(--white);
@@ -160,8 +160,8 @@
 
 .aiPolicyDraftCard {
   display: grid;
-  gap: 8px;
-  padding: 12px;
+  gap: var(--space-2);
+  padding: var(--space-3);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   background: var(--slate-50);
@@ -171,7 +171,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .aiDraftActionButton {
@@ -179,7 +179,7 @@
   align-items: center;
   justify-content: center;
   min-width: 132px;
-  padding: 10px 14px;
+  padding: var(--space-2-5) var(--space-3-5);
   border: 1px solid var(--blue-600);
   border-radius: var(--radius-md);
   color: var(--white);
@@ -203,7 +203,7 @@
 .aiPolicyDraftCard pre {
   overflow: auto;
   margin: 0;
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--slate-900);
   color: var(--slate-200);
@@ -215,18 +215,18 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--space-3-5);
 }
 
 .aiResponseHeader h3 {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-size: 15px;
 }
 
 .aiAnswerBadge {
   display: inline-flex;
   width: fit-content;
-  margin-top: 8px;
+  margin-top: var(--space-2);
   padding: 5px 9px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-soft);
@@ -240,8 +240,8 @@
   display: grid;
   align-content: start;
   min-width: 0;
-  gap: 6px;
-  padding: 12px;
+  gap: var(--space-1-5);
+  padding: var(--space-3);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-lg);
   background: var(--slate-50);
@@ -262,7 +262,7 @@
   display: inline-flex;
   width: fit-content;
   max-width: 100%;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   color: var(--blue-700);
   background: var(--blue-50);
@@ -272,14 +272,14 @@
 .aiResponseColumns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--space-3-5);
 }
 
 .aiResponseColumns > div,
 .aiFollowUps {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .aiResponseColumns strong,
@@ -291,7 +291,7 @@
   display: grid;
   gap: 7px;
   margin: 0;
-  padding-left: 18px;
+  padding-left: var(--space-4-5);
   color: var(--slate-600);
   font-size: 12px;
   line-height: 1.55;
@@ -313,6 +313,6 @@
 @media (max-width: 640px) {
   .aiExplainerPanel,
   .aiResponseCard {
-    padding: 14px;
+    padding: var(--space-3-5);
   }
 }

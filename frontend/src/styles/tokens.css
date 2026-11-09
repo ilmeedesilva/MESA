@@ -29,6 +29,21 @@
   --border-soft: #dbe4f0;
   --surface-tint: #f8fbff;
 
+  /* Spacing scale: --space-N is N x 4px, with half steps (--space-1-5 is 6px). Odd pixel
+     values are optical adjustments and stay as they are. */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-3-5: 14px;
+  --space-4: 16px;
+  --space-4-5: 18px;
+  --space-5: 20px;
+  --space-5-5: 22px;
+  --space-6: 24px;
+
   --radius-sm: 8px;
   --radius-10: 10px;
   --radius-md: 12px;

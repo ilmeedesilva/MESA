@@ -1,6 +1,6 @@
 .graphInspector {
-  margin: 0 18px 18px;
-  padding: 12px;
+  margin: 0 var(--space-4-5) var(--space-4-5);
+  padding: var(--space-3);
   max-height: 190px;
   overflow: auto;
   border: 1px solid var(--blue-100);
@@ -9,7 +9,7 @@
 }
 
 .graphInspector h3 {
-  margin: 8px 0 4px;
+  margin: var(--space-2) 0 var(--space-1);
   font-size: 15px;
 }
 
@@ -19,7 +19,7 @@
 }
 
 .graphInspector details {
-  margin-top: 10px;
+  margin-top: var(--space-2-5);
 }
 
 .graphInspector summary {
@@ -32,8 +32,8 @@
 .graphInspector pre {
   max-height: 120px;
   overflow: auto;
-  margin: 8px 0 0;
-  padding: 10px;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2-5);
   border-radius: var(--radius-sm);
   color: var(--slate-700);
   background: var(--white);
@@ -48,9 +48,9 @@
 .miniHealth {
   display: inline-flex;
   align-items: baseline;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 7px 10px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: 7px var(--space-2-5);
   border-radius: var(--radius-pill);
   background: var(--blue-50);
 }

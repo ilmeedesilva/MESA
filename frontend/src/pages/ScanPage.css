@@ -4,15 +4,15 @@
 
 .stepWorkspaceCard {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .stepWorkspaceHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  padding: 18px;
+  gap: var(--space-4);
+  padding: var(--space-4-5);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-2xl);
   background:
@@ -26,7 +26,7 @@
 }
 
 .stepWorkspaceHeader p {
-  margin-top: 6px;
+  margin-top: var(--space-1-5);
   color: var(--slate-500);
   font-size: 12px;
   line-height: 1.55;
@@ -45,20 +45,20 @@
 }
 
 .scanChecklistCard {
-  gap: 14px;
+  gap: var(--space-3-5);
 }
 
 .scanChecklist {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .scanChecklistItem {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: var(--space-2-5);
+  padding: var(--space-3) var(--space-3-5);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   color: var(--slate-900);
@@ -106,8 +106,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 18px 20px;
+  gap: var(--space-4);
+  padding: var(--space-4-5) var(--space-5);
   border: 1px solid var(--blue-100);
   border-radius: var(--radius-md);
   background:
@@ -118,12 +118,12 @@
 .workflowActions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .workflowStatus {
   min-width: 110px;
-  padding: 10px 12px;
+  padding: var(--space-2-5) var(--space-3);
   border-radius: var(--radius-md);
   text-align: center;
   background: var(--blue-50);
@@ -138,7 +138,7 @@
 
 .workflowStatus span {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--slate-600);
   font-size: 12px;
   font-weight: 800;

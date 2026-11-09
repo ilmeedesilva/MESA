@@ -1,14 +1,14 @@
 .scanList {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .scanItem {
   min-width: 0;
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-sm);
-  padding: 10px;
+  padding: var(--space-2-5);
   color: var(--slate-900);
   background: var(--slate-50);
   box-shadow: none;

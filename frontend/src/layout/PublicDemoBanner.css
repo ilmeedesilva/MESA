@@ -2,9 +2,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  margin: 14px 24px 0;
-  padding: 14px 16px;
+  gap: var(--space-3-5);
+  margin: var(--space-3-5) var(--space-6) 0;
+  padding: var(--space-3-5) var(--space-4);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   background: var(--white);
@@ -46,12 +46,12 @@
 .publicDemoActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 @media (max-width: 1180px) {
   .publicDemoBanner {
-    margin-inline: 16px;
+    margin-inline: var(--space-4);
   }
 }
 

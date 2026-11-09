@@ -6,7 +6,7 @@
 .infoList code {
   display: inline-flex;
   width: fit-content;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-10);
   color: var(--blue-700);
   background: var(--blue-50);
@@ -15,7 +15,7 @@
 
 .workspaceStack {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
   min-width: 0;
 }
 
@@ -23,7 +23,7 @@
 .workspaceOverviewGrid,
 .workspaceSingleColumn {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
   min-width: 0;
 }
 
@@ -40,8 +40,8 @@
 .workspaceInfoCard,
 .workspaceEmptyState {
   display: grid;
-  gap: 12px;
-  padding: 18px;
+  gap: var(--space-3);
+  padding: var(--space-4-5);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-2xl);
   background: var(--white);
@@ -65,14 +65,14 @@
 .workspaceActionGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .stepWorkspaceMeta {
   display: grid;
   gap: 5px;
   min-width: 148px;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3-5);
   border: 1px solid var(--blue-100);
   border-radius: var(--radius-lg);
   background: rgba(239, 246, 255, 0.72);
@@ -82,20 +82,20 @@
 .panelHeader p,
 .healthPanel p,
 .hint {
-  margin-top: 6px;
+  margin-top: var(--space-1-5);
   color: var(--slate-500);
 }
 
 .toolbarProjectPicker {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 250px;
   margin: 0;
 }
 
 .toolbarProjectPicker select {
   min-width: 250px;
-  padding: 10px 12px;
+  padding: var(--space-2-5) var(--space-3);
   border: 1px solid var(--slate-300);
   border-radius: var(--radius-md);
   background: var(--white);
@@ -105,7 +105,7 @@
 }
 
 .eyebrow {
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
   color: var(--blue-600);
   font-size: 12px;
   font-weight: 800;
@@ -116,12 +116,12 @@
 .docLinks {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: var(--space-2);
+  margin-top: var(--space-2-5);
 }
 
 .docLinkButton {
-  padding: 6px 10px;
+  padding: var(--space-1-5) var(--space-2-5);
   border-radius: var(--radius-pill);
   color: var(--blue-700);
   background: var(--blue-50);
@@ -133,7 +133,7 @@
 .aiWorkspaceGrid {
   display: grid;
   grid-template-columns: minmax(320px, 0.42fr) minmax(0, 0.58fr);
-  gap: 14px;
+  gap: var(--space-3-5);
   align-items: start;
 }
 
@@ -160,7 +160,7 @@
 .aiPromptGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .aiAnswerBadge.good {
@@ -184,20 +184,20 @@
 .aiEvidenceGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .panelButtonRow,
 .findingActions,
 .drawerActionRow {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex-wrap: wrap;
 }
 
 .panelButtonRow {
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 
 .panelButtonRow > button {
@@ -205,8 +205,8 @@
 }
 
 .docsCodeBlock {
-  margin: 12px 0;
-  padding: 12px;
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
   overflow: auto;
   border-radius: var(--radius-md);
   color: var(--slate-200);
@@ -217,7 +217,7 @@
 .workflowTrackPanel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-3-5);
   min-width: 0;
 }
 
@@ -246,12 +246,12 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3-5);
 }
 
 .panelHeader.compact {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-2-5);
 }
 
 .panelHeader span,
@@ -263,7 +263,7 @@
 
 .fullButton {
   width: 100%;
-  margin: 12px 0 2px;
+  margin: var(--space-3) 0 var(--space-0-5);
 }
 
 .secondaryButton {
@@ -286,12 +286,12 @@
 .panelButtonRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .error {
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-sm);
   background: #fee2e2;
   color: #991b1b;
@@ -336,13 +336,13 @@
 
   .workspaceFrame,
   .appHeader {
-    padding-inline: 16px;
+    padding-inline: var(--space-4);
   }
 }
 
 .stepHintCard {
-  margin-top: 12px;
-  padding: 10px 12px;
+  margin-top: var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   border-radius: var(--radius-sm);
   color: var(--slate-600);
   background: var(--slate-50);
@@ -359,7 +359,7 @@
   align-content: start;
   gap: 5px;
   min-height: 126px;
-  padding: 14px 15px;
+  padding: var(--space-3-5) 15px;
   border: 1px solid #dbe3ee;
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--white), #fbfdff);
@@ -438,7 +438,7 @@
 }
 
 .metric small {
-  margin-top: 2px;
+  margin-top: var(--space-0-5);
   color: var(--slate-600);
   font-size: 11px;
   line-height: 1.45;
@@ -462,8 +462,8 @@
 
 .metricMoreButton {
   justify-self: start;
-  margin-top: 2px;
-  padding: 6px 10px;
+  margin-top: var(--space-0-5);
+  padding: var(--space-1-5) var(--space-2-5);
   border-radius: var(--radius-pill);
   background: var(--blue-50);
   color: var(--blue-700);
@@ -493,8 +493,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px 12px 10px;
+  gap: var(--space-2-5);
+  padding: var(--space-3) var(--space-3) var(--space-2-5);
   border-bottom: 1px solid var(--blue-100);
   background: rgba(255, 255, 255, 0.96);
 }
@@ -507,7 +507,7 @@
 }
 
 .metricPopoverClose {
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--blue-100);
   color: var(--blue-700);
@@ -518,7 +518,7 @@
 
 .metricPopoverBody {
   overflow: auto;
-  padding: 10px 12px 12px;
+  padding: var(--space-2-5) var(--space-3) var(--space-3);
   scrollbar-width: thin;
   scrollbar-color: var(--blue-300) var(--blue-50);
 }
@@ -558,27 +558,27 @@
 }
 
 .emptyInline.small {
-  padding: 6px 0;
+  padding: var(--space-1-5) 0;
   font-size: 12.5px;
 }
 
 .roadmapTopline {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
-  gap: 14px;
+  gap: var(--space-3-5);
   align-items: start;
 }
 
 .roadmapStats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .roadmapGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--space-3-5);
   align-items: start;
 }
 
@@ -591,20 +591,20 @@
 }
 
 .serviceChips.compact {
-  margin-top: 10px;
+  margin-top: var(--space-2-5);
 }
 
 .roadmapBottomGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-  gap: 14px;
+  gap: var(--space-3-5);
   align-items: start;
 }
 
 .contentGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.75fr);
-  gap: 16px;
+  gap: var(--space-4);
   min-height: 0;
   align-items: start;
 }
@@ -612,7 +612,7 @@
 .legend span {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   white-space: nowrap;
   font-size: 12px;
   font-weight: 800;
@@ -628,8 +628,8 @@
 .linkedFindings {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: var(--space-1-5);
+  margin-top: var(--space-2-5);
 }
 
 .emptyState,
@@ -638,7 +638,7 @@
   display: grid;
   min-height: 150px;
   place-items: center;
-  padding: 20px;
+  padding: var(--space-5);
   color: var(--slate-500);
   text-align: center;
 }
@@ -652,7 +652,7 @@
 }
 
 .systemScore {
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3-5);
   overflow: hidden;
   border-radius: var(--radius-md);
   background: var(--blue-50);
@@ -666,13 +666,13 @@
 
 .systemScore span {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-size: 14px;
   font-weight: 900;
 }
 
 .systemScore p {
-  margin-top: 8px;
+  margin-top: var(--space-2);
   color: var(--slate-600);
   font-size: 13px;
   line-height: 1.4;
@@ -694,29 +694,29 @@
 .dimensionBars {
   display: grid;
   gap: 7px;
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 
 .serviceScores {
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 
 .serviceScores h3 {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   font-size: 14px;
 }
 
 .filters {
   display: grid;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .modePill {
   display: inline-flex;
   align-items: center;
   border-radius: var(--radius-pill);
-  padding: 6px 10px;
+  padding: var(--space-1-5) var(--space-2-5);
   color: var(--blue-700);
   background: var(--blue-50);
   font-size: 11px;
@@ -727,7 +727,7 @@
 .findingMeta {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--slate-500);
   font-size: 11px;
   font-weight: 800;
@@ -754,7 +754,7 @@
 }
 
 .technicalLabel {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   color: var(--blue-600);
   font-size: 11px;
   font-weight: 800;
@@ -763,13 +763,13 @@
 .serviceChips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-2);
 }
 
 .serviceChips span {
   border-radius: var(--radius-pill);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   color: #1e293b;
   background: var(--slate-200);
   font-size: 11px;
@@ -779,7 +779,7 @@
 .inlineCode {
   display: inline-block;
   margin: 0 1px;
-  padding: 1px 6px;
+  padding: 1px var(--space-1-5);
   border: 1px solid var(--blue-100);
   border-radius: 7px;
   color: var(--blue-700);
@@ -791,16 +791,16 @@
 }
 
 .recommendation {
-  margin: 14px 0;
+  margin: var(--space-3-5) 0;
   border-left: 3px solid var(--blue-600);
-  padding: 10px 12px;
+  padding: var(--space-2-5) var(--space-3);
   border-radius: 0 8px 8px 0;
   background: var(--blue-50);
 }
 
 .recommendation strong {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
   font-size: 13px;
 }
 
@@ -815,15 +815,15 @@
   height: 100%;
   overflow: auto;
   border-radius: 0;
-  padding: 24px;
+  padding: var(--space-6);
 }
 
 .drawer h2 {
-  margin: 10px 0;
+  margin: var(--space-2-5) 0;
 }
 
 .drawer h3 {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
 }
 
 .drawer p {
@@ -831,8 +831,8 @@
 }
 
 .drawerSection {
-  margin-top: 16px;
-  padding: 14px;
+  margin-top: var(--space-4);
+  padding: var(--space-3-5);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-10);
   background: var(--white);
@@ -841,7 +841,7 @@
 .drawer pre {
   overflow: auto;
   border-radius: var(--radius-sm);
-  padding: 12px;
+  padding: var(--space-3);
   background: var(--slate-900);
   color: var(--slate-200);
   font-size: 12px;

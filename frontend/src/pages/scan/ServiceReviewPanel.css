@@ -1,6 +1,6 @@
 .discoveryPanel {
-  margin-top: 14px;
-  padding: 12px;
+  margin-top: var(--space-3-5);
+  padding: var(--space-3);
   border: 1px solid var(--blue-100);
   border-radius: var(--radius-sm);
   background: var(--surface-tint);
@@ -9,8 +9,8 @@
 .discoveryMeta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: var(--space-2-5);
+  margin-bottom: var(--space-2-5);
   color: var(--slate-500);
   font-size: 12px;
   font-weight: 800;
@@ -19,13 +19,13 @@
 .warningList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-2-5);
 }
 
 .warningList small {
   display: block;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
   border-radius: var(--radius-sm);
   color: #92400e;
   background: #fef3c7;
@@ -35,13 +35,13 @@
 .discoveryList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2-5);
   max-height: 340px;
   overflow: auto;
 }
 
 .discoveryCard {
-  padding: 12px;
+  padding: var(--space-3);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
   background: var(--white);
@@ -55,7 +55,7 @@
 .discoveryToggle {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2-5);
   margin: 0;
   font-size: 13px;
 }
@@ -67,9 +67,9 @@
 .discoveryStats {
   display: grid;
   grid-template-columns: auto auto 1fr;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: baseline;
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .discoveryStats strong {
@@ -86,8 +86,8 @@
 .signalTags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: var(--space-1-5);
+  margin-top: var(--space-2-5);
 }
 
 .signalTags code {
@@ -100,8 +100,8 @@
 }
 
 .reasonList {
-  margin: 10px 0 0;
-  padding-left: 18px;
+  margin: var(--space-2-5) 0 0;
+  padding-left: var(--space-4-5);
   color: var(--slate-600);
   font-size: 12px;
   line-height: 1.5;

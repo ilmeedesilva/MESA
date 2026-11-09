@@ -2,8 +2,8 @@
 
 .gatePanel {
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: var(--space-3-5);
+  padding: var(--space-4);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-md);
   background: linear-gradient(180deg, var(--white), #fbfdff);
@@ -18,12 +18,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .gateControls label {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
   color: var(--slate-600);
   font-size: 12px;
 }
@@ -35,9 +35,9 @@
 .gateVerdict {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(220px, 280px);
-  gap: 18px;
+  gap: var(--space-4-5);
   align-items: center;
-  padding: 18px;
+  padding: var(--space-4-5);
   border-radius: var(--radius-lg);
   border: 2px solid;
 }
@@ -53,7 +53,7 @@
 }
 
 .gateVerdictBadge {
-  padding: 10px 18px;
+  padding: var(--space-2-5) var(--space-4-5);
   border-radius: var(--radius-10);
   color: var(--white);
   font-size: 22px;
@@ -71,7 +71,7 @@
 
 .gateVerdictText {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .gateVerdictText strong {
@@ -87,7 +87,7 @@
 
 .gateScore {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .gateScore strong {
@@ -98,7 +98,7 @@
 .gateScoreBar {
   position: relative;
   height: 10px;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   border-radius: var(--radius-pill);
   background: var(--slate-200);
 }
@@ -119,15 +119,15 @@
 
 .gateRules {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .gateRule {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: start;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3-5);
   border: 1px solid var(--slate-200);
   border-left-width: 4px;
   border-radius: var(--radius-md);
@@ -167,7 +167,7 @@
 }
 
 .gateRuleBody p {
-  margin: 2px 0 0;
+  margin: var(--space-0-5) 0 0;
   color: var(--slate-700);
   font-size: 12px;
 }
@@ -179,7 +179,7 @@
 
 .gateRuleValues {
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
   justify-items: end;
   color: var(--slate-500);
   font-size: 11px;

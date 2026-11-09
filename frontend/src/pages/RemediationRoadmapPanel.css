@@ -1,7 +1,7 @@
 .roadmapPanel {
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: var(--space-3-5);
+  padding: var(--space-4);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-md);
   background: linear-gradient(180deg, var(--white), #fbfdff);
@@ -10,7 +10,7 @@
 
 .roadmapLayout {
   display: grid;
-  gap: 14px;
+  gap: var(--space-3-5);
 }
 
 .roadmapSummaryCard,
@@ -18,7 +18,7 @@
 .roadmapDependencyCard,
 .roadmapColumn {
   min-width: 0;
-  padding: 14px;
+  padding: var(--space-3-5);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-lg);
   background: var(--white);
@@ -41,7 +41,7 @@
 }
 
 .roadmapStats div {
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   background: var(--slate-50);
@@ -70,21 +70,21 @@
 
 .roadmapSectionHeader {
   display: grid;
-  gap: 4px;
-  margin-bottom: 12px;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
 }
 
 .roadmapActionList,
 .roadmapOrderList,
 .roadmapDependencyList {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .roadmapActionCard,
 .roadmapOrderItem,
 .roadmapDependencyItem {
-  padding: 12px;
+  padding: var(--space-3);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-md);
   background: var(--white);
@@ -94,8 +94,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: var(--space-2-5);
+  margin-bottom: var(--space-2);
 }
 
 .roadmapActionMeta span,
@@ -104,7 +104,7 @@
   align-items: center;
   justify-content: center;
   min-width: 42px;
-  padding: 5px 8px;
+  padding: 5px var(--space-2);
   border-radius: var(--radius-pill);
   font-size: 10px;
   font-weight: 800;
@@ -128,12 +128,12 @@
 .roadmapTagRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: var(--space-1-5);
+  margin-top: var(--space-2-5);
 }
 
 .roadmapTagRow span {
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-pill);
   color: var(--slate-600);
   background: #f1f5f9;
@@ -143,8 +143,8 @@
 
 .roadmapActionDetails {
   display: grid;
-  gap: 10px;
-  margin: 10px 0 0;
+  gap: var(--space-2-5);
+  margin: var(--space-2-5) 0 0;
 }
 
 .roadmapActionDetails div {
@@ -165,8 +165,8 @@
 .roadmapDimensions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: var(--space-1-5);
+  margin-top: var(--space-2-5);
 }
 
 .roadmapDimensions code {
@@ -178,7 +178,7 @@
 }
 
 .playbookDetails {
-  margin-top: 12px;
+  margin-top: var(--space-3);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-10);
   background: var(--slate-50);
@@ -188,8 +188,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px;
+  gap: var(--space-2-5);
+  padding: var(--space-2-5);
   cursor: pointer;
   color: var(--slate-900);
   font-size: 11px;
@@ -205,14 +205,14 @@
 
 .playbookBody {
   display: grid;
-  gap: 10px;
-  padding: 0 10px 10px;
+  gap: var(--space-2-5);
+  padding: 0 var(--space-2-5) var(--space-2-5);
 }
 
 .playbookBlock,
 .playbookPhase,
 .playbookList {
-  padding: 10px;
+  padding: var(--space-2-5);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-sm);
   background: var(--white);
@@ -235,12 +235,12 @@
 .playbookPhaseList,
 .playbookGrid {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .playbookPhase ul,
 .playbookList ul {
-  margin: 8px 0 0 16px;
+  margin: var(--space-2) 0 0 var(--space-4);
   padding: 0;
   color: var(--slate-600);
   font-size: 11px;
@@ -249,17 +249,17 @@
 
 .playbookPhase li,
 .playbookList li {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .playbookChecks {
   display: grid;
   gap: 5px;
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .playbookChecks span {
-  padding: 6px 8px;
+  padding: var(--space-1-5) var(--space-2);
   border-radius: var(--radius-sm);
   color: var(--blue-700);
   background: var(--blue-50);
@@ -270,7 +270,7 @@
 .roadmapOrderItem {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
   align-items: start;
 }
 
@@ -297,7 +297,7 @@
   display: inline-flex;
   width: fit-content;
   margin-top: 5px;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-pill);
   color: var(--slate-600);
   background: #f1f5f9;
@@ -307,7 +307,7 @@
 
 .roadmapOrderItem p,
 .roadmapDependencyItem p {
-  margin-top: 6px;
+  margin-top: var(--space-1-5);
 }
 
 .healthPanel {
@@ -328,7 +328,7 @@
   display: grid;
   grid-template-columns: minmax(96px, 1.2fr) minmax(40px, 150px) auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 7px;
   font-size: 11px;
   font-weight: 800;
@@ -345,8 +345,8 @@
 .healthPanel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 18px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4-5);
 }
 
 @media (max-width: 980px) {

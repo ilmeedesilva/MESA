@@ -1,12 +1,12 @@
 .drawerActionRow {
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 
 .dimensionRow {
   display: grid;
   grid-template-columns: minmax(96px, 1.2fr) minmax(40px, 160px) auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 11px;
   font-weight: 800;
 }
@@ -31,14 +31,14 @@
 
 .structuredRecommendation {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .recommendationHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .recommendationHeader span {
@@ -50,7 +50,7 @@
 
 .structuredRecommendation dl {
   display: grid;
-  gap: 6px;
+  gap: var(--space-1-5);
   margin: 0;
 }
 
@@ -68,45 +68,45 @@
 
 .structuredRecommendation ol {
   margin: 0;
-  padding-left: 20px;
+  padding-left: var(--space-5);
   color: var(--slate-600);
 }
 
 .structuredRecommendation li {
-  margin-top: 6px;
+  margin-top: var(--space-1-5);
   line-height: 1.45;
 }
 
 .affectedFiles {
   display: grid;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .affectedFiles code {
   display: block;
   overflow-wrap: anywhere;
   border-radius: 6px;
-  padding: 6px 8px;
+  padding: var(--space-1-5) var(--space-2);
   color: #1e293b;
   background: var(--white);
   font-size: 11px;
 }
 
 .evidenceFiles {
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 
 .ledgerMetaGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 12px 0;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
 }
 
 .ledgerMetaGrid div {
   border: 1px solid var(--blue-100);
   border-radius: var(--radius-sm);
-  padding: 9px 10px;
+  padding: 9px var(--space-2-5);
   background: var(--blue-50);
 }
 
@@ -131,14 +131,14 @@
 
 .evidenceChainList {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
-  padding-left: 20px;
+  padding-left: var(--space-5);
   color: var(--slate-600);
 }
 
 .evidenceChainList li {
-  padding-left: 2px;
+  padding-left: var(--space-0-5);
   line-height: 1.45;
 }
 
@@ -154,15 +154,15 @@
 }
 
 .evidenceChainList span {
-  margin-top: 2px;
+  margin-top: var(--space-0-5);
 }
 
 .evidenceChainList code {
   width: fit-content;
   max-width: 100%;
-  margin-top: 6px;
+  margin-top: var(--space-1-5);
   border-radius: 6px;
-  padding: 4px 7px;
+  padding: var(--space-1) 7px;
   background: #f1f5f9;
   color: var(--slate-700);
   font-size: 11px;
@@ -179,18 +179,18 @@
 }
 
 .drawerModeNote {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-2-5);
   color: var(--slate-600);
 }
 
 .evidenceBulletList {
   margin: 0;
-  padding-left: 18px;
+  padding-left: var(--space-4-5);
   color: var(--slate-600);
 }
 
 .evidenceBulletList li {
-  margin-top: 6px;
+  margin-top: var(--space-1-5);
   line-height: 1.5;
 }
 
@@ -200,13 +200,13 @@
 
 .supportText {
   display: block;
-  margin-top: 10px;
+  margin-top: var(--space-2-5);
   color: var(--slate-600);
   line-height: 1.45;
 }
 
 .drawerClose {
   float: right;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   box-shadow: none;
 }
