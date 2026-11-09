@@ -7,7 +7,8 @@ import {
   formatType,
   plainLanguageFindingTitle,
   recommendationImpact,
-  summarizeEvidence
+  summarizeEvidence,
+  softWrap
 } from "../viewHelpers";
 import type { Finding, InterpretationMode } from "../types";
 
@@ -53,11 +54,11 @@ export function RecommendationDetails({
       </div>
       <dl>
         <dt>Likely root cause</dt>
-        <dd>{recommendation.root_cause}</dd>
+        <dd>{softWrap(recommendation.root_cause)}</dd>
         <dt>Expected consequence if unchanged</dt>
-        <dd>{recommendation.architectural_consequence}</dd>
+        <dd>{softWrap(recommendation.architectural_consequence)}</dd>
         <dt>Expected impact after refactor</dt>
-        <dd>{recommendation.expected_impact}</dd>
+        <dd>{softWrap(recommendation.expected_impact)}</dd>
       </dl>
       {recommendation.affected_files.length > 0 ? (
         <div className="affectedFiles">
@@ -120,7 +121,7 @@ export function FindingDrawer({
         </div>
         <section className="drawerSection">
           <h3>What MESA found</h3>
-          <p>{finding.description}</p>
+          <p>{softWrap(finding.description)}</p>
         </section>
         <section className="drawerSection">
           <h3>Why it matters</h3>
@@ -128,11 +129,11 @@ export function FindingDrawer({
         </section>
         <section className="drawerSection">
           <h3>Why MESA believes this</h3>
-          <p>{finding.why_valid || "MESA attached structured detector evidence to support this finding."}</p>
+          <p>{softWrap(finding.why_valid || "MESA attached structured detector evidence to support this finding.")}</p>
           <div className="ledgerMetaGrid">
             <div>
               <span>Detector</span>
-              <strong>{finding.detector_name || formatType(finding.type)}</strong>
+              <strong>{softWrap(finding.detector_name || formatType(finding.type))}</strong>
             </div>
             <div>
               <span>Rule</span>
@@ -144,7 +145,7 @@ export function FindingDrawer({
               {finding.evidence_chain.map((item, index) => (
                 <li key={`${item.step}-${index}`}>
                   <strong>{formatType(item.step)}</strong>
-                  <span>{item.description}</span>
+                  <span>{softWrap(item.description)}</span>
                   {item.source ? (
                     <code>
                       {item.source.file_path}
@@ -157,7 +158,7 @@ export function FindingDrawer({
           ) : (
             <ul className="evidenceBulletList">
               {summarizeEvidence(finding.evidence).map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item}>{softWrap(item)}</li>
               ))}
             </ul>
           )}

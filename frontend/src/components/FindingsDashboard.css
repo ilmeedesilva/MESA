@@ -44,6 +44,10 @@
   margin: 0;
 }
 
+.confidenceFilter input {
+  margin-inline: 0;
+}
+
 .confidenceFilter span {
   display: block;
   margin-bottom: 5px;

@@ -982,21 +982,46 @@ export function compactMetricDetail(text: string, maxWords: number) {
   return `${words.slice(0, maxWords).join(" ")}...`;
 }
 
+/**
+ * Adds line-break opportunities after separators in code-like text (dots, underscores,
+ * slashes, hyphens, colons and brackets) and between CamelCase parts, so long pointers,
+ * IDs, paths, URLs and class names wrap between their parts instead of at an arbitrary
+ * character.
+ */
+export function withBreakOpportunities(text: string): React.ReactNode[] {
+  return text
+    .split(/(?<=[._/\\:\-\]])|(?<=[a-z])(?=[A-Z])/)
+    .flatMap((piece, index) => (index === 0 ? [piece] : [<wbr key={index} />, piece]));
+}
+
+/** Plain text in which long path- or identifier-like tokens get the same break opportunities. */
+export function softWrap(text: string): React.ReactNode[] {
+  return text
+    .split(/(\s+)/)
+    .map((token, index) =>
+      token.length >= 16 && /[._/\\:-]|[a-z][A-Z]/.test(token) ? (
+        <React.Fragment key={index}>{withBreakOpportunities(token)}</React.Fragment>
+      ) : (
+        token
+      )
+    );
+}
+
 export function renderHighlightedText(text: string) {
   const parts = tokenizeHighlightedText(text);
   return parts.map((part, index) =>
     part.kind === "code" ? (
       <code key={`${part.value}-${index}`} className="inlineCode">
-        {part.value}
+        {withBreakOpportunities(part.value)}
       </code>
     ) : (
-      <React.Fragment key={`${part.value}-${index}`}>{part.value}</React.Fragment>
+      <React.Fragment key={`${part.value}-${index}`}>{softWrap(part.value)}</React.Fragment>
     )
   );
 }
 
 export function tokenizeHighlightedText(text: string) {
-  const pattern = /(https?:\/\/[^\s)]+|\/[^\s,;]+|[a-z0-9]+(?:-[a-z0-9]+){1,}(?=[\s.,;:)])?)/gi;
+  const pattern = /(https?:\/\/[^\s)]+|\/[A-Za-z_.~][^\s,;]*|[a-z0-9]+(?:-[a-z0-9]+){1,}(?=[\s.,;:)])?)/gi;
   const parts: Array<{ kind: "text" | "code"; value: string }> = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;

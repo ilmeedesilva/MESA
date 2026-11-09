@@ -123,3 +123,18 @@ aside {
 meter {
   width: 100%;
 }
+
+/*
+ * Text never overflows its box. Long words (service names, IDs) break only when they would
+ * overflow; code labels, links and file paths may break anywhere, which also lets the boxes
+ * around them shrink instead of growing past their container.
+ */
+body {
+  overflow-wrap: break-word;
+}
+
+code,
+a,
+.inlineCode {
+  overflow-wrap: anywhere;
+}

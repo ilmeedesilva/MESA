@@ -1,3 +1,5 @@
+import type React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import type { Finding, GraphEdge, PolicyRecord, ProjectRecord } from "./types";
 import {
@@ -8,7 +10,10 @@ import {
   readSectionFromUrl,
   resolveProjectSelection,
   servicePathsFromText,
-  syncAppStateToUrl
+  syncAppStateToUrl,
+  softWrap,
+  tokenizeHighlightedText,
+  withBreakOpportunities
 } from "./viewHelpers";
 
 function finding(overrides: Partial<Finding>): Finding {
@@ -112,5 +117,49 @@ describe("URL state", () => {
     expect(window.location.search).toBe("?project=p1");
     window.history.replaceState({}, "", "/?section=not-a-page");
     expect(readSectionFromUrl()).toBe("overview");
+  });
+});
+
+describe("tokenizeHighlightedText", () => {
+  const codeParts = (text: string) =>
+    tokenizeHighlightedText(text)
+      .filter((part) => part.kind === "code")
+      .map((part) => part.value);
+
+  it("keeps score fractions such as 67.2/100 as plain text", () => {
+    expect(codeParts("System health is 67.2/100 (Moderate).")).toEqual([]);
+    expect(
+      tokenizeHighlightedText("Score 70.1/100, grade Good.")
+        .map((part) => part.value)
+        .join("")
+    ).toBe("Score 70.1/100, grade Good.");
+  });
+
+  it("highlights file paths, URLs and hyphenated service names", () => {
+    expect(codeParts("Found in /workspace/app/config.yml:8 and http://localhost:8061/eureka/.")).toEqual([
+      "/workspace/app/config.yml:8",
+      "http://localhost:8061/eureka/"
+    ]);
+    expect(codeParts("services: config-service.")).toEqual(["config-service"]);
+  });
+});
+
+describe("withBreakOpportunities", () => {
+  it("keeps the text and allows breaks after separators", () => {
+    const nodes = withBreakOpportunities("breakdown.hard_coded_dependency_risk");
+    expect(nodes.filter((node) => typeof node === "string").join("")).toBe("breakdown.hard_coded_dependency_risk");
+    expect(nodes.filter((node) => typeof node !== "string")).toHaveLength(4);
+  });
+});
+
+describe("softWrap", () => {
+  const text = (nodes: React.ReactNode[]) => renderToStaticMarkup(<>{nodes}</>);
+
+  it("adds break opportunities only inside long path or identifier tokens", () => {
+    expect(text(softWrap("A short sentence stays as it is."))).toBe("A short sentence stays as it is.");
+    expect(text(softWrap("Detector HardCodedServiceDependencyDetector"))).toBe(
+      "Detector Hard<wbr/>Coded<wbr/>Service<wbr/>Dependency<wbr/>Detector"
+    );
+    expect(text(softWrap("in /workspace/app.yml:8"))).toBe("in /<wbr/>workspace/<wbr/>app.<wbr/>yml:<wbr/>8");
   });
 });

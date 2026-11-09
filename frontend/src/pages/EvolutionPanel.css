@@ -50,7 +50,7 @@
 }
 
 .evolutionSummary div {
-  padding: 12px;
+  padding: 12px 10px;
   border-radius: var(--radius-sm);
   background: var(--slate-50);
   border: 1px solid var(--slate-200);
@@ -125,4 +125,9 @@
   .evolutionTimeline {
     grid-template-columns: 1fr;
   }
+}
+
+/* Four stat cards share a narrow column; slightly smaller labels and side padding keep "dependencies" whole. */
+.evolutionSummary span {
+  font-size: 11px;
 }

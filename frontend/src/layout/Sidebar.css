@@ -321,3 +321,8 @@
     justify-self: stretch;
   }
 }
+
+/* Navigation labels stay whole words; the collapsed rail is redesigned with icons. */
+.sidebarItem strong {
+  overflow-wrap: normal;
+}

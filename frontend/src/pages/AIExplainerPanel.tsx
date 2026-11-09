@@ -6,7 +6,8 @@ import {
   aiStatusTone,
   renderHighlightedText,
   shortId,
-  summaryFindingTitle
+  summaryFindingTitle,
+  withBreakOpportunities
 } from "../viewHelpers";
 import type {
   AIExplainerIntent,
@@ -272,7 +273,7 @@ export function AIExplainerPanel({
                   <article key={`${item.kind}-${item.pointer}-${item.label}`} className="aiEvidenceCard">
                     <small>{item.kind}</small>
                     <strong>{item.label}</strong>
-                    <code>{item.pointer}</code>
+                    <code>{withBreakOpportunities(item.pointer)}</code>
                     <p>{renderHighlightedText(item.snippet)}</p>
                   </article>
                 ))}

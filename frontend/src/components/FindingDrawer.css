@@ -4,7 +4,7 @@
 
 .dimensionRow {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(80px, 160px) 34px;
+  grid-template-columns: minmax(96px, 1.2fr) minmax(40px, 160px) auto;
   align-items: center;
   gap: 8px;
   font-size: 11px;
