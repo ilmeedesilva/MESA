@@ -94,7 +94,8 @@ def test_project_repo_scan_from_local_path_persists_source_metadata() -> None:
     del app.state.persistence_repository
 
 
-def test_project_repo_scan_supports_archive_sources(tmp_path) -> None:
+def test_project_repo_scan_supports_archive_sources(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("MESA_ALLOWED_SCAN_ROOTS", str(tmp_path))
     archive_source = tmp_path / "chatty"
     shutil.copytree(ROOT / "chatty", archive_source)
     archive_base = tmp_path / "chatty-archive"

@@ -73,8 +73,14 @@ def resolve_benchmark_path(benchmark_id: str) -> Path | None:
     """Resolve a benchmark id to a file strictly inside BENCHMARKS_DIR, or None."""
     if not _BENCHMARK_ID_PATTERN.match(benchmark_id):
         return None
-    candidate = (BENCHMARKS_DIR / f"{benchmark_id}.yml").resolve()
-    if candidate.parent != BENCHMARKS_DIR.resolve():
+    benchmarks_dir = os.path.realpath(BENCHMARKS_DIR)
+    real_path = os.path.realpath(os.path.join(benchmarks_dir, f"{benchmark_id}.yml"))
+    # Prefix check on the fully resolved path, the form static analysers
+    # recognise as a path-traversal guard; then require a direct child.
+    if not real_path.startswith(benchmarks_dir + os.sep):
+        return None
+    candidate = Path(real_path)
+    if str(candidate.parent) != benchmarks_dir:
         return None
     if not candidate.is_file():
         return None
