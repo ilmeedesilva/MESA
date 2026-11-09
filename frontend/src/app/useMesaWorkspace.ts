@@ -24,6 +24,7 @@ import {
   servicePathsFromText
 } from "../viewHelpers";
 import { useEffectEvent } from "../hooks/useEffectEvent";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { defaultPaths, defaultPolicyDocument } from "./defaults";
 import { navigationItems, sectionsRequiringProject } from "./navigation";
 import { readRoute, writeUrl, type Route } from "./router";
@@ -128,8 +129,16 @@ export function useMesaWorkspace() {
   const projectListRequestRef = React.useRef(0);
   const projectStateRequestRef = React.useRef(0);
   const scanRequestRef = React.useRef(0);
-  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
-  const sidebarToggleIntentRef = React.useRef<"auto" | "manual">("auto");
+  // The sidebar collapses by itself on narrower desktops unless the user expanded or collapsed
+  // it. That choice is kept when the window is resized.
+  const [sidebarPreference, setSidebarPreference] = React.useState<"auto" | "expanded" | "collapsed">("auto");
+  const isWideDesktop = useMediaQuery("(min-width: 1360px)");
+  const isStackedLayout = useMediaQuery("(max-width: 1179.98px)");
+  const sidebarCollapsed = isStackedLayout
+    ? false
+    : sidebarPreference === "auto"
+      ? !isWideDesktop
+      : sidebarPreference === "collapsed";
   const projectStateAbortRef = React.useRef<AbortController | null>(null);
   const scanAbortRef = React.useRef<AbortController | null>(null);
 
@@ -252,23 +261,6 @@ export function useMesaWorkspace() {
   React.useEffect(() => {
     refreshResearchRecordsForSection();
   }, [currentSection, refreshResearchRecordsForSection]);
-
-  React.useEffect(() => {
-    const handleResize = () => {
-      const shouldCollapse = window.innerWidth < 1360;
-      if (window.innerWidth < 1180) {
-        setSidebarCollapsed(false);
-        sidebarToggleIntentRef.current = "auto";
-        return;
-      }
-      if (sidebarToggleIntentRef.current === "auto") {
-        setSidebarCollapsed(shouldCollapse);
-      }
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const filteredFindings = React.useMemo(() => filterFindings(result?.findings ?? [], filters), [filters, result]);
 
@@ -1174,8 +1166,7 @@ export function useMesaWorkspace() {
   const activeScanDateLabel = activeScan ? formatDate(activeScan.completed_at ?? activeScan.created_at) : "No scan yet";
 
   function toggleSidebar() {
-    sidebarToggleIntentRef.current = "manual";
-    setSidebarCollapsed((current) => !current);
+    setSidebarPreference(sidebarCollapsed ? "expanded" : "collapsed");
   }
 
   function toggleDemoWorkspace() {
