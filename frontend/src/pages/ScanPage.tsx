@@ -39,7 +39,7 @@ export function ScanPage({ ws }: { ws: MesaWorkspace }) {
               long scrolling page.
             </p>
             <div className="docLinks">
-              <DocLinkButton label="Evaluator quick start" onClick={() => openDoc("evaluator-quick-start")} />
+              <DocLinkButton label="Quick start" onClick={() => openDoc("evaluator-quick-start")} />
               <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
             </div>
           </div>

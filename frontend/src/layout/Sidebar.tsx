@@ -139,7 +139,7 @@ export function Sidebar({
               <p>
                 {isPublicDemoMode
                   ? "You are browsing the demo data."
-                  : "Load the embedded public demo when you want a safe example project."}
+                  : "Load the demo data when you want a safe example project."}
               </p>
             </div>
             <button

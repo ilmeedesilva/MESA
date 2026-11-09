@@ -10,11 +10,11 @@ const docsRootCandidates = [path.resolve(frontendRoot, "docs"), path.resolve(fro
 const docs = [
   {
     slug: "evaluator-quick-start",
-    title: "Evaluator Quick Start",
+    title: "Quick Start",
     category: "Getting Started",
-    summary: "Fastest path for evaluators to understand, run, and assess MESA.",
+    summary: "Fastest path to understand, run, and assess MESA.",
     path: "docs/guides/EVALUATOR_QUICK_START.md",
-    tags: ["evaluator", "quick start", "demo", "evaluation"]
+    tags: ["quick start", "demo", "evaluation"]
   },
   {
     slug: "user-guide",
@@ -46,7 +46,7 @@ const docs = [
     category: "Demo",
     summary: "How to use MESA when the live backend is unavailable.",
     path: "docs/guides/PUBLIC_DEMO_GUIDE.md",
-    tags: ["demo", "public", "embedded", "evaluator"]
+    tags: ["demo", "public", "demo data", "tour"]
   },
   {
     slug: "local-scan-guide",

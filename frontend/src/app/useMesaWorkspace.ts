@@ -529,7 +529,7 @@ export function useMesaWorkspace() {
 
   async function runScan() {
     if (isPublicDemoMode && apiAvailability !== "online") {
-      setError("Public demo mode is using embedded example results. Start the full backend stack to run live scans.");
+      setError("You are viewing demo data. Start the full backend stack to run live scans.");
       return;
     }
     if (!selectedProject) {
@@ -589,7 +589,7 @@ export function useMesaWorkspace() {
 
   async function previewRepositorySource() {
     if (isPublicDemoMode && apiAvailability !== "online") {
-      setError("Repository preview needs the live backend. Public demo mode only includes embedded example scans.");
+      setError("Repository preview needs the live backend. The demo data only includes example scans.");
       return;
     }
     if (!sourceLocation.trim()) {
@@ -796,7 +796,7 @@ export function useMesaWorkspace() {
       return;
     }
     if (usingEmbeddedDemo) {
-      setError("Research records need the live backend. Public demo mode only includes embedded examples.");
+      setError("Research records need the live backend. The demo data only includes example scans.");
       return;
     }
     setIsSavingResearchRecord(true);
@@ -951,7 +951,7 @@ export function useMesaWorkspace() {
         api_key_hint: null,
         model: "demo-embedded",
         base_url: "embedded",
-        message: "Public demo mode is running from embedded example data without a live backend."
+        message: "Showing demo data without a live backend."
       });
       setIsCheckingAIStatus(false);
       return;

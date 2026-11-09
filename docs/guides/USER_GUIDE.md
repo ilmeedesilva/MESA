@@ -75,7 +75,7 @@ After a scan, use the result interpretation switch near the top of the results a
 
 Use beginner mode when:
 
-- demonstrating MESA to evaluators
+- demonstrating MESA to reviewers or your team
 - reviewing results with non-technical stakeholders
 - doing a first pass through a new repository
 
