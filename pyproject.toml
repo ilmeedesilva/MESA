@@ -87,7 +87,10 @@ python_version = "3.10"
 # Type-checked strictly so far: the data models, analysis core and detectors.
 # Widen this list (and drop ignore_missing_imports where stubs exist) as other
 # packages are made clean.
-files = ["src/mesa/models.py", "src/mesa/analysis", "src/mesa/detectors"]
+files = [
+  "src/mesa/models.py", "src/mesa/analysis", "src/mesa/detectors",
+  "src/mesa/file_walk.py", "src/mesa/discovery",
+]
 disallow_untyped_defs = true
 warn_unused_ignores = true
 warn_redundant_casts = true
