@@ -148,15 +148,24 @@ def test_github_outputs_and_summary(repo: Path, tmp_path: Path, monkeypatch) -> 
     assert Path(values["report-markdown"]).read_text("utf-8").startswith("<!-- mesa-report -->")
 
 
-def test_annotations_are_printed_on_request(repo: Path, tmp_path: Path) -> None:
+def test_annotations_default_on_only_in_github_actions(
+    repo: Path, tmp_path: Path, monkeypatch
+) -> None:
     _add_cycle(repo)
+    args = ("--base-ref", "HEAD~1", "--no-fail")
 
-    quiet = _run(repo, tmp_path / "a", "--base-ref", "HEAD~1", "--no-fail")
-    loud = _run(repo, tmp_path / "b", "--base-ref", "HEAD~1", "--no-fail", "--annotations")
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    local = _run(repo, tmp_path / "a", *args)
+    asked = _run(repo, tmp_path / "b", *args, "--annotations")
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    in_actions = _run(repo, tmp_path / "c", *args)
+    switched_off = _run(repo, tmp_path / "d", *args, "--no-annotations")
 
-    assert "::error " not in quiet.output
-    assert "::error file=" in loud.output
-    assert "title=MESA%3A Cyclic dependency" in loud.output
+    assert "::error " not in local.output
+    assert "::error file=" in asked.output
+    assert "title=MESA%3A Cyclic dependency" in asked.output
+    assert "::error file=" in in_actions.output
+    assert "::error " not in switched_off.output
 
 
 def test_links_use_the_github_repository_and_head_sha(
