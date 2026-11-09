@@ -40,3 +40,23 @@ MESA is intended for read-only static analysis:
 - use repository preview first when possible
 - review discovered services before scanning
 - use manual service paths when discovery needs correction
+
+## Known Limitations
+
+MESA reads source code without running it, so some service calls are not visible to it.
+
+- **Python calls need a plain string URL.** A call such as
+  `requests.get("http://user-service:8080/users/1")` is recognised as a call from one service
+  to another. A URL written as an f-string (`requests.get(f"http://user-service/{user_id}")`),
+  built from variables (`requests.get(BASE_URL + "/users")`) or passed as a keyword
+  (`requests.get(url=...)`) is not. Such a call adds no edge to the dependency graph, so it
+  cannot count towards a cyclic dependency or a chatty service pair. The address is still
+  reported as a hard-coded service dependency, because that check scans the text of the file.
+- **JavaScript, TypeScript, Java and Go are read with patterns, not a full parser.** URLs that
+  are assembled at runtime, read from configuration, or produced by a client library are
+  missed.
+- **Only HTTP calls and database connection settings are dependencies.** Message queues
+  (Kafka, RabbitMQ) and gRPC are not yet followed.
+
+These limits are kept as they are for now, because changing the extractor would change the
+published research results.
