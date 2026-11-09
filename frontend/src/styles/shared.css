@@ -911,3 +911,57 @@
     min-height: 120px;
   }
 }
+
+/*
+ * Wide data tables scroll inside their own box. The first column stays in view while
+ * scrolling, and on phones a short hint says the table scrolls.
+ */
+.tableScroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.tableScroll:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+.tableScroll table th:first-child,
+.tableScroll table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--white);
+  box-shadow: 8px 0 10px -10px rgba(15, 23, 42, 0.35);
+}
+
+.tableScrollHint {
+  display: none;
+  margin: 0 0 var(--space-1-5);
+  color: var(--slate-500);
+  font-size: 12px;
+}
+
+@media (max-width: 767.98px) {
+  .tableScrollHint {
+    display: block;
+  }
+
+  .panelHeader,
+  .graphHeader {
+    flex-wrap: wrap;
+  }
+}
+
+/* Touch layouts: button rows and checkbox labels reach the 44px tap size. */
+@media (max-width: 1199.98px) {
+  .panelButtonRow > button {
+    min-height: 44px;
+  }
+
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]) {
+    min-height: 44px;
+  }
+}

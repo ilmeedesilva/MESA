@@ -334,7 +334,8 @@ function Scoreboard({
           came back every time the identical question was asked.
         </p>
       </div>
-      <div className="aiScoreboardScroll">
+      <p className="tableScrollHint">Scroll sideways to see every model.</p>
+      <div className="aiScoreboardScroll tableScroll" tabIndex={0} role="region" aria-label="AI baseline results table">
         <table className="aiScoreboardTable">
           <thead>
             <tr>

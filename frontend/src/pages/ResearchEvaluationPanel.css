@@ -1,5 +1,7 @@
 .researchWorkspace {
   display: grid;
+  /* One column that never grows past the page; the records table scrolls inside its box. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   padding: var(--space-4);
   min-height: calc(100vh - 93px);

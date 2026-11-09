@@ -264,50 +264,58 @@ export function ResearchEvaluationPanel({
             Create a research evaluation from a selected project scan to populate this table.
           </div>
         ) : (
-          <div className="researchTableWrap">
-            <table className="researchTable">
-              <thead>
-                <tr>
-                  <th>Repo</th>
-                  <th>Commit/Ref</th>
-                  <th>Services Expected</th>
-                  <th>Services Detected</th>
-                  <th>Findings</th>
-                  <th>TP</th>
-                  <th>FP</th>
-                  <th>FN</th>
-                  <th>Precision</th>
-                  <th>Recall</th>
-                  <th>F1</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((record) => (
-                  <tr
-                    key={record.id}
-                    className={selectedRecord?.id === record.id ? "selected" : ""}
-                    onClick={() => onSelectRecord(record.id)}
-                  >
-                    <td>
-                      <strong>{record.repo_name}</strong>
-                    </td>
-                    <td>{record.commit_ref || "N/A"}</td>
-                    <td>{record.expected_services ?? "N/A"}</td>
-                    <td>{record.detected_services}</td>
-                    <td>{record.total_findings}</td>
-                    <td>{record.true_positives ?? "N/A"}</td>
-                    <td>{record.false_positives ?? "N/A"}</td>
-                    <td>{record.false_negatives ?? "N/A"}</td>
-                    <td>{formatMetricValue(record.precision)}</td>
-                    <td>{formatMetricValue(record.recall)}</td>
-                    <td>{formatMetricValue(record.f1_score)}</td>
-                    <td>{record.notes || "Add notes"}</td>
+          <>
+            <p className="tableScrollHint">Scroll sideways to see every column.</p>
+            <div
+              className="researchTableWrap tableScroll"
+              tabIndex={0}
+              role="region"
+              aria-label="Evaluation records table"
+            >
+              <table className="researchTable">
+                <thead>
+                  <tr>
+                    <th>Repo</th>
+                    <th>Commit/Ref</th>
+                    <th>Services Expected</th>
+                    <th>Services Detected</th>
+                    <th>Findings</th>
+                    <th>TP</th>
+                    <th>FP</th>
+                    <th>FN</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1</th>
+                    <th>Notes</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {records.map((record) => (
+                    <tr
+                      key={record.id}
+                      className={selectedRecord?.id === record.id ? "selected" : ""}
+                      onClick={() => onSelectRecord(record.id)}
+                    >
+                      <td>
+                        <strong>{record.repo_name}</strong>
+                      </td>
+                      <td>{record.commit_ref || "N/A"}</td>
+                      <td>{record.expected_services ?? "N/A"}</td>
+                      <td>{record.detected_services}</td>
+                      <td>{record.total_findings}</td>
+                      <td>{record.true_positives ?? "N/A"}</td>
+                      <td>{record.false_positives ?? "N/A"}</td>
+                      <td>{record.false_negatives ?? "N/A"}</td>
+                      <td>{formatMetricValue(record.precision)}</td>
+                      <td>{formatMetricValue(record.recall)}</td>
+                      <td>{formatMetricValue(record.f1_score)}</td>
+                      <td>{record.notes || "Add notes"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 

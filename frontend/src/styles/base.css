@@ -138,3 +138,37 @@ a,
 .inlineCode {
   overflow-wrap: anywhere;
 }
+
+/*
+ * Touch layouts (phone and tablet): controls are at least 44 x 44px, and form text is 16px on
+ * phones so iOS does not zoom in when a field is focused. Desktop sizes are unchanged.
+ */
+@media (max-width: 1199.98px) {
+  button,
+  select,
+  summary,
+  [role="button"],
+  [role="tab"],
+  input:not([type="checkbox"], [type="radio"], [type="hidden"]) {
+    min-height: 44px;
+  }
+
+  button,
+  [role="button"],
+  [role="tab"] {
+    min-width: 44px;
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 767.98px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

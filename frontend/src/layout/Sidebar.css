@@ -325,6 +325,19 @@
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
 }
 
+/* Touch layouts: the rail buttons are full-size tap targets. */
+@media (max-width: 1199.98px) {
+  .sidebarToggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .sidebarDemoButton.compact {
+    min-height: 44px;
+  }
+}
+
 /* Phone: the sidebar is a menu that slides in from the left. */
 @media (max-width: 767.98px) {
   .appSidebar,

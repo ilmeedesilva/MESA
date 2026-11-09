@@ -533,3 +533,10 @@
   border-color: var(--slate-900);
   color: var(--white);
 }
+
+@media (max-width: 767.98px) {
+  .aiScoreboardTable tbody th {
+    min-width: 112px;
+    white-space: normal;
+  }
+}
