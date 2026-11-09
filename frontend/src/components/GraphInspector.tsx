@@ -1,8 +1,9 @@
-import React from "react";
+import { Icon } from "./icons";
 import { formatType } from "../viewHelpers";
 import type { GraphSelection } from "../types";
 
-export function GraphInspector({ selection }: { selection: GraphSelection | null }) {
+/** Details of the clicked graph element. On phones it opens as a bottom sheet with a close button. */
+export function GraphInspector({ selection, onClose }: { selection: GraphSelection | null; onClose?: () => void }) {
   if (!selection) {
     return (
       <div className="graphInspector emptyInspector">
@@ -11,7 +12,12 @@ export function GraphInspector({ selection }: { selection: GraphSelection | null
     );
   }
   return (
-    <div className="graphInspector">
+    <div className="graphInspector hasSelection">
+      {onClose ? (
+        <button type="button" className="graphInspectorClose" onClick={onClose} aria-label="Close details">
+          <Icon name="close" />
+        </button>
+      ) : null}
       <div className="findingMeta">
         <span>{selection.kind.toUpperCase()}</span>
         <strong>{selection.findings.length} linked findings</strong>

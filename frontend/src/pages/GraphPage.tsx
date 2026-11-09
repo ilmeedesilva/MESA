@@ -53,7 +53,7 @@ export function GraphPage({ ws }: { ws: MesaWorkspace }) {
         ) : (
           <div className="emptyState">No scan selected.</div>
         )}
-        <GraphInspector selection={selectedGraphElement} />
+        <GraphInspector selection={selectedGraphElement} onClose={() => setSelectedGraphElement(null)} />
       </section>
       <HealthScoreView systemScore={systemScore ?? null} serviceScores={serviceScores} onOpenDoc={openDoc} />
     </section>
