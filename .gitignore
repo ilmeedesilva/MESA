@@ -20,3 +20,7 @@ benchmarks/real-repos/*
 
 dissertation/
 dissertation_output/
+
+# Playwright output
+frontend/playwright-report/
+frontend/test-results/
