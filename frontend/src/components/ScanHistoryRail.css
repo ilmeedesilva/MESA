@@ -78,3 +78,9 @@
     position: static;
   }
 }
+
+/* WCAG AA contrast (4.5:1) on the tinted background of this state. */
+.globalScanItem.active span,
+.globalScanItem.active small {
+  color: var(--slate-600);
+}

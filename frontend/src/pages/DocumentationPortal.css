@@ -227,3 +227,8 @@
     padding: var(--space-4);
   }
 }
+
+/* WCAG AA contrast (4.5:1) on the tinted background of this state. */
+.docsNavItem.active span {
+  color: var(--slate-600);
+}

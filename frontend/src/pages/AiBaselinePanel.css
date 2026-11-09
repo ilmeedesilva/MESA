@@ -369,7 +369,7 @@
 }
 
 .aiModelCardMeta {
-  color: var(--slate-500) !important;
+  color: var(--slate-600) !important;
   font-size: 12px !important;
 }
 
@@ -539,4 +539,14 @@
     min-width: 112px;
     white-space: normal;
   }
+}
+
+/* WCAG AA contrast (4.5:1): notes on the orange model cards and the run labels under the bars. */
+.aiBaselineDeterminismNote,
+.aiModelCardTag {
+  color: var(--slate-600);
+}
+
+.aiBaselineRunBarLabel {
+  color: var(--slate-500);
 }

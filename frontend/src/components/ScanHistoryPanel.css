@@ -32,3 +32,9 @@
   color: var(--slate-500);
   font-size: 12px;
 }
+
+/* WCAG AA contrast (4.5:1) on the tinted background of this state. */
+.scanItem.active span,
+.scanItem.active small {
+  color: var(--slate-600);
+}
