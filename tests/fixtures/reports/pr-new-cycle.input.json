@@ -1,0 +1,911 @@
+{
+  "findings": [
+    {
+      "confidence": 0.9,
+      "confidence_reason": "Confidence is high because the directed service graph contains a closed cycle built from static API call evidence.",
+      "description": "Cyclic service dependency detected: user-service -> order-service -> user-service.",
+      "detector_name": "CyclicDependencyDetector",
+      "evidence": [
+        {
+          "cycle": [
+            "user-service",
+            "order-service"
+          ],
+          "cycle_length": 2,
+          "cycle_path": [
+            "user-service",
+            "order-service",
+            "user-service"
+          ]
+        },
+        {
+          "method": "GET",
+          "source": {
+            "file_path": "user-service/app.py",
+            "line_number": 26
+          },
+          "source_service": "user-service",
+          "target_service": "order-service",
+          "url": "http://order-service:8080/orders/1"
+        },
+        {
+          "method": "GET",
+          "source": {
+            "file_path": "order-service/app.py",
+            "line_number": 30
+          },
+          "source_service": "order-service",
+          "target_service": "user-service",
+          "url": "http://user-service:8080/users/1"
+        }
+      ],
+      "evidence_chain": [
+        {
+          "data": {
+            "edge_count": 2
+          },
+          "description": "Projected API call edges into a directed service dependency graph.",
+          "source": null,
+          "step": "build_call_graph"
+        },
+        {
+          "data": {
+            "cycle_length": 2,
+            "cycle_path": [
+              "user-service",
+              "order-service",
+              "user-service"
+            ]
+          },
+          "description": "Found a closed dependency path: user-service -> order-service -> user-service.",
+          "source": {
+            "file_path": "user-service/app.py",
+            "line_number": 26
+          },
+          "step": "detect_cycle"
+        }
+      ],
+      "fingerprint": "a60c89fec696ec9d9a9cdd483b1f03ddbb9d4ba1",
+      "id": "MESA-CYCL-001",
+      "limitations": [
+        "Static dependencies do not prove all cycle edges are exercised at runtime.",
+        "The detector does not yet rank which edge is cheapest to remove."
+      ],
+      "primary_location": {
+        "file_path": "order-service/app.py",
+        "line_number": 30
+      },
+      "recommendation": "Break the cycle by reversing one dependency, introducing an event, or extracting shared responsibility into an owning service. Prioritize two-service cycles because they most directly block independent deployment.",
+      "recommendations": [
+        {
+          "affected_files": [
+            "order-service/app.py:30",
+            "user-service/app.py:26"
+          ],
+          "affected_services": [
+            "user-service",
+            "order-service"
+          ],
+          "architectural_consequence": "The cycle blocks independent deployment, increases change coordination, and can turn microservices into a distributed monolith.",
+          "estimated_difficulty": "High",
+          "evidence": [
+            {
+              "evidence": {
+                "cycle": [
+                  "user-service",
+                  "order-service"
+                ],
+                "cycle_length": 2,
+                "cycle_path": [
+                  "user-service",
+                  "order-service",
+                  "user-service"
+                ]
+              },
+              "finding_id": "MESA-CYCL-001",
+              "index": 1
+            },
+            {
+              "evidence": {
+                "method": "GET",
+                "source": {
+                  "file_path": "user-service/app.py",
+                  "line_number": 26
+                },
+                "source_service": "user-service",
+                "target_service": "order-service",
+                "url": "http://order-service:8080/orders/1"
+              },
+              "finding_id": "MESA-CYCL-001",
+              "index": 2
+            },
+            {
+              "evidence": {
+                "method": "GET",
+                "source": {
+                  "file_path": "order-service/app.py",
+                  "line_number": 30
+                },
+                "source_service": "order-service",
+                "target_service": "user-service",
+                "url": "http://user-service:8080/users/1"
+              },
+              "finding_id": "MESA-CYCL-001",
+              "index": 3
+            }
+          ],
+          "expected_impact": "Improves deployment independence and reduces cascading change risk.",
+          "priority": "Immediate",
+          "refactoring_steps": [
+            "Identify the dependency edge in the cycle with the weakest ownership justification.",
+            "Reverse that dependency, replace it with an event, or introduce an orchestration/application service.",
+            "Move shared domain logic into the service that owns the lifecycle of the data or workflow.",
+            "Re-run cycle detection and confirm the cycle is removed."
+          ],
+          "root_cause": "The affected services depend on each other directly, usually because ownership of a workflow or domain concept is split across service boundaries.",
+          "source": "rule-based"
+        }
+      ],
+      "related_services": [
+        "user-service",
+        "order-service"
+      ],
+      "rule_id": "cyclic-dependency.api-call-cycle",
+      "services": [
+        "user-service",
+        "order-service"
+      ],
+      "severity": "CRITICAL",
+      "source_files": [
+        "order-service/app.py:30",
+        "user-service/app.py:26"
+      ],
+      "type": "CYCLIC_DEPENDENCY",
+      "why_valid": "MESA found API call dependencies that form the closed path user-service -> order-service -> user-service, which is direct evidence of cyclic coupling."
+    },
+    {
+      "confidence": 0.88,
+      "confidence_reason": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+      "description": "order-service directly references http://user-service:8080/users/1 in order-service/app.py:30. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+      "detector_name": "HardCodedServiceDependencyDetector",
+      "evidence": [
+        {
+          "anti_pattern": "Hard-Coded Service Dependency",
+          "context": "return requests.get(\"http://user-service:8080/users/1\").json()",
+          "duplicate_occurrences": 1,
+          "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+          "file_path": "order-service/app.py",
+          "file_type": "python",
+          "host": "user-service",
+          "line_number": 30,
+          "port": 8080,
+          "reason": "service hostname",
+          "scheme": "http",
+          "service": "order-service",
+          "value": "http://user-service:8080/users/1"
+        }
+      ],
+      "evidence_chain": [
+        {
+          "data": {
+            "reason": "service hostname",
+            "value": "http://user-service:8080/users/1"
+          },
+          "description": "Found endpoint-like value in python evidence.",
+          "source": {
+            "file_path": "order-service/app.py",
+            "line_number": 30
+          },
+          "step": "scan_text_evidence"
+        },
+        {
+          "data": {
+            "host": "user-service",
+            "port": 8080
+          },
+          "description": "Classified the value as a service dependency because it matches a service host, local endpoint, or private network endpoint.",
+          "source": {
+            "file_path": "order-service/app.py",
+            "line_number": 30
+          },
+          "step": "classify_endpoint"
+        },
+        {
+          "data": {
+            "confidence": 0.88,
+            "duplicate_occurrences": 1
+          },
+          "description": "Adjusted confidence using file type, endpoint reason, and duplicate occurrence count.",
+          "source": {
+            "file_path": "order-service/app.py",
+            "line_number": 30
+          },
+          "step": "score_confidence"
+        }
+      ],
+      "fingerprint": "5fa32e8af81609579b73f998238ee286582f2be8",
+      "id": "MESA-HCDD-001",
+      "limitations": [
+        "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
+        "The detector does not execute deployment manifests to prove the endpoint is active."
+      ],
+      "primary_location": {
+        "file_path": "order-service/app.py",
+        "line_number": 30
+      },
+      "recommendation": "Move endpoint values behind configuration or service discovery, inject them through environment-specific settings, and centralize client construction. For Kubernetes or Docker deployments, prefer DNS/service names supplied by deployment manifests instead of embedding URLs in application source code.",
+      "recommendations": [
+        {
+          "affected_files": [
+            "order-service/app.py:30"
+          ],
+          "affected_services": [
+            "order-service"
+          ],
+          "architectural_consequence": "Deployments become environment-specific, endpoint changes require code/config edits, and resilience patterns are harder to centralize.",
+          "estimated_difficulty": "Low",
+          "evidence": [
+            {
+              "evidence": {
+                "anti_pattern": "Hard-Coded Service Dependency",
+                "context": "return requests.get(\"http://user-service:8080/users/1\").json()",
+                "duplicate_occurrences": 1,
+                "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+                "file_path": "order-service/app.py",
+                "file_type": "python",
+                "host": "user-service",
+                "line_number": 30,
+                "port": 8080,
+                "reason": "service hostname",
+                "scheme": "http",
+                "service": "order-service",
+                "value": "http://user-service:8080/users/1"
+              },
+              "finding_id": "MESA-HCDD-001",
+              "index": 1
+            }
+          ],
+          "expected_impact": "Improves portability across environments and lowers operational coupling.",
+          "priority": "Medium",
+          "refactoring_steps": [
+            "Move the endpoint value into environment-specific configuration or secrets.",
+            "Centralize client creation behind a typed adapter or service discovery abstraction.",
+            "Replace private IPs and localhost references with deployment-provided service names.",
+            "Add a regression test or configuration check to prevent the endpoint returning to source code."
+          ],
+          "root_cause": "A concrete host, URL, IP address, or port is embedded in source/config evidence instead of being resolved through environment configuration or service discovery.",
+          "source": "rule-based"
+        }
+      ],
+      "related_services": [
+        "order-service"
+      ],
+      "rule_id": "hard-coded-dependency.static-endpoint-reference",
+      "services": [
+        "order-service"
+      ],
+      "severity": "MEDIUM",
+      "source_files": [
+        "order-service/app.py:30"
+      ],
+      "type": "HARD_CODED_SERVICE_DEPENDENCY",
+      "why_valid": "MESA found http://user-service:8080/users/1 directly embedded in order-service/app.py:30; this is concrete source/config evidence of a deployment endpoint being coupled to the service implementation."
+    },
+    {
+      "confidence": 0.88,
+      "confidence_reason": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+      "description": "user-service directly references http://order-service:8080/orders/1 in user-service/app.py:26. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+      "detector_name": "HardCodedServiceDependencyDetector",
+      "evidence": [
+        {
+          "anti_pattern": "Hard-Coded Service Dependency",
+          "context": "return requests.get(\"http://order-service:8080/orders/1\").json()",
+          "duplicate_occurrences": 1,
+          "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+          "file_path": "user-service/app.py",
+          "file_type": "python",
+          "host": "order-service",
+          "line_number": 26,
+          "port": 8080,
+          "reason": "service hostname",
+          "scheme": "http",
+          "service": "user-service",
+          "value": "http://order-service:8080/orders/1"
+        }
+      ],
+      "evidence_chain": [
+        {
+          "data": {
+            "reason": "service hostname",
+            "value": "http://order-service:8080/orders/1"
+          },
+          "description": "Found endpoint-like value in python evidence.",
+          "source": {
+            "file_path": "user-service/app.py",
+            "line_number": 26
+          },
+          "step": "scan_text_evidence"
+        },
+        {
+          "data": {
+            "host": "order-service",
+            "port": 8080
+          },
+          "description": "Classified the value as a service dependency because it matches a service host, local endpoint, or private network endpoint.",
+          "source": {
+            "file_path": "user-service/app.py",
+            "line_number": 26
+          },
+          "step": "classify_endpoint"
+        },
+        {
+          "data": {
+            "confidence": 0.88,
+            "duplicate_occurrences": 1
+          },
+          "description": "Adjusted confidence using file type, endpoint reason, and duplicate occurrence count.",
+          "source": {
+            "file_path": "user-service/app.py",
+            "line_number": 26
+          },
+          "step": "score_confidence"
+        }
+      ],
+      "fingerprint": "87a2daacb82d399fb7469257ee43cb2c187ab8f6",
+      "id": "MESA-HCDD-002",
+      "limitations": [
+        "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
+        "The detector does not execute deployment manifests to prove the endpoint is active."
+      ],
+      "primary_location": {
+        "file_path": "user-service/app.py",
+        "line_number": 26
+      },
+      "recommendation": "Move endpoint values behind configuration or service discovery, inject them through environment-specific settings, and centralize client construction. For Kubernetes or Docker deployments, prefer DNS/service names supplied by deployment manifests instead of embedding URLs in application source code.",
+      "recommendations": [
+        {
+          "affected_files": [
+            "user-service/app.py:26"
+          ],
+          "affected_services": [
+            "user-service"
+          ],
+          "architectural_consequence": "Deployments become environment-specific, endpoint changes require code/config edits, and resilience patterns are harder to centralize.",
+          "estimated_difficulty": "Low",
+          "evidence": [
+            {
+              "evidence": {
+                "anti_pattern": "Hard-Coded Service Dependency",
+                "context": "return requests.get(\"http://order-service:8080/orders/1\").json()",
+                "duplicate_occurrences": 1,
+                "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+                "file_path": "user-service/app.py",
+                "file_type": "python",
+                "host": "order-service",
+                "line_number": 26,
+                "port": 8080,
+                "reason": "service hostname",
+                "scheme": "http",
+                "service": "user-service",
+                "value": "http://order-service:8080/orders/1"
+              },
+              "finding_id": "MESA-HCDD-002",
+              "index": 1
+            }
+          ],
+          "expected_impact": "Improves portability across environments and lowers operational coupling.",
+          "priority": "Medium",
+          "refactoring_steps": [
+            "Move the endpoint value into environment-specific configuration or secrets.",
+            "Centralize client creation behind a typed adapter or service discovery abstraction.",
+            "Replace private IPs and localhost references with deployment-provided service names.",
+            "Add a regression test or configuration check to prevent the endpoint returning to source code."
+          ],
+          "root_cause": "A concrete host, URL, IP address, or port is embedded in source/config evidence instead of being resolved through environment configuration or service discovery.",
+          "source": "rule-based"
+        }
+      ],
+      "related_services": [
+        "user-service"
+      ],
+      "rule_id": "hard-coded-dependency.static-endpoint-reference",
+      "services": [
+        "user-service"
+      ],
+      "severity": "MEDIUM",
+      "source_files": [
+        "user-service/app.py:26"
+      ],
+      "type": "HARD_CODED_SERVICE_DEPENDENCY",
+      "why_valid": "MESA found http://order-service:8080/orders/1 directly embedded in user-service/app.py:26; this is concrete source/config evidence of a deployment endpoint being coupled to the service implementation."
+    }
+  ],
+  "gate": {
+    "baseline_scan_id": null,
+    "failed_rules": [
+      "new_findings_at_or_above_severity",
+      "health_score_drop",
+      "cyclic_dependency_detected"
+    ],
+    "fixed_findings": [],
+    "has_baseline": true,
+    "health_after": 79.67,
+    "health_before": 98.67,
+    "health_delta": -19.0,
+    "health_score": 79.67,
+    "mode": "new-only",
+    "new_findings": [
+      {
+        "confidence": 0.9,
+        "confidence_reason": "Confidence is high because the directed service graph contains a closed cycle built from static API call evidence.",
+        "description": "Cyclic service dependency detected: user-service -> order-service -> user-service.",
+        "detector_name": "CyclicDependencyDetector",
+        "evidence": [
+          {
+            "cycle": [
+              "user-service",
+              "order-service"
+            ],
+            "cycle_length": 2,
+            "cycle_path": [
+              "user-service",
+              "order-service",
+              "user-service"
+            ]
+          },
+          {
+            "method": "GET",
+            "source": {
+              "file_path": "user-service/app.py",
+              "line_number": 26
+            },
+            "source_service": "user-service",
+            "target_service": "order-service",
+            "url": "http://order-service:8080/orders/1"
+          },
+          {
+            "method": "GET",
+            "source": {
+              "file_path": "order-service/app.py",
+              "line_number": 30
+            },
+            "source_service": "order-service",
+            "target_service": "user-service",
+            "url": "http://user-service:8080/users/1"
+          }
+        ],
+        "evidence_chain": [
+          {
+            "data": {
+              "edge_count": 2
+            },
+            "description": "Projected API call edges into a directed service dependency graph.",
+            "source": null,
+            "step": "build_call_graph"
+          },
+          {
+            "data": {
+              "cycle_length": 2,
+              "cycle_path": [
+                "user-service",
+                "order-service",
+                "user-service"
+              ]
+            },
+            "description": "Found a closed dependency path: user-service -> order-service -> user-service.",
+            "source": {
+              "file_path": "user-service/app.py",
+              "line_number": 26
+            },
+            "step": "detect_cycle"
+          }
+        ],
+        "fingerprint": "a60c89fec696ec9d9a9cdd483b1f03ddbb9d4ba1",
+        "id": "MESA-CYCL-001",
+        "limitations": [
+          "Static dependencies do not prove all cycle edges are exercised at runtime.",
+          "The detector does not yet rank which edge is cheapest to remove."
+        ],
+        "primary_location": {
+          "file_path": "order-service/app.py",
+          "line_number": 30
+        },
+        "recommendation": "Break the cycle by reversing one dependency, introducing an event, or extracting shared responsibility into an owning service. Prioritize two-service cycles because they most directly block independent deployment.",
+        "recommendations": [
+          {
+            "affected_files": [
+              "order-service/app.py:30",
+              "user-service/app.py:26"
+            ],
+            "affected_services": [
+              "user-service",
+              "order-service"
+            ],
+            "architectural_consequence": "The cycle blocks independent deployment, increases change coordination, and can turn microservices into a distributed monolith.",
+            "estimated_difficulty": "High",
+            "evidence": [
+              {
+                "evidence": {
+                  "cycle": [
+                    "user-service",
+                    "order-service"
+                  ],
+                  "cycle_length": 2,
+                  "cycle_path": [
+                    "user-service",
+                    "order-service",
+                    "user-service"
+                  ]
+                },
+                "finding_id": "MESA-CYCL-001",
+                "index": 1
+              },
+              {
+                "evidence": {
+                  "method": "GET",
+                  "source": {
+                    "file_path": "user-service/app.py",
+                    "line_number": 26
+                  },
+                  "source_service": "user-service",
+                  "target_service": "order-service",
+                  "url": "http://order-service:8080/orders/1"
+                },
+                "finding_id": "MESA-CYCL-001",
+                "index": 2
+              },
+              {
+                "evidence": {
+                  "method": "GET",
+                  "source": {
+                    "file_path": "order-service/app.py",
+                    "line_number": 30
+                  },
+                  "source_service": "order-service",
+                  "target_service": "user-service",
+                  "url": "http://user-service:8080/users/1"
+                },
+                "finding_id": "MESA-CYCL-001",
+                "index": 3
+              }
+            ],
+            "expected_impact": "Improves deployment independence and reduces cascading change risk.",
+            "priority": "Immediate",
+            "refactoring_steps": [
+              "Identify the dependency edge in the cycle with the weakest ownership justification.",
+              "Reverse that dependency, replace it with an event, or introduce an orchestration/application service.",
+              "Move shared domain logic into the service that owns the lifecycle of the data or workflow.",
+              "Re-run cycle detection and confirm the cycle is removed."
+            ],
+            "root_cause": "The affected services depend on each other directly, usually because ownership of a workflow or domain concept is split across service boundaries.",
+            "source": "rule-based"
+          }
+        ],
+        "related_services": [
+          "user-service",
+          "order-service"
+        ],
+        "rule_id": "cyclic-dependency.api-call-cycle",
+        "services": [
+          "user-service",
+          "order-service"
+        ],
+        "severity": "CRITICAL",
+        "source_files": [
+          "order-service/app.py:30",
+          "user-service/app.py:26"
+        ],
+        "type": "CYCLIC_DEPENDENCY",
+        "why_valid": "MESA found API call dependencies that form the closed path user-service -> order-service -> user-service, which is direct evidence of cyclic coupling."
+      },
+      {
+        "confidence": 0.88,
+        "confidence_reason": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+        "description": "order-service directly references http://user-service:8080/users/1 in order-service/app.py:30. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+        "detector_name": "HardCodedServiceDependencyDetector",
+        "evidence": [
+          {
+            "anti_pattern": "Hard-Coded Service Dependency",
+            "context": "return requests.get(\"http://user-service:8080/users/1\").json()",
+            "duplicate_occurrences": 1,
+            "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+            "file_path": "order-service/app.py",
+            "file_type": "python",
+            "host": "user-service",
+            "line_number": 30,
+            "port": 8080,
+            "reason": "service hostname",
+            "scheme": "http",
+            "service": "order-service",
+            "value": "http://user-service:8080/users/1"
+          }
+        ],
+        "evidence_chain": [
+          {
+            "data": {
+              "reason": "service hostname",
+              "value": "http://user-service:8080/users/1"
+            },
+            "description": "Found endpoint-like value in python evidence.",
+            "source": {
+              "file_path": "order-service/app.py",
+              "line_number": 30
+            },
+            "step": "scan_text_evidence"
+          },
+          {
+            "data": {
+              "host": "user-service",
+              "port": 8080
+            },
+            "description": "Classified the value as a service dependency because it matches a service host, local endpoint, or private network endpoint.",
+            "source": {
+              "file_path": "order-service/app.py",
+              "line_number": 30
+            },
+            "step": "classify_endpoint"
+          },
+          {
+            "data": {
+              "confidence": 0.88,
+              "duplicate_occurrences": 1
+            },
+            "description": "Adjusted confidence using file type, endpoint reason, and duplicate occurrence count.",
+            "source": {
+              "file_path": "order-service/app.py",
+              "line_number": 30
+            },
+            "step": "score_confidence"
+          }
+        ],
+        "fingerprint": "5fa32e8af81609579b73f998238ee286582f2be8",
+        "id": "MESA-HCDD-001",
+        "limitations": [
+          "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
+          "The detector does not execute deployment manifests to prove the endpoint is active."
+        ],
+        "primary_location": {
+          "file_path": "order-service/app.py",
+          "line_number": 30
+        },
+        "recommendation": "Move endpoint values behind configuration or service discovery, inject them through environment-specific settings, and centralize client construction. For Kubernetes or Docker deployments, prefer DNS/service names supplied by deployment manifests instead of embedding URLs in application source code.",
+        "recommendations": [
+          {
+            "affected_files": [
+              "order-service/app.py:30"
+            ],
+            "affected_services": [
+              "order-service"
+            ],
+            "architectural_consequence": "Deployments become environment-specific, endpoint changes require code/config edits, and resilience patterns are harder to centralize.",
+            "estimated_difficulty": "Low",
+            "evidence": [
+              {
+                "evidence": {
+                  "anti_pattern": "Hard-Coded Service Dependency",
+                  "context": "return requests.get(\"http://user-service:8080/users/1\").json()",
+                  "duplicate_occurrences": 1,
+                  "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+                  "file_path": "order-service/app.py",
+                  "file_type": "python",
+                  "host": "user-service",
+                  "line_number": 30,
+                  "port": 8080,
+                  "reason": "service hostname",
+                  "scheme": "http",
+                  "service": "order-service",
+                  "value": "http://user-service:8080/users/1"
+                },
+                "finding_id": "MESA-HCDD-001",
+                "index": 1
+              }
+            ],
+            "expected_impact": "Improves portability across environments and lowers operational coupling.",
+            "priority": "Medium",
+            "refactoring_steps": [
+              "Move the endpoint value into environment-specific configuration or secrets.",
+              "Centralize client creation behind a typed adapter or service discovery abstraction.",
+              "Replace private IPs and localhost references with deployment-provided service names.",
+              "Add a regression test or configuration check to prevent the endpoint returning to source code."
+            ],
+            "root_cause": "A concrete host, URL, IP address, or port is embedded in source/config evidence instead of being resolved through environment configuration or service discovery.",
+            "source": "rule-based"
+          }
+        ],
+        "related_services": [
+          "order-service"
+        ],
+        "rule_id": "hard-coded-dependency.static-endpoint-reference",
+        "services": [
+          "order-service"
+        ],
+        "severity": "MEDIUM",
+        "source_files": [
+          "order-service/app.py:30"
+        ],
+        "type": "HARD_CODED_SERVICE_DEPENDENCY",
+        "why_valid": "MESA found http://user-service:8080/users/1 directly embedded in order-service/app.py:30; this is concrete source/config evidence of a deployment endpoint being coupled to the service implementation."
+      },
+      {
+        "confidence": 0.88,
+        "confidence_reason": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+        "description": "user-service directly references http://order-service:8080/orders/1 in user-service/app.py:26. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+        "detector_name": "HardCodedServiceDependencyDetector",
+        "evidence": [
+          {
+            "anti_pattern": "Hard-Coded Service Dependency",
+            "context": "return requests.get(\"http://order-service:8080/orders/1\").json()",
+            "duplicate_occurrences": 1,
+            "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+            "file_path": "user-service/app.py",
+            "file_type": "python",
+            "host": "order-service",
+            "line_number": 26,
+            "port": 8080,
+            "reason": "service hostname",
+            "scheme": "http",
+            "service": "user-service",
+            "value": "http://order-service:8080/orders/1"
+          }
+        ],
+        "evidence_chain": [
+          {
+            "data": {
+              "reason": "service hostname",
+              "value": "http://order-service:8080/orders/1"
+            },
+            "description": "Found endpoint-like value in python evidence.",
+            "source": {
+              "file_path": "user-service/app.py",
+              "line_number": 26
+            },
+            "step": "scan_text_evidence"
+          },
+          {
+            "data": {
+              "host": "order-service",
+              "port": 8080
+            },
+            "description": "Classified the value as a service dependency because it matches a service host, local endpoint, or private network endpoint.",
+            "source": {
+              "file_path": "user-service/app.py",
+              "line_number": 26
+            },
+            "step": "classify_endpoint"
+          },
+          {
+            "data": {
+              "confidence": 0.88,
+              "duplicate_occurrences": 1
+            },
+            "description": "Adjusted confidence using file type, endpoint reason, and duplicate occurrence count.",
+            "source": {
+              "file_path": "user-service/app.py",
+              "line_number": 26
+            },
+            "step": "score_confidence"
+          }
+        ],
+        "fingerprint": "87a2daacb82d399fb7469257ee43cb2c187ab8f6",
+        "id": "MESA-HCDD-002",
+        "limitations": [
+          "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
+          "The detector does not execute deployment manifests to prove the endpoint is active."
+        ],
+        "primary_location": {
+          "file_path": "user-service/app.py",
+          "line_number": 26
+        },
+        "recommendation": "Move endpoint values behind configuration or service discovery, inject them through environment-specific settings, and centralize client construction. For Kubernetes or Docker deployments, prefer DNS/service names supplied by deployment manifests instead of embedding URLs in application source code.",
+        "recommendations": [
+          {
+            "affected_files": [
+              "user-service/app.py:26"
+            ],
+            "affected_services": [
+              "user-service"
+            ],
+            "architectural_consequence": "Deployments become environment-specific, endpoint changes require code/config edits, and resilience patterns are harder to centralize.",
+            "estimated_difficulty": "Low",
+            "evidence": [
+              {
+                "evidence": {
+                  "anti_pattern": "Hard-Coded Service Dependency",
+                  "context": "return requests.get(\"http://order-service:8080/orders/1\").json()",
+                  "duplicate_occurrences": 1,
+                  "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+                  "file_path": "user-service/app.py",
+                  "file_type": "python",
+                  "host": "order-service",
+                  "line_number": 26,
+                  "port": 8080,
+                  "reason": "service hostname",
+                  "scheme": "http",
+                  "service": "user-service",
+                  "value": "http://order-service:8080/orders/1"
+                },
+                "finding_id": "MESA-HCDD-002",
+                "index": 1
+              }
+            ],
+            "expected_impact": "Improves portability across environments and lowers operational coupling.",
+            "priority": "Medium",
+            "refactoring_steps": [
+              "Move the endpoint value into environment-specific configuration or secrets.",
+              "Centralize client creation behind a typed adapter or service discovery abstraction.",
+              "Replace private IPs and localhost references with deployment-provided service names.",
+              "Add a regression test or configuration check to prevent the endpoint returning to source code."
+            ],
+            "root_cause": "A concrete host, URL, IP address, or port is embedded in source/config evidence instead of being resolved through environment configuration or service discovery.",
+            "source": "rule-based"
+          }
+        ],
+        "related_services": [
+          "user-service"
+        ],
+        "rule_id": "hard-coded-dependency.static-endpoint-reference",
+        "services": [
+          "user-service"
+        ],
+        "severity": "MEDIUM",
+        "source_files": [
+          "user-service/app.py:26"
+        ],
+        "type": "HARD_CODED_SERVICE_DEPENDENCY",
+        "why_valid": "MESA found http://order-service:8080/orders/1 directly embedded in user-service/app.py:26; this is concrete source/config evidence of a deployment endpoint being coupled to the service implementation."
+      }
+    ],
+    "rules": [
+      {
+        "message": "3 new finding(s); 1 at HIGH or above.",
+        "observed_value": 1,
+        "passed": false,
+        "related_findings": [
+          "MESA-CYCL-001"
+        ],
+        "rule_id": "new_findings_at_or_above_severity",
+        "threshold": "HIGH"
+      },
+      {
+        "message": "Health score 98.7 -> 79.7 (-19.0); allowed drop is 5.0.",
+        "observed_value": 19.0,
+        "passed": false,
+        "related_findings": [],
+        "rule_id": "health_score_drop",
+        "threshold": 5.0
+      },
+      {
+        "message": "Detected 1 new cyclic dependency finding(s).",
+        "observed_value": 1,
+        "passed": false,
+        "related_findings": [
+          "MESA-CYCL-001"
+        ],
+        "rule_id": "cyclic_dependency_detected",
+        "threshold": 0
+      },
+      {
+        "message": "Detected 0 new governance policy violation finding(s).",
+        "observed_value": 0,
+        "passed": true,
+        "related_findings": [],
+        "rule_id": "governance_violation_detected",
+        "threshold": 0
+      }
+    ],
+    "source": "mesa-architecture-fitness-gate",
+    "status": "failed",
+    "threshold": 75.0,
+    "thresholds": {
+      "allow_governance_violations": false,
+      "allow_new_cyclic_dependencies": false,
+      "allow_new_high_risk_coupling": false,
+      "fail_on_new_severity": "HIGH",
+      "max_health_drop": 5.0,
+      "maximum_critical_findings": 0,
+      "minimum_health_score": 75.0,
+      "mode": "new-only"
+    },
+    "unchanged_count": 0
+  }
+}

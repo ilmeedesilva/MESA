@@ -148,3 +148,24 @@ def test_gate_argument_errors() -> None:
     assert new_only_alone.exit_code == 2 and "baseline" in new_only_alone.output
     assert bad_mode.exit_code == 2
     assert bad_severity.exit_code == 2
+
+
+def test_gate_markdown_and_sarif_formats(tmp_path: Path) -> None:
+    base = tmp_path / "base.json"
+    head = tmp_path / "head.json"
+    sarif_file = tmp_path / "mesa.sarif"
+    runner.invoke(app, ["scan", str(DEMO / "myservice-fixed"), "-o", str(base)])
+    runner.invoke(app, ["scan", str(DEMO / "myservice-broken"), "-o", str(head)])
+    common = ["gate", "--report", str(head), "--baseline-report", str(base), "--mode", "new-only"]
+
+    markdown = runner.invoke(app, [*common, "--format", "markdown", "--no-fail"])
+    sarif = runner.invoke(app, [*common, "--format", "sarif", "-o", str(sarif_file), "--no-fail"])
+
+    assert markdown.exit_code == 0
+    assert markdown.output.startswith("<!-- mesa-report -->")
+    assert "FAILED (26 new problems, 0 fixed)" in markdown.output
+    assert sarif.exit_code == 0
+    log = json.loads(sarif_file.read_text(encoding="utf-8"))
+    assert log["version"] == "2.1.0"
+    assert len(log["runs"][0]["results"]) == 26
+    assert {r["baselineState"] for r in log["runs"][0]["results"]} == {"new"}

@@ -1,0 +1,499 @@
+{
+  "findings": [
+    {
+      "confidence": 0.9,
+      "confidence_reason": "Confidence is high because the directed service graph contains a closed cycle built from static API call evidence.",
+      "description": "Cyclic service dependency detected: payment-service -> order-service -> payment-service.",
+      "detector_name": "CyclicDependencyDetector",
+      "evidence": [
+        {
+          "cycle": [
+            "payment-service",
+            "order-service"
+          ],
+          "cycle_length": 2,
+          "cycle_path": [
+            "payment-service",
+            "order-service",
+            "payment-service"
+          ]
+        },
+        {
+          "method": "GET",
+          "source": {
+            "file_path": "payment-service/app.py",
+            "line_number": 5
+          },
+          "source_service": "payment-service",
+          "target_service": "order-service",
+          "url": "http://order-service/orders/1"
+        },
+        {
+          "method": "POST",
+          "source": {
+            "file_path": "order-service/app.py",
+            "line_number": 5
+          },
+          "source_service": "order-service",
+          "target_service": "payment-service",
+          "url": "http://payment-service/payments"
+        }
+      ],
+      "evidence_chain": [
+        {
+          "data": {
+            "edge_count": 2
+          },
+          "description": "Projected API call edges into a directed service dependency graph.",
+          "source": null,
+          "step": "build_call_graph"
+        },
+        {
+          "data": {
+            "cycle_length": 2,
+            "cycle_path": [
+              "payment-service",
+              "order-service",
+              "payment-service"
+            ]
+          },
+          "description": "Found a closed dependency path: payment-service -> order-service -> payment-service.",
+          "source": {
+            "file_path": "payment-service/app.py",
+            "line_number": 5
+          },
+          "step": "detect_cycle"
+        }
+      ],
+      "fingerprint": "7d99cf325c796642cd4e2e4dc48591e59e6163df",
+      "id": "MESA-CYCL-001",
+      "limitations": [
+        "Static dependencies do not prove all cycle edges are exercised at runtime.",
+        "The detector does not yet rank which edge is cheapest to remove."
+      ],
+      "primary_location": {
+        "file_path": "order-service/app.py",
+        "line_number": 5
+      },
+      "recommendation": "Break the cycle by reversing one dependency, introducing an event, or extracting shared responsibility into an owning service. Prioritize two-service cycles because they most directly block independent deployment.",
+      "recommendations": [
+        {
+          "affected_files": [
+            "order-service/app.py:5",
+            "payment-service/app.py:5"
+          ],
+          "affected_services": [
+            "payment-service",
+            "order-service"
+          ],
+          "architectural_consequence": "The cycle blocks independent deployment, increases change coordination, and can turn microservices into a distributed monolith.",
+          "estimated_difficulty": "High",
+          "evidence": [
+            {
+              "evidence": {
+                "cycle": [
+                  "payment-service",
+                  "order-service"
+                ],
+                "cycle_length": 2,
+                "cycle_path": [
+                  "payment-service",
+                  "order-service",
+                  "payment-service"
+                ]
+              },
+              "finding_id": "MESA-CYCL-001",
+              "index": 1
+            },
+            {
+              "evidence": {
+                "method": "GET",
+                "source": {
+                  "file_path": "payment-service/app.py",
+                  "line_number": 5
+                },
+                "source_service": "payment-service",
+                "target_service": "order-service",
+                "url": "http://order-service/orders/1"
+              },
+              "finding_id": "MESA-CYCL-001",
+              "index": 2
+            },
+            {
+              "evidence": {
+                "method": "POST",
+                "source": {
+                  "file_path": "order-service/app.py",
+                  "line_number": 5
+                },
+                "source_service": "order-service",
+                "target_service": "payment-service",
+                "url": "http://payment-service/payments"
+              },
+              "finding_id": "MESA-CYCL-001",
+              "index": 3
+            }
+          ],
+          "expected_impact": "Improves deployment independence and reduces cascading change risk.",
+          "priority": "Immediate",
+          "refactoring_steps": [
+            "Identify the dependency edge in the cycle with the weakest ownership justification.",
+            "Reverse that dependency, replace it with an event, or introduce an orchestration/application service.",
+            "Move shared domain logic into the service that owns the lifecycle of the data or workflow.",
+            "Re-run cycle detection and confirm the cycle is removed."
+          ],
+          "root_cause": "The affected services depend on each other directly, usually because ownership of a workflow or domain concept is split across service boundaries.",
+          "source": "rule-based"
+        }
+      ],
+      "related_services": [
+        "payment-service",
+        "order-service"
+      ],
+      "rule_id": "cyclic-dependency.api-call-cycle",
+      "services": [
+        "payment-service",
+        "order-service"
+      ],
+      "severity": "CRITICAL",
+      "source_files": [
+        "order-service/app.py:5",
+        "payment-service/app.py:5"
+      ],
+      "type": "CYCLIC_DEPENDENCY",
+      "why_valid": "MESA found API call dependencies that form the closed path payment-service -> order-service -> payment-service, which is direct evidence of cyclic coupling."
+    },
+    {
+      "confidence": 0.88,
+      "confidence_reason": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+      "description": "order-service directly references http://payment-service/payments in order-service/app.py:5. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+      "detector_name": "HardCodedServiceDependencyDetector",
+      "evidence": [
+        {
+          "anti_pattern": "Hard-Coded Service Dependency",
+          "context": "return requests.post(\"http://payment-service/payments\")",
+          "duplicate_occurrences": 1,
+          "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+          "file_path": "order-service/app.py",
+          "file_type": "python",
+          "host": "payment-service",
+          "line_number": 5,
+          "port": null,
+          "reason": "service hostname",
+          "scheme": "http",
+          "service": "order-service",
+          "value": "http://payment-service/payments"
+        }
+      ],
+      "evidence_chain": [
+        {
+          "data": {
+            "reason": "service hostname",
+            "value": "http://payment-service/payments"
+          },
+          "description": "Found endpoint-like value in python evidence.",
+          "source": {
+            "file_path": "order-service/app.py",
+            "line_number": 5
+          },
+          "step": "scan_text_evidence"
+        },
+        {
+          "data": {
+            "host": "payment-service",
+            "port": null
+          },
+          "description": "Classified the value as a service dependency because it matches a service host, local endpoint, or private network endpoint.",
+          "source": {
+            "file_path": "order-service/app.py",
+            "line_number": 5
+          },
+          "step": "classify_endpoint"
+        },
+        {
+          "data": {
+            "confidence": 0.88,
+            "duplicate_occurrences": 1
+          },
+          "description": "Adjusted confidence using file type, endpoint reason, and duplicate occurrence count.",
+          "source": {
+            "file_path": "order-service/app.py",
+            "line_number": 5
+          },
+          "step": "score_confidence"
+        }
+      ],
+      "fingerprint": "486db2a81ca0485567474cf74b702c58ae3256c3",
+      "id": "MESA-HCDD-001",
+      "limitations": [
+        "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
+        "The detector does not execute deployment manifests to prove the endpoint is active."
+      ],
+      "primary_location": {
+        "file_path": "order-service/app.py",
+        "line_number": 5
+      },
+      "recommendation": "Move endpoint values behind configuration or service discovery, inject them through environment-specific settings, and centralize client construction. For Kubernetes or Docker deployments, prefer DNS/service names supplied by deployment manifests instead of embedding URLs in application source code.",
+      "recommendations": [
+        {
+          "affected_files": [
+            "order-service/app.py:5"
+          ],
+          "affected_services": [
+            "order-service"
+          ],
+          "architectural_consequence": "Deployments become environment-specific, endpoint changes require code/config edits, and resilience patterns are harder to centralize.",
+          "estimated_difficulty": "Low",
+          "evidence": [
+            {
+              "evidence": {
+                "anti_pattern": "Hard-Coded Service Dependency",
+                "context": "return requests.post(\"http://payment-service/payments\")",
+                "duplicate_occurrences": 1,
+                "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+                "file_path": "order-service/app.py",
+                "file_type": "python",
+                "host": "payment-service",
+                "line_number": 5,
+                "port": null,
+                "reason": "service hostname",
+                "scheme": "http",
+                "service": "order-service",
+                "value": "http://payment-service/payments"
+              },
+              "finding_id": "MESA-HCDD-001",
+              "index": 1
+            }
+          ],
+          "expected_impact": "Improves portability across environments and lowers operational coupling.",
+          "priority": "Medium",
+          "refactoring_steps": [
+            "Move the endpoint value into environment-specific configuration or secrets.",
+            "Centralize client creation behind a typed adapter or service discovery abstraction.",
+            "Replace private IPs and localhost references with deployment-provided service names.",
+            "Add a regression test or configuration check to prevent the endpoint returning to source code."
+          ],
+          "root_cause": "A concrete host, URL, IP address, or port is embedded in source/config evidence instead of being resolved through environment configuration or service discovery.",
+          "source": "rule-based"
+        }
+      ],
+      "related_services": [
+        "order-service"
+      ],
+      "rule_id": "hard-coded-dependency.static-endpoint-reference",
+      "services": [
+        "order-service"
+      ],
+      "severity": "MEDIUM",
+      "source_files": [
+        "order-service/app.py:5"
+      ],
+      "type": "HARD_CODED_SERVICE_DEPENDENCY",
+      "why_valid": "MESA found http://payment-service/payments directly embedded in order-service/app.py:5; this is concrete source/config evidence of a deployment endpoint being coupled to the service implementation."
+    },
+    {
+      "confidence": 0.88,
+      "confidence_reason": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+      "description": "payment-service directly references http://order-service/orders/1 in payment-service/app.py:5. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+      "detector_name": "HardCodedServiceDependencyDetector",
+      "evidence": [
+        {
+          "anti_pattern": "Hard-Coded Service Dependency",
+          "context": "return requests.get(\"http://order-service/orders/1\")",
+          "duplicate_occurrences": 1,
+          "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+          "file_path": "payment-service/app.py",
+          "file_type": "python",
+          "host": "order-service",
+          "line_number": 5,
+          "port": null,
+          "reason": "service hostname",
+          "scheme": "http",
+          "service": "payment-service",
+          "value": "http://order-service/orders/1"
+        }
+      ],
+      "evidence_chain": [
+        {
+          "data": {
+            "reason": "service hostname",
+            "value": "http://order-service/orders/1"
+          },
+          "description": "Found endpoint-like value in python evidence.",
+          "source": {
+            "file_path": "payment-service/app.py",
+            "line_number": 5
+          },
+          "step": "scan_text_evidence"
+        },
+        {
+          "data": {
+            "host": "order-service",
+            "port": null
+          },
+          "description": "Classified the value as a service dependency because it matches a service host, local endpoint, or private network endpoint.",
+          "source": {
+            "file_path": "payment-service/app.py",
+            "line_number": 5
+          },
+          "step": "classify_endpoint"
+        },
+        {
+          "data": {
+            "confidence": 0.88,
+            "duplicate_occurrences": 1
+          },
+          "description": "Adjusted confidence using file type, endpoint reason, and duplicate occurrence count.",
+          "source": {
+            "file_path": "payment-service/app.py",
+            "line_number": 5
+          },
+          "step": "score_confidence"
+        }
+      ],
+      "fingerprint": "3b4d9b3af14a2ab4a3a511c403716289455ef645",
+      "id": "MESA-HCDD-002",
+      "limitations": [
+        "A hard-coded endpoint may still be acceptable in local-only test fixtures.",
+        "The detector does not execute deployment manifests to prove the endpoint is active."
+      ],
+      "primary_location": {
+        "file_path": "payment-service/app.py",
+        "line_number": 5
+      },
+      "recommendation": "Move endpoint values behind configuration or service discovery, inject them through environment-specific settings, and centralize client construction. For Kubernetes or Docker deployments, prefer DNS/service names supplied by deployment manifests instead of embedding URLs in application source code.",
+      "recommendations": [
+        {
+          "affected_files": [
+            "payment-service/app.py:5"
+          ],
+          "affected_services": [
+            "payment-service"
+          ],
+          "architectural_consequence": "Deployments become environment-specific, endpoint changes require code/config edits, and resilience patterns are harder to centralize.",
+          "estimated_difficulty": "Low",
+          "evidence": [
+            {
+              "evidence": {
+                "anti_pattern": "Hard-Coded Service Dependency",
+                "context": "return requests.get(\"http://order-service/orders/1\")",
+                "duplicate_occurrences": 1,
+                "explanation": "Detected service hostname in a python file. Because the endpoint is inside source code, deployment changes may require code edits.",
+                "file_path": "payment-service/app.py",
+                "file_type": "python",
+                "host": "order-service",
+                "line_number": 5,
+                "port": null,
+                "reason": "service hostname",
+                "scheme": "http",
+                "service": "payment-service",
+                "value": "http://order-service/orders/1"
+              },
+              "finding_id": "MESA-HCDD-002",
+              "index": 1
+            }
+          ],
+          "expected_impact": "Improves portability across environments and lowers operational coupling.",
+          "priority": "Medium",
+          "refactoring_steps": [
+            "Move the endpoint value into environment-specific configuration or secrets.",
+            "Centralize client creation behind a typed adapter or service discovery abstraction.",
+            "Replace private IPs and localhost references with deployment-provided service names.",
+            "Add a regression test or configuration check to prevent the endpoint returning to source code."
+          ],
+          "root_cause": "A concrete host, URL, IP address, or port is embedded in source/config evidence instead of being resolved through environment configuration or service discovery.",
+          "source": "rule-based"
+        }
+      ],
+      "related_services": [
+        "payment-service"
+      ],
+      "rule_id": "hard-coded-dependency.static-endpoint-reference",
+      "services": [
+        "payment-service"
+      ],
+      "severity": "MEDIUM",
+      "source_files": [
+        "payment-service/app.py:5"
+      ],
+      "type": "HARD_CODED_SERVICE_DEPENDENCY",
+      "why_valid": "MESA found http://order-service/orders/1 directly embedded in payment-service/app.py:5; this is concrete source/config evidence of a deployment endpoint being coupled to the service implementation."
+    }
+  ],
+  "gate": {
+    "baseline_scan_id": null,
+    "failed_rules": [
+      "minimum_health_score",
+      "critical_findings_exceeded",
+      "cyclic_dependency_detected"
+    ],
+    "fixed_findings": [],
+    "has_baseline": false,
+    "health_after": 63.68,
+    "health_before": null,
+    "health_delta": null,
+    "health_score": 63.68,
+    "mode": "absolute",
+    "new_findings": [],
+    "rules": [
+      {
+        "message": "System health score is below the minimum 75.0.",
+        "observed_value": 63.68,
+        "passed": false,
+        "related_findings": [],
+        "rule_id": "minimum_health_score",
+        "threshold": 75.0
+      },
+      {
+        "message": "Critical finding count is 1; maximum allowed is 0.",
+        "observed_value": 1,
+        "passed": false,
+        "related_findings": [
+          "MESA-CYCL-001"
+        ],
+        "rule_id": "critical_findings_exceeded",
+        "threshold": 0
+      },
+      {
+        "message": "Detected 1 cyclic dependency finding(s).",
+        "observed_value": 1,
+        "passed": false,
+        "related_findings": [
+          "MESA-CYCL-001"
+        ],
+        "rule_id": "cyclic_dependency_detected",
+        "threshold": 0
+      },
+      {
+        "message": "Detected 0 governance policy violation finding(s).",
+        "observed_value": 0,
+        "passed": true,
+        "related_findings": [],
+        "rule_id": "governance_violation_detected",
+        "threshold": 0
+      },
+      {
+        "message": "Detected 0 high-risk service coupling finding(s).",
+        "observed_value": 0,
+        "passed": true,
+        "related_findings": [],
+        "rule_id": "high_risk_service_coupling_detected",
+        "threshold": 0
+      }
+    ],
+    "source": "mesa-architecture-fitness-gate",
+    "status": "failed",
+    "threshold": 75.0,
+    "thresholds": {
+      "allow_governance_violations": false,
+      "allow_new_cyclic_dependencies": false,
+      "allow_new_high_risk_coupling": false,
+      "fail_on_new_severity": "HIGH",
+      "max_health_drop": 5.0,
+      "maximum_critical_findings": 0,
+      "minimum_health_score": 75.0,
+      "mode": "absolute"
+    },
+    "unchanged_count": 0
+  }
+}
