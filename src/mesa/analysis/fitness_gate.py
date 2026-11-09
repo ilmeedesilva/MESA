@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from mesa.fingerprint import new_findings
 from mesa.models import (
     AnalysisResult,
     ArchitectureFitnessGateResult,
@@ -31,11 +32,11 @@ def evaluate_architecture_gate(
         _minimum_health_score_rule(health_score, active_thresholds),
         _critical_findings_rule(result.findings, active_thresholds),
         _cyclic_dependency_rule(
-            result.findings, baseline.findings if baseline else [], active_thresholds
+            result.findings, baseline.findings if baseline is not None else None, active_thresholds
         ),
         _governance_rule(result.findings, active_thresholds),
         _high_risk_coupling_rule(
-            result.findings, baseline.findings if baseline else [], active_thresholds
+            result.findings, baseline.findings if baseline is not None else None, active_thresholds
         ),
     ]
     failed_rules = [rule.rule_id for rule in rules if not rule.passed]
@@ -91,25 +92,26 @@ def _critical_findings_rule(
 
 def _cyclic_dependency_rule(
     findings: list[Finding],
-    baseline_findings: list[Finding],
+    baseline_findings: list[Finding] | None,
     thresholds: ArchitectureGateThresholds,
 ) -> ArchitectureGateRuleResult:
+    """`baseline_findings` is None when there is no baseline. An empty list is a
+    baseline with no findings, and then every cycle is reported as new."""
     cycles = _findings_by_type(findings, FindingType.CYCLIC_DEPENDENCY)
-    baseline_cycles = _finding_keys(
-        _findings_by_type(baseline_findings, FindingType.CYCLIC_DEPENDENCY)
+    new_cycles = (
+        cycles
+        if baseline_findings is None
+        else new_findings(
+            cycles, _findings_by_type(baseline_findings, FindingType.CYCLIC_DEPENDENCY)
+        )
     )
-    new_cycles = [
-        finding
-        for finding in cycles
-        if not baseline_findings or _finding_key(finding) not in baseline_cycles
-    ]
     passed = thresholds.allow_new_cyclic_dependencies or not new_cycles
     return ArchitectureGateRuleResult(
         rule_id="cyclic_dependency_detected",
         passed=passed,
         message=(
             f"Detected {len(new_cycles)} new cyclic dependency finding(s)."
-            if baseline_findings
+            if baseline_findings is not None
             else f"Detected {len(new_cycles)} cyclic dependency finding(s)."
         ),
         observed_value=len(new_cycles),
@@ -135,35 +137,22 @@ def _governance_rule(
 
 def _high_risk_coupling_rule(
     findings: list[Finding],
-    baseline_findings: list[Finding],
+    baseline_findings: list[Finding] | None,
     thresholds: ArchitectureGateThresholds,
 ) -> ArchitectureGateRuleResult:
-    coupling_findings = [
-        finding
-        for finding in findings
-        if finding.type in HIGH_RISK_COUPLING_TYPES
-        and finding.severity in {Severity.HIGH, Severity.CRITICAL}
-    ]
-    baseline_keys = _finding_keys(
-        [
-            finding
-            for finding in baseline_findings
-            if finding.type in HIGH_RISK_COUPLING_TYPES
-            and finding.severity in {Severity.HIGH, Severity.CRITICAL}
-        ]
+    coupling_findings = _high_risk_coupling(findings)
+    new_coupling = (
+        coupling_findings
+        if baseline_findings is None
+        else new_findings(coupling_findings, _high_risk_coupling(baseline_findings))
     )
-    new_coupling = [
-        finding
-        for finding in coupling_findings
-        if not baseline_findings or _finding_key(finding) not in baseline_keys
-    ]
     passed = thresholds.allow_new_high_risk_coupling or not new_coupling
     return ArchitectureGateRuleResult(
         rule_id="high_risk_service_coupling_detected",
         passed=passed,
         message=(
             f"Detected {len(new_coupling)} new high-risk service coupling finding(s)."
-            if baseline_findings
+            if baseline_findings is not None
             else f"Detected {len(new_coupling)} high-risk service coupling finding(s)."
         ),
         observed_value=len(new_coupling),
@@ -183,9 +172,10 @@ def _findings_by_type(findings: list[Finding], finding_type: FindingType) -> lis
     return [finding for finding in findings if finding.type == finding_type]
 
 
-def _finding_keys(findings: list[Finding]) -> set[tuple[str, tuple[str, ...]]]:
-    return {_finding_key(finding) for finding in findings}
-
-
-def _finding_key(finding: Finding) -> tuple[str, tuple[str, ...]]:
-    return (finding.type.value, tuple(sorted(finding.services)))
+def _high_risk_coupling(findings: list[Finding]) -> list[Finding]:
+    return [
+        finding
+        for finding in findings
+        if finding.type in HIGH_RISK_COUPLING_TYPES
+        and finding.severity in {Severity.HIGH, Severity.CRITICAL}
+    ]

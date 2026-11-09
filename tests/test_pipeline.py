@@ -623,3 +623,22 @@ def test_hard_coded_dependency_self_reference_is_excluded() -> None:
 
     assert not any("order-service:8080" in value for value in values)
     assert "http://payment-service:8082/api" in values
+
+
+def test_source_paths_are_relative_to_the_folder_holding_the_services() -> None:
+    result = analyze_services(
+        [str(ROOT / "cycle" / "order-service"), str(ROOT / "cycle" / "payment-service")]
+    )
+    paths = [call.source.file_path for service in result.services for call in service.calls]
+    files = [entry for finding in result.findings for entry in finding.source_files]
+
+    assert paths and files
+    assert all(not Path(path).is_absolute() for path in paths + files)
+    assert all(path.startswith(("order-service/", "payment-service/")) for path in paths)
+
+
+def test_source_paths_can_be_relative_to_a_chosen_base() -> None:
+    result = analyze_services([str(ROOT / "hardcoded" / "billing-service")], path_base=ROOT)
+
+    files = {entry.split(":")[0] for finding in result.findings for entry in finding.source_files}
+    assert files and all(path.startswith("hardcoded/billing-service/") for path in files)

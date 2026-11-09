@@ -1,10 +1,26 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from mesa.file_walk import iter_files
 from mesa.models import ServiceDiscoveryCandidate
+
+# Folders that hold test data, examples or documentation rather than services.
+# Used by `mesa scan` and the GitHub Action. The API and the research benchmarks
+# call discovery without excludes, so their results do not change.
+DEFAULT_DISCOVERY_EXCLUDES: tuple[str, ...] = (
+    "tests",
+    "test",
+    "fixtures",
+    "examples",
+    "docs",
+    "node_modules",
+    "vendor",
+    ".venv",
+)
 
 _MANIFEST_WEIGHTS = {
     "pyproject.toml": 0.34,
@@ -108,11 +124,34 @@ class _CandidateAccumulator:
     name_pattern_boost_applied: bool = False
 
 
-def discover_service_candidates(root_path: Path) -> list[ServiceDiscoveryCandidate]:
+def discover_service_candidates(
+    root_path: Path,
+    *,
+    exclude: Iterable[str] = (),
+    include: Iterable[str] = (),
+    drop_root_when_nested: bool = False,
+) -> list[ServiceDiscoveryCandidate]:
+    """Find directories under `root_path` that look like services.
+
+    `exclude` patterns remove files from the scan. A plain name such as
+    `tests` matches a folder of that name at any depth; a pattern with `/` or
+    `*` (for example `examples/**` or `**/mocks/**`) is matched against the
+    path relative to `root_path`. `include` patterns, when given, keep only
+    candidates whose relative path matches one of them (for example
+    `services/*`). With `drop_root_when_nested`, the root itself (`.`) is
+    dropped when any service was found below it.
+    """
+    # Resolve first: compose build contexts are resolved to absolute paths, and
+    # comparing them with a relative root raised ValueError.
+    root_path = Path(root_path).resolve()
+    exclude_matcher = PathPatterns(exclude)
+    include_matcher = PathPatterns(include)
     accumulators: dict[str, _CandidateAccumulator] = {}
 
-    for file_path in sorted(root_path.rglob("*")):
-        if not file_path.is_file() or _is_ignored(file_path):
+    for file_path in iter_files(root_path):
+        if exclude_matcher and exclude_matcher.matches_any_ancestor(
+            file_path.relative_to(root_path).as_posix()
+        ):
             continue
 
         candidate_path = _candidate_path_for_file(root_path, file_path)
@@ -145,7 +184,7 @@ def discover_service_candidates(root_path: Path) -> list[ServiceDiscoveryCandida
                 candidate.language_votes.get(inferred_by_suffix, 0) + 1
             )
 
-        _add_content_signals(root_path, file_path, candidate, accumulators)
+        _add_content_signals(root_path, file_path, candidate, accumulators, exclude_matcher)
 
         if not candidate.name_pattern_boost_applied and _looks_like_service_directory(
             file_path.parent.name
@@ -163,6 +202,14 @@ def discover_service_candidates(root_path: Path) -> list[ServiceDiscoveryCandida
         for candidate in accumulators.values()
         if candidate.score >= _MIN_CONFIDENCE
     ]
+    if include_matcher:
+        discovered = [
+            candidate
+            for candidate in discovered
+            if include_matcher.matches(candidate.relative_path)
+        ]
+    if drop_root_when_nested and any(item.relative_path != "." for item in discovered):
+        discovered = [item for item in discovered if item.relative_path != "."]
     return sorted(discovered, key=lambda item: (-item.confidence, item.relative_path))
 
 
@@ -228,6 +275,7 @@ def _add_content_signals(
     file_path: Path,
     candidate: _CandidateAccumulator,
     accumulators: dict[str, _CandidateAccumulator],
+    exclude_matcher: PathPatterns | None = None,
 ) -> None:
     if not _is_small_text_file(file_path):
         return
@@ -241,6 +289,10 @@ def _add_content_signals(
 
     if lowered_name in {"docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"}:
         for context in _docker_compose_service_contexts(root_path, file_path, content):
+            if exclude_matcher and exclude_matcher.matches_any_ancestor(
+                context.relative_to(root_path).as_posix()
+            ):
+                continue
             compose_candidate = _candidate_for_path(accumulators, root_path, context)
             _add_signal(
                 compose_candidate,
@@ -491,6 +543,68 @@ def _unique_preserving_order(items: list[str]) -> list[str]:
     return ordered
 
 
-def _is_ignored(file_path: Path) -> bool:
-    ignored = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build"}
-    return any(part in ignored for part in file_path.parts)
+class PathPatterns:
+    """Match relative POSIX paths against simple glob patterns.
+
+    * `name` (no `/` and no wildcard): any path segment equal to `name`.
+    * `*` matches within one segment, `**` matches any number of segments,
+      `?` matches one character other than `/`.
+    """
+
+    def __init__(self, patterns: Iterable[str]) -> None:
+        self._names: set[str] = set()
+        self._regexes: list[re.Pattern[str]] = []
+        for raw in patterns:
+            pattern = raw.strip().strip("/")
+            if not pattern:
+                continue
+            if "/" not in pattern and not any(char in pattern for char in "*?["):
+                self._names.add(pattern)
+            else:
+                self._regexes.append(_glob_to_regex(pattern))
+
+    def __bool__(self) -> bool:
+        return bool(self._names or self._regexes)
+
+    def matches(self, relative_path: str) -> bool:
+        path = relative_path.strip("/")
+        if self._names and any(part in self._names for part in path.split("/")):
+            return True
+        return any(regex.fullmatch(path) for regex in self._regexes)
+
+    def matches_any_ancestor(self, relative_path: str) -> bool:
+        """True if the path or any folder above it matches."""
+        parts = relative_path.strip("/").split("/")
+        if self._names and any(part in self._names for part in parts):
+            return True
+        return any(
+            regex.fullmatch("/".join(parts[:end]))
+            for end in range(1, len(parts) + 1)
+            for regex in self._regexes
+        )
+
+
+def _glob_to_regex(pattern: str) -> re.Pattern[str]:
+    # `dir/**` also matches `dir` itself, so an excluded folder is never a candidate.
+    tail = ""
+    if pattern.endswith("/**"):
+        pattern, tail = pattern[:-3], "(?:/.*)?"
+    out: list[str] = []
+    index = 0
+    while index < len(pattern):
+        if pattern.startswith("**/", index):
+            out.append("(?:.*/)?")
+            index += 3
+        elif pattern.startswith("**", index):
+            out.append(".*")
+            index += 2
+        elif pattern[index] == "*":
+            out.append("[^/]*")
+            index += 1
+        elif pattern[index] == "?":
+            out.append("[^/]")
+            index += 1
+        else:
+            out.append(re.escape(pattern[index]))
+            index += 1
+    return re.compile("".join(out) + tail)

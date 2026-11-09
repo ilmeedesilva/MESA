@@ -37,6 +37,8 @@ export type Finding = {
   confidence_reason?: string;
   limitations?: string[];
   source_files?: string[];
+  /** Stable identity across scans; empty in reports made before it existed. */
+  fingerprint?: string;
   related_services?: string[];
   why_valid?: string;
 };
