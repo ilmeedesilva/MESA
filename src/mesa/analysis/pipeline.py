@@ -16,6 +16,7 @@ from mesa.detectors import (
     SharedDatabaseDetector,
     score_god_services,
 )
+from mesa.fingerprint import assign_fingerprints
 from mesa.graph.builder import build_graph, graph_to_dict
 from mesa.models import AnalysisResult
 
@@ -56,6 +57,7 @@ def analyze_services(
     god_service_scores = [score.to_dict() for score in score_god_services(graph)]
     findings.extend(GodServiceDetector().detect(graph))
     findings = enrich_findings_with_recommendations(findings)
+    assign_fingerprints(findings)
     health_scores = calculate_health_scores(graph, findings, god_service_scores)
 
     return AnalysisResult(

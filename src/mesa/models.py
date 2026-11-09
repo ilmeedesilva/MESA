@@ -156,6 +156,9 @@ class Finding(BaseModel):
     source_files: list[str] = Field(default_factory=list)
     related_services: list[str] = Field(default_factory=list)
     why_valid: str = ""
+    # Stable identity across scans (see mesa.fingerprint). Empty in reports
+    # written before it existed; comparisons then compute it on the fly.
+    fingerprint: str = ""
 
 
 class AnalysisRequest(BaseModel):

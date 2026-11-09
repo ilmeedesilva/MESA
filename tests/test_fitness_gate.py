@@ -59,3 +59,34 @@ def test_architecture_gate_compares_new_risks_against_baseline() -> None:
     cycle_rule = next(rule for rule in gate.rules if rule.rule_id == "cyclic_dependency_detected")
     assert not cycle_rule.passed
     assert cycle_rule.observed_value >= 1
+
+
+def test_empty_baseline_is_a_baseline_not_a_missing_one() -> None:
+    """A base branch with no findings must report cycles as *new*."""
+    target = analyze_services(
+        [str(ROOT / "cycle" / "order-service"), str(ROOT / "cycle" / "payment-service")]
+    )
+    empty_baseline = analyze_services([str(ROOT / "clean" / "order-service")])
+    assert empty_baseline.findings == []
+    thresholds = ArchitectureGateThresholds(minimum_health_score=0, maximum_critical_findings=10)
+
+    with_baseline = evaluate_architecture_gate(target, thresholds, baseline=empty_baseline)
+    without_baseline = evaluate_architecture_gate(target, thresholds)
+
+    def cycle_message(gate) -> str:
+        return next(r.message for r in gate.rules if r.rule_id == "cyclic_dependency_detected")
+
+    assert cycle_message(with_baseline) == "Detected 1 new cyclic dependency finding(s)."
+    assert cycle_message(without_baseline) == "Detected 1 cyclic dependency finding(s)."
+
+
+def test_existing_cycle_in_baseline_is_not_new() -> None:
+    paths = [str(ROOT / "cycle" / "order-service"), str(ROOT / "cycle" / "payment-service")]
+    baseline = analyze_services(paths)
+    target = analyze_services(paths)
+    thresholds = ArchitectureGateThresholds(minimum_health_score=0, maximum_critical_findings=10)
+
+    gate = evaluate_architecture_gate(target, thresholds, baseline=baseline)
+
+    assert "cyclic_dependency_detected" not in gate.failed_rules
+    assert "high_risk_service_coupling_detected" not in gate.failed_rules

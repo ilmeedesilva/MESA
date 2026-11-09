@@ -89,7 +89,7 @@ python_version = "3.10"
 # packages are made clean.
 files = [
   "src/mesa/models.py", "src/mesa/analysis", "src/mesa/detectors",
-  "src/mesa/file_walk.py", "src/mesa/discovery",
+  "src/mesa/fingerprint.py", "src/mesa/file_walk.py", "src/mesa/discovery",
 ]
 disallow_untyped_defs = true
 warn_unused_ignores = true
