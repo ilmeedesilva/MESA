@@ -131,14 +131,26 @@ export function useMesaWorkspace() {
   const scanRequestRef = React.useRef(0);
   // The sidebar collapses by itself on narrower desktops unless the user expanded or collapsed
   // it. That choice is kept when the window is resized.
+  // Layout by width: phone (menu button and slide-in sidebar), tablet (icon rail whose toggle
+  // opens the full sidebar over the page) and desktop (sidebar, or the rail on narrower desktops).
   const [sidebarPreference, setSidebarPreference] = React.useState<"auto" | "expanded" | "collapsed">("auto");
+  const isPhone = useMediaQuery("(max-width: 767.98px)");
+  const isDesktop = useMediaQuery("(min-width: 1200px)");
   const isWideDesktop = useMediaQuery("(min-width: 1360px)");
-  const isStackedLayout = useMediaQuery("(max-width: 1179.98px)");
-  const sidebarCollapsed = isStackedLayout
-    ? false
-    : sidebarPreference === "auto"
-      ? !isWideDesktop
-      : sidebarPreference === "collapsed";
+  const layoutMode: "phone" | "tablet" | "desktop" = isPhone ? "phone" : isDesktop ? "desktop" : "tablet";
+  const sidebarCollapsed =
+    layoutMode === "tablet"
+      ? true
+      : layoutMode === "phone"
+        ? false
+        : sidebarPreference === "auto"
+          ? !isWideDesktop
+          : sidebarPreference === "collapsed";
+  // The phone menu or the tablet overlay sidebar.
+  const [navOpen, setNavOpen] = React.useState(false);
+  React.useEffect(() => {
+    setNavOpen(false);
+  }, [layoutMode]);
   const projectStateAbortRef = React.useRef<AbortController | null>(null);
   const scanAbortRef = React.useRef<AbortController | null>(null);
 
@@ -1165,8 +1177,17 @@ export function useMesaWorkspace() {
   const sourceLabel = sourceLocation.trim() ? sourceLocation.trim() : "Manual service paths";
   const activeScanDateLabel = activeScan ? formatDate(activeScan.completed_at ?? activeScan.created_at) : "No scan yet";
 
+  /** Desktop: expand or collapse the sidebar. Phone and tablet: open or close the menu. */
   function toggleSidebar() {
+    if (layoutMode !== "desktop") {
+      setNavOpen((open) => !open);
+      return;
+    }
     setSidebarPreference(sidebarCollapsed ? "expanded" : "collapsed");
+  }
+
+  function closeNav() {
+    setNavOpen(false);
   }
 
   function toggleDemoWorkspace() {
@@ -1298,8 +1319,11 @@ export function useMesaWorkspace() {
     currentSectionMeta,
     sectionNeedsProject,
     navigateToSection,
+    layoutMode,
     sidebarCollapsed,
+    navOpen,
     toggleSidebar,
+    closeNav,
     apiAvailability,
     isPublicDemoMode,
     usingEmbeddedDemo,

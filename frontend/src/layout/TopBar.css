@@ -77,3 +77,10 @@
     justify-content: stretch;
   }
 }
+
+/* Phone: the top bar shows the page title and the menu holds the project picker. */
+@media (max-width: 767.98px) {
+  .appHeader {
+    display: none;
+  }
+}

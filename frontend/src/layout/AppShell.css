@@ -90,12 +90,114 @@
   padding: var(--space-4) var(--space-6) 0;
 }
 
-@media (max-width: 1180px) {
-  .appShell {
-    grid-template-columns: 1fr;
+/* Layout widths: phone below 768px, tablet 768-1199px, desktop 1200px and up. */
+
+.mobileBar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-1-5) var(--space-3);
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+}
+
+.mobileMenuButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--slate-900), #172554);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+}
+
+.mobileBarTitle {
+  display: grid;
+  min-width: 0;
+}
+
+.mobileBarTitle strong {
+  color: var(--blue-700);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.mobileBarTitle span {
+  overflow: hidden;
+  color: var(--slate-900);
+  font-size: 17px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+/* The frame keeps the second column when the sidebar is lifted out of the grid (tablet overlay). */
+@media (min-width: 768px) {
+  .appFrame {
+    grid-column: 2;
+  }
+}
+
+/* Tablet: the icon rail stays in the grid; its toggle opens the full sidebar over the page. */
+@media (max-width: 1199.98px) {
+  .appShell,
+  .appShell.sidebarCollapsed {
+    --sidebar-width: 88px;
   }
 
   .globalControlBar {
     padding-inline: var(--space-4);
+  }
+
+  .workspaceBodyWithRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Phone: one column under the top bar; the sidebar becomes a slide-in menu. */
+@media (max-width: 767.98px) {
+  .appShell,
+  .appShell.sidebarCollapsed {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+
+  .globalControlBar {
+    padding: var(--space-3) var(--space-3) 0;
+  }
+
+  .workspaceError {
+    margin: var(--space-3) var(--space-3) 0;
+  }
+
+  .workspaceFrame {
+    gap: var(--space-3-5);
+    padding: var(--space-3) var(--space-3) var(--space-5);
+  }
+
+  .workspaceFrameHeader {
+    flex-direction: column;
+    padding: var(--space-3-5);
+  }
+
+  .workspaceContextMeta {
+    width: 100%;
+    min-width: 0;
   }
 }

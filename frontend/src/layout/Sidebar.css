@@ -264,61 +264,119 @@
   transform: rotate(180deg);
 }
 
-@media (max-width: 1180px) {
+.sidebarItemIcon {
+  flex: 0 0 auto;
+}
+
+/* In the icon rail the label stays available to screen readers and as a tooltip. */
+.appSidebar.collapsed .sidebarItem strong {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.appSidebar.collapsed .sidebarItem {
+  position: relative;
+  min-height: 48px;
+}
+
+/* The rail is too narrow for the mark and the toggle side by side. */
+.appSidebar.collapsed .appSidebarTop {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sidebarProjectPicker {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--white);
+}
+
+.sidebarProjectPicker label {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.sidebarProjectPicker span {
+  color: var(--slate-500);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Tablet: the full sidebar opens over the page from the icon rail. */
+.appSidebar.overlayOpen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: 280px;
+  height: 100vh;
+  height: 100dvh;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+}
+
+/* Phone: the sidebar is a menu that slides in from the left. */
+@media (max-width: 767.98px) {
   .appSidebar,
-  .appSidebar.collapsed {
-    position: static;
-    width: 100%;
-    height: auto;
-    max-height: none;
+  .appSidebar.overlayOpen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    width: min(320px, 86vw);
+    height: 100vh;
+    height: 100dvh;
+    padding: var(--space-4) var(--space-3-5);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 220ms ease,
+      visibility 220ms ease;
+  }
+
+  .appSidebar.overlayOpen {
+    transform: none;
+    visibility: visible;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  }
+
+  /* The whole menu scrolls; the list keeps its full height. */
+  .sidebarNav {
+    flex: 0 0 auto;
     overflow: visible;
-    border-right: 0;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .appSidebarTop {
-    align-items: center;
-  }
-
-  .appIdentity {
-    width: 100%;
   }
 
   .sidebarToggle {
-    display: none;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
   }
 
-  .sidebarNav {
-    overflow: visible;
-    padding-right: 0;
+  .sidebarItem {
+    min-height: 44px;
   }
 
-  .appSidebar.collapsed .sidebarItem {
-    place-items: start;
-    padding: var(--space-3) 13px;
-  }
-
-  .appSidebar.collapsed .sidebarItem strong {
-    font-size: 12px;
-    text-align: left;
-  }
-
-  .appSidebar.collapsed .sidebarGroup h2,
-  .appSidebar.collapsed .sidebarItem span,
-  .appSidebar.collapsed .appIdentity p {
-    display: initial;
-  }
-
-  .sidebarFooterAction,
-  .sidebarFooterAction.collapsed {
-    margin-top: 0;
-    padding: var(--space-3);
-  }
-
-  .sidebarDemoButton,
-  .sidebarDemoButton.compact {
+  .sidebarDemoButton {
     width: 100%;
+    min-height: 44px;
     justify-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appSidebar {
+    transition: none;
   }
 }
 

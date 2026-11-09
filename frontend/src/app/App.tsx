@@ -4,6 +4,7 @@ import { isDemoScan } from "../demoMode";
 import { plainLanguageFindingTitle } from "../viewHelpers";
 import { AppShell, WorkspaceFrame } from "../layout/AppShell";
 import { PublicDemoBanner } from "../layout/PublicDemoBanner";
+import { MobileBar } from "../layout/MobileBar";
 import { Sidebar } from "../layout/Sidebar";
 import { TopBar } from "../layout/TopBar";
 import { FindingDrawer } from "../components/FindingDrawer";
@@ -74,14 +75,40 @@ export function App() {
   return (
     <AppShell
       sidebarCollapsed={ws.sidebarCollapsed}
+      navOpen={ws.navOpen}
+      onCloseNav={ws.closeNav}
+      mobileBar={
+        ws.layoutMode === "phone" ? (
+          <MobileBar title={currentSectionMeta.label} navOpen={ws.navOpen} onOpenMenu={ws.toggleSidebar} />
+        ) : null
+      }
       sidebar={
         <Sidebar
+          layoutMode={ws.layoutMode}
           collapsed={ws.sidebarCollapsed}
+          navOpen={ws.navOpen}
           currentSection={currentSection}
           isPublicDemoMode={ws.isPublicDemoMode}
+          projects={ws.projects}
+          selectedProjectId={selectedProjectId}
+          projectListStatus={ws.projectListStatus}
           onToggleCollapsed={ws.toggleSidebar}
-          onNavigate={(section) => ws.navigateToSection(section)}
-          onToggleDemo={ws.toggleDemoWorkspace}
+          onNavigate={(section) => {
+            ws.navigateToSection(section);
+            ws.closeNav();
+          }}
+          onToggleDemo={() => {
+            ws.toggleDemoWorkspace();
+            ws.closeNav();
+          }}
+          onSelectProject={(value) => {
+            ws.handleTopProjectSelection(value);
+            ws.closeNav();
+          }}
+          onCreateProject={() => {
+            ws.openCreateProjectFlow();
+            ws.closeNav();
+          }}
         />
       }
       topBar={

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../app/App";
 
@@ -56,5 +56,72 @@ describe("sidebar", () => {
     resizeTo(1000);
     resizeTo(1250);
     expect(sidebarIsCollapsed()).toBe(false);
+  });
+});
+
+describe("phone menu and tablet rail", () => {
+  const menu = () => document.getElementById("app-sidebar")!;
+  const menuOpen = () => menu().classList.contains("overlayOpen");
+
+  it("opens the phone menu, closes it with Esc and returns focus to the menu button", async () => {
+    resizeTo(390);
+    render(<App />);
+    await screen.findAllByText("MESA Public Demo");
+    const button = screen.getByRole("button", { name: "Open menu" });
+    expect(menuOpen()).toBe(false);
+
+    button.focus();
+    fireEvent.click(button);
+    expect(menuOpen()).toBe(true);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(menu().contains(document.activeElement)).toBe(true);
+    expect(document.querySelector(".appFrame")).toHaveAttribute("inert");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(menuOpen()).toBe(false);
+    expect(document.activeElement).toBe(button);
+    expect(document.querySelector(".appFrame")).not.toHaveAttribute("inert");
+  });
+
+  it("closes the phone menu after choosing a page, or tapping the backdrop", async () => {
+    resizeTo(390);
+    render(<App />);
+    await screen.findAllByText("MESA Public Demo");
+
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    const nav = screen.getByRole("navigation", { name: "Workspace sections" });
+    fireEvent.click(within(nav).getByRole("button", { name: /^Findings/ }));
+    expect(menuOpen()).toBe(false);
+    expect(window.location.hash).toBe("#/findings");
+    expect(document.querySelector(".mobileBarTitle span")).toHaveTextContent("Findings");
+
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    fireEvent.click(document.querySelector(".navBackdrop")!);
+    expect(menuOpen()).toBe(false);
+  });
+
+  it("shows an icon rail on tablets that opens the full sidebar over the page", async () => {
+    resizeTo(900);
+    render(<App />);
+    await screen.findAllByText("MESA Public Demo");
+    expect(menu()).toHaveClass("collapsed");
+    expect(document.querySelector(".mobileBar")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    expect(menuOpen()).toBe(true);
+    expect(menu()).not.toHaveClass("collapsed");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(menuOpen()).toBe(false);
+    expect(menu()).toHaveClass("collapsed");
+  });
+
+  it("closes the menu when the layout changes", async () => {
+    resizeTo(390);
+    render(<App />);
+    await screen.findAllByText("MESA Public Demo");
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    resizeTo(1440);
+    expect(menuOpen()).toBe(false);
+    expect(document.querySelector(".mobileBar")).toBeNull();
   });
 });
