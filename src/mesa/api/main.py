@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+import threading
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from itertools import pairwise
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
@@ -75,7 +79,29 @@ from mesa.storage import (
     PostgresPersistenceRepository,
 )
 
-app = FastAPI(title="MESA API", version=__version__)
+logger = logging.getLogger(__name__)
+
+# Storage is created once per process. Before this lock, two requests arriving
+# together on a new database both ran the table migrations, and one failed with
+# a UniqueViolation on pg_type (HTTP 500).
+_storage_lock = threading.Lock()
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Create the database tables and graph constraints before the first request."""
+    try:
+        _repository_for(app)
+        _architecture_store_for(app)
+    except Exception:  # pragma: no cover - depends on the database being reachable
+        # Keep the API up (for example /health and /analyze, which need no
+        # database). The first request that needs storage retries and reports
+        # the error.
+        logger.exception("Could not set up storage at startup; will retry on first use")
+    yield
+
+
+app = FastAPI(title="MESA API", version=__version__, lifespan=_lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -87,18 +113,25 @@ app.add_middleware(
 
 
 def get_repository(request: Request) -> PersistenceRepository:
-    if hasattr(request.app.state, "persistence_repository"):
-        return request.app.state.persistence_repository
+    return _repository_for(request.app)
 
-    if os.getenv("MESA_PERSISTENCE", "memory").lower() == "postgres":
-        dsn = os.getenv("MESA_POSTGRES_DSN", "postgresql://mesa:mesa@localhost:5432/mesa")
-        repository: PersistenceRepository = PostgresPersistenceRepository(dsn)
-    else:
-        repository = InMemoryPersistenceRepository()
 
-    repository.initialize()
-    request.app.state.persistence_repository = repository
-    return repository
+def _repository_for(app: FastAPI) -> PersistenceRepository:
+    if hasattr(app.state, "persistence_repository"):
+        return app.state.persistence_repository
+    with _storage_lock:
+        if hasattr(app.state, "persistence_repository"):
+            return app.state.persistence_repository
+
+        if os.getenv("MESA_PERSISTENCE", "memory").lower() == "postgres":
+            dsn = os.getenv("MESA_POSTGRES_DSN", "postgresql://mesa:mesa@localhost:5432/mesa")
+            repository: PersistenceRepository = PostgresPersistenceRepository(dsn)
+        else:
+            repository = InMemoryPersistenceRepository()
+
+        repository.initialize()
+        app.state.persistence_repository = repository
+        return repository
 
 
 def neo4j_enabled() -> bool:
@@ -106,15 +139,21 @@ def neo4j_enabled() -> bool:
 
 
 def get_architecture_store(request: Request):
-    if hasattr(request.app.state, "architecture_store"):
-        return request.app.state.architecture_store
+    return _architecture_store_for(request.app)
+
+
+def _architecture_store_for(app: FastAPI):
+    if hasattr(app.state, "architecture_store"):
+        return app.state.architecture_store
     if not neo4j_enabled():
         return None
-
-    store = Neo4jArchitectureStore()
-    store.initialize()
-    request.app.state.architecture_store = store
-    return store
+    with _storage_lock:
+        if hasattr(app.state, "architecture_store"):
+            return app.state.architecture_store
+        store = Neo4jArchitectureStore()
+        store.initialize()
+        app.state.architecture_store = store
+        return store
 
 
 def require_architecture_store(request: Request):
