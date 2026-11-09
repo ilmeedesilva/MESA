@@ -11,7 +11,7 @@ export function FindingsPage({ ws }: { ws: MesaWorkspace }) {
     interpretationMode,
     setFilters,
     openDoc,
-    setSelectedFinding,
+    openFinding,
     askAIAboutFinding
   } = ws;
   return (
@@ -23,7 +23,7 @@ export function FindingsPage({ ws }: { ws: MesaWorkspace }) {
       interpretationMode={interpretationMode}
       onFilterChange={setFilters}
       onOpenDoc={openDoc}
-      onSelectFinding={setSelectedFinding}
+      onSelectFinding={(finding) => openFinding(finding.id)}
       onAskAI={(finding) => {
         askAIAboutFinding(
           finding,

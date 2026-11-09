@@ -10,6 +10,7 @@ export function DocumentationPortal({
   onChangeQuery,
   onChangeCategory,
   onSelectDoc,
+  onAutoSelectDoc,
   onBackToAnalysis
 }: {
   selectedDocSlug: string;
@@ -18,6 +19,8 @@ export function DocumentationPortal({
   onChangeQuery: (value: string) => void;
   onChangeCategory: (value: string) => void;
   onSelectDoc: (slug: string) => void;
+  /** Called when the list selects a page by itself (search or category change). */
+  onAutoSelectDoc: (slug: string) => void;
   onBackToAnalysis: () => void;
 }) {
   const filteredDocs = React.useMemo(() => docsByQuery(docsQuery, docsCategory), [docsCategory, docsQuery]);
@@ -26,9 +29,9 @@ export function DocumentationPortal({
 
   React.useEffect(() => {
     if (filteredDocs.length > 0 && !filteredDocs.some((doc) => doc.slug === selectedDocSlug)) {
-      onSelectDoc(filteredDocs[0].slug);
+      onAutoSelectDoc(filteredDocs[0].slug);
     }
-  }, [filteredDocs, onSelectDoc, selectedDocSlug]);
+  }, [filteredDocs, onAutoSelectDoc, selectedDocSlug]);
 
   return (
     <section className="docsPortal">

@@ -108,7 +108,7 @@ export function App() {
                 `Explain simply what to solve first about ${plainLanguageFindingTitle(selectedFinding).toLowerCase()}.`
               );
             }}
-            onClose={() => ws.setSelectedFinding(null)}
+            onClose={ws.closeFinding}
           />
         ) : null
       }
@@ -246,7 +246,8 @@ function SectionContent({ ws, historyPanel }: { ws: MesaWorkspace; historyPanel:
           docsCategory={ws.docsCategory}
           onChangeQuery={ws.setDocsQuery}
           onChangeCategory={ws.setDocsCategory}
-          onSelectDoc={ws.setSelectedDocSlug}
+          onSelectDoc={(slug) => ws.selectDoc(slug)}
+          onAutoSelectDoc={(slug) => ws.selectDoc(slug, "replace")}
           onBackToAnalysis={() => ws.navigateToSection("overview")}
         />
       );

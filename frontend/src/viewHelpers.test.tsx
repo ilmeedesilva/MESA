@@ -1,16 +1,14 @@
 import type React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Finding, GraphEdge, PolicyRecord, ProjectRecord } from "./types";
 import {
   aggregateEdges,
   buildFilterOptions,
   filterFindings,
   policyDocumentFromRecords,
-  readSectionFromUrl,
   resolveProjectSelection,
   servicePathsFromText,
-  syncAppStateToUrl,
   softWrap,
   tokenizeHighlightedText,
   withBreakOpportunities
@@ -100,23 +98,6 @@ describe("resolveProjectSelection", () => {
     expect(resolveProjectSelection(projects, "missing", "p2")).toBe("p2");
     expect(resolveProjectSelection(projects, "missing")).toBe("p1");
     expect(resolveProjectSelection([], "missing")).toBe("");
-  });
-});
-
-describe("URL state", () => {
-  afterEach(() => window.history.replaceState({}, "", "/"));
-
-  it("round-trips the project and section through the query string", () => {
-    syncAppStateToUrl("p1", "findings");
-    expect(window.location.search).toBe("?project=p1&section=findings");
-    expect(readSectionFromUrl()).toBe("findings");
-  });
-
-  it("drops the section for the overview page and falls back to overview for unknown values", () => {
-    syncAppStateToUrl("p1", "overview");
-    expect(window.location.search).toBe("?project=p1");
-    window.history.replaceState({}, "", "/?section=not-a-page");
-    expect(readSectionFromUrl()).toBe("overview");
   });
 });
 

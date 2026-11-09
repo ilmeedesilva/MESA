@@ -20,14 +20,13 @@ import {
   policyDocumentFromRecords,
   preferredGraph,
   readProjectIdFromUrl,
-  readSectionFromUrl,
   resolveProjectSelection,
-  servicePathsFromText,
-  syncAppStateToUrl
+  servicePathsFromText
 } from "../viewHelpers";
 import { useEffectEvent } from "../hooks/useEffectEvent";
 import { defaultPaths, defaultPolicyDocument } from "./defaults";
 import { navigationItems, sectionsRequiringProject } from "./navigation";
+import { readRoute, writeUrl, type Route } from "./router";
 import type {
   AIExplainerIntent,
   AIExplainerResponse,
@@ -95,13 +94,18 @@ export function useMesaWorkspace() {
   const [isSavingPolicies, setIsSavingPolicies] = React.useState(false);
   const [isSavingResearchRecord, setIsSavingResearchRecord] = React.useState(false);
   const [isExportingResearchRecords, setIsExportingResearchRecords] = React.useState(false);
-  const [selectedFinding, setSelectedFinding] = React.useState<Finding | null>(null);
+  // The route the page was opened with (hash, or the old ?section= parameter).
+  const [initialRoute] = React.useState<Route>(() => readRoute());
+  // The open finding is kept by ID and looked up in the current scan. A finding from a link
+  // waits as "pending" until a scan has loaded.
+  const [selectedFindingId, setSelectedFindingId] = React.useState<string | null>(null);
+  const [pendingFindingId, setPendingFindingId] = React.useState<string | null>(initialRoute.findingId ?? null);
   const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
   const [interpretationMode, setInterpretationMode] = React.useState<InterpretationMode>("beginner");
   const [showSetupWorkspace, setShowSetupWorkspace] = React.useState(true);
   const [hasAutoCollapsedSetup, setHasAutoCollapsedSetup] = React.useState(false);
   const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");
-  const [currentSection, setCurrentSection] = React.useState<AppSection>(readSectionFromUrl());
+  const [currentSection, setCurrentSection] = React.useState<AppSection>(initialRoute.section);
   const [apiAvailability, setApiAvailability] = React.useState<ApiAvailability>("checking");
   const [isPublicDemoMode, setIsPublicDemoMode] = React.useState(false);
   const [isLoadingProjectState, setIsLoadingProjectState] = React.useState(false);
@@ -111,7 +115,7 @@ export function useMesaWorkspace() {
   const [streamingAnswer, setStreamingAnswer] = React.useState("");
   const [aiStatus, setAiStatus] = React.useState<AIExplainerStatus | null>(null);
   const [isCheckingAIStatus, setIsCheckingAIStatus] = React.useState(false);
-  const [selectedDocSlug, setSelectedDocSlug] = React.useState("evaluator-quick-start");
+  const [selectedDocSlug, setSelectedDocSlug] = React.useState(initialRoute.docSlug ?? "evaluator-quick-start");
   const [docsQuery, setDocsQuery] = React.useState("");
   const [docsCategory, setDocsCategory] = React.useState("ALL");
   const [filters, setFilters] = React.useState<Filters>({
@@ -132,19 +136,57 @@ export function useMesaWorkspace() {
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
   const manualServicePaths = React.useMemo(() => servicePathsFromText(paths), [paths]);
 
-  React.useEffect(() => {
-    const handlePopState = () => {
-      if (isPublicDemoMode && apiAvailability !== "online") return;
-      setSelectedProjectId(readProjectIdFromUrl());
-      setCurrentSection(readSectionFromUrl());
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [apiAvailability, isPublicDemoMode]);
+  const selectedFinding =
+    (selectedFindingId && result?.findings.find((finding) => finding.id === selectedFindingId)) || null;
 
+  // The route shown in the address bar. A pending finding stays in it until its scan loads.
+  const currentRoute = React.useMemo<Route>(
+    () => ({
+      section: currentSection,
+      findingId: currentSection === "findings" ? (selectedFindingId ?? pendingFindingId ?? undefined) : undefined,
+      docSlug: currentSection === "docs" ? selectedDocSlug : undefined
+    }),
+    [currentSection, pendingFindingId, selectedDocSlug, selectedFindingId]
+  );
+
+  // Keep the address bar in step with the state; navigation actions push their own entries.
   React.useEffect(() => {
-    syncAppStateToUrl(selectedProjectId, currentSection, "replace");
-  }, [currentSection, selectedProjectId]);
+    writeUrl(selectedProjectId, currentRoute, "replace");
+  }, [currentRoute, selectedProjectId]);
+
+  // Open a finding from a link once a scan with that finding has loaded.
+  React.useEffect(() => {
+    if (!pendingFindingId || !result) return;
+    if (result.findings.some((finding) => finding.id === pendingFindingId)) setSelectedFindingId(pendingFindingId);
+    setPendingFindingId(null);
+  }, [pendingFindingId, result]);
+
+  // Back, forward and edits to the hash: show the page the URL describes. In the embedded
+  // demo the project is fixed, so only the page changes.
+  const applyLocation = useEffectEvent(() => {
+    const route = readRoute();
+    if (!(isPublicDemoMode && apiAvailability !== "online")) setSelectedProjectId(readProjectIdFromUrl());
+    setCurrentSection(route.section);
+    if (route.docSlug) setSelectedDocSlug(route.docSlug);
+    if (!route.findingId) {
+      setSelectedFindingId(null);
+      setPendingFindingId(null);
+    } else if (result?.findings.some((finding) => finding.id === route.findingId)) {
+      setSelectedFindingId(route.findingId);
+    } else {
+      setSelectedFindingId(null);
+      setPendingFindingId(route.findingId);
+    }
+  });
+  React.useEffect(() => {
+    const handleLocationChange = () => applyLocation();
+    window.addEventListener("popstate", handleLocationChange);
+    window.addEventListener("hashchange", handleLocationChange);
+    return () => {
+      window.removeEventListener("popstate", handleLocationChange);
+      window.removeEventListener("hashchange", handleLocationChange);
+    };
+  }, [applyLocation]);
 
   // Runs when the selected project, demo mode or API availability changes.
   const syncSelectedProjectState = useEffectEvent(() => {
@@ -253,7 +295,7 @@ export function useMesaWorkspace() {
     setResult(null);
     setDisplayGraph(null);
     setScores([]);
-    setSelectedFinding(null);
+    setSelectedFindingId(null);
     setSelectedGraphElement(null);
     setAiQuestion("");
     setAiResponse(null);
@@ -269,7 +311,7 @@ export function useMesaWorkspace() {
     setSelectedProjectId(projectId);
     setShowCreateProjectForm(false);
     setShowSetupWorkspace(true);
-    syncAppStateToUrl(projectId, currentSection, historyMode);
+    writeUrl(projectId, { ...currentRoute, findingId: undefined }, historyMode);
   }
 
   async function loadProjects(options?: {
@@ -293,7 +335,7 @@ export function useMesaWorkspace() {
       if (resolvedProjectId !== selectedProjectId) {
         updateSelectedProject(resolvedProjectId, options?.historyMode ?? "replace");
       } else if (!resolvedProjectId) {
-        syncAppStateToUrl("", currentSection, options?.historyMode ?? "replace");
+        writeUrl("", { ...currentRoute, findingId: undefined }, options?.historyMode ?? "replace");
       }
     } catch (caught) {
       if (requestId !== projectListRequestRef.current || isAbortError(caught)) return;
@@ -526,7 +568,7 @@ export function useMesaWorkspace() {
       const nextScores = flattenScores(payload.result.summary.health_scores);
       setScores(nextScores);
       setDisplayGraph(graphFromReport(payload.result, nextScores));
-      setSelectedFinding(null);
+      setSelectedFindingId(null);
       setSelectedGraphElement(null);
       setAiResponse(null);
       setStreamingAnswer("");
@@ -631,7 +673,7 @@ export function useMesaWorkspace() {
       setRoadmap(
         demoWorkspace.roadmaps[scanId as keyof typeof demoWorkspace.roadmaps] as unknown as RemediationRoadmap
       );
-      setSelectedFinding(null);
+      setSelectedFindingId(null);
       setSelectedGraphElement(null);
       setAiResponse(null);
       setStreamingAnswer("");
@@ -654,7 +696,7 @@ export function useMesaWorkspace() {
       let nextScores = flattenScores(payload.result.summary.health_scores);
       setScores(nextScores);
       setDisplayGraph(graphFromReport(payload.result, nextScores));
-      setSelectedFinding(null);
+      setSelectedFindingId(null);
       setSelectedGraphElement(null);
       setAiResponse(null);
       setStreamingAnswer("");
@@ -1018,7 +1060,35 @@ export function useMesaWorkspace() {
 
   function navigateToSection(section: AppSection, historyMode: "push" | "replace" = "push") {
     setCurrentSection(section);
-    syncAppStateToUrl(selectedProjectId, section, historyMode);
+    setSelectedFindingId(null);
+    setPendingFindingId(null);
+    writeUrl(selectedProjectId, { section, docSlug: section === "docs" ? selectedDocSlug : undefined }, historyMode);
+  }
+
+  /** Opens a finding in the drawer, with its own URL (#/findings/<id>). */
+  function openFinding(findingId: string) {
+    const mode = selectedFindingId ? "replace" : "push";
+    setCurrentSection("findings");
+    setSelectedFindingId(findingId);
+    setPendingFindingId(null);
+    writeUrl(selectedProjectId, { section: "findings", findingId }, mode, { mesaFindingOpenedInApp: true });
+  }
+
+  /** Closes the drawer. If the finding was opened in the app, go back so history has no extra entry. */
+  function closeFinding() {
+    const state = window.history.state as { mesaFindingOpenedInApp?: boolean } | null;
+    if (state?.mesaFindingOpenedInApp) {
+      window.history.back();
+      return;
+    }
+    setSelectedFindingId(null);
+    setPendingFindingId(null);
+  }
+
+  /** Shows a documentation page; "replace" is used when the docs list picks a page by itself. */
+  function selectDoc(slug: string, historyMode: "push" | "replace" = "push") {
+    setSelectedDocSlug(slug);
+    writeUrl(selectedProjectId, { section: "docs", docSlug: slug }, historyMode);
   }
 
   function askAIAboutFinding(finding: Finding, question: string) {
@@ -1032,7 +1102,10 @@ export function useMesaWorkspace() {
 
   function openDoc(slug: string) {
     setSelectedDocSlug(slug);
-    navigateToSection("docs");
+    setCurrentSection("docs");
+    setSelectedFindingId(null);
+    setPendingFindingId(null);
+    writeUrl(selectedProjectId, { section: "docs", docSlug: slug }, "push");
   }
 
   function openCreateProjectFlow() {
@@ -1194,7 +1267,8 @@ export function useMesaWorkspace() {
     filterOptions,
     filteredFindings,
     selectedFinding,
-    setSelectedFinding,
+    openFinding,
+    closeFinding,
     interpretationMode,
     setInterpretationMode,
     // AI explainer
@@ -1222,7 +1296,7 @@ export function useMesaWorkspace() {
     exportResearchRecords,
     // documentation
     selectedDocSlug,
-    setSelectedDocSlug,
+    selectDoc,
     docsQuery,
     setDocsQuery,
     docsCategory,

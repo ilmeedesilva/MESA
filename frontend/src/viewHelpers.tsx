@@ -4,7 +4,6 @@ import type {
   AIExplainerStatus,
   AggregatedEdge,
   AnalysisResult,
-  AppSection,
   DigitalTwinGraph,
   DisplayGraph,
   Filters,
@@ -860,43 +859,6 @@ export function downloadTextFile(filename: string, content: string, type: string
 export function readProjectIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get("project") ?? "";
-}
-
-export function readSectionFromUrl(): AppSection {
-  const params = new URLSearchParams(window.location.search);
-  const value = params.get("section");
-  if (value === "services" || value === "policies") return "scan";
-  const knownSections = new Set<AppSection>([
-    "overview",
-    "scan",
-    "findings",
-    "graph",
-    "history",
-    "evolution",
-    "roadmap",
-    "gate",
-    "ai",
-    "evaluation",
-    "benchmarks",
-    "ai-baseline",
-    "docs"
-  ]);
-  return value && knownSections.has(value as AppSection) ? (value as AppSection) : "overview";
-}
-
-export function syncAppStateToUrl(projectId: string, section: AppSection, historyMode: "push" | "replace" = "replace") {
-  const url = new URL(window.location.href);
-  if (projectId) {
-    url.searchParams.set("project", projectId);
-  } else {
-    url.searchParams.delete("project");
-  }
-  if (section !== "overview") {
-    url.searchParams.set("section", section);
-  } else {
-    url.searchParams.delete("section");
-  }
-  window.history[historyMode === "push" ? "pushState" : "replaceState"]({}, "", url);
 }
 
 export function resolveProjectSelection(projects: ProjectRecord[], currentProjectId: string, preferredProjectId = "") {
