@@ -1,8 +1,8 @@
-# MESA Evaluator Quick Start
+# MESA Quick Start
 
 ## Purpose
 
-This page is the fastest way for an evaluator to understand what MESA is, how to try it, and how to judge its outputs.
+This page is the fastest way to understand what MESA is, how to try it, and how to judge its outputs.
 
 ## What MESA Is
 

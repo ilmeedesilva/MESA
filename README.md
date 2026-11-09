@@ -54,8 +54,8 @@ Phase J adds a backend-free public demo experience inside the frontend.
 
 If the live API is unavailable, the UI can still load:
 
-- embedded demo scans
-- embedded documentation
+- demo scans
+- the built-in documentation
 - roadmap, graph, and score examples
 - a guided tour
 

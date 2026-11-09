@@ -2,7 +2,7 @@ export const demoWorkspace = {
   project: {
     id: "demo-project-public",
     name: "MESA Public Demo",
-    description: "Embedded public demo workspace with example architecture results.",
+    description: "Demo data with example architecture results.",
     created_at: "2026-07-01T09:00:00Z"
   },
   scans: [

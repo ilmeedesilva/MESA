@@ -78,10 +78,10 @@ export function localDemoAIResponse({
       ],
       suggestions: [
         "Open the full documentation page from inside MESA.",
-        "Use the evaluator quick start if you are reviewing the demo."
+        "Use the quick start if you are reviewing the demo."
       ],
       follow_up_questions: ["How do I use this demo?", "What should I look at first in the results?"],
-      limitations: ["This answer is from embedded documentation, not the live backend."],
+      limitations: ["This answer is from the built-in documentation, not your MESA server."],
       confidence: "HIGH",
       grounded: true,
       source: "mesa-public-demo-docs"
@@ -92,9 +92,9 @@ export function localDemoAIResponse({
     return {
       intent: resolvedIntent,
       title: "Demo data not loaded",
-      answer: "Load the embedded demo workspace first so MESA can show example results.",
+      answer: "Load the demo data first so MESA can show example results.",
       evidence: [],
-      suggestions: ["Use the public demo workspace banner to load embedded examples."],
+      suggestions: ["Use Load Demo Workspace in the sidebar to load the demo data."],
       follow_up_questions: ["How do I use this demo?"],
       limitations: ["No active demo scan was loaded."],
       confidence: "LOW",
@@ -133,7 +133,7 @@ export function localDemoAIResponse({
         recommendationPreview(urgentFinding ?? result.findings[0])
       ],
       follow_up_questions: ["Explain the top finding.", "Why is the health score low?"],
-      limitations: ["This answer is generated from embedded demo data, not from a live backend response."],
+      limitations: ["This answer is generated from demo data, not from your MESA server."],
       confidence: "HIGH",
       grounded: true,
       source: "mesa-public-demo"
@@ -161,7 +161,7 @@ export function localDemoAIResponse({
       ],
       suggestions: systemScore.recommendations.slice(0, 3),
       follow_up_questions: ["What should I fix first?", "Show me the roadmap."],
-      limitations: ["This explanation comes from embedded example results."],
+      limitations: ["This explanation comes from the demo data."],
       confidence: "HIGH",
       grounded: true,
       source: "mesa-public-demo"
@@ -184,7 +184,7 @@ export function localDemoAIResponse({
       ],
       suggestions: [...latestReport.recommendations],
       follow_up_questions: ["What should I fix first?", "Explain the roadmap order."],
-      limitations: ["The comparison is between two embedded demo scans."],
+      limitations: ["The comparison is between two demo scans."],
       confidence: "HIGH",
       grounded: true,
       source: "mesa-public-demo"
@@ -196,7 +196,7 @@ export function localDemoAIResponse({
       intent: "POLICY_WRITING_ASSISTANCE",
       title: "Demo policy draft",
       answer:
-        "This embedded demo suggests starting with rules for dependency cycles, hard-coded service URLs, and outbound dependency limits.",
+        "This demo suggests starting with rules for dependency cycles, hard-coded service URLs, and outbound dependency limits.",
       evidence: [
         {
           kind: "policy",
@@ -208,7 +208,7 @@ export function localDemoAIResponse({
       ],
       suggestions: [
         "Save the current draft into a live project when the backend is available.",
-        "Keep policy names simple and specific for evaluators."
+        "Keep policy names simple and specific so your team can read them."
       ],
       follow_up_questions: ["Explain governance simply.", "What should I fix first?"],
       limitations: ["Draft generation is static in public demo mode."],
@@ -248,7 +248,7 @@ export function localDemoAIResponse({
       "Compare the two demo scans."
     ],
     follow_up_questions: ["What should I fix first?", "Explain the health score.", "How do I use this demo?"],
-    limitations: ["This answer comes from embedded example results and does not analyze your own repository."],
+    limitations: ["This answer comes from the demo data and does not analyze your own repository."],
     confidence: "HIGH",
     grounded: true,
     source: "mesa-public-demo"
