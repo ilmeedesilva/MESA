@@ -1,5 +1,4 @@
-ARG TARGETPLATFORM=linux/arm64
-FROM --platform=$TARGETPLATFORM python:3.12-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -9,7 +8,8 @@ COPY benchmarks ./benchmarks
 COPY evaluation-results ./evaluation-results
 COPY tests ./tests
 
-RUN pip install --no-cache-dir -e .
+# The API image needs the web API and AI extras; the CLI alone needs neither.
+RUN pip install --no-cache-dir -e ".[api,ai]"
 
 EXPOSE 8000
 
