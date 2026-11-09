@@ -66,6 +66,10 @@ jobs:
         run: npm ci
       - name: Lint and type check
         run: npm run lint
+      # `npm run lint` regenerates src/generated-docs.ts from docs/ first. The
+      # committed copy must match, or the embedded demo docs are out of date.
+      - name: Embedded docs are up to date
+        run: git diff --exit-code -- src/generated-docs.ts || { echo "::error file=frontend/src/generated-docs.ts::Out of date. Run 'node scripts/generate-docs-bundle.mjs' in frontend/ and commit the result."; exit 1; }
       - name: Check formatting
         run: npm run format:check
       - name: Unit tests

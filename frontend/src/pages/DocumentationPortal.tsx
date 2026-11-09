@@ -98,7 +98,7 @@ export function DocumentationPortal({
         <div className="docsQuickLinks">
           <strong>Quick links</strong>
           <div className="docLinks">
-            <DocLinkButton label="Evaluator quick start" onClick={() => onSelectDoc("evaluator-quick-start")} />
+            <DocLinkButton label="Quick start" onClick={() => onSelectDoc("evaluator-quick-start")} />
             <DocLinkButton label="User guide" onClick={() => onSelectDoc("user-guide")} />
             <DocLinkButton label="Demo guide" onClick={() => onSelectDoc("demo-guide")} />
           </div>

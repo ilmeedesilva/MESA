@@ -453,6 +453,10 @@ class InMemoryPersistenceRepository:
         return self.research_records.pop(record_id, None) is not None
 
 
+# Arbitrary constant that identifies MESA's migration lock (ASCII "MESA").
+_MIGRATION_LOCK_ID = 0x4D455341
+
+
 class PostgresPersistenceRepository:
     def __init__(self, dsn: str) -> None:
         self.dsn = dsn
@@ -472,6 +476,11 @@ class PostgresPersistenceRepository:
     def initialize(self) -> None:
         migrations_dir = Path(__file__).parent / "migrations"
         with self._connect() as connection:
+            # One transaction, serialised across processes (several API workers
+            # or a second container) with a transaction-level advisory lock.
+            # Concurrent `CREATE TABLE IF NOT EXISTS` is not safe in PostgreSQL:
+            # it can fail with a UniqueViolation on pg_type.
+            connection.execute("SELECT pg_advisory_xact_lock(%s)", (_MIGRATION_LOCK_ID,))
             for migration_path in sorted(migrations_dir.glob("*.sql")):
                 connection.execute(migration_path.read_text(encoding="utf-8"))
 

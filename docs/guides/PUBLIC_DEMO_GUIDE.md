@@ -6,7 +6,7 @@ This guide explains how to use MESA in public demo mode.
 
 Public demo mode is meant for:
 
-- evaluators
+- people reviewing MESA
 - reviewers
 - first-time visitors
 - anyone who wants to understand MESA without setting up the full backend stack first
@@ -15,13 +15,13 @@ Public demo mode is meant for:
 
 When the live backend is not available, MESA can still load:
 
-- embedded demo scans
+- demo scans
 - findings
 - architecture graph views
 - health scores
 - remediation roadmap
 - scan comparison
-- embedded documentation
+- the built-in documentation
 - a guided tour
 
 ## What Public Demo Mode Does Not Do
@@ -38,7 +38,7 @@ It is a guided example workspace, not a full analysis runtime.
 ## How To Use It
 
 1. Open the frontend.
-2. If the backend is unavailable, MESA automatically loads the embedded demo workspace.
+2. If the backend is unavailable, MESA automatically loads the demo data.
 3. Read the banner at the top to confirm that public demo mode is active.
 4. Review the sample project and scan history.
 5. Start with these areas:
@@ -59,7 +59,7 @@ It is a guided example workspace, not a full analysis runtime.
 5. Switch to the documentation portal.
 6. Read:
 
-- `Evaluator Quick Start`
+- `Quick Start`
 - `Getting Started`
 - `How To Read Findings`
 - `Remediation Roadmap Guide`
@@ -73,7 +73,7 @@ Try these example questions in the AI panel:
 - `Summarize this scan.`
 - `How do I use this tool?`
 
-In public demo mode, the AI panel answers from embedded example data and documentation.
+In public demo mode, the AI panel answers from the demo data and the built-in documentation.
 
 ## How To Leave Demo Mode
 

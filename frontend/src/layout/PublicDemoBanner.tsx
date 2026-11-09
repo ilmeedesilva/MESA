@@ -50,8 +50,8 @@ export function PublicDemoBanner({
         <strong>Live workspace is available</strong>
         <span>
           {isPublicDemoMode
-            ? "The embedded demo workspace is loaded even though the live backend is available."
-            : "You can analyze your own repositories normally, or switch to the embedded public demo examples at any time."}
+            ? "The demo data is loaded even though your MESA server is available."
+            : "You can analyze your own repositories normally, or switch to the demo data at any time."}
         </span>
       </div>
     </section>
