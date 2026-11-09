@@ -25,7 +25,7 @@ npm run build          # production build in dist/
 
 The browser tests in `e2e/` use Playwright. They build the app, serve it locally and open it in
 Chromium with the demo data (no backend, no network). They check that every page fits the
-screen at 390, 768, 1024 and 1440px, the phone menu and tablet sidebar, opening and closing
+screen at 360, 390, 768, 1024 and 1440px, the phone menu and tablet sidebar, opening and closing
 findings, links and the back button, the graph, and accessibility with axe (WCAG 2.2 A and AA;
 any violation fails).
 

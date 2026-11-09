@@ -18,7 +18,7 @@ export const sections = [
 
 export type Section = (typeof sections)[number];
 
-export const widths = [390, 768, 1024, 1440] as const;
+export const widths = [360, 390, 768, 1024, 1440] as const;
 
 /** Phone and tablet widths get touch input; phones also get mobile viewport behaviour. */
 export function deviceFor(width: number) {
