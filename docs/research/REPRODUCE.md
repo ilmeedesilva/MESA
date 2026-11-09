@@ -107,3 +107,12 @@ the per-run and summary scores for every system. The prompt is in
 Later MESA versions change discovery, extraction and matching, and may give different numbers.
 The results in the dissertation and paper always refer to `v0.1.0-research`. Results for later
 versions are stored in their own folders and never overwrite the files above.
+
+Known differences in later versions, measured with `PYTHONHASHSEED=0`:
+
+| Change | Benchmark | Metric | `v0.1.0-research` | Later |
+| --- | --- | --- | --- | --- |
+| Chatty, cyclic and shared-database findings record the file and line of each call or connection setting, so their recommendations list affected files | Seeded | Recommendation usefulness | 0.8558 | 0.8750 |
+
+Detector precision, recall and F1, discovery and explanation scores are unchanged on all four
+benchmarks, and the three real-repository result files are identical.

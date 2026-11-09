@@ -5,7 +5,11 @@ from collections import defaultdict
 import networkx as nx
 
 from mesa.detectors.base import Detector
-from mesa.detectors.evidence import evidence_chain_item, source_files_from_evidence
+from mesa.detectors.evidence import (
+    evidence_chain_item,
+    primary_location_from_evidence,
+    source_files_from_evidence,
+)
 from mesa.models import Finding, FindingType, Severity
 
 
@@ -33,7 +37,7 @@ class ChattyServiceDetector(Detector):
                         {
                             "url": call.get("url"),
                             "method": call.get("method"),
-                            "source": call.get("source"),
+                            "source": call.get("source_location"),
                         }
                         for call in calls
                     ],
@@ -64,7 +68,7 @@ class ChattyServiceDetector(Detector):
                         evidence_chain_item(
                             "collect_api_calls",
                             f"Collected static API call edges from {source} to {target}.",
-                            source=calls[0].get("source") if calls else None,
+                            source=calls[0].get("source_location") if calls else None,
                             data={"call_count": len(calls)},
                         ),
                         evidence_chain_item(
@@ -90,6 +94,7 @@ class ChattyServiceDetector(Detector):
                         "Runtime traces or latency metrics are needed to confirm operational impact.",
                     ],
                     source_files=source_files_from_evidence(evidence),
+                    primary_location=primary_location_from_evidence(evidence),
                     related_services=[source, target],
                     why_valid=(
                         f"MESA found {len(calls)} source-level API call references from {source} "

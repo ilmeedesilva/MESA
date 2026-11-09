@@ -93,6 +93,13 @@ class MessageBrokerConnection(BaseModel):
     source: SourceLocation
 
 
+class FileSize(BaseModel):
+    """A source file and its length, used to point at a service's largest files."""
+
+    file_path: str
+    line_count: int
+
+
 class ServiceFacts(BaseModel):
     name: str
     root_path: str
@@ -106,6 +113,9 @@ class ServiceFacts(BaseModel):
     hard_coded_dependencies: list[HardCodedDependency] = Field(default_factory=list)
     file_count: int = 0
     domain_keywords: list[str] = Field(default_factory=list)
+    # The longest source files (most lines first), so findings about the
+    # service as a whole (God Service) can point at concrete files.
+    largest_files: list[FileSize] = Field(default_factory=list)
 
 
 class HealthScore(BaseModel):
@@ -159,6 +169,10 @@ class Finding(BaseModel):
     # Stable identity across scans (see mesa.fingerprint). Empty in reports
     # written before it existed; comparisons then compute it on the fly.
     fingerprint: str = ""
+    # The single file and line a reviewer should open first. Used for pull
+    # request annotations and SARIF. None only for governance findings about
+    # the whole system.
+    primary_location: SourceLocation | None = None
 
 
 class AnalysisRequest(BaseModel):

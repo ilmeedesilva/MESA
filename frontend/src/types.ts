@@ -39,6 +39,11 @@ export type Finding = {
   source_files?: string[];
   /** Stable identity across scans; empty in reports made before it existed. */
   fingerprint?: string;
+  /** The file and line to open first; null for system-wide governance findings. */
+  primary_location?: {
+    file_path: string;
+    line_number?: number | null;
+  } | null;
   related_services?: string[];
   why_valid?: string;
 };

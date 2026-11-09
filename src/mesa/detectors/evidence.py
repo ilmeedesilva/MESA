@@ -34,6 +34,20 @@ def evidence_chain_item(
     )
 
 
+def primary_location_from_evidence(evidence: list[dict[str, Any]]) -> SourceLocation | None:
+    """The first file:line in the evidence (a file without a line if none has one)."""
+    fallback: SourceLocation | None = None
+    for item in _walk_dicts(evidence):
+        for candidate in (item.get("source"), item):
+            location = source_location_from_dict(candidate)
+            if location is None:
+                continue
+            if location.line_number is not None:
+                return location
+            fallback = fallback or location
+    return fallback
+
+
 def source_files_from_evidence(evidence: list[dict[str, Any]]) -> list[str]:
     files: set[str] = set()
     for item in _walk_dicts(evidence):
