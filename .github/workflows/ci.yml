@@ -49,6 +49,64 @@ jobs:
       - name: Test with coverage floor
         run: pytest --cov=mesa --cov-report=term-missing
 
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install build twine
+          python -m build
+      - name: Check package metadata
+        run: twine check --strict dist/*
+      # Install the wheel alone (no extras) into a clean environment, outside the
+      # repository, and check that the command line works without the API and AI
+      # packages.
+      - name: Core install from the wheel
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -m venv core
+          core/bin/pip install "$GITHUB_WORKSPACE"/dist/*.whl
+          core/bin/python - <<'PY'
+          import importlib.util, sys
+          extras = ["fastapi", "uvicorn", "neo4j", "psycopg", "anthropic"]
+          installed = [name for name in extras if importlib.util.find_spec(name)]
+          sys.exit(f"optional packages in the core install: {installed}" if installed else 0)
+          PY
+          core/bin/mesa-analyzer --version
+          core/bin/mesa scan "$GITHUB_WORKSPACE/demo-projects/myservice-broken" --format json > scan.json
+          core/bin/python -c "import json; s = json.load(open('scan.json'))['summary']; assert s['finding_count'] == 26, s"
+      - name: Install from the sdist
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -m venv from-sdist
+          from-sdist/bin/pip install "$GITHUB_WORKSPACE"/dist/*.tar.gz
+          from-sdist/bin/mesa --version
+
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Builds on GitHub's amd64 runners; nothing is pushed.
+      - name: Build the API image
+        run: docker build --tag mesa-api:ci .
+      - name: Build the frontend image
+        run: docker build --tag mesa-frontend:ci --file frontend/Dockerfile .
+      - name: API image starts
+        run: |
+          docker run --detach --name mesa-api --publish 8000:8000 mesa-api:ci
+          for attempt in $(seq 1 30); do
+            curl --silent --fail http://localhost:8000/health && exit 0
+            sleep 2
+          done
+          docker logs mesa-api
+          exit 1
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest

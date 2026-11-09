@@ -26,6 +26,7 @@ from mesa.models import (
     PolicyRecord,
     Severity,
 )
+from mesa.optional import require
 
 _SEVERITY_WEIGHT = {
     Severity.CRITICAL: 4,
@@ -1533,7 +1534,7 @@ def _anthropic_model() -> str:
 
 
 def _anthropic_client(api_key: str) -> Any:
-    import anthropic
+    anthropic = require("anthropic")
 
     timeout_seconds = float(os.getenv("MESA_ANTHROPIC_TIMEOUT_SECONDS", "60"))
     return anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds, max_retries=1)
@@ -1666,7 +1667,7 @@ def _anthropic_status(*, probe: bool) -> AIExplainerStatus:
             state=AIConnectionState.READY,
             message="Hybrid AI (Claude) appears configured. Probe was skipped.",
         )
-    import anthropic
+    anthropic = require("anthropic")
 
     try:
         _anthropic_client(api_key).models.retrieve(model)

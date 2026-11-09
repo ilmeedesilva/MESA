@@ -30,6 +30,7 @@ import yaml
 from mesa.analysis.explainer import _extract_output_text
 from mesa.analysis.extractor import ANALYZED_TEXT_FILENAMES, ANALYZED_TEXT_SUFFIXES
 from mesa.evaluation.runner import compare_labels
+from mesa.optional import require
 
 _MAX_SOURCE_CHARS_PER_SYSTEM = 60_000
 _FINDING_TYPES = (
@@ -160,7 +161,7 @@ def _call_openai_for_findings(source_bundle: str, api_key: str) -> list[dict[str
 
 
 def _call_anthropic_for_findings(source_bundle: str, api_key: str) -> list[dict[str, Any]]:
-    import anthropic
+    anthropic = require("anthropic")
 
     model = _resolve_model("anthropic")
     timeout_seconds = float(os.getenv("MESA_ANTHROPIC_TIMEOUT_SECONDS", "120"))
