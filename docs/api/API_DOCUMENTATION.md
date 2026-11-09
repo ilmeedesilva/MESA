@@ -26,8 +26,8 @@ Body:
 
 ## Allowed scan roots
 
-`POST /analyze` and `POST /projects/{project_id}/scans` only scan service paths that resolve
-inside an allowed scan root. Paths are resolved first (`..` removed, symlinks followed), so a
+`POST /analyze`, `POST /projects/{project_id}/scans`, and repository previews and scans with a
+`LOCAL_PATH` or `ARCHIVE_PATH` source only read paths that resolve inside an allowed scan root. Paths are resolved first (`..` removed, symlinks followed), so a
 `../` escape or a symlink pointing outside a root is rejected too. A rejected request returns
 `400` and nothing is stored:
 
@@ -41,9 +41,10 @@ inside an allowed scan root. Paths are resolved first (`..` removed, symlinks fo
 | Not set, `MESA_WORKSPACE_ROOT` set | That directory (`/workspace` in the Docker Compose setup) |
 | Neither set | The MESA repository root |
 
-Relative paths are resolved against the API server's working directory. Repository scans
-(`/repo-scans`) are already limited to the repository being scanned. The CLI is not affected:
-it scans paths on your own machine.
+Relative paths are resolved against the API server's working directory. Service paths in a
+repository scan (`/repo-scans`) must also stay inside the repository being scanned. While
+scanning, MESA skips any file reached through a symlink that points outside the service folder.
+The CLI is not affected by the allowed roots: it scans paths on your own machine.
 
 ## Repository Ingestion Preview
 

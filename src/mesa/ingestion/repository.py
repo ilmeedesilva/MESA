@@ -13,6 +13,7 @@ from urllib.request import urlopen
 from uuid import uuid4
 
 from mesa.discovery import discover_service_candidates
+from mesa.ingestion.scan_roots import resolve_allowed_service_path
 from mesa.models import (
     RepoScanPreview,
     RepoScanPreviewRequest,
@@ -143,7 +144,8 @@ def resolve_service_paths(prepared: PreparedRepository, request: RepoScanRunRequ
 
 
 def _prepare_local_directory(location: str, subdirectory: str | None) -> PreparedRepository:
-    root_path = Path(location).expanduser().resolve()
+    # Same rule as /analyze: only directories inside an allowed scan root.
+    root_path = Path(resolve_allowed_service_path(os.path.expanduser(location)))
     if not root_path.exists():
         raise RepositoryPreparationError(f"Local repository path does not exist: {location}")
     if not root_path.is_dir():
@@ -162,7 +164,7 @@ def _prepare_local_directory(location: str, subdirectory: str | None) -> Prepare
 
 
 def _prepare_archive_path(location: str, subdirectory: str | None) -> PreparedRepository:
-    archive_path = Path(location).expanduser().resolve()
+    archive_path = Path(resolve_allowed_service_path(os.path.expanduser(location)))
     if not archive_path.exists():
         raise RepositoryPreparationError(f"Archive path does not exist: {location}")
     if not archive_path.is_file():
@@ -352,13 +354,13 @@ def _apply_subdirectory(root_path: Path, subdirectory: str | None) -> Path:
 
 
 def _resolve_relative_path(root_path: Path, raw_path: str) -> Path:
-    candidate = Path(raw_path)
-    resolved = candidate.resolve() if candidate.is_absolute() else (root_path / candidate).resolve()
-
-    try:
-        resolved.relative_to(root_path)
-    except ValueError as error:
-        raise RepositoryPreparationError(f"Path escapes repository root: {raw_path}") from error
+    real_root = os.path.realpath(root_path)
+    real_path = os.path.realpath(os.path.join(real_root, raw_path))
+    # Prefix check on the fully resolved path (symlinks followed), the form
+    # static analysers recognise as a path-traversal guard.
+    if real_path != real_root and not real_path.startswith(real_root.rstrip(os.sep) + os.sep):
+        raise RepositoryPreparationError(f"Path escapes repository root: {raw_path}")
+    resolved = Path(real_path)
 
     if not resolved.exists():
         raise RepositoryPreparationError(f"Path does not exist inside repository: {raw_path}")
