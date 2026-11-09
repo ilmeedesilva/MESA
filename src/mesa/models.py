@@ -240,12 +240,34 @@ class ArchitectureGateStatus(str, Enum):
     FAILED = "failed"
 
 
+class ArchitectureGateMode(str, Enum):
+    # Fixed thresholds on the whole scan (minimum health, critical count, ...).
+    ABSOLUTE = "absolute"
+    # Only problems introduced since a baseline scan fail the gate.
+    NEW_ONLY = "new-only"
+
+
+SEVERITY_RANK = {
+    Severity.LOW: 0,
+    Severity.MEDIUM: 1,
+    Severity.HIGH: 2,
+    Severity.CRITICAL: 3,
+}
+
+
 class ArchitectureGateThresholds(BaseModel):
+    # Absolute mode is the default so existing API and CLI calls keep their
+    # behaviour. `mesa ci` and the GitHub Action default to new-only.
+    mode: ArchitectureGateMode = ArchitectureGateMode.ABSOLUTE
     minimum_health_score: float = Field(default=75.0, ge=0.0, le=100.0)
     maximum_critical_findings: int = Field(default=0, ge=0)
     allow_new_cyclic_dependencies: bool = False
     allow_governance_violations: bool = False
     allow_new_high_risk_coupling: bool = False
+    # New-only mode: fail when the system health score drops by more than this.
+    max_health_drop: float = Field(default=5.0, ge=0.0, le=100.0)
+    # New-only mode: a new finding at or above this severity fails the gate.
+    fail_on_new_severity: Severity = Severity.HIGH
 
 
 class ArchitectureGateRuleResult(BaseModel):
@@ -266,6 +288,15 @@ class ArchitectureFitnessGateResult(BaseModel):
     thresholds: ArchitectureGateThresholds = Field(default_factory=ArchitectureGateThresholds)
     baseline_scan_id: str | None = None
     source: str = "mesa-architecture-fitness-gate"
+    mode: ArchitectureGateMode = ArchitectureGateMode.ABSOLUTE
+    # Comparison with the baseline; empty and None when there is no baseline.
+    has_baseline: bool = False
+    new_findings: list[Finding] = Field(default_factory=list)
+    fixed_findings: list[Finding] = Field(default_factory=list)
+    unchanged_count: int = 0
+    health_before: float | None = None
+    health_after: float | None = None
+    health_delta: float | None = None
 
 
 class ArchitectureFitnessGateRequest(BaseModel):

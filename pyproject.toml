@@ -78,8 +78,8 @@ extend-immutable-calls = ["typer.Argument", "typer.Option"]
 source = ["mesa"]
 
 [tool.coverage.report]
-# Current level is 79.8%. Raise this as tests are added; never lower it.
-fail_under = 79
+# Current level is 83%. Raise this as tests are added; never lower it.
+fail_under = 82
 show_missing = true
 
 [tool.mypy]
@@ -90,6 +90,7 @@ python_version = "3.10"
 files = [
   "src/mesa/models.py", "src/mesa/analysis", "src/mesa/detectors",
   "src/mesa/fingerprint.py", "src/mesa/file_walk.py", "src/mesa/discovery",
+  "src/mesa/config.py", "src/mesa/scan.py", "src/mesa/ci.py",
 ]
 disallow_untyped_defs = true
 warn_unused_ignores = true

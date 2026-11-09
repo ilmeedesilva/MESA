@@ -805,6 +805,10 @@ def _evaluate_scan_gate(
         if baseline is None:
             raise HTTPException(status_code=404, detail="Baseline scan report not found")
 
+    if thresholds.mode.value == "new-only" and baseline is None:
+        raise HTTPException(
+            status_code=400, detail="New-only mode needs baseline_scan_id to compare with."
+        )
     return evaluate_architecture_gate(
         result,
         thresholds=thresholds,
