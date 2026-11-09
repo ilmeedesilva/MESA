@@ -762,12 +762,13 @@ def _scan_summary_answer(result: AnalysisResult, scores: list[HealthScore]) -> A
         answer_parts.append(
             f"The overall health score is {system_score.score:.1f}/100, graded {system_score.grade.lower()}."
         )
-    if top:
-        answer_parts.append(
-            "The main areas to review first are "
-            + ", ".join(_plain_title(finding).lower() for finding in top[:2])
-            + "."
-        )
+    # Several top findings often share a type ("a hard-coded service dependency,
+    # a hard-coded service dependency"), so name each kind of risk only once.
+    areas = list(dict.fromkeys(_plain_title(finding).lower() for finding in top))[:2]
+    if len(areas) == 1:
+        answer_parts.append(f"The main area to review first is {areas[0]}.")
+    elif areas:
+        answer_parts.append(f"The main areas to review first are {' and '.join(areas)}.")
     return AIExplainerResponse(
         intent=AIExplainerIntent.SCAN_SUMMARY,
         title="Grounded scan summary",
