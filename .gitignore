@@ -24,3 +24,7 @@ dissertation_output/
 # Playwright output
 frontend/playwright-report/
 frontend/test-results/
+
+# Python package builds (python -m build, pip install of the Action folder)
+build/
+dist/

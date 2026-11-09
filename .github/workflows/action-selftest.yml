@@ -1,0 +1,172 @@
+name: Action self-test
+
+# Runs the GitHub Action from this repository (`uses: ./`) against small git
+# repositories built from demo-projects/myservice-fixed, and checks its outputs.
+# Comments are switched off, so nothing is posted anywhere.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selftest:
+    name: Action self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the test repositories
+        id: repos
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global user.name "MESA self-test"
+          git config --global user.email "selftest@example.com"
+          git config --global init.defaultBranch main
+          add_cycle() {
+            printf '\nimport requests\n\n\n@app.get("/orders/{order_id}/customer")\ndef order_customer(order_id: str):\n    return requests.get("http://user-service:8080/users/1").json()\n' >> order-service/app.py
+            printf '\nimport requests\n\n\n@app.get("/users/{user_id}/orders")\ndef user_orders(user_id: str):\n    return requests.get("http://order-service:8080/orders/1").json()\n' >> user-service/app.py
+            git commit --quiet -am "add a cycle"
+          }
+          for name in cycle harmless fix; do
+            repo="$RUNNER_TEMP/$name"
+            cp -R demo-projects/myservice-fixed "$repo"
+            git -C "$repo" init --quiet
+            git -C "$repo" add -A
+            git -C "$repo" commit --quiet -m base
+            (cd "$repo" && add_cycle)
+          done
+          (cd "$RUNNER_TEMP/harmless" && echo "# Demo shop" > README.md && git commit --quiet -am readme)
+          cp demo-projects/myservice-fixed/user-service/app.py "$RUNNER_TEMP/fix/user-service/app.py"
+          git -C "$RUNNER_TEMP/fix" commit --quiet -am "replace the back-call"
+          # A shallow clone without the base commit: the Action must fetch it.
+          git -C "$RUNNER_TEMP/cycle" config uploadpack.allowAnySHA1InWant true
+          git clone --quiet --depth 1 "file://$RUNNER_TEMP/cycle" "$RUNNER_TEMP/shallow"
+          echo "cycle-base=$(git -C "$RUNNER_TEMP/cycle" rev-parse HEAD~1)" >> "$GITHUB_OUTPUT"
+          echo "python-before=$(python3 --version)" >> "$GITHUB_OUTPUT"
+
+      - name: "Case 1: a new cycle fails"
+        id: cycle
+        continue-on-error: true
+        uses: ./
+        with:
+          path: ${{ runner.temp }}/cycle
+          base-ref: HEAD~1
+          comment: "false"
+          artifact-name: selftest-cycle
+
+      - name: "Case 2: a harmless change passes"
+        id: harmless
+        uses: ./
+        with:
+          path: ${{ runner.temp }}/harmless
+          base-ref: HEAD~1
+          comment: "false"
+          artifact-name: selftest-harmless
+
+      - name: "Case 3: removing the back-call shows the cycle as fixed"
+        id: fix
+        uses: ./
+        with:
+          path: ${{ runner.temp }}/fix
+          base-ref: HEAD~1
+          comment: "false"
+          artifact-name: ""
+
+      - name: "Case 4: shallow checkout, base commit fetched by the Action"
+        id: shallow
+        uses: ./
+        with:
+          path: ${{ runner.temp }}/shallow
+          base-ref: ${{ steps.repos.outputs.cycle-base }}
+          comment: "false"
+          fail-on-violation: "false"
+          artifact-name: ""
+
+      - name: "Case 5: no base, absolute mode, report only"
+        id: absolute
+        uses: ./
+        with:
+          path: ${{ runner.temp }}/cycle
+          base-ref: none
+          comment: "false"
+          fail-on-violation: "false"
+          artifact-name: ""
+
+      - name: "Case 6: severity and health limits from inputs; the new cycle still fails"
+        id: lenient
+        continue-on-error: true
+        uses: ./
+        with:
+          path: ${{ runner.temp }}/cycle
+          base-ref: HEAD~1
+          comment: "false"
+          fail-on-new-severity: CRITICAL
+          max-health-drop: "50"
+          artifact-name: ""
+
+      - name: Check the results
+        shell: bash
+        env:
+          CYCLE_OUTCOME: ${{ steps.cycle.outcome }}
+          CYCLE_STATUS: ${{ steps.cycle.outputs.status }}
+          CYCLE_NEW: ${{ steps.cycle.outputs.new-findings }}
+          CYCLE_DELTA: ${{ steps.cycle.outputs.health-delta }}
+          CYCLE_REPORT: ${{ steps.cycle.outputs.report-markdown }}
+          CYCLE_SARIF: ${{ steps.cycle.outputs.report-sarif }}
+          HARMLESS_STATUS: ${{ steps.harmless.outputs.status }}
+          HARMLESS_NEW: ${{ steps.harmless.outputs.new-findings }}
+          FIX_STATUS: ${{ steps.fix.outputs.status }}
+          FIX_FIXED: ${{ steps.fix.outputs.fixed-findings }}
+          FIX_NEW: ${{ steps.fix.outputs.new-findings }}
+          SHALLOW_NEW: ${{ steps.shallow.outputs.new-findings }}
+          SHALLOW_OUTCOME: ${{ steps.shallow.outcome }}
+          ABSOLUTE_STATUS: ${{ steps.absolute.outputs.status }}
+          ABSOLUTE_DELTA: ${{ steps.absolute.outputs.health-delta }}
+          ABSOLUTE_OUTCOME: ${{ steps.absolute.outcome }}
+          LENIENT_OUTCOME: ${{ steps.lenient.outcome }}
+          LENIENT_STATUS: ${{ steps.lenient.outputs.status }}
+          PYTHON_BEFORE: ${{ steps.repos.outputs.python-before }}
+        run: |
+          set -euo pipefail
+          failures=0
+          check() {
+            if [ "$2" = "$3" ]; then
+              echo "ok   $1: $2"
+            else
+              echo "::error::$1: expected '$3', got '$2'"
+              failures=$((failures + 1))
+            fi
+          }
+          check "cycle step fails" "$CYCLE_OUTCOME" failure
+          check "cycle status" "$CYCLE_STATUS" failed
+          check "cycle new findings" "$CYCLE_NEW" 3
+          check "cycle health drops" "$(python3 -c "print(float('$CYCLE_DELTA') < 0)")" True
+          check "comment marker" "$(head -n 1 "$CYCLE_REPORT")" "<!-- mesa-report -->"
+          check "SARIF version" "$(python3 -c "import json; print(json.load(open('$CYCLE_SARIF'))['version'])")" 2.1.0
+          check "harmless status" "$HARMLESS_STATUS" passed
+          check "harmless new findings" "$HARMLESS_NEW" 0
+          check "fix status" "$FIX_STATUS" passed
+          check "fix fixed findings" "$FIX_FIXED" 2
+          check "fix new findings" "$FIX_NEW" 0
+          check "shallow step succeeds" "$SHALLOW_OUTCOME" success
+          check "shallow new findings" "$SHALLOW_NEW" 3
+          check "absolute status" "$ABSOLUTE_STATUS" failed
+          check "absolute has no delta" "$ABSOLUTE_DELTA" ""
+          check "absolute step succeeds (report only)" "$ABSOLUTE_OUTCOME" success
+          check "lenient step still fails on the new cycle" "$LENIENT_OUTCOME" failure
+          check "lenient status" "$LENIENT_STATUS" failed
+          # The Action must not change the job's own Python or install into it.
+          check "job Python unchanged" "$(python3 --version)" "$PYTHON_BEFORE"
+          check "MESA not in the job's Python" "$(python3 -m pip show mesa-analyzer >/dev/null 2>&1 && echo yes || echo no)" no
+          check "temporary base checkouts removed" "$(git -C "$RUNNER_TEMP/cycle" worktree list | wc -l | tr -d ' ')" 1
+          if [ "$failures" -gt 0 ]; then
+            exit 1
+          fi

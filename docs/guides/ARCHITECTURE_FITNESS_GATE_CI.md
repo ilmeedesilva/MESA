@@ -138,9 +138,12 @@ curl -X POST http://localhost:8000/scans/{scan_id}/gate \
   }'
 ```
 
-## GitHub Actions Example
+## GitHub Action
+
+This repository is also a GitHub Action. Add this workflow to a repository with microservices:
 
 ```yaml
+# .github/workflows/architecture.yml
 name: Architecture check
 
 on:
@@ -148,34 +151,70 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write # for the pull request comment
 
 jobs:
   mesa:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: ilmeedesilva/MESA@<commit-sha> # pin a full commit SHA
+```
+
+On every pull request the Action:
+
+1. installs MESA into its own environment (your job's Python is not changed),
+2. scans the pull request and its base commit (it fetches the base commit itself, so
+   `fetch-depth: 0` is not needed),
+3. creates one comment on the pull request and updates it on later pushes,
+4. writes the full report to the job summary and adds annotations for new findings,
+5. uploads `report.md`, `gate.json`, `mesa.sarif` and both scans as the `mesa-reports`
+   artifact,
+6. fails the check when the change adds a problem (new-only mode).
+
+MESA only reads files. It never installs or runs the repository's code, so it is safe for
+pull requests from forks. Their token cannot write comments; the Action then reports in the job
+summary only. Do not use `pull_request_target` for this.
+
+### Inputs
+
+| Input | Default | Meaning |
+| --- | --- | --- |
+| `path` | `.` | Folder to scan (for monorepos). |
+| `config` | (empty) | Config file; empty means `.mesa.yml` in `path`, if present. |
+| `mode` | (config, `new-only`) | `new-only` or `absolute`. |
+| `fail-on-violation` | `true` | `false` reports without failing the check. |
+| `comment` | `true` | Create or update the pull request comment. |
+| `sarif` | `false` | Upload `mesa.sarif` to code scanning (needs `security-events: write`). |
+| `max-health-drop` | (config, `5`) | Largest allowed health score drop. |
+| `fail-on-new-severity` | (config, `HIGH`) | `LOW`, `MEDIUM`, `HIGH` or `CRITICAL`. |
+| `base-ref` | pull request base | Commit to compare with; `none` for absolute mode. |
+| `python-version` | `3.12` | Python used to run MESA. |
+| `artifact-name` | `mesa-reports` | Artifact name; empty skips the upload. |
+| `github-token` | `github.token` | Token for the comment. |
+
+### Outputs
+
+`status` (`passed` or `failed`), `health-score`, `health-delta`, `new-findings`,
+`fixed-findings`, `report-markdown`, `report-json`, `report-sarif`.
+
+On a push (no pull request) the Action scans once with fixed thresholds and posts no comment.
+Use `fail-on-violation: false` there if the main branch has existing problems.
+
+### Without The Action
+
+The same check with the command line:
+
+```yaml
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # the base commit must be available
-
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-
-      - name: Install MESA
-        run: pip install "mesa-analyzer @ git+https://github.com/ilmeedesilva/MESA@main"
-
-      - name: Run architecture check
-        run: mesa ci --base-ref "${{ github.event.pull_request.base.sha }}" --out-dir mesa-out
-
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mesa-reports
-          path: mesa-out/
+      - run: pip install "mesa-analyzer @ git+https://github.com/ilmeedesilva/MESA@<commit-sha>"
+      - run: mesa ci --base-ref "${{ github.event.pull_request.base.sha }}" --out-dir mesa-out
 ```
-
-A ready-made GitHub Action that also comments on the pull request is planned.
 
 ## Example Output
 
