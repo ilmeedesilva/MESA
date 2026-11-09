@@ -12,6 +12,7 @@ from mesa.models import (
     DatabaseConnection,
     Endpoint,
     EnvironmentVariable,
+    FileSize,
     HardCodedDependency,
     LibraryUsage,
     MessageBrokerConnection,
@@ -275,9 +276,12 @@ def extract_service_facts(
         name.lower() for name in (sibling_service_names or set()) if name != root.name
     }
 
+    file_sizes: list[FileSize] = []
     for file_path in iter_files(root):
         if _is_analyzed_text_file(file_path):
             facts.file_count += 1
+        if file_path.suffix in _SOURCE_CODE_SUFFIXES:
+            file_sizes.append(FileSize(file_path=str(file_path), line_count=_line_count(file_path)))
         if file_path.suffix == ".py":
             _extract_python_file(file_path, facts)
         if file_path.name == "requirements.txt":
@@ -317,6 +321,9 @@ def extract_service_facts(
     ]
 
     facts.domain_keywords = _domain_keywords_for(root, facts)
+    facts.largest_files = sorted(file_sizes, key=lambda item: (-item.line_count, item.file_path))[
+        :_LARGEST_FILE_COUNT
+    ]
     if path_base is not None:
         _relativize_sources(facts, Path(path_base).resolve())
     return facts
@@ -335,6 +342,8 @@ def _relativize_sources(facts: ServiceFacts, base: Path) -> None:
     for group in groups:
         for item in group:
             item.source.file_path = relative_source_path(item.source.file_path, base)
+    for file_size in facts.largest_files:
+        file_size.file_path = relative_source_path(file_size.file_path, base)
 
 
 def relative_source_path(file_path: str, base: Path) -> str:
@@ -343,6 +352,18 @@ def relative_source_path(file_path: str, base: Path) -> str:
         return Path(file_path).relative_to(base).as_posix()
     except ValueError:
         return file_path
+
+
+_SOURCE_CODE_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".go"}
+_LARGEST_FILE_COUNT = 3
+
+
+def _line_count(file_path: Path) -> int:
+    try:
+        with file_path.open("rb") as handle:
+            return sum(1 for _ in handle)
+    except OSError:
+        return 0
 
 
 def _stem_matches_other_service(file_path: Path, other_service_names: set[str]) -> bool:

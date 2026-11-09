@@ -25,6 +25,8 @@ def build_graph(services: Iterable[ServiceFacts]) -> nx.MultiDiGraph:
             hard_coded_dependencies=[
                 dependency.model_dump(mode="json") for dependency in service.hard_coded_dependencies
             ],
+            endpoint_sources=[endpoint.source.model_dump() for endpoint in service.endpoints],
+            largest_files=[item.model_dump() for item in service.largest_files],
         )
 
     for service in service_list:

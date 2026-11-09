@@ -5,7 +5,11 @@ from collections import defaultdict
 import networkx as nx
 
 from mesa.detectors.base import Detector
-from mesa.detectors.evidence import evidence_chain_item, source_files_from_evidence
+from mesa.detectors.evidence import (
+    evidence_chain_item,
+    primary_location_from_evidence,
+    source_files_from_evidence,
+)
 from mesa.models import Finding, FindingType, Severity
 
 
@@ -20,7 +24,7 @@ class SharedDatabaseDetector(Detector):
             db_key = graph.nodes[target].get("key", target)
             db_users[db_key].add(source)
             evidence_by_db[db_key].append(
-                {"service": source, "database": db_key, "source": data.get("source")}
+                {"service": source, "database": db_key, "source": data.get("source_location")}
             )
 
         findings: list[Finding] = []
@@ -68,6 +72,7 @@ class SharedDatabaseDetector(Detector):
                         "The detector cannot yet distinguish read-only replicas from shared ownership.",
                     ],
                     source_files=source_files_from_evidence(evidence),
+                    primary_location=primary_location_from_evidence(evidence),
                     related_services=service_list,
                     why_valid=(
                         f"MESA found database usage evidence linking {', '.join(service_list)} "
