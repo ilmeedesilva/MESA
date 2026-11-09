@@ -48,6 +48,21 @@ def primary_location_from_evidence(evidence: list[dict[str, Any]]) -> SourceLoca
     return fallback
 
 
+def earliest_location_from_evidence(evidence: list[dict[str, Any]]) -> SourceLocation | None:
+    """The alphabetically first file:line in the evidence, so the choice does
+    not depend on the order the evidence was collected in."""
+    found: list[SourceLocation] = []
+    for item in _walk_dicts(evidence):
+        for candidate in (item.get("source"), item):
+            location = source_location_from_dict(candidate)
+            if location is not None:
+                found.append(location)
+    with_line = [loc for loc in found if loc.line_number is not None] or found
+    if not with_line:
+        return None
+    return min(with_line, key=lambda loc: (loc.file_path, loc.line_number or 0))
+
+
 def source_files_from_evidence(evidence: list[dict[str, Any]]) -> list[str]:
     files: set[str] = set()
     for item in _walk_dicts(evidence):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import NoReturn
 
@@ -11,7 +12,7 @@ from rich.table import Table
 from mesa import __version__
 from mesa.analysis import analyze_services
 from mesa.analysis.fitness_gate import evaluate_architecture_gate
-from mesa.ci import CIError, render_summary, run_ci
+from mesa.ci import CIError, annotation_lines, render_summary, run_ci
 from mesa.config import ConfigError, MesaConfig, load_config
 from mesa.evaluation import evaluate_benchmark, export_evaluation
 from mesa.evaluation.ai_baseline import export_ai_baseline, run_ai_baseline
@@ -22,6 +23,7 @@ from mesa.models import (
     ArchitectureGateThresholds,
     Severity,
 )
+from mesa.reporting import render_markdown, render_sarif
 from mesa.scan import apply_policies, scan_repository
 
 app = typer.Typer(help="MESA cross-service static architecture analyzer.")
@@ -122,14 +124,18 @@ def gate(
     policy: Path | None = typer.Option(
         None, "--policy", help="Governance policy YAML file (with service paths)."
     ),
-    output_format: str = typer.Option("json", "--format", help="json or text."),
-    output: Path | None = typer.Option(None, "--output", "-o", help="Write gate JSON to file."),
+    output_format: str = typer.Option(
+        "json", "--format", help="json, text, markdown (pull request comment) or sarif."
+    ),
+    output: Path | None = typer.Option(
+        None, "--output", "-o", help="Write the result (in --format, text as JSON) to a file."
+    ),
     fail: bool = typer.Option(
         True, "--fail/--no-fail", help="Exit with code 1 when the gate fails."
     ),
 ) -> None:
     """Check a scan against architecture fitness rules."""
-    _check_choice("--format", output_format, ["json", "text"])
+    _check_choice("--format", output_format, ["json", "text", "markdown", "sarif"])
     if bool(service_paths) == bool(report):
         raise typer.BadParameter("Give either service paths or --report, not both.")
     if report and policy:
@@ -153,11 +159,22 @@ def gate(
     if thresholds.mode == ArchitectureGateMode.NEW_ONLY and baseline is None:
         raise typer.BadParameter("--mode new-only needs --baseline-report.")
     gate_result = evaluate_architecture_gate(result, thresholds=thresholds, baseline=baseline)
-    payload = gate_result.model_dump_json(indent=2)
+    if output_format == "markdown":
+        payload = render_markdown(gate_result, findings=result.findings, version=__version__)
+    elif output_format == "sarif":
+        new_prints = (
+            {f.fingerprint for f in gate_result.new_findings} if gate_result.has_baseline else None
+        )
+        payload = json.dumps(
+            render_sarif(result.findings, version=__version__, new_fingerprints=new_prints),
+            indent=2,
+        )
+    else:
+        payload = gate_result.model_dump_json(indent=2)
     if output:
         output.write_text(payload, encoding="utf-8")
         console.print(f"Wrote gate result to {output}")
-    elif output_format == "json":
+    elif output_format != "text":
         print(payload)
     if output_format == "text":
         _print_gate(gate_result)
@@ -183,6 +200,14 @@ def ci(
         None, "--fail-on-new-severity", help="Override gate.fail_on_new_severity."
     ),
     out_dir: Path = typer.Option(Path("mesa-out"), "--out-dir", help="Folder for the reports."),
+    head_sha: str | None = typer.Option(
+        None, "--head-sha", help="Commit to link file references to (default: HEAD)."
+    ),
+    annotate: bool | None = typer.Option(
+        None,
+        "--annotations/--no-annotations",
+        help="Print GitHub annotations for new findings (default: on in GitHub Actions).",
+    ),
     fail: bool = typer.Option(True, "--fail/--no-fail", help="Exit with code 1 when it fails."),
 ) -> None:
     """Compare the working tree with --base-ref and fail on new architecture problems."""
@@ -205,11 +230,15 @@ def ci(
             out_dir=out_dir,
             base_ref=base_ref or None,
             policy_path=policy,
+            head_sha=head_sha or None,
         )
     except (CIError, ConfigError) as error:
         _fail(str(error))
     console.print(render_summary(result), markup=False, highlight=False)
     console.print(f"Wrote reports to {out_dir}")
+    if annotate if annotate is not None else os.environ.get("GITHUB_ACTIONS") == "true":
+        for line in annotation_lines(result):
+            print(line)
     if fail and result.gate.status.value == "failed":
         raise typer.Exit(1)
 

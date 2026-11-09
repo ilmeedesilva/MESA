@@ -90,7 +90,13 @@ def test_a_new_cycle_fails_with_exactly_the_new_findings(repo: Path, tmp_path: P
     assert gate["fixed_findings"] == []
     locations = {f["primary_location"]["file_path"] for f in gate["new_findings"]}
     assert locations <= {"order-service/app.py", "user-service/app.py"}
-    assert {p.name for p in out.iterdir()} == {"head.json", "base.json", "gate.json", "summary.md"}
+    assert {p.name for p in out.iterdir()} == {
+        "head.json",
+        "base.json",
+        "gate.json",
+        "report.md",
+        "mesa.sarif",
+    }
     # The temporary base checkout is removed again.
     assert len(_git(repo, "worktree", "list").splitlines()) == 1
 
@@ -138,6 +144,41 @@ def test_github_outputs_and_summary(repo: Path, tmp_path: Path, monkeypatch) -> 
     assert values["fixed-findings"] == "0"
     assert float(values["health-delta"]) < 0
     assert "MESA architecture check: FAILED" in summary.read_text("utf-8")
+    assert values["report-sarif"].endswith("mesa.sarif")
+    assert Path(values["report-markdown"]).read_text("utf-8").startswith("<!-- mesa-report -->")
+
+
+def test_annotations_default_on_only_in_github_actions(
+    repo: Path, tmp_path: Path, monkeypatch
+) -> None:
+    _add_cycle(repo)
+    args = ("--base-ref", "HEAD~1", "--no-fail")
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    local = _run(repo, tmp_path / "a", *args)
+    asked = _run(repo, tmp_path / "b", *args, "--annotations")
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    in_actions = _run(repo, tmp_path / "c", *args)
+    switched_off = _run(repo, tmp_path / "d", *args, "--no-annotations")
+
+    assert "::error " not in local.output
+    assert "::error file=" in asked.output
+    assert "title=MESA%3A Cyclic dependency" in asked.output
+    assert "::error file=" in in_actions.output
+    assert "::error " not in switched_off.output
+
+
+def test_links_use_the_github_repository_and_head_sha(
+    repo: Path, tmp_path: Path, monkeypatch
+) -> None:
+    _add_cycle(repo)
+    monkeypatch.setenv("GITHUB_SERVER_URL", "https://github.com")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "octo/shop")
+
+    _run(repo, tmp_path / "out", "--base-ref", "HEAD~1", "--no-fail", "--head-sha", "feed42")
+
+    report = (tmp_path / "out" / "report.md").read_text("utf-8")
+    assert "https://github.com/octo/shop/blob/feed42/order-service/app.py#L" in report
 
 
 def test_without_a_base_it_uses_absolute_mode(repo: Path, tmp_path: Path) -> None:
