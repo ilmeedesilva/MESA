@@ -33,6 +33,13 @@ export function DocumentationPortal({
     }
   }, [filteredDocs, onAutoSelectDoc, selectedDocSlug]);
 
+  const articleRef = React.useRef<HTMLElement | null>(null);
+  // Phones: picking a page from the dropdown shows it straight away, below the top bar.
+  function showDocOnPhone(slug: string) {
+    onSelectDoc(slug);
+    window.requestAnimationFrame(() => articleRef.current?.scrollIntoView?.({ block: "start" }));
+  }
+
   return (
     <section className="docsPortal">
       <aside className="docsSidebar">
@@ -65,6 +72,28 @@ export function DocumentationPortal({
             ))}
           </select>
         </div>
+
+        <label className="docsPhonePicker">
+          <span>Page</span>
+          <select value={selectedDoc.slug} onChange={(event) => showDocOnPhone(event.target.value)}>
+            {docsCategories.map((category) => {
+              const docsInCategory = filteredDocs.filter((doc) => doc.category === category);
+              if (docsInCategory.length === 0) return null;
+              return (
+                <optgroup key={category} label={category}>
+                  {docsInCategory.map((doc) => (
+                    <option key={doc.slug} value={doc.slug}>
+                      {doc.title}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+            {filteredDocs.some((doc) => doc.slug === selectedDoc.slug) ? null : (
+              <option value={selectedDoc.slug}>{selectedDoc.title}</option>
+            )}
+          </select>
+        </label>
 
         <div className="docsQuickLinks">
           <strong>Quick links</strong>
@@ -99,7 +128,7 @@ export function DocumentationPortal({
         </nav>
       </aside>
 
-      <article className="docsArticle">
+      <article className="docsArticle" ref={articleRef}>
         <div className="docsArticleHeader">
           <div>
             <div className="eyebrow">{selectedDoc.category}</div>

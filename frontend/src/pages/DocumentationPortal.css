@@ -209,7 +209,8 @@
 
 @media (max-width: 1320px) {
   .docsPortal {
-    grid-template-columns: 1fr;
+    /* One column that never grows past the page; wide code blocks scroll inside their box. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -225,6 +226,34 @@
   .docsSidebar,
   .docsArticle {
     padding: var(--space-4);
+  }
+}
+
+/* Phones: a dropdown replaces the long list of pages, so a page shows without scrolling past it. */
+.docsPhonePicker {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .docsPhonePicker {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+  }
+
+  .docsPhonePicker span {
+    color: var(--slate-600);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .docsQuickLinks,
+  .docsNav {
+    display: none;
+  }
+
+  .docsArticle {
+    scroll-margin-top: 72px;
   }
 }
 
