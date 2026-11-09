@@ -138,7 +138,7 @@ export function Sidebar({
               <div className="eyebrow">Demo Workspace</div>
               <p>
                 {isPublicDemoMode
-                  ? "You are browsing the embedded evaluator demo."
+                  ? "You are browsing the demo data."
                   : "Load the embedded public demo when you want a safe example project."}
               </p>
             </div>
@@ -147,7 +147,7 @@ export function Sidebar({
               className={isPublicDemoMode ? "secondaryButton sidebarDemoButton" : "sidebarDemoButton"}
               onClick={onToggleDemo}
             >
-              {isPublicDemoMode ? "Return to Live Workspace" : "Load Demo Workspace"}
+              {isPublicDemoMode ? "Connect to your MESA server" : "Load Demo Workspace"}
             </button>
           </>
         ) : (
@@ -155,7 +155,7 @@ export function Sidebar({
             type="button"
             className={isPublicDemoMode ? "secondaryButton sidebarDemoButton compact" : "sidebarDemoButton compact"}
             onClick={onToggleDemo}
-            title={isPublicDemoMode ? "Return to live workspace" : "Load demo workspace"}
+            title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo workspace"}
           >
             Demo
           </button>

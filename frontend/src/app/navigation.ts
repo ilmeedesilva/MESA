@@ -24,7 +24,7 @@ export const appNavigation = [
     ]
   },
   {
-    group: "Research",
+    group: "Benchmarks",
     items: [
       { id: "evaluation", label: "Evaluation", description: "Research evidence and validation" },
       {

@@ -22,7 +22,7 @@ When the live backend is not available, MESA can still load:
 - remediation roadmap
 - scan comparison
 - embedded documentation
-- evaluator walkthrough guidance
+- a guided tour
 
 ## What Public Demo Mode Does Not Do
 
@@ -50,7 +50,7 @@ It is a guided example workspace, not a full analysis runtime.
 - health score panel
 - architecture evolution
 
-## Recommended Evaluator Walkthrough
+## Take The Tour
 
 1. Read the summary strip first.
 2. Open the most urgent finding.
@@ -79,10 +79,10 @@ In public demo mode, the AI panel answers from embedded example data and documen
 
 If the live backend is available, use:
 
-- `Load demo workspace`
-- `Return to live workspace`
+- `Load Demo Workspace`
+- `Connect to your MESA server`
 
-from the top banner to switch between the embedded example view and the live workspace.
+in the Demo Workspace box at the bottom of the sidebar (in the menu on phones) to switch between the demo data and your MESA server.
 
 ## When To Use The Full Stack Instead
 

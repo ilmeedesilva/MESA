@@ -47,7 +47,7 @@ export function DocumentationPortal({
           <div>
             <div className="eyebrow">Documentation Portal</div>
             <h2>Learn MESA from inside the product</h2>
-            <p>{`Search ${docsCatalog.length} pages covering guides, methodology, limitations, API notes, and evaluator walkthroughs.`}</p>
+            <p>{`Search ${docsCatalog.length} pages covering guides, methodology, limitations, API notes, and a guided tour.`}</p>
           </div>
           <button type="button" className="workflowToggle" onClick={onBackToAnalysis}>
             Back to analysis
