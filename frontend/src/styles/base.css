@@ -9,10 +9,6 @@ body {
   font-family: var(--font-sans);
 }
 
-main {
-  min-height: 100vh;
-}
-
 h1,
 h2,
 h3,
@@ -83,7 +79,7 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid var(--blue-200);
+  outline: 2px solid var(--blue-600);
   border-color: var(--blue-600);
 }
 
@@ -170,5 +166,26 @@ a,
   select,
   textarea {
     font-size: 16px;
+  }
+}
+
+/*
+ * Keyboard focus is always visible: a 3px outline in a colour with at least 4.5:1 contrast
+ * against every light background used here. It shows for keyboard focus, not mouse clicks.
+ */
+:focus-visible {
+  outline: 3px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+/* Reduced motion: no slide-in, hover or transition animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

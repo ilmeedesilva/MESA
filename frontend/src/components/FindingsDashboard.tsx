@@ -49,7 +49,11 @@ export function FindingsDashboard({
       </div>
 
       <div className="filters findingsFilters">
-        <select value={filters.type} onChange={(event) => onFilterChange({ ...filters, type: event.target.value })}>
+        <select
+          aria-label="Filter by anti-pattern"
+          value={filters.type}
+          onChange={(event) => onFilterChange({ ...filters, type: event.target.value })}
+        >
           <option value="ALL">All anti-patterns</option>
           {filterOptions.types.map((type) => (
             <option key={type} value={type}>
@@ -58,6 +62,7 @@ export function FindingsDashboard({
           ))}
         </select>
         <select
+          aria-label="Filter by severity"
           value={filters.severity}
           onChange={(event) => onFilterChange({ ...filters, severity: event.target.value })}
         >
@@ -69,6 +74,7 @@ export function FindingsDashboard({
           ))}
         </select>
         <select
+          aria-label="Filter by service"
           value={filters.service}
           onChange={(event) => onFilterChange({ ...filters, service: event.target.value })}
         >
@@ -100,12 +106,17 @@ export function FindingsDashboard({
       {filteredFindings.length > 0 ? (
         <div className="findingsGrid">
           {filteredFindings.map((finding) => (
-            <article key={finding.id} className="findingCard clickable" onClick={() => onSelectFinding(finding)}>
+            <article key={finding.id} className="findingCard clickable">
               <div className="findingMeta">
                 <span>{interpretationMode === "research" ? finding.id : confidenceLabel(finding.confidence)}</span>
                 <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
               </div>
-              <h3>{plainLanguageFindingTitle(finding)}</h3>
+              <h3>
+                {/* The whole card opens the finding: this button's hit area is stretched over it. */}
+                <button type="button" className="findingCardOpen" onClick={() => onSelectFinding(finding)}>
+                  {plainLanguageFindingTitle(finding)}
+                </button>
+              </h3>
               {interpretationMode === "research" ? (
                 <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
               ) : null}
@@ -128,7 +139,7 @@ export function FindingsDashboard({
               <small className="confidenceText">
                 {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%)
               </small>
-              <div className="findingActions" onClick={(event) => event.stopPropagation()}>
+              <div className="findingActions">
                 <button type="button" className="secondaryButton" onClick={() => onAskAI(finding)}>
                   Ask AI
                 </button>

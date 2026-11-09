@@ -11,6 +11,7 @@ import {
   softWrap
 } from "../viewHelpers";
 import type { Finding, InterpretationMode } from "../types";
+import { useModalFocus } from "../hooks/useModalFocus";
 
 export function DimensionBars({ breakdown }: { breakdown: Record<string, number> }) {
   return (
@@ -90,17 +91,37 @@ export function FindingDrawer({
   onAskAI: () => void;
   onClose: () => void;
 }) {
+  const drawerRef = React.useRef<HTMLElement | null>(null);
+  // A modal dialog: Esc closes it, Tab stays inside, the page behind is inert, and focus returns
+  // to the finding card that opened it.
+  useModalFocus({
+    open: true,
+    getContainer: () => drawerRef.current,
+    inertSelectors: [".appFrame", "#app-sidebar", ".mobileBar"],
+    onClose,
+    initialFocusSelector: ".drawerClose"
+  });
+
   return (
-    <div className="drawerOverlay" onClick={onClose}>
-      <aside className="drawer" onClick={(event) => event.stopPropagation()}>
-        <button className="drawerClose" onClick={onClose}>
+    <div className="drawerOverlay">
+      {/* Clicking outside the panel closes it; keyboard users have Esc and the Close button. */}
+      <div className="drawerBackdrop" role="presentation" onClick={onClose} />
+      <aside
+        ref={drawerRef}
+        className="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="finding-drawer-title"
+        tabIndex={-1}
+      >
+        <button type="button" className="drawerClose" onClick={onClose}>
           Close
         </button>
         <div className="findingMeta">
           <span>{finding.id}</span>
           <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
         </div>
-        <h2>{plainLanguageFindingTitle(finding)}</h2>
+        <h2 id="finding-drawer-title">{plainLanguageFindingTitle(finding)}</h2>
         <p className="drawerModeNote">
           {interpretationMode === "beginner"
             ? "Beginner mode focuses on the meaning of the result and the first actions to take."

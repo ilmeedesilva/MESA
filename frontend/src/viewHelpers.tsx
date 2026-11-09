@@ -633,6 +633,21 @@ export function Metric({
   fullDetail?: string;
 }) {
   const [isDetailOpen, setIsDetailOpen] = React.useState(false);
+  const moreButtonRef = React.useRef<HTMLButtonElement | null>(null);
+  const popoverCloseRef = React.useRef<HTMLButtonElement | null>(null);
+  const wasOpenRef = React.useRef(false);
+  // Opening moves focus into the detail; closing (Close, Esc or the toggle) returns it.
+  React.useEffect(() => {
+    if (isDetailOpen) popoverCloseRef.current?.focus();
+    else if (wasOpenRef.current) moreButtonRef.current?.focus();
+    wasOpenRef.current = isDetailOpen;
+    if (!isDetailOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsDetailOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isDetailOpen]);
   const valueLength = String(value).length;
   const valueClassName = [
     "metricValue",
@@ -661,6 +676,7 @@ export function Metric({
       {expandableDetail && fullDetail ? (
         <>
           <button
+            ref={moreButtonRef}
             type="button"
             className="metricMoreButton"
             onClick={() => setIsDetailOpen((current) => !current)}
@@ -672,7 +688,12 @@ export function Metric({
             <div className="metricPopover" role="dialog" aria-label={`${label} detail`}>
               <div className="metricPopoverHeader">
                 <strong>{label}</strong>
-                <button type="button" className="metricPopoverClose" onClick={() => setIsDetailOpen(false)}>
+                <button
+                  ref={popoverCloseRef}
+                  type="button"
+                  className="metricPopoverClose"
+                  onClick={() => setIsDetailOpen(false)}
+                >
                   Close
                 </button>
               </div>

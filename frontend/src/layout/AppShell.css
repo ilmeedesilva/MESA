@@ -18,6 +18,29 @@
   min-width: 0;
 }
 
+/* The page content; a flex column like the frame, so its sections lay out as before. */
+.appMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.appMain:focus {
+  outline: none;
+}
+
+.skipLink {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 70;
+  transform: translateY(-200%);
+}
+
+.skipLink:focus-visible {
+  transform: none;
+}
+
 .workspaceError {
   margin: var(--space-4) var(--space-6) 0;
 }

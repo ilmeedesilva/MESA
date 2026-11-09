@@ -23,10 +23,11 @@ export function InterpretationModeCard({
           <DocLinkButton label="Findings guide" onClick={() => onOpenDoc("findings-guide")} />
         </div>
       </div>
-      <div className="modeToggle" role="tablist" aria-label="Interpretation mode">
+      <div className="modeToggle" role="group" aria-label="Interpretation mode">
         <button
           type="button"
           className={mode === "beginner" ? "modeButton active" : "modeButton"}
+          aria-pressed={mode === "beginner"}
           onClick={() => onChangeMode("beginner")}
         >
           <small>Recommended</small>
@@ -36,6 +37,7 @@ export function InterpretationModeCard({
         <button
           type="button"
           className={mode === "research" ? "modeButton active" : "modeButton"}
+          aria-pressed={mode === "research"}
           onClick={() => onChangeMode("research")}
         >
           <small>Detailed</small>

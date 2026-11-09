@@ -1,3 +1,4 @@
+import React from "react";
 import type { MesaWorkspace } from "../app/useMesaWorkspace";
 import { ArchitectureGraph } from "../components/ArchitectureGraph";
 import { GraphInspector } from "../components/GraphInspector";
@@ -16,6 +17,16 @@ export function GraphPage({ ws }: { ws: MesaWorkspace }) {
     serviceScores,
     openDoc
   } = ws;
+  // Esc closes the details of a clicked element (the bottom sheet on phones).
+  React.useEffect(() => {
+    if (!selectedGraphElement) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedGraphElement(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [selectedGraphElement, setSelectedGraphElement]);
+
   return (
     <section className="contentGrid workspaceGraphGrid">
       <section className="graphPanel dashboardGraph">

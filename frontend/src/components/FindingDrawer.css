@@ -169,6 +169,15 @@
   overflow-wrap: anywhere;
 }
 
+.drawerBackdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.drawer {
+  position: relative;
+}
+
 .drawerOverlay {
   position: fixed;
   inset: 0;

@@ -158,3 +158,51 @@
     flex-direction: column;
   }
 }
+
+/* Finding cards open from anywhere on the card, through the title button. */
+.findingCard.clickable {
+  position: relative;
+}
+
+.findingCardOpen {
+  display: inline;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  text-align: left;
+}
+
+/* No hover lift: a transform would make the button the box for its stretched hit area. */
+.findingCardOpen:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.findingCardOpen::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  content: "";
+}
+
+.findingCardOpen:focus-visible {
+  outline: none;
+}
+
+.findingCard.clickable:has(.findingCardOpen:focus-visible) {
+  outline: 3px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+/* Buttons inside the card sit above the stretched hit area. */
+.findingCard .findingActions,
+.findingCard .findingActions button {
+  position: relative;
+  z-index: 1;
+}

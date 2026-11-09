@@ -70,7 +70,11 @@ export function BenchmarksPanel() {
 
       {benchmarks.length > 0 ? (
         <div className="benchmarksControls">
-          <select value={selectedBenchmarkId} onChange={(event) => setSelectedBenchmarkId(event.target.value)}>
+          <select
+            aria-label="Benchmark"
+            value={selectedBenchmarkId}
+            onChange={(event) => setSelectedBenchmarkId(event.target.value)}
+          >
             {benchmarks.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.benchmark} ({item.system_count} system{item.system_count === 1 ? "" : "s"})

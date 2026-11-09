@@ -95,7 +95,12 @@ export function ArchitectureGraph({
 
   return (
     <div className="graphStage">
-      <div ref={containerRef} className="graph" />
+      <div
+        ref={containerRef}
+        className="graph"
+        role="img"
+        aria-label={`Architecture graph of ${graph?.nodes.filter((node) => (node.type ?? "service") === "service").length ?? 0} services and their dependencies. The same information is listed on the Findings page and in Health Scores.`}
+      />
       <div className="graphControls" role="group" aria-label="Graph zoom">
         <button type="button" onClick={() => zoomBy(1.25)} aria-label="Zoom in" title="Zoom in">
           <Icon name="zoomIn" />

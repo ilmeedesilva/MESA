@@ -74,7 +74,7 @@ describe("hash routing", () => {
     await renderDemoAt("/");
     clickNav("Findings");
 
-    fireEvent.click(document.querySelector(".findingCard")!);
+    fireEvent.click(document.querySelector<HTMLButtonElement>(".findingCardOpen")!);
     const id = drawer()!.querySelector(".findingMeta span")!.textContent!;
     expect(hash()).toBe(`#/findings/${id}`);
 
@@ -92,7 +92,7 @@ describe("hash routing", () => {
     clickNav("Findings");
     const lengthBefore = window.history.length;
 
-    fireEvent.click(document.querySelector(".findingCard")!);
+    fireEvent.click(document.querySelector<HTMLButtonElement>(".findingCardOpen")!);
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
 
     await waitFor(() => expect(drawer()).toBeNull());
@@ -105,7 +105,7 @@ describe("hash routing", () => {
   it("opens a finding from a shared link once the scan has loaded", async () => {
     await renderDemoAt("/");
     clickNav("Findings");
-    fireEvent.click(document.querySelector(".findingCard")!);
+    fireEvent.click(document.querySelector<HTMLButtonElement>(".findingCardOpen")!);
     const id = drawer()!.querySelector(".findingMeta span")!.textContent!;
     cleanup();
 

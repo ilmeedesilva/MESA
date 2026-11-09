@@ -1,8 +1,5 @@
-import React, { type ReactNode } from "react";
-import { useEffectEvent } from "../hooks/useEffectEvent";
-
-const focusableSelector =
-  'a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+import type { ReactNode } from "react";
+import { useModalFocus } from "../hooks/useModalFocus";
 
 /**
  * The page grid: sidebar on the left, the main frame on the right, and an optional overlay (the
@@ -30,64 +27,38 @@ export function AppShell({
   children: ReactNode;
   overlay?: ReactNode;
 }) {
-  const frameRef = React.useRef<HTMLDivElement | null>(null);
-  const closeNav = useEffectEvent(onCloseNav);
-
-  React.useEffect(() => {
-    if (!navOpen) return;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const menu = document.getElementById("app-sidebar");
-    const frame = frameRef.current;
-    frame?.setAttribute("inert", "");
-    const first =
-      menu?.querySelector<HTMLElement>(".sidebarItem.active") ?? menu?.querySelector<HTMLElement>(focusableSelector);
-    first?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeNav();
-        return;
-      }
-      if (event.key !== "Tab" || !menu) return;
-      // Keep keyboard focus inside the menu while it is open.
-      const items = [...menu.querySelectorAll<HTMLElement>(focusableSelector)].filter(
-        (element) => element.offsetParent !== null
-      );
-      if (items.length === 0) return;
-      const firstItem = items[0];
-      const lastItem = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === firstItem) {
-        event.preventDefault();
-        lastItem.focus();
-      } else if (!event.shiftKey && document.activeElement === lastItem) {
-        event.preventDefault();
-        firstItem.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      frame?.removeAttribute("inert");
-      if (opener && document.contains(opener)) opener.focus();
-    };
-  }, [navOpen, closeNav]);
+  // While the phone menu or tablet overlay is open, the rest of the page is inert, Esc closes it
+  // and focus returns to the button that opened it.
+  useModalFocus({
+    open: navOpen,
+    getContainer: () => document.getElementById("app-sidebar"),
+    inertSelectors: [".appFrame", ".mobileBar"],
+    onClose: onCloseNav,
+    initialFocusSelector: ".sidebarItem.active"
+  });
 
   const className = ["appShell", sidebarCollapsed ? "sidebarCollapsed" : "", navOpen ? "navOpen" : ""]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <main className={className}>
+    <div className={className}>
+      {/* First stop for keyboard users: jump past the menu to the page. A button, not a link,
+          because the URL hash is used for routing. */}
+      <button type="button" className="skipLink" onClick={() => document.getElementById("main-content")?.focus()}>
+        Skip to content
+      </button>
       {mobileBar}
       {sidebar}
       {navOpen ? <div className="navBackdrop" onClick={onCloseNav} aria-hidden="true" /> : null}
-      <div className="appFrame" ref={frameRef}>
+      <div className="appFrame">
         {topBar}
-        {children}
+        <main id="main-content" className="appMain" tabIndex={-1}>
+          {children}
+        </main>
       </div>
       {overlay}
-    </main>
+    </div>
   );
 }
 

@@ -58,7 +58,7 @@ export function Sidebar({
       <div className="appSidebarTop">
         <div className="appIdentity">
           {showRail ? (
-            <div className="appIdentityMark" aria-label="MESA">
+            <div className="appIdentityMark" role="img" aria-label="MESA">
               M
             </div>
           ) : (
@@ -117,6 +117,7 @@ export function Sidebar({
                   key={item.id}
                   type="button"
                   className={item.id === currentSection ? "sidebarItem active" : "sidebarItem"}
+                  aria-current={item.id === currentSection ? "page" : undefined}
                   onClick={() => onNavigate(item.id)}
                   title={showRail ? item.label : undefined}
                 >

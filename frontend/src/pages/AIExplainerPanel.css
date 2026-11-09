@@ -196,7 +196,7 @@
 }
 
 .aiDraftActionButton:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline: 3px solid var(--blue-600);
   outline-offset: 2px;
 }
 
