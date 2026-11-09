@@ -34,10 +34,21 @@ mesa ci --base-ref origin/main --out-dir mesa-out
 ```
 
 It finds the services itself (tests, fixtures, examples and docs folders are skipped), scans
-the base commit in a temporary `git worktree` with the same settings, and writes
-`head.json`, `base.json`, `gate.json` and `summary.md` to `mesa-out/`. On GitHub Actions it
-also writes the step summary and the step outputs `status`, `health-score`, `health-delta`,
-`new-findings` and `fixed-findings`.
+the base commit in a temporary `git worktree` with the same settings, and writes to
+`mesa-out/`:
+
+| File | Contents |
+| --- | --- |
+| `report.md` | The pull request comment: new problems with file:line, why they matter and how to fix them; fixed and existing problems collapsed. Stays under GitHub's comment size limit. |
+| `mesa.sarif` | SARIF 2.1.0 for GitHub code scanning (`github/codeql-action/upload-sarif`), so findings show inline on the changed files. |
+| `gate.json` | The full gate result, including every new and fixed finding. |
+| `head.json`, `base.json` | The two scans. |
+
+On GitHub Actions it also writes the job summary (the same report, not shortened), the step
+outputs `status`, `health-score`, `health-delta`, `new-findings`, `fixed-findings`,
+`report-markdown`, `report-sarif` and `report-json`, and annotations for the first ten new
+findings (`--annotations` turns them on elsewhere). File links in the report point at the
+commit given with `--head-sha` (default: the checked-out commit).
 
 Exit codes: `0` passed, `1` the gate failed (use `--no-fail` to only report), `2` a usage or
 configuration error.
@@ -51,7 +62,11 @@ Options: `--path` (folder to scan inside the repository), `--config`, `--policy`
 mesa scan .                      # finds the services and prints the findings
 mesa scan . -o report.json       # JSON report with paths relative to the folder
 mesa gate --report report.json   # check a saved report
+mesa gate --report head.json --baseline-report base.json --mode new-only --format markdown
+mesa gate --report report.json --format sarif -o mesa.sarif
 ```
+
+`--format` is `json` (default), `text`, `markdown` (the pull request comment) or `sarif`.
 
 ## Configuration File (`.mesa.yml`)
 
