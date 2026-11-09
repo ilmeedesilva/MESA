@@ -355,12 +355,16 @@ def _apply_subdirectory(root_path: Path, subdirectory: str | None) -> Path:
 
 def _resolve_relative_path(root_path: Path, raw_path: str) -> Path:
     real_root = os.path.realpath(root_path)
+    root_prefix = real_root.rstrip(os.sep) + os.sep
     real_path = os.path.realpath(os.path.join(real_root, raw_path))
     # Prefix check on the fully resolved path (symlinks followed), the form
-    # static analysers recognise as a path-traversal guard.
-    if real_path != real_root and not real_path.startswith(real_root.rstrip(os.sep) + os.sep):
+    # static analysers (CodeQL) recognise as a path-traversal guard.
+    if real_path == real_root:
+        resolved = Path(real_root)
+    elif real_path.startswith(root_prefix):
+        resolved = Path(real_path)
+    else:
         raise RepositoryPreparationError(f"Path escapes repository root: {raw_path}")
-    resolved = Path(real_path)
 
     if not resolved.exists():
         raise RepositoryPreparationError(f"Path does not exist inside repository: {raw_path}")
