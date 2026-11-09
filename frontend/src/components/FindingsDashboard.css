@@ -1,0 +1,208 @@
+.findingActions {
+  margin-top: var(--space-2-5);
+}
+
+.dashboardFindings {
+  min-width: 0;
+}
+
+.dashboardFindings {
+  overflow: visible;
+  padding: var(--space-4-5);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 14px 32px rgba(148, 163, 184, 0.1);
+}
+
+.findingsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3-5);
+}
+
+.findingsHeaderText h2 {
+  font-size: 16px;
+}
+
+.findingsHeaderText p {
+  margin-top: var(--space-1-5);
+  color: var(--slate-500);
+  font-size: 12px;
+}
+
+.findingsFilters {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  padding: var(--space-3-5);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--white), var(--surface-tint));
+}
+
+.confidenceFilter {
+  margin: 0;
+}
+
+.confidenceFilter input {
+  margin-inline: 0;
+}
+
+.confidenceFilter span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--slate-500);
+  font-size: 11px;
+}
+
+.findingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3-5);
+}
+
+.findingCard {
+  padding: var(--space-4);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, var(--white), #fbfdff);
+  box-shadow: 0 8px 22px rgba(148, 163, 184, 0.08);
+}
+
+.findingCard.clickable {
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.findingCard.clickable:hover {
+  transform: translateY(-1px);
+  border-color: var(--blue-200);
+  box-shadow: 0 16px 28px rgba(148, 163, 184, 0.14);
+}
+
+.findingCard.clickable:hover h3 {
+  color: var(--blue-600);
+}
+
+.findingCard h3 {
+  margin: var(--space-1-5) 0 var(--space-2);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.findingCard p {
+  margin-bottom: var(--space-2);
+  color: var(--slate-700);
+  font-size: 11px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.findingHighlights {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.findingHighlights div {
+  padding: var(--space-2-5) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+}
+
+.findingHighlights strong,
+.findingHighlights span {
+  display: block;
+}
+
+.findingHighlights strong {
+  margin-bottom: var(--space-1);
+  font-size: 11px;
+}
+
+.findingHighlights span {
+  color: var(--slate-600);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.confidenceText {
+  color: var(--slate-500);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+@media (max-width: 1320px) {
+  .dashboardFindings {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 980px) {
+  .findingsFilters,
+  .findingsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboardFindings {
+    padding: var(--space-3-5);
+  }
+
+  .findingsHeader {
+    flex-direction: column;
+  }
+}
+
+/* Finding cards open from anywhere on the card, through the title button. */
+.findingCard.clickable {
+  position: relative;
+}
+
+.findingCardOpen {
+  display: inline;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  text-align: left;
+}
+
+/* No hover lift: a transform would make the button the box for its stretched hit area. */
+.findingCardOpen:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.findingCardOpen::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  content: "";
+}
+
+.findingCardOpen:focus-visible {
+  outline: none;
+}
+
+.findingCard.clickable:has(.findingCardOpen:focus-visible) {
+  outline: 3px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+/* Buttons inside the card sit above the stretched hit area. */
+.findingCard .findingActions,
+.findingCard .findingActions button {
+  position: relative;
+  z-index: 1;
+}

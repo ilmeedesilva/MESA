@@ -1,0 +1,552 @@
+.aiBaselineResults {
+  display: grid;
+  gap: var(--space-4-5);
+  margin-top: var(--space-4);
+  min-width: 0;
+}
+
+.aiBaselineCliHint {
+  display: block;
+  margin: var(--space-2) 0;
+  padding: var(--space-2-5) var(--space-3);
+  background: var(--slate-900);
+  color: var(--slate-200);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.aiBaselineSystem {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  background: var(--white);
+}
+
+.aiBaselineSystemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.aiBaselineSystemHeader strong {
+  font-size: 15px;
+  color: var(--slate-900);
+  margin-right: var(--space-2);
+}
+
+.aiBaselineSystemMeta {
+  color: var(--slate-500);
+  font-size: 12px;
+}
+
+.aiBaselineBadge {
+  display: inline-block;
+  margin-right: var(--space-2);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+.aiBaselineBadge.real {
+  background: var(--blue-100);
+  color: #1e40af;
+}
+
+.aiBaselineBadge.synthetic {
+  background: #f1f5f9;
+  color: var(--slate-600);
+}
+
+.aiBaselineDescription {
+  margin: 0 0 var(--space-3);
+  color: var(--slate-600);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.aiBaselineIntro {
+  margin-top: var(--space-3-5);
+  padding: var(--space-3-5) var(--space-4);
+  border-radius: var(--radius-10);
+  background: var(--blue-50);
+  border: 1px solid var(--blue-200);
+}
+
+.aiBaselineIntro strong {
+  display: block;
+  font-size: 12.5px;
+  color: #1e3a8a;
+  margin-bottom: var(--space-1-5);
+}
+
+.aiBaselineIntro p {
+  margin: 0;
+  color: #1e40af;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.aiBaselineSummary {
+  margin-bottom: var(--space-3-5);
+  padding: var(--space-3) var(--space-3-5);
+  border-radius: var(--radius-10);
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+}
+
+.aiBaselineSummary > strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--slate-600);
+  margin-bottom: var(--space-1-5);
+}
+
+.aiBaselineSummary ul {
+  margin: 0;
+  padding-left: var(--space-4-5);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.aiBaselineSummary li {
+  color: #1e293b;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.aiBaselineCompare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (max-width: 720px) {
+  .aiBaselineCompare {
+    grid-template-columns: 1fr;
+  }
+}
+
+.aiBaselineCompareCol {
+  min-width: 0;
+  padding: var(--space-3) var(--space-3-5);
+  border-radius: var(--radius-10);
+  border: 1px solid var(--slate-200);
+}
+
+.aiBaselineCompareCol.mesa {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.aiBaselineCompareCol.llm {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.aiBaselineCompareLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--slate-600);
+  margin-bottom: var(--space-2);
+}
+
+.aiBaselineStatRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--slate-600);
+  margin-bottom: 3px;
+}
+
+.aiBaselineStatRow span {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--slate-900);
+  min-width: 92px;
+}
+
+.aiBaselineCompareCol.mesa .aiBaselineStatRow span {
+  color: #0f766e;
+}
+
+.aiBaselineCompareCol.llm .aiBaselineStatRow span {
+  color: #c2410c;
+}
+
+.aiBaselineDeterminismNote {
+  margin-top: var(--space-2);
+  font-size: 11.5px;
+  color: var(--slate-500);
+  line-height: 1.5;
+}
+
+.aiBaselineRunStrip {
+  margin-top: var(--space-3-5);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--slate-200);
+}
+
+.aiBaselineRunStripLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate-500);
+  line-height: 1.5;
+  margin-bottom: var(--space-2);
+}
+
+.aiBaselineRunChart {
+  position: relative;
+  padding-top: var(--space-4-5);
+}
+
+.aiBaselineRunReferenceLine {
+  position: absolute;
+  top: 18px;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px dashed #0f766e;
+}
+
+.aiBaselineRunReferenceLine::after {
+  content: "MESA = 1.00, always";
+  position: absolute;
+  right: 0;
+  top: -16px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.aiBaselineRunBars {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3-5);
+  height: 120px;
+  position: relative;
+}
+
+.aiBaselineRunBar {
+  flex: 1 1 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.aiBaselineRunBarValue {
+  font-size: 12px;
+  font-weight: 800;
+  color: #9a3412;
+  font-variant-numeric: tabular-nums;
+}
+
+.aiBaselineRunBarTrack {
+  width: 100%;
+  max-width: 40px;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+  background: #fef3e7;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.aiBaselineRunBarFill {
+  width: 100%;
+  background: #c2410c;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.2s ease;
+}
+
+.aiBaselineRunBarLabel {
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.aiBaselineEvidence {
+  margin-top: var(--space-3-5);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--slate-200);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.aiBaselineEvidence > strong {
+  font-size: 12.5px;
+  color: var(--slate-900);
+}
+
+.aiBaselineEvidenceCard {
+  padding: var(--space-2) var(--space-2-5);
+  border-radius: var(--radius-sm);
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  font-size: 12.5px;
+  color: #7c2d12;
+}
+
+.aiBaselineEvidenceCard code {
+  background: rgba(15, 23, 42, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11.5px;
+}
+
+/* AI baseline: model cards, one-table scoreboard and model tabs */
+
+.aiModelCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.aiModelCard {
+  min-width: 0;
+  padding: var(--space-3-5) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--slate-200);
+  background: var(--white);
+}
+
+.aiModelCard.mesa {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.aiModelCard.top {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.aiModelCard.mid {
+  background: var(--slate-50);
+}
+
+.aiModelCard strong {
+  display: block;
+  font-size: 17px;
+  color: var(--slate-900);
+  margin: var(--space-1) 0 var(--space-1-5);
+}
+
+.aiModelCard p {
+  margin: 0 0 var(--space-1-5);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--slate-700);
+}
+
+.aiModelCardTag {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+}
+
+.aiModelCardMeta {
+  color: var(--slate-600) !important;
+  font-size: 12px !important;
+}
+
+.aiScoreboard {
+  padding: var(--space-4);
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  margin-bottom: var(--space-4);
+  min-width: 0;
+}
+
+.aiScoreboardHead strong {
+  font-size: 16px;
+  color: var(--slate-900);
+}
+
+.aiScoreboardHead p {
+  margin: var(--space-1) 0 var(--space-3);
+  font-size: 13px;
+  color: var(--slate-600);
+  line-height: 1.5;
+}
+
+.aiScoreboardScroll {
+  overflow-x: auto;
+}
+
+.aiScoreboardTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 6px;
+  min-width: 560px;
+}
+
+.aiScoreboardTable thead th {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--slate-600);
+  text-align: center;
+  padding: var(--space-1) var(--space-2);
+}
+
+.aiScoreboardTable thead th:first-child {
+  text-align: left;
+}
+
+.aiScoreboardTable thead th.mesaCol {
+  color: #0f766e;
+}
+
+.aiScoreboardTable tbody th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--slate-900);
+  font-size: 13.5px;
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  white-space: nowrap;
+}
+
+.aiScoreboardSystemName {
+  vertical-align: middle;
+}
+
+.aiScoreCell {
+  text-align: center;
+  padding: var(--space-2-5) var(--space-2);
+  border-radius: var(--radius-10);
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  vertical-align: top;
+}
+
+.aiScoreCell.good {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.aiScoreCell.mixed {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.aiScoreCell.poor {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.aiScoreValue {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--slate-900);
+  line-height: 1.1;
+}
+
+.aiScoreDetail {
+  display: block;
+  font-size: 12px;
+  color: var(--slate-600);
+  margin-top: var(--space-0-5);
+}
+
+.aiScoreConsistency {
+  display: inline-block;
+  margin-top: var(--space-1-5);
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.aiScoreConsistency.consistent {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.aiScoreConsistency.inconsistent {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.aiScoreboardTakeaways {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-4-5);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--slate-700);
+}
+
+.aiModelTabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4-5) 0 var(--space-1);
+}
+
+.aiModelTabsLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--slate-600);
+}
+
+.aiModelTabs button {
+  padding: 7px var(--space-3-5);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--slate-300);
+  background: var(--white);
+  color: var(--slate-700);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.aiModelTabs button.active {
+  background: var(--slate-900);
+  border-color: var(--slate-900);
+  color: var(--white);
+}
+
+@media (max-width: 767.98px) {
+  .aiScoreboardTable tbody th {
+    min-width: 112px;
+    white-space: normal;
+  }
+}
+
+/* WCAG AA contrast (4.5:1): notes on the orange model cards and the run labels under the bars. */
+.aiBaselineDeterminismNote,
+.aiModelCardTag {
+  color: var(--slate-600);
+}
+
+.aiBaselineRunBarLabel {
+  color: var(--slate-500);
+}

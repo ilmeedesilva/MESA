@@ -1,0 +1,133 @@
+.evolutionPanel {
+  padding: var(--space-4);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.evolutionSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2-5);
+}
+
+.evolutionGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.evolutionPrimary,
+.evolutionSecondary {
+  min-width: 0;
+}
+
+.evolutionSecondary {
+  padding: var(--space-3-5);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  background: var(--slate-50);
+}
+
+.evolutionSecondaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2-5);
+  margin-bottom: var(--space-2-5);
+}
+
+.evolutionSecondaryHeader strong {
+  font-size: 13px;
+}
+
+.evolutionSecondaryHeader span {
+  color: var(--slate-500);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.evolutionSummary div {
+  padding: var(--space-3) var(--space-2-5);
+  border-radius: var(--radius-sm);
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+}
+
+.evolutionSummary strong {
+  display: block;
+  color: var(--blue-600);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.evolutionSummary span,
+.evolutionTimeline span,
+.evolutionTimeline small {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--slate-500);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.evolutionSentence {
+  margin-top: var(--space-3);
+  color: var(--slate-600);
+  line-height: 1.45;
+}
+
+.evolutionRecommendations {
+  margin-top: var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
+  border-left: 3px solid var(--blue-600);
+  border-radius: 0 8px 8px 0;
+  background: var(--blue-50);
+}
+
+.evolutionRecommendations strong,
+.evolutionRecommendations span {
+  display: block;
+}
+
+.evolutionRecommendations span {
+  margin-top: var(--space-1);
+  color: var(--slate-600);
+  line-height: 1.45;
+}
+
+.evolutionTimeline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2-5);
+}
+
+.evolutionTimeline article {
+  padding: var(--space-2-5) var(--space-3);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+}
+
+.evolutionTimeline strong {
+  display: block;
+  font-size: 12px;
+}
+
+.evolutionTimeline span,
+.evolutionTimeline small {
+  font-size: 11px;
+}
+
+@media (max-width: 1320px) {
+  .evolutionTimeline {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Four stat cards share a narrow column; slightly smaller labels and side padding keep "dependencies" whole. */
+.evolutionSummary span {
+  font-size: 11px;
+}

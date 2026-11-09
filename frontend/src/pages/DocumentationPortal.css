@@ -1,0 +1,263 @@
+.docsPortal {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.34fr) minmax(0, 0.66fr);
+  gap: var(--space-4-5);
+  padding: var(--space-4-5) var(--space-6) var(--space-6);
+  min-height: calc(100vh - 93px);
+}
+
+.docsSidebar,
+.docsArticle {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-2xl);
+  background: var(--white);
+  box-shadow: 0 16px 36px rgba(148, 163, 184, 0.08);
+}
+
+.docsSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3-5);
+  padding: var(--space-4-5);
+}
+
+.docsSidebarHeader h2,
+.docsArticleHeader h1 {
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.docsSidebarHeader p,
+.docsArticleHeader p {
+  margin-top: var(--space-1-5);
+  color: var(--slate-500);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.docsSearchPanel {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3-5);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: var(--slate-50);
+}
+
+.docsQuickLinks {
+  padding: var(--space-3-5);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--white), var(--surface-tint));
+}
+
+.docsQuickLinks strong {
+  display: block;
+  font-size: 12px;
+}
+
+.docsQuickLinks .docLinks {
+  margin-top: var(--space-2-5);
+}
+
+.docsNav {
+  display: grid;
+  gap: var(--space-3-5);
+  min-height: 0;
+  overflow: auto;
+}
+
+.docsCategoryGroup {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.docsCategoryGroup h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-500);
+}
+
+.docsNavItem {
+  display: grid;
+  gap: 5px;
+  padding: var(--space-3);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  color: var(--slate-900);
+  background: var(--white);
+  box-shadow: none;
+  text-align: left;
+}
+
+.docsNavItem.active {
+  border-color: var(--blue-300);
+  background: var(--blue-50);
+}
+
+.docsNavItem strong {
+  font-size: 13px;
+}
+
+.docsNavItem span {
+  color: var(--slate-500);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.docsArticle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3-5);
+  padding: var(--space-5) var(--space-5-5);
+}
+
+.docsArticleHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.docsArticleHeader code {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: var(--radius-pill);
+  color: var(--blue-700);
+  background: var(--blue-50);
+  font-size: 11px;
+}
+
+.docsTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.docsTags span {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  color: var(--slate-600);
+  background: #f1f5f9;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.docsMarkdown {
+  padding: var(--space-4-5);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-xl);
+  background: #fbfdff;
+}
+
+.docsMarkdown h1,
+.docsMarkdown h2,
+.docsMarkdown h3 {
+  margin-top: var(--space-4-5);
+}
+
+.docsMarkdown h1:first-child,
+.docsMarkdown h2:first-child,
+.docsMarkdown h3:first-child {
+  margin-top: 0;
+}
+
+.docsMarkdown h2 {
+  font-size: 18px;
+}
+
+.docsMarkdown h3 {
+  font-size: 14px;
+}
+
+.docsMarkdown p,
+.docsMarkdown li {
+  color: var(--slate-700);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.docsMarkdown ul,
+.docsMarkdown ol {
+  margin: var(--space-2-5) 0;
+  padding-left: var(--space-5);
+}
+
+.docsMarkdown code {
+  padding: var(--space-0-5) var(--space-1-5);
+  border-radius: 6px;
+  color: var(--blue-700);
+  background: var(--blue-50);
+  font-size: 12px;
+}
+
+.docsPager {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2-5);
+}
+
+.docsPagerButton {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--slate-900);
+  background: var(--slate-50);
+  box-shadow: none;
+  text-align: left;
+}
+
+@media (max-width: 1320px) {
+  .docsPortal {
+    /* One column that never grows past the page; wide code blocks scroll inside their box. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 980px) {
+  .docsArticleHeader,
+  .docsPager {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .docsSidebar,
+  .docsArticle {
+    padding: var(--space-4);
+  }
+}
+
+/* Phones: a dropdown replaces the long list of pages, so a page shows without scrolling past it. */
+.docsPhonePicker {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .docsPhonePicker {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+  }
+
+  .docsPhonePicker span {
+    color: var(--slate-600);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .docsQuickLinks,
+  .docsNav {
+    display: none;
+  }
+
+  .docsArticle {
+    scroll-margin-top: 72px;
+  }
+}
+
+/* WCAG AA contrast (4.5:1) on the tinted background of this state. */
+.docsNavItem.active span {
+  color: var(--slate-600);
+}

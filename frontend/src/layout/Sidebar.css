@@ -1,0 +1,399 @@
+.appSidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 280px;
+  height: 100vh;
+  padding: var(--space-5) var(--space-4) var(--space-4-5);
+  border-right: 1px solid var(--border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.96)),
+    linear-gradient(180deg, var(--white), var(--surface-tint));
+  backdrop-filter: blur(18px);
+  transition:
+    width 220ms ease,
+    padding 220ms ease,
+    box-shadow 220ms ease;
+  overflow: hidden;
+  box-shadow: inset -1px 0 0 rgba(219, 228, 240, 0.8);
+}
+
+.appSidebar.collapsed {
+  width: 88px;
+  padding-inline: var(--space-2);
+}
+
+.appSidebarTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.appIdentity {
+  display: grid;
+  gap: var(--space-1-5);
+  min-width: 0;
+}
+
+.appIdentity h1 {
+  font-size: 26px;
+  letter-spacing: -0.04em;
+}
+
+.appIdentityMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  color: var(--white);
+  background: linear-gradient(135deg, var(--blue-600), var(--blue-700));
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.22);
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.appIdentity p {
+  color: var(--slate-500);
+  font-size: 12px;
+  line-height: 1.55;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.sidebarToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--slate-900), #172554);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.2);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.sidebarToggle span {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  transition: transform 220ms ease;
+}
+
+.sidebarToggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.24);
+}
+
+.sidebarNav {
+  display: grid;
+  gap: var(--space-4-5);
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--space-0-5);
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.sidebarNav::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.sidebarNav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebarNav::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: transparent;
+}
+
+.sidebarNav:hover,
+.appSidebar:focus-within .sidebarNav {
+  scrollbar-color: rgba(148, 163, 184, 0.72) transparent;
+}
+
+.sidebarNav:hover::-webkit-scrollbar-thumb,
+.appSidebar:focus-within .sidebarNav::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.72);
+}
+
+.sidebarFooterAction {
+  display: grid;
+  gap: var(--space-2-5);
+  margin-top: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%),
+    linear-gradient(135deg, var(--white), var(--surface-tint));
+  box-shadow: 0 14px 30px rgba(148, 163, 184, 0.08);
+}
+
+.sidebarFooterAction p {
+  margin: var(--space-1) 0 0;
+  color: var(--slate-500);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.sidebarFooterAction.collapsed {
+  gap: var(--space-2);
+  padding: var(--space-1-5);
+  border-radius: var(--radius-md);
+}
+
+.sidebarDemoButton {
+  width: fit-content;
+  min-height: 36px;
+  padding-inline: var(--space-3-5);
+  border-radius: var(--radius-lg);
+  justify-self: start;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.16);
+}
+
+.sidebarDemoButton.compact {
+  width: 100%;
+  min-height: 38px;
+  padding: 0;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  justify-self: stretch;
+}
+
+.sidebarGroup {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.sidebarGroup h2 {
+  color: var(--slate-500);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebarGroupItems {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.sidebarItem {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  padding: var(--space-3) 13px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  color: var(--slate-900);
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.sidebarItem strong {
+  font-size: 12px;
+}
+
+.sidebarItem span {
+  color: var(--slate-500);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.sidebarItem:hover {
+  border-color: var(--blue-100);
+  background: rgba(239, 246, 255, 0.72);
+  transform: translateX(2px);
+}
+
+.sidebarItem.active {
+  border-color: var(--blue-300);
+  background: linear-gradient(135deg, var(--blue-50), var(--white));
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.12);
+}
+
+.appSidebar.collapsed .sidebarItem {
+  place-items: center;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-1-5);
+  text-align: center;
+}
+
+.appSidebar.collapsed .sidebarItem strong {
+  max-width: 48px;
+  font-size: 9px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.appSidebar.collapsed .appIdentity p,
+.appSidebar.collapsed .sidebarItem span {
+  opacity: 0;
+  transform: translateX(-6px);
+  pointer-events: none;
+}
+
+.appSidebar.collapsed .sidebarGroup h2 {
+  text-align: center;
+}
+
+.appSidebar.collapsed .sidebarToggle span {
+  transform: rotate(180deg);
+}
+
+.sidebarItemIcon {
+  flex: 0 0 auto;
+}
+
+/* In the icon rail the label stays available to screen readers and as a tooltip. */
+.appSidebar.collapsed .sidebarItem strong {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.appSidebar.collapsed .sidebarItem {
+  position: relative;
+  min-height: 48px;
+}
+
+/* The rail is too narrow for the mark and the toggle side by side. */
+.appSidebar.collapsed .appSidebarTop {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sidebarProjectPicker {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--white);
+}
+
+.sidebarProjectPicker label {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.sidebarProjectPicker span {
+  color: var(--slate-500);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Tablet: the full sidebar opens over the page from the icon rail. */
+.appSidebar.overlayOpen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: 280px;
+  height: 100vh;
+  height: 100dvh;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+}
+
+/* Touch layouts: the rail buttons are full-size tap targets. */
+@media (max-width: 1199.98px) {
+  .sidebarToggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .sidebarDemoButton.compact {
+    min-height: 44px;
+  }
+}
+
+/* Phone: the sidebar is a menu that slides in from the left. */
+@media (max-width: 767.98px) {
+  .appSidebar,
+  .appSidebar.overlayOpen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    width: min(320px, 86vw);
+    height: 100vh;
+    height: 100dvh;
+    padding: var(--space-4) var(--space-3-5);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 220ms ease,
+      visibility 220ms ease;
+  }
+
+  .appSidebar.overlayOpen {
+    transform: none;
+    visibility: visible;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  }
+
+  /* The whole menu scrolls; the list keeps its full height. */
+  .sidebarNav {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .sidebarToggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .sidebarItem {
+    min-height: 44px;
+  }
+
+  .sidebarDemoButton {
+    width: 100%;
+    min-height: 44px;
+    justify-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appSidebar {
+    transition: none;
+  }
+}
+
+/* Navigation labels stay whole words; the collapsed rail is redesigned with icons. */
+.sidebarItem strong {
+  overflow-wrap: normal;
+}

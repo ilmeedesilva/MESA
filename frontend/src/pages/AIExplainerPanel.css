@@ -1,0 +1,318 @@
+.aiExplainerPanel {
+  display: grid;
+  gap: var(--space-3-5);
+  padding: var(--space-4-5);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(180deg, var(--white), var(--surface-tint));
+  box-shadow: 0 16px 36px rgba(148, 163, 184, 0.08);
+}
+
+.aiAskPane {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.aiConnectionBanner {
+  display: grid;
+  gap: var(--space-1-5);
+  padding: var(--space-3) var(--space-3-5);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+}
+
+.aiConnectionBanner strong {
+  font-size: 12px;
+}
+
+.aiConnectionBanner span,
+.aiConnectionBanner small {
+  color: var(--slate-500);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.aiConnectionBanner code {
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  color: var(--blue-700);
+  background: rgba(239, 246, 255, 0.9);
+  font-size: 10px;
+}
+
+.aiExplainerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.aiExplainerHeader h2 {
+  font-size: 18px;
+}
+
+.aiExplainerHeader p,
+.aiAnswer,
+.aiEvidenceCard p {
+  color: var(--slate-600);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.aiStatusCard {
+  display: grid;
+  gap: 5px;
+  min-width: 180px;
+  padding: var(--space-3) var(--space-3-5);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--slate-50);
+}
+
+.aiStatusCard strong {
+  font-size: 12px;
+}
+
+.aiStatusCard span {
+  color: var(--slate-500);
+  font-size: 11px;
+}
+
+.aiQuickAction {
+  display: grid;
+  gap: 5px;
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  color: var(--slate-900);
+  background: var(--white);
+  box-shadow: none;
+  text-align: left;
+}
+
+.aiQuickAction strong {
+  font-size: 12px;
+}
+
+.aiQuickAction span {
+  color: var(--slate-500);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.aiQuestionBar {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3-5);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+}
+
+.aiQuestionControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2-5);
+  align-items: center;
+}
+
+.aiQuestionControls button {
+  min-width: 120px;
+}
+
+.aiEmptyState {
+  padding: var(--space-4);
+  border: 1px dashed var(--slate-300);
+  border-radius: var(--radius-lg);
+  color: var(--slate-500);
+  background: var(--white);
+  font-size: 12px;
+}
+
+.aiHelperCard {
+  display: grid;
+  gap: 5px;
+  padding: var(--space-3) var(--space-3-5);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+}
+
+.aiHelperCard strong {
+  font-size: 12px;
+}
+
+.aiHelperCard span {
+  color: var(--slate-500);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.aiResponseCard {
+  display: grid;
+  gap: var(--space-3-5);
+  padding: var(--space-4);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--white);
+}
+
+.aiPolicyDraftCard {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--slate-50);
+}
+
+.aiPolicyDraftHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2-5);
+}
+
+.aiDraftActionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 132px;
+  padding: var(--space-2-5) var(--space-3-5);
+  border: 1px solid var(--blue-600);
+  border-radius: var(--radius-md);
+  color: var(--white);
+  background: linear-gradient(135deg, var(--blue-600), var(--blue-700));
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.24);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.aiDraftActionButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.28);
+}
+
+.aiDraftActionButton:focus-visible {
+  outline: 3px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+.aiPolicyDraftCard pre {
+  overflow: auto;
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--slate-900);
+  color: var(--slate-200);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.aiResponseHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3-5);
+}
+
+.aiResponseHeader h3 {
+  margin-top: var(--space-1);
+  font-size: 15px;
+}
+
+.aiAnswerBadge {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: var(--space-2);
+  padding: 5px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.aiEvidenceCard {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  gap: var(--space-1-5);
+  padding: var(--space-3);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: var(--slate-50);
+}
+
+.aiEvidenceCard small {
+  color: var(--slate-500);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.aiEvidenceCard strong {
+  font-size: 12px;
+}
+
+.aiEvidenceCard code {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--blue-700);
+  background: var(--blue-50);
+  font-size: 10px;
+}
+
+.aiResponseColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3-5);
+}
+
+.aiResponseColumns > div,
+.aiFollowUps {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.aiResponseColumns strong,
+.aiFollowUps strong {
+  font-size: 12px;
+}
+
+.aiList {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: var(--space-4-5);
+  color: var(--slate-600);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 980px) {
+  .aiExplainerHeader,
+  .aiResponseHeader,
+  .aiQuestionControls {
+    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+
+  .aiResponseColumns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .aiExplainerPanel,
+  .aiResponseCard {
+    padding: var(--space-3-5);
+  }
+}

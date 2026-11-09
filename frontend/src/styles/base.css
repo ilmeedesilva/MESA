@@ -1,0 +1,191 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--slate-900);
+  background: #f6f8fb;
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 28px;
+  line-height: 1;
+}
+
+h2 {
+  font-size: 17px;
+}
+
+h3 {
+  font-size: 13px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 9px var(--space-3-5);
+  background: var(--blue-600);
+  color: white;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease,
+    opacity 180ms ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  color: #111827;
+  background: var(--slate-50);
+  font-size: 13px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--blue-600);
+  border-color: var(--blue-600);
+}
+
+textarea {
+  min-height: 190px;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+label {
+  display: block;
+  margin: var(--space-3) 0 7px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.panelBlock,
+.historyPanel,
+.healthPanel,
+aside,
+.graphPanel {
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.panelBlock,
+.healthPanel,
+.historyPanel,
+aside {
+  padding: var(--space-4);
+}
+
+meter {
+  width: 100%;
+}
+
+/*
+ * Text never overflows its box. Long words (service names, IDs) break only when they would
+ * overflow; code labels, links and file paths may break anywhere, which also lets the boxes
+ * around them shrink instead of growing past their container.
+ */
+body {
+  overflow-wrap: break-word;
+}
+
+code,
+a,
+.inlineCode {
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Touch layouts (phone and tablet): controls are at least 44 x 44px, and form text is 16px on
+ * phones so iOS does not zoom in when a field is focused. Desktop sizes are unchanged.
+ */
+@media (max-width: 1199.98px) {
+  button,
+  select,
+  summary,
+  [role="button"],
+  [role="tab"],
+  input:not([type="checkbox"], [type="radio"], [type="hidden"]) {
+    min-height: 44px;
+  }
+
+  button,
+  [role="button"],
+  [role="tab"] {
+    min-width: 44px;
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 767.98px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/*
+ * Keyboard focus is always visible: a 3px outline in a colour with at least 4.5:1 contrast
+ * against every light background used here. It shows for keyboard focus, not mouse clicks.
+ */
+:focus-visible {
+  outline: 3px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+/* Reduced motion: no slide-in, hover or transition animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

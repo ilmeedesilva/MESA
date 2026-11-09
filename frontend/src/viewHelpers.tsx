@@ -4,7 +4,6 @@ import type {
   AIExplainerStatus,
   AggregatedEdge,
   AnalysisResult,
-  AppSection,
   DigitalTwinGraph,
   DisplayGraph,
   Filters,
@@ -634,6 +633,21 @@ export function Metric({
   fullDetail?: string;
 }) {
   const [isDetailOpen, setIsDetailOpen] = React.useState(false);
+  const moreButtonRef = React.useRef<HTMLButtonElement | null>(null);
+  const popoverCloseRef = React.useRef<HTMLButtonElement | null>(null);
+  const wasOpenRef = React.useRef(false);
+  // Opening moves focus into the detail; closing (Close, Esc or the toggle) returns it.
+  React.useEffect(() => {
+    if (isDetailOpen) popoverCloseRef.current?.focus();
+    else if (wasOpenRef.current) moreButtonRef.current?.focus();
+    wasOpenRef.current = isDetailOpen;
+    if (!isDetailOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsDetailOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isDetailOpen]);
   const valueLength = String(value).length;
   const valueClassName = [
     "metricValue",
@@ -662,6 +676,7 @@ export function Metric({
       {expandableDetail && fullDetail ? (
         <>
           <button
+            ref={moreButtonRef}
             type="button"
             className="metricMoreButton"
             onClick={() => setIsDetailOpen((current) => !current)}
@@ -673,7 +688,12 @@ export function Metric({
             <div className="metricPopover" role="dialog" aria-label={`${label} detail`}>
               <div className="metricPopoverHeader">
                 <strong>{label}</strong>
-                <button type="button" className="metricPopoverClose" onClick={() => setIsDetailOpen(false)}>
+                <button
+                  ref={popoverCloseRef}
+                  type="button"
+                  className="metricPopoverClose"
+                  onClick={() => setIsDetailOpen(false)}
+                >
                   Close
                 </button>
               </div>
@@ -862,43 +882,6 @@ export function readProjectIdFromUrl() {
   return params.get("project") ?? "";
 }
 
-export function readSectionFromUrl(): AppSection {
-  const params = new URLSearchParams(window.location.search);
-  const value = params.get("section");
-  if (value === "services" || value === "policies") return "scan";
-  const knownSections = new Set<AppSection>([
-    "overview",
-    "scan",
-    "findings",
-    "graph",
-    "history",
-    "evolution",
-    "roadmap",
-    "gate",
-    "ai",
-    "evaluation",
-    "benchmarks",
-    "ai-baseline",
-    "docs"
-  ]);
-  return value && knownSections.has(value as AppSection) ? (value as AppSection) : "overview";
-}
-
-export function syncAppStateToUrl(projectId: string, section: AppSection, historyMode: "push" | "replace" = "replace") {
-  const url = new URL(window.location.href);
-  if (projectId) {
-    url.searchParams.set("project", projectId);
-  } else {
-    url.searchParams.delete("project");
-  }
-  if (section !== "overview") {
-    url.searchParams.set("section", section);
-  } else {
-    url.searchParams.delete("section");
-  }
-  window.history[historyMode === "push" ? "pushState" : "replaceState"]({}, "", url);
-}
-
 export function resolveProjectSelection(projects: ProjectRecord[], currentProjectId: string, preferredProjectId = "") {
   if (currentProjectId && projects.some((project) => project.id === currentProjectId)) {
     return currentProjectId;
@@ -982,21 +965,46 @@ export function compactMetricDetail(text: string, maxWords: number) {
   return `${words.slice(0, maxWords).join(" ")}...`;
 }
 
+/**
+ * Adds line-break opportunities after separators in code-like text (dots, underscores,
+ * slashes, hyphens, colons and brackets) and between CamelCase parts, so long pointers,
+ * IDs, paths, URLs and class names wrap between their parts instead of at an arbitrary
+ * character.
+ */
+export function withBreakOpportunities(text: string): React.ReactNode[] {
+  return text
+    .split(/(?<=[._/\\:\-\]])|(?<=[a-z])(?=[A-Z])/)
+    .flatMap((piece, index) => (index === 0 ? [piece] : [<wbr key={index} />, piece]));
+}
+
+/** Plain text in which long path- or identifier-like tokens get the same break opportunities. */
+export function softWrap(text: string): React.ReactNode[] {
+  return text
+    .split(/(\s+)/)
+    .map((token, index) =>
+      token.length >= 16 && /[._/\\:-]|[a-z][A-Z]/.test(token) ? (
+        <React.Fragment key={index}>{withBreakOpportunities(token)}</React.Fragment>
+      ) : (
+        token
+      )
+    );
+}
+
 export function renderHighlightedText(text: string) {
   const parts = tokenizeHighlightedText(text);
   return parts.map((part, index) =>
     part.kind === "code" ? (
       <code key={`${part.value}-${index}`} className="inlineCode">
-        {part.value}
+        {withBreakOpportunities(part.value)}
       </code>
     ) : (
-      <React.Fragment key={`${part.value}-${index}`}>{part.value}</React.Fragment>
+      <React.Fragment key={`${part.value}-${index}`}>{softWrap(part.value)}</React.Fragment>
     )
   );
 }
 
 export function tokenizeHighlightedText(text: string) {
-  const pattern = /(https?:\/\/[^\s)]+|\/[^\s,;]+|[a-z0-9]+(?:-[a-z0-9]+){1,}(?=[\s.,;:)])?)/gi;
+  const pattern = /(https?:\/\/[^\s)]+|\/[A-Za-z_.~][^\s,;]*|[a-z0-9]+(?:-[a-z0-9]+){1,}(?=[\s.,;:)])?)/gi;
   const parts: Array<{ kind: "text" | "code"; value: string }> = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;

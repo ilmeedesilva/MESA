@@ -1,0 +1,226 @@
+.appShell {
+  --sidebar-width: 280px;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.07), transparent 28%),
+    linear-gradient(180deg, var(--surface-tint) 0%, #f3f6fb 100%);
+}
+
+.appShell.sidebarCollapsed {
+  --sidebar-width: 88px;
+}
+
+.appFrame {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The page content; a flex column like the frame, so its sections lay out as before. */
+.appMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.appMain:focus {
+  outline: none;
+}
+
+.skipLink {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 70;
+  transform: translateY(-200%);
+}
+
+.skipLink:focus-visible {
+  transform: none;
+}
+
+.workspaceError {
+  margin: var(--space-4) var(--space-6) 0;
+}
+
+.workspaceFrame {
+  display: grid;
+  gap: var(--space-4-5);
+  padding: var(--space-4-5) var(--space-6) var(--space-6);
+  min-width: 0;
+}
+
+.workspaceFrameHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4-5);
+  padding: var(--space-4-5) var(--space-5);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-2xl);
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 34%),
+    linear-gradient(135deg, var(--white), var(--surface-tint));
+  box-shadow: 0 18px 36px rgba(148, 163, 184, 0.08);
+}
+
+.workspaceFrameHeader h2 {
+  font-size: 19px;
+}
+
+.workspaceFrameHeader p {
+  margin-top: var(--space-1-5);
+  color: var(--slate-500);
+  font-size: 12px;
+  line-height: 1.55;
+  max-width: 72ch;
+}
+
+.workspaceContextMeta {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 240px;
+  padding: var(--space-3) var(--space-3-5);
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-lg);
+  background: rgba(239, 246, 255, 0.72);
+}
+
+.workspaceContextMeta span {
+  color: var(--slate-900);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.workspaceBody {
+  min-width: 0;
+}
+
+.workspaceBodyWithRail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 260px);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.workspacePrimaryContent {
+  min-width: 0;
+}
+
+.globalControlBar {
+  padding: var(--space-4) var(--space-6) 0;
+}
+
+/* Layout widths: phone below 768px, tablet 768-1199px, desktop 1200px and up. */
+
+.mobileBar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-1-5) var(--space-3);
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+}
+
+.mobileMenuButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--slate-900), #172554);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+}
+
+.mobileBarTitle {
+  display: grid;
+  min-width: 0;
+}
+
+.mobileBarTitle strong {
+  color: var(--blue-700);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.mobileBarTitle span {
+  overflow: hidden;
+  color: var(--slate-900);
+  font-size: 17px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+/* The frame keeps the second column when the sidebar is lifted out of the grid (tablet overlay). */
+@media (min-width: 768px) {
+  .appFrame {
+    grid-column: 2;
+  }
+}
+
+/* Tablet: the icon rail stays in the grid; its toggle opens the full sidebar over the page. */
+@media (max-width: 1199.98px) {
+  .appShell,
+  .appShell.sidebarCollapsed {
+    --sidebar-width: 88px;
+  }
+
+  .globalControlBar {
+    padding-inline: var(--space-4);
+  }
+
+  .workspaceBodyWithRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Phone: one column under the top bar; the sidebar becomes a slide-in menu. */
+@media (max-width: 767.98px) {
+  .appShell,
+  .appShell.sidebarCollapsed {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+
+  .globalControlBar {
+    padding: var(--space-3) var(--space-3) 0;
+  }
+
+  .workspaceError {
+    margin: var(--space-3) var(--space-3) 0;
+  }
+
+  .workspaceFrame {
+    gap: var(--space-3-5);
+    padding: var(--space-3) var(--space-3) var(--space-5);
+  }
+
+  .workspaceFrameHeader {
+    flex-direction: column;
+    padding: var(--space-3-5);
+  }
+
+  .workspaceContextMeta {
+    width: 100%;
+    min-width: 0;
+  }
+}

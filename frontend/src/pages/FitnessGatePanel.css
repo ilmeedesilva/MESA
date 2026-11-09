@@ -1,0 +1,197 @@
+/* Architecture fitness gate */
+
+.gatePanel {
+  display: grid;
+  gap: var(--space-3-5);
+  padding: var(--space-4);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--white), #fbfdff);
+  box-shadow: 0 8px 24px rgba(148, 163, 184, 0.08);
+}
+
+.gatePanel code {
+  font-size: 12px;
+}
+
+.gateControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.gateControls label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--slate-600);
+  font-size: 12px;
+}
+
+.gateControls input {
+  width: 120px;
+}
+
+.gateVerdict {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(220px, 280px);
+  gap: var(--space-4-5);
+  align-items: center;
+  padding: var(--space-4-5);
+  border-radius: var(--radius-lg);
+  border: 2px solid;
+}
+
+.gateVerdict.passed {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.gateVerdict.failed {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.gateVerdictBadge {
+  padding: var(--space-2-5) var(--space-4-5);
+  border-radius: var(--radius-10);
+  color: var(--white);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.gateVerdict.passed .gateVerdictBadge {
+  background: #16a34a;
+}
+
+.gateVerdict.failed .gateVerdictBadge {
+  background: #dc2626;
+}
+
+.gateVerdictText {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.gateVerdictText strong {
+  font-size: 16px;
+  color: var(--slate-900);
+}
+
+.gateVerdictText span,
+.gateScore span {
+  color: var(--slate-600);
+  font-size: 12px;
+}
+
+.gateScore {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.gateScore strong {
+  font-size: 26px;
+  color: var(--slate-900);
+}
+
+.gateScoreBar {
+  position: relative;
+  height: 10px;
+  margin-top: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--slate-200);
+}
+
+.gateScoreFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--blue-600);
+}
+
+.gateScoreMark {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 18px;
+  background: var(--slate-900);
+}
+
+.gateRules {
+  display: grid;
+  gap: var(--space-2-5);
+}
+
+.gateRule {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) var(--space-3-5);
+  border: 1px solid var(--slate-200);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: var(--white);
+}
+
+.gateRule.passed {
+  border-left-color: #16a34a;
+}
+
+.gateRule.failed {
+  border-left-color: #dc2626;
+  background: #fffafa;
+}
+
+.gateRuleIcon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  color: var(--white);
+  font-weight: 800;
+}
+
+.gateRule.passed .gateRuleIcon {
+  background: #16a34a;
+}
+
+.gateRule.failed .gateRuleIcon {
+  background: #dc2626;
+}
+
+.gateRuleBody strong {
+  font-size: 14px;
+  color: var(--slate-900);
+}
+
+.gateRuleBody p {
+  margin: var(--space-0-5) 0 0;
+  color: var(--slate-700);
+  font-size: 12px;
+}
+
+.gateRuleBody .gateRuleHint {
+  color: var(--slate-500);
+  font-size: 11px;
+}
+
+.gateRuleValues {
+  display: grid;
+  gap: var(--space-0-5);
+  justify-items: end;
+  color: var(--slate-500);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.gateRuleValues b {
+  color: var(--slate-900);
+}
+
+@media (max-width: 860px) {
+  .gateVerdict {
+    grid-template-columns: 1fr;
+  }
+}

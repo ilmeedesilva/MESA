@@ -1,0 +1,93 @@
+.workspaceGraphGrid {
+  align-items: start;
+}
+
+.graphPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.18) 1px, transparent 0), var(--white);
+  background-size: 26px 26px;
+}
+
+.graphHeader {
+  padding: var(--space-4-5) var(--space-4-5) var(--space-2-5);
+}
+
+.graphHeader h2 {
+  font-size: 16px;
+}
+
+.graphHeader p {
+  font-size: 12px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2-5);
+}
+
+.serviceDot,
+.apiDot,
+.databaseDot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-pill);
+  background: var(--blue-600);
+}
+
+.apiDot {
+  border-radius: 3px;
+  background: #059669;
+  transform: rotate(45deg);
+}
+
+.databaseDot {
+  border-radius: 3px;
+  background: #7c3aed;
+}
+
+.riskLine {
+  width: 18px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: #dc2626;
+}
+
+.graphStage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.graphControls {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  gap: var(--space-1-5);
+}
+
+.graphControls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border-soft);
+  color: var(--slate-700);
+  background: var(--white);
+  box-shadow: 0 6px 16px rgba(148, 163, 184, 0.18);
+}
+
+/* Phones and tablets: the graph fits the screen instead of a fixed 720px. */
+@media (max-width: 1199.98px) {
+  .graphStage .graph {
+    min-height: 360px;
+    height: clamp(360px, 60vh, 720px);
+  }
+}

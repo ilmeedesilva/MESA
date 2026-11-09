@@ -1,0 +1,70 @@
+.benchmarksControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-3-5) 0;
+}
+
+.benchmarksControls select {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.benchmarksResults {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+  min-width: 0;
+}
+
+.benchmarksMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-2-5);
+}
+
+.benchmarksMetrics div {
+  min-width: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+}
+
+.benchmarksMetrics strong {
+  display: block;
+  color: var(--blue-600);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.benchmarksMetrics span {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--slate-500);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.benchmarksNotes {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.benchmarksNoteCard {
+  min-width: 0;
+  padding: var(--space-3-5);
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-md);
+  background: var(--slate-50);
+  overflow-wrap: break-word;
+}
+
+.benchmarksNoteCard p {
+  margin: var(--space-2) 0 0;
+  color: var(--slate-600);
+  font-size: 13px;
+  line-height: 1.6;
+}

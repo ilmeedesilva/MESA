@@ -57,7 +57,7 @@ If the live API is unavailable, the UI can still load:
 - embedded demo scans
 - embedded documentation
 - roadmap, graph, and score examples
-- evaluator walkthrough guidance
+- a guided tour
 
 See `docs/guides/PUBLIC_DEMO_GUIDE.md` for the public-demo workflow.
 
