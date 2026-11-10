@@ -33,7 +33,7 @@ export function ExplanationSwitch({
             <span
               key={option.mode}
               className="levelSwitchItem"
-              onMouseEnter={() => setTooltip(option.mode)}
+              onMouseEnter={() => !showHelp && setTooltip(option.mode)}
               onMouseLeave={() => setTooltip(null)}
             >
               <button
@@ -42,11 +42,11 @@ export function ExplanationSwitch({
                 aria-pressed={mode === option.mode}
                 aria-describedby={tipId}
                 onClick={() => onChangeMode(option.mode)}
-                onFocus={() => setTooltip(option.mode)}
+                onFocus={() => !showHelp && setTooltip(option.mode)}
                 onBlur={() => setTooltip(null)}
                 onKeyDown={(event) => {
-                  if (event.key === "Escape" && tooltip) {
-                    // Close the tooltip only; do not also close a menu or dialog around it.
+                  if (event.key === "Escape" && tooltip && !showHelp) {
+                    // Close a visible tooltip only; otherwise Esc does its usual job (closing the menu).
                     event.stopPropagation();
                     setTooltip(null);
                   }

@@ -120,7 +120,10 @@ test.describe("explanation level", () => {
 
     await menuButton.click();
     await levels.getByRole("button", { name: /Technical/ }).click();
+    // Esc on the switch closes the menu (the switch has no tooltip in the menu).
     await page.keyboard.press("Escape");
+    await expect(menu(page)).toBeHidden();
+    await expect(menuButton).toBeFocused();
     await expect(cards.filter({ hasText: /MESA-[A-Z]+-\d+/ }).first()).toBeVisible();
     await expect(page.locator(".findingLocations code").filter({ hasText: /:\d+$/ }).first()).toBeVisible();
 
