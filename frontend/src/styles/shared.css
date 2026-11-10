@@ -1,7 +1,3 @@
-.headerProjectShell {
-  min-width: 360px;
-}
-
 .infoList code {
   display: inline-flex;
   width: fit-content;
@@ -80,24 +76,6 @@
 .hint {
   margin-top: var(--space-1-5);
   color: var(--slate-500);
-}
-
-.toolbarProjectPicker {
-  display: grid;
-  gap: var(--space-1);
-  min-width: 250px;
-  margin: 0;
-}
-
-.toolbarProjectPicker select {
-  min-width: 250px;
-  padding: var(--space-2-5) var(--space-3);
-  border: 1px solid var(--slate-300);
-  border-radius: var(--radius-md);
-  background: var(--white);
-  box-shadow: 0 8px 18px rgba(148, 163, 184, 0.08);
-  font-size: 13px;
-  font-weight: 800;
 }
 
 .eyebrow {
@@ -303,11 +281,6 @@
     grid-template-columns: 1fr;
   }
 
-  .appHeader {
-    flex-direction: column;
-  }
-
-  .headerProjectShell,
   .stepWorkspaceMeta {
     width: 100%;
     min-width: 0;
@@ -315,15 +288,6 @@
 }
 
 @media (max-width: 1180px) {
-  .toolbarProjectShell,
-  .toolbarProjectPicker,
-  .toolbarProjectPicker select,
-  .headerProjectShell {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .appHeaderActions > button,
   .workspaceActionGrid button {
     flex: 1 1 180px;
   }
@@ -873,17 +837,9 @@
 }
 
 @media (max-width: 980px) {
-  .toolbarProjectShell,
   .projectChoiceHeader {
     grid-template-columns: 1fr;
     flex-direction: column;
-  }
-
-  .toolbarProjectPicker,
-  .toolbarProjectPicker select,
-  .toolbarProjectMeta {
-    min-width: 0;
-    width: 100%;
   }
 
   .contentGrid,

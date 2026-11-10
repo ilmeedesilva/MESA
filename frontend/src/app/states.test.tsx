@@ -115,13 +115,15 @@ describe("connection status", () => {
 });
 
 describe("header", () => {
-  it("has no Current page card, and shows the project source only in Technical", async () => {
+  it("has no Current page card, and only the dropdown names the project in either level", async () => {
     await openLive("/?project=project-1#/scan");
     expect(screen.queryByText("Current page")).toBeNull();
     const header = document.querySelector<HTMLElement>(".appHeader")!;
-    expect(header.querySelector(".toolbarProjectPath")).toBeNull();
-    fireEvent.click(within(header).getByRole("button", { name: "Technical" }));
-    expect(header.querySelector(".toolbarProjectPath")).toHaveTextContent("Manual service paths");
+    for (const level of ["Technical", "Simple"]) {
+      fireEvent.click(within(header).getByRole("button", { name: level }));
+      expect(header).not.toHaveTextContent(/available project|Manual service paths/);
+      expect(within(header).getByRole("combobox", { name: "Project" })).toHaveValue("project-1");
+    }
   });
 
   it("describes each level for screen readers and shows it as a tooltip; Esc hides it", async () => {

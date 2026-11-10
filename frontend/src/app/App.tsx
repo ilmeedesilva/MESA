@@ -126,13 +126,11 @@ export function App() {
           selectedProject={selectedProject}
           selectedProjectId={selectedProjectId}
           projectListStatus={ws.projectListStatus}
-          isLoadingProjectState={ws.isLoadingProjectState}
           isPublicDemoMode={ws.isPublicDemoMode}
           onSelectProject={ws.handleTopProjectSelection}
           onCreateProject={ws.openCreateProjectFlow}
           interpretationMode={interpretationMode}
           onChangeInterpretationMode={ws.setInterpretationMode}
-          projectSource={ws.sourceLabel}
         />
       }
       footer={
