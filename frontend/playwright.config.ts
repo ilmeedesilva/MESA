@@ -9,6 +9,8 @@ const port = 4173;
 
 export default defineConfig({
   testDir: "e2e",
+  // The demo site build has its own config (playwright.demo-site.config.ts).
+  testIgnore: "demo-site/**",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,

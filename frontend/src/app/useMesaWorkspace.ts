@@ -53,6 +53,7 @@ import type {
   ScanRecord,
   WorkflowStep
 } from "../types";
+import { isDemoSite } from "../demoSite";
 
 /** The version in a health response ({ "status": "ok", "version": "..." }), or null. */
 async function readHealthVersion(response: Response): Promise<string | null> {
@@ -853,7 +854,7 @@ export function useMesaWorkspace() {
     // Only the newest check may set the status: a slow answer to an older request (for example
     // the first check, sent before MESA knew there was no server) must not replace it.
     const request = ++aiStatusRequest.current;
-    if (isPublicDemoMode && apiAvailability !== "online") {
+    if (isDemoSite || (isPublicDemoMode && apiAvailability !== "online")) {
       setAiStatus({
         mode: "demo",
         state: "GROUNDED_ONLY",
@@ -1040,6 +1041,12 @@ export function useMesaWorkspace() {
   }
 
   async function probeApiAvailability() {
+    if (isDemoSite) {
+      // The demo site never has a server: go straight to the demo data, without a request.
+      setApiAvailability("offline");
+      if (!isPublicDemoMode) activatePublicDemo();
+      return;
+    }
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 2500);
     try {
@@ -1059,6 +1066,7 @@ export function useMesaWorkspace() {
 
   /** Demo data because the server could not be reached: check again, and switch to it when it answers. */
   async function retryServerConnection() {
+    if (isDemoSite) return;
     setServerRetryStatus("checking");
     try {
       const response = await fetch("/api/health");
@@ -1131,6 +1139,7 @@ export function useMesaWorkspace() {
   }
 
   function toggleDemoWorkspace() {
+    if (isDemoSite) return;
     if (isPublicDemoMode) {
       leavePublicDemo();
       return;

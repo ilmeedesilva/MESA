@@ -1,3 +1,5 @@
+import { isDemoSite } from "../demoSite";
+
 export const repositoryUrl = "https://github.com/ilmeedesilva/MESA";
 
 export type ConnectionState = "checking" | "connected" | "demo" | "offline";
@@ -23,7 +25,7 @@ export function AppFooter({
       <span className="footerStatus">
         <span className={`connectionStatus ${connection}`}>
           <i className="statusDot" aria-hidden="true" />
-          {connectionLabels[connection]}
+          {isDemoSite ? "Demo" : connectionLabels[connection]}
         </span>
         <span>{serverVersion && connection === "connected" ? `MESA version ${serverVersion}` : "MESA"}</span>
       </span>

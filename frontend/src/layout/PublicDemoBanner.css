@@ -23,7 +23,8 @@
   min-width: 0;
 }
 
-.statusLine button {
+.statusLine button,
+.statusLine .statusLineLink {
   min-height: 44px;
   padding: 0 var(--space-3);
   border: 0;
@@ -33,6 +34,11 @@
   font-weight: 800;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.statusLine .statusLineLink {
+  display: inline-flex;
+  align-items: center;
 }
 
 @media (max-width: 1180px) {

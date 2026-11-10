@@ -1,3 +1,4 @@
+import { isDemoSite } from "../demoSite";
 import type { ApiAvailability } from "../types";
 
 /**
@@ -19,6 +20,18 @@ export function PublicDemoBanner({
   onRetryServer: () => void;
   onConnectToServer: () => void;
 }) {
+  // The public demo site never has a server, so it does not offer to connect to one.
+  if (isDemoSite) {
+    return (
+      <div className="statusLine demo" role="status">
+        <span>You're viewing a demo with example data. Install MESA to scan your own code.</span>
+        <a className="statusLineLink" href="#/docs/quick-start">
+          Quick start
+        </a>
+      </div>
+    );
+  }
+
   if (usingEmbeddedDemo) {
     return (
       <div className="statusLine warn" role="status">

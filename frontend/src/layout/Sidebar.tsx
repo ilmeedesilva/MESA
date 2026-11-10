@@ -1,3 +1,4 @@
+import { isDemoSite } from "../demoSite";
 import { appNavigation } from "../app/navigation";
 import { ExplanationSwitch } from "../components/ExplanationSwitch";
 import { Icon } from "../components/icons";
@@ -137,36 +138,39 @@ export function Sidebar({
         ))}
       </nav>
 
-      <section className={showRail ? "sidebarFooterAction collapsed" : "sidebarFooterAction"}>
-        {!showRail ? (
-          <>
-            <div>
-              <div className="eyebrow">Try it with demo data</div>
-              <p>
-                {isPublicDemoMode
-                  ? "You are browsing the demo data."
-                  : "Load the demo data when you want a safe example project."}
-              </p>
-            </div>
+      {/* The public demo site only has demo data: there is no server to switch to. */}
+      {!isDemoSite ? (
+        <section className={showRail ? "sidebarFooterAction collapsed" : "sidebarFooterAction"}>
+          {!showRail ? (
+            <>
+              <div>
+                <div className="eyebrow">Try it with demo data</div>
+                <p>
+                  {isPublicDemoMode
+                    ? "You are browsing the demo data."
+                    : "Load the demo data when you want a safe example project."}
+                </p>
+              </div>
+              <button
+                type="button"
+                className={isPublicDemoMode ? "secondaryButton sidebarDemoButton" : "sidebarDemoButton"}
+                onClick={onToggleDemo}
+              >
+                {isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              className={isPublicDemoMode ? "secondaryButton sidebarDemoButton" : "sidebarDemoButton"}
+              className={isPublicDemoMode ? "secondaryButton sidebarDemoButton compact" : "sidebarDemoButton compact"}
               onClick={onToggleDemo}
+              title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
             >
-              {isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
+              Demo
             </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            className={isPublicDemoMode ? "secondaryButton sidebarDemoButton compact" : "sidebarDemoButton compact"}
-            onClick={onToggleDemo}
-            title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
-          >
-            Demo
-          </button>
-        )}
-      </section>
+          )}
+        </section>
+      ) : null}
     </aside>
   );
 }

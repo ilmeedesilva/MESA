@@ -18,7 +18,10 @@
     "pretest": "node scripts/generate-docs-bundle.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install --with-deps chromium"
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "build:demo-site": "node scripts/generate-docs-bundle.mjs && tsc && MESA_BASE_PATH=/MESA/ VITE_MESA_DEMO_SITE=true vite build --outDir dist-demo-site",
+    "preview:demo-site": "MESA_BASE_PATH=/MESA/ vite preview --outDir dist-demo-site",
+    "test:e2e:demo-site": "playwright test --config playwright.demo-site.config.ts"
   },
   "dependencies": {
     "cytoscape": "^3.34.4",

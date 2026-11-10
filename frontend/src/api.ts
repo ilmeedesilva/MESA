@@ -1,3 +1,4 @@
+import { demoSiteActionMessage, isDemoSite } from "./demoSite";
 import type { AIExplainerResponse, PersistedScanResult, ScanJobRecord } from "./types";
 
 export class ApiError extends Error {
@@ -12,6 +13,8 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  // The demo site has no server: say so instead of sending a request that can only fail.
+  if (isDemoSite) throw new Error(demoSiteActionMessage);
   const response = await fetch(path, init);
   if (!response.ok) {
     const detail = await readApiErrorDetail(response);
@@ -55,6 +58,7 @@ export async function streamAIResponse(
   payload: Record<string, unknown>,
   onDelta: (chunk: string) => void
 ): Promise<AIExplainerResponse> {
+  if (isDemoSite) throw new Error(demoSiteActionMessage);
   const response = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

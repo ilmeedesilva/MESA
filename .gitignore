@@ -10,6 +10,7 @@ htmlcov/
 node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/dist-demo-site/
 
 .DS_Store
 .env
@@ -24,6 +25,8 @@ dissertation_output/
 # Playwright output
 frontend/playwright-report/
 frontend/test-results/
+frontend/playwright-report-demo-site/
+frontend/test-results-demo-site/
 
 # Python package builds (python -m build, pip install of the Action folder)
 build/
