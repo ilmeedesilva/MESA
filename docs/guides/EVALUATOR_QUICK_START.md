@@ -1,10 +1,10 @@
-# MESA Quick Start
+# MESA quick start
 
 ## Purpose
 
 This page is the fastest way to understand what MESA is, how to try it, and how to read its results.
 
-## What MESA Is
+## What MESA is
 
 MESA is an explainable microservice architecture analysis platform. It performs static, deterministic analysis of repository structure and service relationships, then presents:
 
@@ -15,7 +15,7 @@ MESA is an explainable microservice architecture analysis platform. It performs 
 - recommendations
 - scan history and evolution
 
-## First Steps
+## First steps
 
 1. Open the application UI.
 2. Review the guided workflow.
@@ -24,7 +24,7 @@ MESA is an explainable microservice architecture analysis platform. It performs 
 5. Switch to `Technical` to see finding IDs, rules, exact file locations and raw evidence.
 6. Open the documentation for scanning guides, how to read results, and the API reference.
 
-## What To Inspect First
+## What to inspect first
 
 - `Findings`
   - confirms whether MESA detected meaningful architecture risks
@@ -35,18 +35,18 @@ MESA is an explainable microservice architecture analysis platform. It performs 
 - `History`
   - shows how architecture changed across scans
 
-## What Makes MESA Credible
+## What makes MESA credible
 
 - detection remains deterministic
 - results are evidence-based
 - AI explanation is treated as a layer above detector output, not as the detector itself
 - findings expose confidence and limitations
 
-## Important Limitation
+## Important limitation
 
 MESA performs static analysis only. It does not execute repository code and does not claim runtime truth.
 
-## Suggested Reading
+## Suggested reading
 
 - `Getting started`
 - `Findings`

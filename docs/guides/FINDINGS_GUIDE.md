@@ -1,6 +1,6 @@
-# How To Read Findings
+# How to read findings
 
-## Reading Order
+## Reading order
 
 For each finding, read the result in this order:
 
@@ -13,14 +13,14 @@ For each finding, read the result in this order:
 7. evidence
 8. limitation
 
-## Severity vs Confidence
+## Severity vs confidence
 
 - `Severity` describes likely architectural impact.
 - `Confidence` describes how strongly detector evidence supports the finding.
 
 These are not the same thing.
 
-## Evidence vs Inference
+## Evidence vs inference
 
 MESA separates:
 
@@ -29,7 +29,7 @@ MESA separates:
 - `inference`
   - what that observation likely means architecturally
 
-## Explanation Levels
+## Explanation levels
 
 Switch with the `Simple | Technical` control in the top bar (in the menu on phones). Your browser remembers the choice.
 
@@ -49,7 +49,7 @@ Use `Technical` when you want everything in `Simple`, plus:
 - the exact file:line locations
 - the evidence steps, recommendation source and raw evidence
 
-## What A Finding Does Not Prove
+## What a finding does not prove
 
 A finding is a strong static signal, not a complete runtime truth claim. Always distinguish:
 

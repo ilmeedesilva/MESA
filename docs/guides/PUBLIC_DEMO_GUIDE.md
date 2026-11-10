@@ -1,4 +1,4 @@
-# Public Demo Guide
+# Public demo guide
 
 ## Purpose
 
@@ -11,7 +11,7 @@ Demo data is meant for:
 - first-time visitors
 - anyone who wants to understand MESA without setting up the full backend stack first
 
-## What The Demo Data Includes
+## What the demo data includes
 
 When your MESA server is not available, MESA can still load:
 
@@ -24,7 +24,7 @@ When your MESA server is not available, MESA can still load:
 - the built-in documentation
 - a guided tour
 
-## What The Demo Data Does Not Do
+## What the demo data does not do
 
 With demo data, MESA does not:
 
@@ -35,7 +35,7 @@ With demo data, MESA does not:
 
 It is a guided example workspace, not a full analysis runtime.
 
-## How To Use It
+## How to use it
 
 1. Open the frontend.
 2. If the backend is unavailable, MESA automatically loads the demo data.
@@ -50,7 +50,7 @@ It is a guided example workspace, not a full analysis runtime.
 - health score panel
 - architecture evolution
 
-## Take The Tour
+## Take the tour
 
 1. Read the summary strip first.
 2. Open the most urgent finding.
@@ -64,7 +64,7 @@ It is a guided example workspace, not a full analysis runtime.
 - `Findings`
 - `Roadmap`
 
-## Best Questions To Ask In Demo Mode
+## Best questions to ask in demo mode
 
 Try these example questions in the AI panel:
 
@@ -75,7 +75,7 @@ Try these example questions in the AI panel:
 
 With demo data, the AI Explainer answers from the demo data and the built-in documentation.
 
-## How To Leave Demo Mode
+## How to leave demo mode
 
 If your MESA server is available, use:
 
@@ -84,7 +84,7 @@ If your MESA server is available, use:
 
 in the "Try it with demo data" box at the bottom of the sidebar (in the menu on phones) to switch between the demo data and your MESA server.
 
-## When To Use The Full Stack Instead
+## When to use the full stack instead
 
 Use the full backend stack when you want to:
 

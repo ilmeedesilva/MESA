@@ -1,4 +1,4 @@
-# Public Repo Scan Guide
+# Public repo scan guide
 
 ## Goal
 
@@ -15,7 +15,7 @@ This guide explains how to scan a public repository using MESA without manually 
 7. Keep the services you want to analyze.
 8. Run the repository-backed scan.
 
-## What Preview Discovery Does
+## What preview discovery does
 
 Preview discovery tries to identify likely service boundaries before the full scan runs. It shows:
 
@@ -25,7 +25,7 @@ Preview discovery tries to identify likely service boundaries before the full sc
 - confidence
 - reasons for selection
 
-## When To Be Careful
+## When to be careful
 
 Review the candidate list more carefully when:
 
@@ -33,7 +33,7 @@ Review the candidate list more carefully when:
 - orchestration files exist but service entrypoints are weak
 - services share folders or are nested deeply
 
-## Recommended Interpretation
+## Recommended interpretation
 
 - high-confidence candidates are usually good defaults
 - medium-confidence candidates should be reviewed manually

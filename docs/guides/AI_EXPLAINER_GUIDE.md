@@ -1,6 +1,6 @@
-# AI Explainer Guide
+# AI explainer guide
 
-## Current Status
+## Current status
 
 The AI explainer is available inside the MESA app in two ways:
 
@@ -15,7 +15,7 @@ It works on top of:
 - governance policies
 - local MESA documentation
 
-## Intended Role
+## Intended role
 
 The AI explainer is meant to help users:
 
@@ -26,7 +26,7 @@ The AI explainer is meant to help users:
 - understand health scores
 - navigate MESA documentation
 
-## Important Rule
+## Important rule
 
 AI explanation does not replace deterministic detection.
 
@@ -37,7 +37,7 @@ The design is:
 - AI distinguishes evidence from inference
 - AI responses expose supporting evidence, suggestions, and limitations
 
-## Available Actions
+## Available actions
 
 The current explainer supports:
 
@@ -49,7 +49,7 @@ The current explainer supports:
 - governance policy help
 - documentation question answering
 
-## Built-in Explanations vs AI
+## Built-in explanations vs AI
 
 Built-in explanations:
 
@@ -64,7 +64,7 @@ AI explanations:
 - keep MESA's evidence cards as the source of truth
 - fall back to the built-in explanation if the AI request fails
 
-## What Is Sent
+## What is sent
 
 With AI off (the default), nothing is sent anywhere: explanations are built on your MESA server.
 
@@ -73,7 +73,7 @@ contains your question and MESA's own explanation and evidence for it: finding d
 service names, file paths, scores and, for documentation questions, short excerpts of the MESA
 docs. Your source files are not sent.
 
-## How To Turn On AI
+## How to turn on AI
 
 Create a local `.env` file from `.env.example`, then set one of these.
 
@@ -106,7 +106,7 @@ Docker Compose reads those values automatically through the `${...}` mappings in
 
 If AI is not turned on, or no API key is configured, MESA uses its built-in explanations.
 
-## What The App Shows
+## What the app shows
 
 The AI Explainer page shows one status line:
 
@@ -116,7 +116,7 @@ The AI Explainer page shows one status line:
 
 Each answer has a small `MESA` or `AI` label. The detailed source is shown in `Technical`.
 
-## How To Use It
+## How to use it
 
 1. Run or load a scan.
 2. Open the `AI Explainer` panel in the analysis workspace.
@@ -128,10 +128,10 @@ Each answer has a small `MESA` or `AI` label. The detailed source is shown in `T
    - the limitations
    - the `MESA` or `AI` label on the answer
 
-## What The AI Does Not Change
+## What the AI does not change
 
 Findings always come from MESA's deterministic analysis, with or without AI. The AI only explains those findings in clearer words; it is instructed not to invent claims the evidence does not support.
 
-## Current Limitation
+## Current limitation
 
 AI explanations are evidence-bounded by design. It does not let the model generate detector facts independently, and it does not execute repository code.

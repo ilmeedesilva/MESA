@@ -1,10 +1,10 @@
-# MESA User Guide
+# MESA user guide
 
-## What MESA Does
+## What MESA does
 
 MESA analyzes multiple microservice directories and reports architectural anti-patterns, health scores, recommendations, governance policy violations, and architecture evolution.
 
-## Start the App
+## Start the app
 
 ```bash
 docker compose up --build
@@ -22,7 +22,7 @@ Neo4j development credentials:
 neo4j / mesa-password
 ```
 
-## Run a Scan in the UI
+## Run a scan in the UI
 
 1. Open `http://localhost:5173`.
 2. Follow the guided workflow at the top of the page.
@@ -56,7 +56,7 @@ neo4j / mesa-password
 8. Review findings, graph, health scores, evolution, and recommendations.
 9. Open the `Roadmap` page to see grouped fixes in suggested order.
 
-## Read Results More Easily
+## Read results more easily
 
 MESA can explain findings at two levels of detail.
 
@@ -85,7 +85,7 @@ Use `Technical` when:
 - comparing evidence quality across findings
 - fixing the problem in code
 
-## How to Interpret a Finding
+## How to interpret a finding
 
 Each finding now has a clearer structure in the drawer:
 
@@ -106,7 +106,7 @@ Recommended reading order:
 6. Read the first refactoring step before planning changes.
 7. Read `What this does not prove` to avoid over-interpreting the result.
 
-## Understanding Confidence
+## Understanding confidence
 
 Confidence is not the same as severity.
 
@@ -122,7 +122,7 @@ Practical interpretation:
 - `Low` confidence:
   - treat as an early signal that needs manual confirmation
 
-## Summary Cards Meaning
+## Summary cards meaning
 
 The summary strip now helps users understand where to focus first:
 
@@ -133,7 +133,7 @@ The summary strip now helps users understand where to focus first:
 - `Hotspot Service`: service with the densest concentration of linked findings
 - `Focus First`: the first issue MESA suggests reviewing
 
-## Remediation Roadmap
+## Remediation roadmap
 
 The remediation roadmap combines multiple findings into one action plan.
 
@@ -153,7 +153,7 @@ Read it in this order:
 5. high-effort refactors
 6. dependencies
 
-## Guided Workflow Meaning
+## Guided workflow meaning
 
 The current UI now guides users through these steps:
 
@@ -171,7 +171,7 @@ The workflow banner at the top shows:
 
 This is intended to reduce first-run confusion and make the system easier to follow.
 
-## Repository Ingestion APIs
+## Repository ingestion APIs
 
 MESA provides repository-ingestion endpoints for source-driven scans.
 
@@ -193,7 +193,7 @@ Current limitation:
 - automatic service discovery is heuristic and explainable, not guaranteed perfect
 - GitHub URL fetching depends on runtime network access and an accessible public archive
 
-## Service Discovery Review
+## Service discovery review
 
 MESA adds explainable service discovery on top of repository preview.
 
@@ -211,7 +211,7 @@ Recommended interpretation:
 - medium-confidence candidates should be reviewed before selection
 - if a repository contains orchestration files but weak per-service signals, review the candidate list carefully instead of assuming all directories are services
 
-## CLI Usage
+## CLI usage
 
 ```bash
 mesa analyze tests/fixtures/chatty/order-service tests/fixtures/chatty/user-service

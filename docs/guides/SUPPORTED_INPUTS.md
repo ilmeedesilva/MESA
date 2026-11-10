@@ -1,6 +1,6 @@
-# Supported Inputs
+# Supported inputs
 
-## Supported Source Types
+## Supported source types
 
 MESA currently supports these input styles:
 
@@ -9,13 +9,13 @@ MESA currently supports these input styles:
 - public GitHub repository URLs
 - manually entered service directories
 
-## Intended Usage
+## Intended usage
 
-### Local Path
+### Local path
 
 Use this when MESA runs in a trusted environment with filesystem access to a repository checkout.
 
-### Archive Path
+### Archive path
 
 Use this when a repository has already been packaged as a ZIP or archive for offline analysis.
 
@@ -23,11 +23,11 @@ Use this when a repository has already been packaged as a ZIP or archive for off
 
 Use this for public repository analysis workflows when the backend environment can fetch a public snapshot safely.
 
-### Manual Service Paths
+### Manual service paths
 
 Use this when service directories are already known and you want direct control over the scan scope.
 
-## Safety Boundary
+## Safety boundary
 
 MESA is intended for read-only static analysis:
 
@@ -35,13 +35,13 @@ MESA is intended for read-only static analysis:
 - no dependency installation as part of public repo analysis
 - no service startup
 
-## Practical Guidance
+## Practical guidance
 
 - use repository preview first when possible
 - review discovered services before scanning
 - use manual service paths when discovery needs correction
 
-## Known Limitations
+## Known limitations
 
 MESA reads source code without running it, so some service calls are not visible to it.
 

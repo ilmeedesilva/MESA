@@ -1,4 +1,4 @@
-# CI And The GitHub Action
+# CI and the GitHub Action
 
 MESA can check every pull request for new architecture problems: it comments with what is
 new, where it is and how to fix it, and fails the check only when the change makes the
@@ -44,7 +44,7 @@ MESA only reads files. It never installs or runs the repository's code, so it is
 pull requests from forks. Their token cannot write comments; the Action then reports in the job
 summary only. Do not use `pull_request_target` for this.
 
-### Example With Options
+### Example with options
 
 A monorepo with its services under `services/`, stricter about new problems, with findings
 also shown in GitHub code scanning:
@@ -98,12 +98,12 @@ still appear, but the check always passes.
 For example, to use the result in a later step, give the MESA step an `id: mesa` and read
 `${{ steps.mesa.outputs.new-findings }}`.
 
-### On The Main Branch
+### On the main branch
 
 On a push (no pull request) the Action scans once with fixed thresholds and posts no comment.
 Use `fail-on-violation: false` there if the main branch has existing problems.
 
-## What Fails The Check
+## What fails the check
 
 | Mode | Fails when | Use it for |
 | --- | --- | --- |
@@ -123,7 +123,7 @@ The absolute gate fails when:
 
 High-risk service coupling currently includes high or critical findings for chatty service communication, hard-coded service dependencies, and shared database access.
 
-## Configuration File (`.mesa.yml`)
+## Configuration file (`.mesa.yml`)
 
 Optional, for the Action and the command line. Without it, the defaults below apply. Unknown
 keys are errors, so typos are reported.
@@ -146,7 +146,7 @@ policies: .mesa/policies.yml   # optional governance rules, relative to this fil
 On a pull request, the configuration from the pull request is used for both scans, so the
 comparison is fair. Inputs given to the Action override the file.
 
-## Without The Action (`mesa ci`)
+## Without the Action (`mesa ci`)
 
 The same check with the command line, in GitHub Actions or any other CI system:
 
@@ -194,9 +194,9 @@ configuration error.
 Options: `--path` (folder to scan inside the repository), `--config`, `--policy`, `--mode`,
 `--max-health-drop`, `--fail-on-new-severity`.
 
-## Other Commands
+## Other commands
 
-### Scan A Repository (`mesa scan`)
+### Scan a repository (`mesa scan`)
 
 ```bash
 mesa scan .                      # finds the services and prints the findings
@@ -208,7 +208,7 @@ mesa gate --report report.json --format sarif -o mesa.sarif
 
 `--format` is `json` (default), `text`, `markdown` (the pull request comment) or `sarif`.
 
-### Gate Named Service Folders (`mesa gate`)
+### Gate named service folders (`mesa gate`)
 
 ```bash
 mesa gate services/order-service services/payment-service --output mesa-gate.json
@@ -247,7 +247,7 @@ Example output (shortened):
 }
 ```
 
-## API Usage
+## API usage
 
 For a scan stored on a MESA server. Default thresholds:
 
