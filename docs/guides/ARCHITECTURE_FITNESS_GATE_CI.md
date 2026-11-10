@@ -1,6 +1,6 @@
-# Architecture Fitness Gate CI Guide
+# Architecture Gate CI Guide
 
-MESA can produce a pass/fail architecture fitness gate report for CI/CD.
+MESA can produce a pass/fail architecture gate report for CI/CD.
 
 ## Two Modes
 

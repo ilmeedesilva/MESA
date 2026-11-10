@@ -1,5 +1,5 @@
 import React from "react";
-import { api } from "../api";
+import { api, messageFor } from "../api";
 import { useEffectEvent } from "../hooks/useEffectEvent";
 import type { ArchitectureFitnessGateResult, ArchitectureGateRuleResult } from "../types";
 
@@ -59,7 +59,7 @@ export function FitnessGatePanel({ scanId, isDemo }: { scanId: string | null; is
         setResult(gate);
       } catch (gateError) {
         setResult(null);
-        setError(gateError instanceof Error ? gateError.message : "Could not evaluate the gate.");
+        setError(messageFor(gateError, "Could not check the gate"));
       } finally {
         setIsRunning(false);
       }
@@ -84,7 +84,7 @@ export function FitnessGatePanel({ scanId, isDemo }: { scanId: string | null; is
     <section className="gatePanel">
       <div className="panelHeader compact">
         <div>
-          <h2>Architecture Fitness Gate</h2>
+          <h2>Architecture Gate</h2>
           <p>
             Turns the scan into a pass or fail decision against architecture rules, the same check
             <code> mesa gate</code> runs in a CI pipeline.
@@ -93,9 +93,7 @@ export function FitnessGatePanel({ scanId, isDemo }: { scanId: string | null; is
         <span>{result ? `${result.rules.length} rules checked` : isRunning ? "Evaluating" : "No result yet"}</span>
       </div>
 
-      {isDemo ? (
-        <div className="emptyInline">The fitness gate needs the live backend. Start the API to evaluate this scan.</div>
-      ) : null}
+      {isDemo ? <div className="emptyInline">The gate needs your MESA server. Start it to check this scan.</div> : null}
       {!isDemo && !scanId ? <div className="emptyInline">Run or load a scan to evaluate the gate.</div> : null}
 
       {!isDemo && scanId ? (
@@ -128,7 +126,7 @@ export function FitnessGatePanel({ scanId, isDemo }: { scanId: string | null; is
             />
           </label>
           <button type="submit" disabled={isRunning}>
-            {isRunning ? "Evaluating..." : "Run Gate"}
+            {isRunning ? "Evaluating..." : "Run gate"}
           </button>
         </form>
       ) : null}

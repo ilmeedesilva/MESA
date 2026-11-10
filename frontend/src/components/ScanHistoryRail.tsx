@@ -18,7 +18,7 @@ export function ScanHistoryRail({
     <aside className="globalScanRail">
       <section className="globalScanRailCard">
         <div className="panelHeader compact">
-          <h3>Recent Scans</h3>
+          <h3>Recent scans</h3>
           <button type="button" className="railLinkButton" onClick={onOpenHistory}>
             Full history
           </button>

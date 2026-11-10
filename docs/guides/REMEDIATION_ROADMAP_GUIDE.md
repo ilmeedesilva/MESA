@@ -15,13 +15,13 @@ Instead of reading each finding alone, you can use the roadmap to answer:
 
 Each roadmap is built per scan and includes:
 
-- `Quick Wins`
+- `Quick wins`
   - low-effort fixes that reduce noise or operational coupling early
-- `Medium-Term Changes`
+- `Medium-term changes`
   - boundary or interaction improvements that need more design work
-- `High-Effort Refactors`
+- `High-effort refactors`
   - structural changes such as cycle removal, shared database separation, or God Service decomposition
-- `Suggested Order`
+- `Suggested order`
   - the recommended action sequence
 - `Dependencies`
   - actions that should happen only after another action is complete
@@ -102,9 +102,9 @@ Practical interpretation:
 ## How To Use It In The UI
 
 1. Run or load a scan.
-2. Open the `Remediation Roadmap` panel in the analysis view.
+2. Open the `Roadmap` page.
 3. Read the roadmap summary first.
-4. Check the `Suggested Order`.
+4. Check the `Suggested order`.
 5. Review dependencies before planning implementation.
 6. Open the findings drawer if you need deeper per-finding detail.
 7. Use the AI explainer if you want a simpler explanation of why an action matters.
@@ -127,7 +127,7 @@ http://localhost:5173
 
 3. Create a project.
 4. Run a scan.
-5. Confirm that the `Remediation Roadmap` panel appears.
+5. Confirm that the `Roadmap` page shows the roadmap.
 6. Check that these sections render:
 
 - summary
@@ -182,4 +182,4 @@ It does not yet:
 - assign owners automatically
 - generate implementation tickets automatically
 
-Those can be added later, but the current version keeps the roadmap auditable and easy to validate for research.
+Those can be added later, but the current version keeps the roadmap auditable and easy to check.

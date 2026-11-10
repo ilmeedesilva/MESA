@@ -465,21 +465,20 @@ export type WorkflowStep = {
   optional?: boolean;
 };
 
-export type InterpretationMode = "beginner" | "research";
+/** How much detail MESA shows: "simple" (plain language, the default) or "technical" (IDs, rules, raw evidence). */
+export type InterpretationMode = "simple" | "technical";
 export type AppSection =
   | "overview"
   | "scan"
   | "findings"
   | "graph"
   | "history"
-  | "evolution"
   | "roadmap"
   | "gate"
   | "ai"
-  | "evaluation"
-  | "benchmarks"
-  | "ai-baseline"
-  | "docs";
+  | "docs"
+  /** Shown for links to pages that do not exist (or no longer exist in the app). */
+  | "not-found";
 export type ApiAvailability = "checking" | "online" | "offline";
 export type ProjectListStatus = "idle" | "loading" | "ready" | "error";
 export type AIExplainerIntent =

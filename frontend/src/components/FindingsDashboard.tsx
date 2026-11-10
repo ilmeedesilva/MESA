@@ -1,7 +1,9 @@
 import React from "react";
 import { DocLinkButton } from "./DocLinkButton";
+import { StatePanel } from "./StatePanel";
 import {
   confidenceLabel,
+  findingLocations,
   findingWhyItMatters,
   formatType,
   plainLanguageFindingTitle,
@@ -35,7 +37,7 @@ export function FindingsDashboard({
     <aside className="findings dashboardFindings">
       <div className="findingsHeader">
         <div className="findingsHeaderText">
-          <h2>Findings Dashboard</h2>
+          <h2>Findings</h2>
           <p>
             {filteredFindings.length} of {findings.length} findings
           </p>
@@ -43,9 +45,7 @@ export function FindingsDashboard({
             <DocLinkButton label="How to read findings" onClick={() => onOpenDoc("findings-guide")} />
           </div>
         </div>
-        <span className="modePill">
-          {interpretationMode === "beginner" ? "Plain-language view" : "Research detail view"}
-        </span>
+        <span className="modePill">{interpretationMode === "simple" ? "Plain-language view" : "Technical view"}</span>
       </div>
 
       <div className="filters findingsFilters">
@@ -98,7 +98,11 @@ export function FindingsDashboard({
         </label>
       </div>
 
-      {findings.length === 0 ? <div className="emptyList">No findings for this scan.</div> : null}
+      {findings.length === 0 ? (
+        <StatePanel kind="success" title="No problems found">
+          MESA checked this scan and found no architecture problems. Good news: there is nothing to fix right now.
+        </StatePanel>
+      ) : null}
       {findings.length > 0 && filteredFindings.length === 0 ? (
         <div className="emptyList">No findings match these filters.</div>
       ) : null}
@@ -108,7 +112,11 @@ export function FindingsDashboard({
           {filteredFindings.map((finding) => (
             <article key={finding.id} className="findingCard clickable">
               <div className="findingMeta">
-                <span>{interpretationMode === "research" ? finding.id : confidenceLabel(finding.confidence)}</span>
+                <span>
+                  {interpretationMode === "technical"
+                    ? finding.id
+                    : `${confidenceLabel(finding.confidence)} confidence`}
+                </span>
                 <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
               </div>
               <h3>
@@ -117,9 +125,7 @@ export function FindingsDashboard({
                   {plainLanguageFindingTitle(finding)}
                 </button>
               </h3>
-              {interpretationMode === "research" ? (
-                <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
-              ) : null}
+              {interpretationMode === "technical" ? <TechnicalDetails finding={finding} /> : null}
               <div className="serviceChips">
                 {finding.services.map((service) => (
                   <span key={service}>{service}</span>
@@ -149,5 +155,27 @@ export function FindingsDashboard({
         </div>
       ) : null}
     </aside>
+  );
+}
+
+/** Technical view only: detector, rule and the exact file:line list for one finding card. */
+function TechnicalDetails({ finding }: { finding: Finding }) {
+  const locations = findingLocations(finding);
+  const shown = locations.slice(0, 5);
+  return (
+    <div className="technicalDetails">
+      <div className="technicalLabel">Detector: {finding.detector_name || formatType(finding.type)}</div>
+      {finding.rule_id ? <div className="technicalLabel">Rule: {finding.rule_id}</div> : null}
+      {shown.length > 0 ? (
+        <ul className="findingLocations" aria-label="Where MESA found it">
+          {shown.map((location) => (
+            <li key={location}>
+              <code>{location}</code>
+            </li>
+          ))}
+          {locations.length > shown.length ? <li>and {locations.length - shown.length} more</li> : null}
+        </ul>
+      ) : null}
+    </div>
   );
 }

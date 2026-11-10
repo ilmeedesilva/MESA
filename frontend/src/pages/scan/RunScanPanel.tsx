@@ -17,7 +17,7 @@ export function RunScanPanel({ ws }: { ws: MesaWorkspace }) {
   return (
     <section className="panelBlock runStepCard">
       <div className="panelHeader compact">
-        <h2>Run Scan</h2>
+        <h2>Run scan</h2>
         <span>{repoPreview ? "Repository-backed" : "Manual paths"}</span>
       </div>
       <div className="scanReadinessGrid">
@@ -46,12 +46,17 @@ export function RunScanPanel({ ws }: { ws: MesaWorkspace }) {
           onClick={() => focusWorkflowStep("policies")}
           disabled={!selectedProject}
         >
-          Back to Policies
+          Back to policies
         </button>
         <button onClick={runScan} disabled={isScanning || !selectedProject || usingEmbeddedDemo}>
-          {isScanning ? "Scanning..." : repoPreview ? "Run Repo Scan" : "Run Scan"}
+          {isScanning ? "Scanning..." : repoPreview ? "Run repo scan" : "Run scan"}
         </button>
       </div>
+      {isScanning ? (
+        <p className="hint" role="status">
+          Scanning. Large repositories can take a minute; you can keep this page open.
+        </p>
+      ) : null}
     </section>
   );
 }

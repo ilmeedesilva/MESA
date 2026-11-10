@@ -2,18 +2,18 @@
 
 ## Purpose
 
-This guide explains how to use MESA in public demo mode.
+This guide explains how to use MESA with demo data.
 
-Public demo mode is meant for:
+Demo data is meant for:
 
 - people reviewing MESA
 - reviewers
 - first-time visitors
 - anyone who wants to understand MESA without setting up the full backend stack first
 
-## What Public Demo Mode Includes
+## What The Demo Data Includes
 
-When the live backend is not available, MESA can still load:
+When your MESA server is not available, MESA can still load:
 
 - demo scans
 - findings
@@ -24,14 +24,14 @@ When the live backend is not available, MESA can still load:
 - the built-in documentation
 - a guided tour
 
-## What Public Demo Mode Does Not Do
+## What The Demo Data Does Not Do
 
-Public demo mode does not:
+With demo data, MESA does not:
 
 - scan your own repositories
 - save new projects
 - persist new scans
-- run live backend AI requests
+- send requests to an AI provider
 
 It is a guided example workspace, not a full analysis runtime.
 
@@ -39,12 +39,12 @@ It is a guided example workspace, not a full analysis runtime.
 
 1. Open the frontend.
 2. If the backend is unavailable, MESA automatically loads the demo data.
-3. Read the banner at the top to confirm that public demo mode is active.
+3. Read the banner at the top to confirm that it says "You're viewing demo data".
 4. Review the sample project and scan history.
 5. Start with these areas:
 
 - summary strip
-- findings dashboard
+- Findings
 - remediation roadmap
 - architecture graph
 - health score panel
@@ -56,13 +56,13 @@ It is a guided example workspace, not a full analysis runtime.
 2. Open the most urgent finding.
 3. Open the remediation roadmap to see grouped actions.
 4. Compare the latest demo scan with the previous one.
-5. Switch to the documentation portal.
+5. Switch to the documentation.
 6. Read:
 
-- `Quick Start`
-- `Getting Started`
-- `How To Read Findings`
-- `Remediation Roadmap Guide`
+- `Quick start`
+- `Getting started`
+- `Findings`
+- `Roadmap`
 
 ## Best Questions To Ask In Demo Mode
 
@@ -73,16 +73,16 @@ Try these example questions in the AI panel:
 - `Summarize this scan.`
 - `How do I use this tool?`
 
-In public demo mode, the AI panel answers from the demo data and the built-in documentation.
+With demo data, the AI Explainer answers from the demo data and the built-in documentation.
 
 ## How To Leave Demo Mode
 
-If the live backend is available, use:
+If your MESA server is available, use:
 
-- `Load Demo Workspace`
+- `Load demo data`
 - `Connect to your MESA server`
 
-in the Demo Workspace box at the bottom of the sidebar (in the menu on phones) to switch between the demo data and your MESA server.
+in the "Try it with demo data" box at the bottom of the sidebar (in the menu on phones) to switch between the demo data and your MESA server.
 
 ## When To Use The Full Stack Instead
 

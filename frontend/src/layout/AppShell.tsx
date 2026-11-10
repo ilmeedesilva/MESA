@@ -16,6 +16,7 @@ export function AppShell({
   sidebar,
   topBar,
   children,
+  footer,
   overlay
 }: {
   sidebarCollapsed: boolean;
@@ -25,6 +26,7 @@ export function AppShell({
   sidebar: ReactNode;
   topBar: ReactNode;
   children: ReactNode;
+  footer?: ReactNode;
   overlay?: ReactNode;
 }) {
   // While the phone menu or tablet overlay is open, the rest of the page is inert, Esc closes it
@@ -56,25 +58,17 @@ export function AppShell({
         <main id="main-content" className="appMain" tabIndex={-1}>
           {children}
         </main>
+        {footer}
       </div>
       {overlay}
     </div>
   );
 }
 
-/** The framed workspace below the global banners: a header for the current section, the page, and an optional rail. */
-export function WorkspaceFrame({
-  header,
-  rail,
-  children
-}: {
-  header: ReactNode;
-  rail: ReactNode;
-  children: ReactNode;
-}) {
+/** The framed workspace below the status line: the page and an optional rail. */
+export function WorkspaceFrame({ rail, children }: { rail: ReactNode; children: ReactNode }) {
   return (
     <section className="workspaceFrame">
-      {header}
       <div className={rail ? "workspaceBody workspaceBodyWithRail" : "workspaceBody"}>
         <div className="workspacePrimaryContent">{children}</div>
         {rail}

@@ -29,7 +29,7 @@ export async function pollScanJob(jobId: string): Promise<PersistedScanResult> {
       return api<PersistedScanResult>(`/api/scans/${job.scan_id}`);
     }
     if (job.status === "FAILED") {
-      throw new Error(job.error_message || "Repository scan failed.");
+      throw new Error(job.error_message ? `The scan failed. ${job.error_message}` : "The scan failed.");
     }
     await new Promise((resolve) => window.setTimeout(resolve, pollIntervalMs));
   }
@@ -60,7 +60,9 @@ export async function streamAIResponse(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
-  if (!response.ok || !response.body) throw new Error(`API returned ${response.status}`);
+  if (!response.ok || !response.body) {
+    throw new ApiError(response.status, response.ok ? "" : await readApiErrorDetail(response));
+  }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -94,6 +96,57 @@ export async function streamAIResponse(
   return finalPayload;
 }
 
-export function messageFor(caught: unknown, fallback: string) {
-  return caught instanceof Error ? caught.message : fallback;
+export const serverUnreachableMessage =
+  "MESA can't reach your MESA server. Check that it is running (docker compose up), then try again.";
+
+/** True when a message is raw output (JSON, HTML, a stack trace) rather than a sentence for people. */
+function looksTechnical(message: string) {
+  const text = message.trim();
+  return (
+    !text ||
+    text.length > 300 ||
+    /^[[{<]/.test(text) ||
+    /Traceback \(most recent call last\)|\bat \S+ \(.*:\d+:\d+\)|<\/?html|(?:^|\s)\w*(?:Error|Exception):/.test(text)
+  );
+}
+
+/** A FastAPI validation error body: [{ "loc": [...], "msg": "..." }]. */
+function validationMessage(detail: string) {
+  try {
+    const parsed = JSON.parse(detail) as { detail?: Array<{ msg?: string }> } | Array<{ msg?: string }>;
+    const items = Array.isArray(parsed) ? parsed : parsed.detail;
+    const first = Array.isArray(items) ? items.find((item) => typeof item?.msg === "string")?.msg : undefined;
+    return first ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A plain message for something that failed: what failed (the action), then why and what to do
+ * next. Never shows stack traces, HTML or raw JSON.
+ */
+export function messageFor(caught: unknown, action: string) {
+  const what = action.replace(/[.\s]+$/, "");
+  // fetch() rejects with a TypeError when the server cannot be reached at all.
+  if (caught instanceof TypeError) return `${what}. ${serverUnreachableMessage}`;
+  if (caught instanceof ApiError) {
+    // The web server answers 502/503/504 when the API behind it is down.
+    if ([502, 503, 504].includes(caught.status)) return `${what}. ${serverUnreachableMessage}`;
+    if (caught.status === 422) {
+      const reason = validationMessage(caught.detail);
+      return `${what}. Some of the details are not valid${reason ? `: ${reason}` : ""}. Check them and try again.`;
+    }
+    if (caught.status >= 500)
+      return `${what}. The MESA server hit an unexpected problem. Check the API logs, then try again.`;
+    if (caught.status === 404 && looksTechnical(caught.detail))
+      return `${what}. It was not found; it may have been deleted.`;
+    if (looksTechnical(caught.detail)) return `${what}. Please try again.`;
+    return `${what}. ${caught.detail}`;
+  }
+  if (caught instanceof Error && !looksTechnical(caught.message)) {
+    // Our own messages are already full sentences.
+    return caught.message;
+  }
+  return `${what}. Please try again.`;
 }

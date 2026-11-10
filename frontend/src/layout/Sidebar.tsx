@@ -1,6 +1,7 @@
 import { appNavigation } from "../app/navigation";
+import { ExplanationSwitch } from "../components/ExplanationSwitch";
 import { Icon } from "../components/icons";
-import type { AppSection, ProjectListStatus, ProjectRecord } from "../types";
+import type { AppSection, InterpretationMode, ProjectListStatus, ProjectRecord } from "../types";
 
 export function Sidebar({
   layoutMode,
@@ -15,7 +16,9 @@ export function Sidebar({
   onNavigate,
   onToggleDemo,
   onSelectProject,
-  onCreateProject
+  onCreateProject,
+  interpretationMode,
+  onChangeInterpretationMode
 }: {
   layoutMode: "phone" | "tablet" | "desktop";
   /** The narrow icon rail (desktop below 1360px wide, or tablet). */
@@ -32,6 +35,8 @@ export function Sidebar({
   onToggleDemo: () => void;
   onSelectProject: (value: string) => void;
   onCreateProject: () => void;
+  interpretationMode: InterpretationMode;
+  onChangeInterpretationMode: (mode: InterpretationMode) => void;
 }) {
   // On a tablet the rail opens as a full sidebar over the page.
   const showRail = collapsed && !navOpen;
@@ -63,9 +68,9 @@ export function Sidebar({
             </div>
           ) : (
             <>
-              <div className="eyebrow">Architecture Analyzer</div>
+              <div className="eyebrow">Architecture analyzer</div>
               <h1>MESA</h1>
-              <p>Structured project selection, scanning, findings analysis, and research evidence in one workspace.</p>
+              <p>Find architecture problems in your microservices before they reach main.</p>
             </>
           )}
         </div>
@@ -96,14 +101,15 @@ export function Sidebar({
                   {project.name}
                 </option>
               ))}
-              {!isPublicDemoMode ? <option value="__create_new__">+ Create New Project</option> : null}
+              {!isPublicDemoMode ? <option value="__create_new__">+ Create new project</option> : null}
             </select>
           </label>
           {!isPublicDemoMode ? (
             <button type="button" className="secondaryButton" onClick={onCreateProject}>
-              New Project
+              New project
             </button>
           ) : null}
+          <ExplanationSwitch mode={interpretationMode} onChangeMode={onChangeInterpretationMode} showHelp />
         </div>
       ) : null}
 
@@ -135,7 +141,7 @@ export function Sidebar({
         {!showRail ? (
           <>
             <div>
-              <div className="eyebrow">Demo Workspace</div>
+              <div className="eyebrow">Try it with demo data</div>
               <p>
                 {isPublicDemoMode
                   ? "You are browsing the demo data."
@@ -147,7 +153,7 @@ export function Sidebar({
               className={isPublicDemoMode ? "secondaryButton sidebarDemoButton" : "sidebarDemoButton"}
               onClick={onToggleDemo}
             >
-              {isPublicDemoMode ? "Connect to your MESA server" : "Load Demo Workspace"}
+              {isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
             </button>
           </>
         ) : (
@@ -155,7 +161,7 @@ export function Sidebar({
             type="button"
             className={isPublicDemoMode ? "secondaryButton sidebarDemoButton compact" : "sidebarDemoButton compact"}
             onClick={onToggleDemo}
-            title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo workspace"}
+            title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
           >
             Demo
           </button>
