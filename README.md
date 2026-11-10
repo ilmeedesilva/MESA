@@ -1,4 +1,9 @@
-# MESA
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/brand/mesa-logo-dark.svg">
+    <img src="docs/images/brand/mesa-logo.svg" alt="MESA" width="240">
+  </picture>
+</h1>
 
 **Find architecture problems in your microservices before they reach main.**
 
