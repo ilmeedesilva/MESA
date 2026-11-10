@@ -11,7 +11,10 @@ database, a service address written into the code, a service that does too much.
 request it comments with the new problems, the file and line, why each one matters and how to
 fix it, and fails the check only when the change makes the architecture worse.
 
-It is static analysis: your code is never run and is not sent to any outside service.
+It is static analysis: MESA never runs your code, and nothing leaves your machine (in CI,
+nothing beyond the comment and reports on GitHub itself). The one exception is the optional
+AI explainer in the web app: if you turn it on, the scan details you ask about are sent to the
+AI provider you choose (OpenAI or Anthropic). It is off by default.
 
 <!-- Before the 1.0 release: replace the excerpt below with docs/images/pr-comment.png,
      a screenshot of the comment on a real pull request. -->
@@ -136,9 +139,13 @@ problems, and 3 public open-source microservice projects pinned to fixed commits
 | Spring Boot sample | 24 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 | Sock Shop | 4 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 
+The benchmarks are small (76 seeded problems, and 30 across the three public projects), and
+the public projects were labelled by the author. See
+[threats to validity](docs/research/THREATS_TO_VALIDITY.md).
+
 These are the frozen results of the tagged research version `v0.1.0-research`. Benchmarks
 measure only what they label, so a perfect score here does not mean MESA finds every problem
-in every codebase (see [Limitations](#limitations)). To run them yourself in about five
+in every codebase (see [Limitations](#limitations)). To run them yourself in a few
 minutes, and to see what changed in later versions, follow
 [REPRODUCE.md](docs/research/REPRODUCE.md).
 
@@ -217,3 +224,4 @@ versions are stored separately.
 - [Reading findings](docs/guides/FINDINGS_GUIDE.md) and [the health score](docs/guides/HEALTH_SCORE_GUIDE.md)
 - [API reference](docs/api/API_DOCUMENTATION.md) (the running server also serves it at <http://localhost:8000/docs>)
 - [Developer guide](docs/guides/DEVELOPER_GUIDE.md)
+- [Changelog](CHANGELOG.md) and [build history](docs/HISTORY.md)

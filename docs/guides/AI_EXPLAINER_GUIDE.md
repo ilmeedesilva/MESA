@@ -64,6 +64,15 @@ AI explanations:
 - keep MESA's evidence cards as the source of truth
 - fall back to the built-in explanation if the AI request fails
 
+## What Is Sent
+
+With AI off (the default), nothing is sent anywhere: explanations are built on your MESA server.
+
+With AI on, each question sends one request to the provider you chose (OpenAI or Anthropic). It
+contains your question and MESA's own explanation and evidence for it: finding descriptions,
+service names, file paths, scores and, for documentation questions, short excerpts of the MESA
+docs. Your source files are not sent.
+
 ## How To Turn On AI
 
 Create a local `.env` file from `.env.example`, then set one of these.
