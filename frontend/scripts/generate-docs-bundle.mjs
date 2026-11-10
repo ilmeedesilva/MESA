@@ -102,7 +102,7 @@ const docs = [
     slug: "ci-github-action",
     title: "CI and the GitHub Action",
     category: "Automate",
-    summary: "Fail a pull request when the architecture gets worse, with mesa gate.",
+    summary: "Check every pull request with the MESA GitHub Action, or with mesa ci in any CI system.",
     path: "docs/guides/ARCHITECTURE_FITNESS_GATE_CI.md",
     tags: ["ci", "github actions", "gate", "pull request"]
   },
