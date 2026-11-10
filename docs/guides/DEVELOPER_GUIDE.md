@@ -35,6 +35,20 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider
 cd frontend && npm run build
 ```
 
+## Demo Site
+
+The public demo site (GitHub Pages) is the web app with its demo data only: it never contacts a
+server. It is built with base path `/MESA/` and `VITE_MESA_DEMO_SITE=true`:
+
+```bash
+cd frontend
+npm run build:demo-site      # output in dist-demo-site/
+npm run test:e2e:demo-site   # builds it, serves it under /MESA/ and tests it
+```
+
+`.github/workflows/pages.yml` builds and tests it on pull requests, and publishes it only when
+run by hand on `main`.
+
 ## Main Backend Areas
 
 | Area | Path |
