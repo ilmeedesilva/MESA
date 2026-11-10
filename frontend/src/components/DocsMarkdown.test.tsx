@@ -16,7 +16,10 @@ describe("resolveDocLink", () => {
       slug: "findings-guide",
       href: "#/docs/findings-guide"
     });
-    expect(resolveDocLink("../api/API_DOCUMENTATION.md#health", guide)).toMatchObject({ kind: "doc", slug: "api-reference" });
+    expect(resolveDocLink("../api/API_DOCUMENTATION.md#health", guide)).toMatchObject({
+      kind: "doc",
+      slug: "api-reference"
+    });
   });
 
   it("sends removed docs and repository files to GitHub", () => {
@@ -101,7 +104,9 @@ describe("DocsMarkdown", () => {
   it("shows no raw Markdown table syntax in any in-app doc", () => {
     for (const doc of docsCatalog) {
       const html = renderToStaticMarkup(<DocsMarkdown content={doc.content} docPath={doc.path} />);
-      const text = html.replace(/<pre[\s\S]*?<\/pre>/g, "").replace(/<[^>]+>/g, "");
+      const page = new DOMParser().parseFromString(html, "text/html");
+      page.querySelectorAll("pre").forEach((block) => block.remove());
+      const text = page.body.textContent ?? "";
       expect(text, doc.slug).not.toMatch(/\|\s*---/);
     }
   });

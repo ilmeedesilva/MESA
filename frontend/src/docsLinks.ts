@@ -49,5 +49,8 @@ export function resolveDocLink(href: string, docPath: string): DocLink {
   if (doc) return { kind: "doc", slug: doc.slug, href: `#/docs/${encodeURIComponent(doc.slug)}` };
 
   const base = isDirectory ? repositoryTreeUrl : repositoryFileUrl;
-  return { kind: "external", href: `${base}${resolved}${isDirectory && resolved ? "/" : ""}${fragment ? `#${fragment}` : ""}` };
+  return {
+    kind: "external",
+    href: `${base}${resolved}${isDirectory && resolved ? "/" : ""}${fragment ? `#${fragment}` : ""}`
+  };
 }

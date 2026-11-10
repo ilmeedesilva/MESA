@@ -33,7 +33,10 @@ for (const width of [390, 1440] as const) {
         expect(scrollWidth, "no sideways page scrolling").toBeLessThanOrEqual(innerWidth);
 
         const results = await new AxeBuilder({ page }).include(".docsArticle").withTags(wcag).analyze();
-        expect(results.violations.map((violation) => violation.id), "accessibility violations").toEqual([]);
+        expect(
+          results.violations.map((violation) => violation.id),
+          "accessibility violations"
+        ).toEqual([]);
 
         await testInfo.attach(`${doc.slug}-${width}px.png`, {
           body: await page.screenshot({ fullPage: true }),
@@ -65,8 +68,17 @@ test("the Markdown renderer loads only on the Documentation page", async ({ page
     if (request.resourceType() === "script") scripts.push(request.url());
   });
   await openApp(page, "#/findings");
-  expect(scripts.filter((url) => url.includes("DocsMarkdown")), "not loaded on Findings").toEqual([]);
-  await page.getByRole("button", { name: /Documentation/ }).first().click();
+  expect(
+    scripts.filter((url) => url.includes("DocsMarkdown")),
+    "not loaded on Findings"
+  ).toEqual([]);
+  await page
+    .getByRole("button", { name: /Documentation/ })
+    .first()
+    .click();
   await expect(page.locator(".docsMarkdown h1").first()).toBeVisible();
-  expect(scripts.filter((url) => url.includes("DocsMarkdown")), "loaded on Documentation").toHaveLength(1);
+  expect(
+    scripts.filter((url) => url.includes("DocsMarkdown")),
+    "loaded on Documentation"
+  ).toHaveLength(1);
 });
