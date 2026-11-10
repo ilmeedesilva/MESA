@@ -1,220 +1,219 @@
 # MESA
 
-MESA is an architecture intelligence platform for microservice systems.
+**Find architecture problems in your microservices before they reach main.**
 
-Current implementation:
+[![CI](https://github.com/ilmeedesilva/MESA/actions/workflows/ci.yml/badge.svg)](https://github.com/ilmeedesilva/MESA/actions/workflows/ci.yml)
+<!-- Badges added at the 1.0 release: PyPI version, license, GitHub Marketplace. -->
 
-- performs cross-service static analysis
-- detects architectural anti-patterns from source and configuration evidence
-- builds a graph-based architectural view of a system
-- calculates health scores and recommendations
-- supports governance policies, scan history, and evolution analysis
+MESA reads the source code and configuration of all your services together and finds the
+problems that only show up *between* services: a call cycle, two services sharing one
+database, a service address written into the code, a service that does too much. On a pull
+request it comments with the new problems, the file and line, why each one matters and how to
+fix it, and fails the check only when the change makes the architecture worse.
 
-Target product direction:
+It is static analysis: your code is never run and is not sent to any outside service.
 
-- dynamic public repository intake
-- automatic service discovery
-- guided workflow for non-expert users
-- integrated documentation portal
-- optional AI-assisted explanation grounded in MESA evidence
+<!-- Before the 1.0 release: replace the excerpt below with docs/images/pr-comment.png,
+     a screenshot of the comment on a real pull request. -->
 
-See [docs/guides/PRODUCT_VISION.md](docs/guides/PRODUCT_VISION.md), [docs/guides/USER_PERSONAS_AND_FLOWS.md](docs/guides/USER_PERSONAS_AND_FLOWS.md), [docs/guides/FEATURE_SCOPE_AND_RELEASE_PLAN.md](docs/guides/FEATURE_SCOPE_AND_RELEASE_PLAN.md), and [docs/guides/PRODUCT_LANGUAGE_AND_TERMINOLOGY.md](docs/guides/PRODUCT_LANGUAGE_AND_TERMINOLOGY.md) for the Phase 1 product foundation.
+**What the pull request comment looks like** (shortened):
 
-Current vertical slice:
+> ## ❌ MESA architecture check: FAILED (3 new problems, 0 fixed)
+>
+> **Health score:** 98.7 → 79.7 (-19.0, allowed drop is 5.0)
+>
+> #### 🔴 CRITICAL Cyclic dependency: order-service → user-service → order-service
+>
+> - `order-service/app.py:30` calls `http://user-service:8080/users/1`
+> - `user-service/app.py:26` calls `http://order-service:8080/orders/1`
+>
+> **Why it matters:** The cycle blocks independent deployment, increases change coordination,
+> and can turn microservices into a distributed monolith.
+>
+> **How to fix:** Identify the dependency edge in the cycle with the weakest ownership
+> justification. Reverse that dependency, replace it with an event, or introduce an
+> orchestration/application service.
 
-- Python/FastAPI backend.
-- CLI workflow for reproducible research evaluation.
-- Static extraction for Python services, environment/config files, and simple HTTP call evidence.
-- NetworkX graph model plus Neo4j architecture graph persistence for persistent scans.
-- Detectors for Chatty Services, Cyclic Dependencies, Shared Database, God Service, and Hard-Coded Service Dependencies.
-- React + TypeScript frontend scaffold with Cytoscape.js.
+The full example is [`tests/fixtures/reports/pr-new-cycle.md`](tests/fixtures/reports/pr-new-cycle.md).
 
-## Quick Start
+## Use it in CI in 30 seconds
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-mesa analyze tests/fixtures/chatty/order-service tests/fixtures/chatty/user-service
-uvicorn mesa.api.main:app --reload
+Add this workflow to a repository with microservices:
+
+```yaml
+# .github/workflows/architecture.yml
+name: Architecture check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write # for the pull request comment
+
+jobs:
+  mesa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ilmeedesilva/MESA@<commit-sha> # pin a full commit SHA
 ```
 
-## Run Tests
+On every pull request MESA scans the change and its base commit, posts one comment (and
+updates it on later pushes), writes the report to the job summary, and fails the check only
+when the change *adds* a problem. Problems that were already there do not block you.
+
+Inputs (folder to scan, thresholds, SARIF upload for code scanning, report-only mode) and
+outputs are listed in [CI and the GitHub Action](docs/guides/ARCHITECTURE_FITNESS_GATE_CI.md#github-action).
+An optional `.mesa.yml` file sets which folders are services and how strict the check is.
+
+**Coming in 1.0:** a short `uses: ilmeedesilva/mesa-action@v1` on the GitHub Marketplace,
+installing MESA from PyPI.
+
+## Try it locally
+
+You need Python 3.10 or later.
 
 ```bash
-pytest
-ruff check src tests
+git clone https://github.com/ilmeedesilva/MESA.git
+cd MESA
+python -m venv .venv && source .venv/bin/activate
+pip install .
+
+mesa scan tests/fixtures/cycle    # a small example with a call cycle
+mesa scan /path/to/your/repo      # finds the services and lists the problems
 ```
 
-CI runs both, plus `pytest --cov=mesa --cov-report=term-missing` for a coverage report (currently ~80% overall; the CLI and the Postgres/Neo4j storage backends are the least-covered areas since the test suite exercises the in-memory repository).
+**Coming in 1.0:** `pip install mesa-analyzer` from PyPI.
 
-## Public Demo Experience
+To check a branch the way the Action does, run `mesa ci --base-ref origin/main` in your
+repository. It exits with `0` when the check passes, `1` when it fails and `2` on a usage or
+configuration error.
 
-Phase J adds a backend-free public demo experience inside the frontend.
+### The web app
 
-If the live API is unavailable, the UI can still load:
-
-- demo scans
-- the built-in documentation
-- roadmap, graph, and score examples
-- a guided tour
-
-See `docs/guides/PUBLIC_DEMO_GUIDE.md` for the public-demo workflow.
-
-
-
-## Persistent API Workflow
-
-Phase 1 adds PostgreSQL-backed project and scan persistence. Start the full stack with:
+The web app shows the findings, an interactive architecture graph, health scores, scan
+history and a fix-first roadmap, and can explain a finding in plain words (built in, or with
+OpenAI or Anthropic if you add a key). It needs Docker:
 
 ```bash
 docker compose up --build
 ```
 
-Then use `http://localhost:8000/docs` to create projects, run persistent scans, view scan history, and retrieve findings after restart. See `docs/architecture/PHASE_1_PERSISTENCE_FOUNDATION.md` for the full guide.
+Then open <http://localhost:5173>. If the app can't reach its server, it shows demo data.
 
+![Findings page of the MESA web app, with demo data](docs/images/web-findings.png)
 
-## Neo4j Architecture Graph
+![Architecture graph and health scores in the MESA web app, with demo data](docs/images/web-graph.png)
 
-Phase 2 adds a Neo4j-backed architectural digital twin for persistent scans. Start the full stack with:
+## What it detects
 
-```bash
-docker compose up --build
-```
+| Problem | What MESA looks for |
+| --- | --- |
+| Cyclic dependency | Services that call each other in a loop, directly or through others. |
+| Shared database | Two or more services connecting to the same database. |
+| Hard-coded service dependency | Service URLs, private IPs and local ports written into code or config instead of configuration or service discovery. |
+| Chatty services | One service calling another from many places. |
+| God service | One service with too many endpoints, dependencies and responsibilities. |
+| Policy violations | Your own rules, for example no hard-coded URLs or a maximum number of outbound dependencies per service ([policies guide](docs/guides/GOVERNANCE_GUIDE.md)). |
 
-Then create a project and run `POST /projects/{project_id}/scans` from `http://localhost:8000/docs`. Use the returned scan id with:
+Each finding comes with the files and lines it is based on, why it matters, the steps to fix
+it, and a health score for each service and for the whole system.
 
-```text
-GET /scans/{scan_id}/graph
-GET /scans/{scan_id}/graph/paths?source=order-service&target=user-service
-GET /scans/{scan_id}/graph/cycles
-GET /scans/{scan_id}/graph/centrality
-GET /scans/{scan_id}/graph/shared-databases
-GET /scans/{scan_id}/graph/high-risk-clusters
-```
+**Languages:** Python (parsed into a syntax tree), JavaScript and TypeScript, Java and Go
+(read with patterns), plus `.env`, YAML, `.properties`, `requirements.txt`, `package.json`,
+`pom.xml` and OpenAPI files.
 
-Neo4j Browser is available at `http://localhost:7474` with `neo4j` / `mesa-password` in the development stack. See `docs/architecture/PHASE_2_NEO4J_ARCHITECTURE_GRAPH.md` for the full Phase 2 guide.
+## Results
 
+MESA was measured against hand-labelled benchmarks: 8 seeded systems built to contain known
+problems, and 3 public open-source microservice projects pinned to fixed commits.
 
-## Hard-Coded Service Dependencies
+| Benchmark | Correct | Wrong | Missed | Precision | Recall | F1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Seeded (8 systems, 32 services) | 76 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| Online Boutique | 2 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| Spring Boot sample | 24 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| Sock Shop | 4 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 
-Phase 3 detects service URLs, private IP endpoints, local ports, and service-like hostnames embedded in source or configuration files. Findings use the type `HARD_CODED_SERVICE_DEPENDENCY` and are returned by both `/analyze` and persistent scan endpoints. See `docs/architecture/PHASE_3_HARD_CODED_SERVICE_DEPENDENCIES.md` for detection heuristics and test fixtures.
+These are the frozen results of the tagged research version `v0.1.0-research`. Benchmarks
+measure only what they label, so a perfect score here does not mean MESA finds every problem
+in every codebase (see [Limitations](#limitations)). To run them yourself in about five
+minutes, and to see what changed in later versions, follow
+[REPRODUCE.md](docs/research/REPRODUCE.md).
 
-
-## God Service Scores
-
-Phase 4 adds a weighted God Service score for every analyzed service. Scores are returned in `summary.god_service_scores`; high-risk services also produce `GOD_SERVICE` findings with decomposition recommendations. See `docs/architecture/PHASE_4_GOD_SERVICE_DETECTOR.md` for the scoring model, thresholds, and test workflow.
-
-
-## Architectural Health Scores
-
-Phase 5 adds service-level, domain-level, and system-level architectural health scores. Scores are returned in `summary.health_scores`, persisted in the `scores` table, and exposed through `GET /scans/{scan_id}/scores`. See `docs/architecture/PHASE_5_ARCHITECTURAL_HEALTH_SCORE.md` for dimensions, weights, grades, and test workflow.
-
-
-## Scan History and Findings Dashboard
-
-Phase 6 adds a persistent frontend workflow for project creation, scan execution, scan history, findings filtering, finding detail inspection, and health score review. See `docs/architecture/PHASE_6_SCAN_HISTORY_AND_FINDINGS_DASHBOARD.md` for the dashboard workflow and limitations.
-
-
-## Architecture Graph Dashboard
-
-Phase 7 renders the persisted Neo4j architecture graph as an interactive architectural digital twin: services, per-service API groups, databases, and supporting resources as distinct node types, with risk-highlighted edges linked back to findings. Clicking a node or edge opens an inspector with ownership, linked findings, and health context. See `docs/architecture/PHASE_7_ARCHITECTURE_GRAPH_DASHBOARD.md`.
-
-
-## Architecture Snapshots and Evolution Tracking
-
-Phase 8 compares scan N with scan N+1 to detect architectural drift over time.
+## How it works
 
 ```text
-GET /projects/{project_id}/snapshots
-GET /projects/{project_id}/evolution
-GET /projects/{project_id}/evolution/compare?base_scan_id=<scan_id>&target_scan_id=<scan_id>
+repository ──▶ discover services ──▶ extract facts ──▶ build graph ──▶ detectors ──▶ health scores
+                                                                                    + recommendations
+                                                                                          │
+                     PR comment · SARIF · job summary · JSON ◀── compare with base ◀──────┘
 ```
 
-Each comparison reports architecture change summary, risk trend, score trend, new/removed dependencies, and new/removed cycles. See `docs/architecture/PHASE_8_ARCHITECTURE_SNAPSHOTS_AND_EVOLUTION.md`.
+1. **Discover services** (`src/mesa/discovery/`). Folders are scored by what they contain
+   (`pyproject.toml`, `package.json`, `pom.xml`, `go.mod`, a Dockerfile, an OpenAPI file, ...)
+   and the likely ones become services. Tests,
+   fixtures, examples, docs and vendored code are skipped. `.mesa.yml` can list services
+   explicitly.
+2. **Extract facts** (`src/mesa/analysis/extractor.py`). Per service: outbound HTTP calls,
+   database connection settings, endpoints, dependencies and hard-coded addresses, each with
+   its file and line.
+3. **Build the graph** (`src/mesa/graph/`). Services, APIs and databases become nodes and calls
+   become edges in a NetworkX graph. The web app also stores it in Neo4j for graph queries.
+4. **Run the detectors** (`src/mesa/detectors/`). One small class per problem type, each
+   working on the graph and the extracted facts. Results are deterministic: the same code
+   gives the same findings every time.
+5. **Score and explain** (`src/mesa/analysis/`). Health scores per service, domain and system,
+   and a recommendation for each finding, built from its evidence.
+6. **Compare and report** (`src/mesa/ci.py`, `src/mesa/reporting/`). In CI the base commit is
+   scanned the same way. Findings are matched by a fingerprint that ignores line numbers
+   (`src/mesa/fingerprint.py`), so moving code does not make an old problem look new. The
+   result becomes the Markdown comment, SARIF, annotations and JSON.
 
+The web app is a FastAPI server (`src/mesa/api/`, with PostgreSQL and Neo4j) and a React +
+TypeScript frontend (`frontend/`). Setup, tests and project layout are in the
+[developer guide](docs/guides/DEVELOPER_GUIDE.md).
 
-## Recommendation Layer
+## Limitations
 
-Phase 9 attaches a structured, evidence-grounded recommendation to every finding: root cause, architectural consequence, affected services/files, refactoring steps, expected impact, priority, and estimated difficulty, covering all implemented detectors. See `docs/architecture/PHASE_9_RECOMMENDATION_LAYER.md`.
+MESA reads code without running it, so it sees only what is written down:
 
+- **Python calls need a plain string URL.** `requests.get("http://user-service:8080/users/1")`
+  is seen. A URL in an f-string (`f"http://user-service/{user_id}"`), built from variables, or
+  passed as a keyword argument is not, so that call adds no edge to the graph and cannot be
+  part of a cycle or a chatty pair. The address is still reported as hard-coded.
+- **JavaScript, TypeScript, Java and Go are read with patterns, not a full parser.** URLs built
+  at runtime, read from configuration or produced by a client library are missed.
+- **Only HTTP calls and database connections count as dependencies.** Message queues (Kafka,
+  RabbitMQ) and gRPC are not followed yet.
+- **Service discovery is a heuristic.** In repositories with unusual layouts it can report too
+  many or too few services. List them in `.mesa.yml` to be exact.
+- **Thresholds and health-score weights are defaults**, not universal truths. Adjust them in
+  `.mesa.yml` to fit your system.
 
-## Governance Policy Engine
+More detail is in [Supported inputs](docs/guides/SUPPORTED_INPUTS.md).
 
-Phase 10 lets a project define its own architecture rules and have MESA enforce them at scan time; violations are returned as normal findings with recommendations.
+## Research and reproducibility
 
-```text
-GET /projects/{project_id}/policies
-POST /projects/{project_id}/policies
-PUT /projects/{project_id}/policies/{policy_id}
-POST /projects/{project_id}/policies/import
-```
+MESA started as a research project. The method, the benchmarks and the full results are kept
+in [`docs/research/`](docs/research/):
 
-See `docs/architecture/PHASE_10_GOVERNANCE_POLICY_ENGINE.md` for the YAML/JSON policy format.
+- [REPRODUCE.md](docs/research/REPRODUCE.md): reproduce every result from the tagged version
+- [Evaluation setup and results](docs/research/EVALUATION_SETUP_AND_RESULTS.md)
+- [Methodology](docs/research/METHODOLOGY.md) and [threats to validity](docs/research/THREATS_TO_VALIDITY.md)
+- [Detection algorithms](docs/research/DETECTION_ALGORITHMS.md) and [system architecture](docs/research/SYSTEM_ARCHITECTURE.md)
+- [Comparison with general-purpose AI models](docs/research/AI_BASELINE_COMPARISON.md)
+- [Index of all research documents](docs/research/PHASE_12_DOCUMENTATION_INDEX.md)
 
+The benchmark definitions are in [`benchmarks/`](benchmarks/) and the frozen result files in
+[`evaluation-results/`](evaluation-results/). They are never edited; results from later
+versions are stored separately.
 
-## Evaluation Runner
+## Documentation
 
-Phase 11 adds a repeatable evaluation runner that scores MESA's own detector output against ground-truth benchmark labels (precision/recall/F1, CSV/JSON/Markdown export):
-
-```bash
-mesa evaluate benchmarks/ground_truth.yml --output-dir evaluation-results
-```
-
-See `docs/architecture/PHASE_11_EVALUATION_RUNNER.md`.
-
-
-## Secure Scan Intake Hardening
-
-Phase 13 hardens archive/GitHub-URL ingestion: decompressed-size and file-count caps, rejection of tar symlink/hardlink/device members, and a TTL sweep of extracted workspaces, on top of the existing zip-slip/path-traversal protection. See `docs/architecture/PHASE_13_SECURE_SCAN_INTAKE.md`.
-
-
-## Async Scan Job System
-
-Phase 14 runs repository-backed scans (archive or GitHub URL) as a background job instead of blocking the request:
-
-```text
-POST /projects/{project_id}/repo-scans/async
-GET /scan-jobs/{job_id}
-```
-
-The guided scan workflow's repository-backed submit path uses this automatically. See `docs/architecture/PHASE_14_ASYNC_SCAN_JOB_SYSTEM.md`.
-
-
-## Real Repository Evaluation
-
-Phase 15 evaluates MESA against manually reviewed, real, third-party repositories (`GoogleCloudPlatform/microservices-demo`, `piomin/sample-spring-microservices-new`) rather than only synthetic fixtures, with full TP/FP/FN reasoning recorded in `benchmarks/real_repo_*.yml`. See `docs/architecture/PHASE_15_REAL_REPOSITORY_EVALUATION.md` and `docs/research/EVALUATION_SETUP_AND_RESULTS.md` for results.
-
-
-## Benchmark Evaluation API and UI
-
-Phase 16 exposes the evaluation runner over the API and a frontend `Benchmarks` page, so ground-truth precision/recall/F1 can be run without a terminal:
-
-```text
-GET /benchmarks
-POST /benchmarks/{benchmark_id}/evaluate
-```
-
-See `docs/architecture/PHASE_16_BENCHMARK_EVALUATION_API_AND_UI.md`.
-
-## Detector Fixes and Language Coverage (Phases 17–20)
-
-Phase 17 fixes a Config Server misattribution: MESA no longer reads a hosted config file's URLs (e.g. `config-service/discovery-service.yml`) as the hosting service's own outbound calls, removing false `CHATTY_SERVICE`/`CYCLIC_DEPENDENCY` findings on Spring Cloud Config-based systems. See `docs/architecture/PHASE_17_CONFIG_SERVER_MISATTRIBUTION_FIX.md`.
-
-Phase 18 downgrades hard-coded-dependency findings for known observability/infra sidecar addresses (OpenTelemetry, Prometheus, Jaeger, Consul, Vault) to `LOW` severity with a `likely_infrastructure_address` flag, configurable via `MESA_INFRA_PORT_ALLOWLIST`. See `docs/architecture/PHASE_18_INFRA_ADDRESS_DOWNGRADE.md`.
-
-Phase 19 adds a synthetic recall-stress-test fixture (8 services, 5 anti-pattern types deliberately interleaved in one scan) to test whether co-occurring patterns mask each other. See `docs/architecture/PHASE_19_RECALL_STRESS_TEST.md`.
-
-Phase 20 adds MVP Go language support (regex-based extraction, matching the existing per-language style), closing a real discovery gap found evaluating Online Boutique. See `docs/architecture/PHASE_20_GO_LANGUAGE_SUPPORT.md`.
-
-Real-repository evaluation (Phase 15) was extended with a third repository, Sock Shop (`microservices-demo` org, 8 services split across 8 separate repos) — originally a deliberately different kind of result from Online Boutique and the Spring sample: 17 of 21 findings were false positives traced to test fixtures, API-contract mocks, and code comments. Evaluating it surfaced and fixed six real bugs in total: language misdetection, a `db_type` string-normalization bug, two bugs blocking ground-truth auto-matching for real repositories, and — closing the precision gap itself — comment-stripping and test/mock-tooling-directory exclusion in the hard-coded-dependency and shared-database detectors. Sock Shop now scores 1.0000/1.0000/1.0000, and combined across all three real repositories MESA scores 30/30/30 (0 false positives, 0 false negatives). See `benchmarks/real_repo_sockshop.yml`.
-
-## AI Baseline Comparison
-
-An empirical comparison of MESA's deterministic static analysis against two general-purpose LLMs (Claude Sonnet 5 and Claude Opus 5) prompted directly with MESA's own anti-pattern taxonomy, run 5 times per benchmark system to measure both accuracy and output determinism:
-
-```text
-mesa evaluate-ai-baseline <benchmark.yml> --systems <ids> --runs 5 --provider openai|anthropic
-```
-
-On the two real repositories tested (`spring-sample`, `sock-shop`), neither model found more than 25% of the labelled findings (Sonnet 5: F1 0.00 and 0.40; Opus 5, ranked 1st on SWE-bench Verified: F1 0.39 on both), and neither model was fully deterministic across all systems, against MESA's 1.0000 with identical output every run. See `docs/research/AI_BASELINE_COMPARISON.md` for the full methodology and results.
+- [Installation](docs/guides/INSTALLATION_GUIDE.md) and [user guide](docs/guides/USER_GUIDE.md)
+- [CI and the GitHub Action](docs/guides/ARCHITECTURE_FITNESS_GATE_CI.md)
+- [Reading findings](docs/guides/FINDINGS_GUIDE.md) and [the health score](docs/guides/HEALTH_SCORE_GUIDE.md)
+- [API reference](docs/api/API_DOCUMENTATION.md) (the running server also serves it at <http://localhost:8000/docs>)
+- [Developer guide](docs/guides/DEVELOPER_GUIDE.md)
