@@ -42,7 +42,7 @@ test.describe("tablet sidebar", () => {
 
     await page.getByRole("button", { name: "Open menu" }).click();
     await expect(menu(page)).toHaveClass(/overlayOpen/);
-    await expect(menu(page).getByText("Architecture Analyzer")).toBeVisible();
+    await expect(menu(page).locator(".appLogo img")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(menu(page)).toHaveClass(/collapsed/);
   });

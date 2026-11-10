@@ -1,3 +1,5 @@
+import mesaIconUrl from "../assets/brand/mesa-icon.svg";
+import mesaLogoUrl from "../assets/brand/mesa-logo.svg";
 import { isDemoSite } from "../demoSite";
 import { appNavigation } from "../app/navigation";
 import { ExplanationSwitch } from "../components/ExplanationSwitch";
@@ -64,13 +66,13 @@ export function Sidebar({
       <div className="appSidebarTop">
         <div className="appIdentity">
           {showRail ? (
-            <div className="appIdentityMark" role="img" aria-label="MESA">
-              M
-            </div>
+            // The app icon: the mark on a dark tile, so it uses the colours for dark backgrounds.
+            <img className="appIdentityMark" src={mesaIconUrl} alt="MESA" width={38} height={38} />
           ) : (
             <>
-              <div className="eyebrow">Architecture analyzer</div>
-              <h1>MESA</h1>
+              <h1 className="appLogo">
+                <img src={mesaLogoUrl} alt="MESA" width={132} height={32} />
+              </h1>
               <p>Find architecture problems in your microservices before they reach main.</p>
             </>
           )}

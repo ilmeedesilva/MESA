@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#2563eb"/>
-  <path d="M8 23V9h3.2l4.8 7.2L20.8 9H24v14h-3.2v-8.6L16 21.4l-4.8-7v8.6z" fill="#fff"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 56 56" role="img" aria-label="MESA"><style>.t{fill:#2350E6}.b{fill:#0B1220}@media (prefers-color-scheme:dark){.t{fill:#7C9CFF}.b{fill:#FFFFFF}}</style><polygon class="t" points="20,14 44,14 47.4,23 16.6,23"/><polygon class="b" points="15.5,27 48.5,27 57,50 7,50"/></svg>

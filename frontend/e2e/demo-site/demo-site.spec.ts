@@ -75,10 +75,18 @@ test("the favicon and all assets load from /MESA/", async ({ page, request }) =>
   page.on("response", (response) => {
     if (response.status() >= 400) failed.push(`${response.status()} ${response.url()}`);
   });
+  // Desktop width, where the sidebar is open and shows the full logo.
+  await page.setViewportSize({ width: 1440, height: 900 });
   await openDemoSite(page);
-  const icon = await page.locator('link[rel="icon"]').getAttribute("href");
-  expect(icon).toBe("/MESA/favicon.svg");
-  expect((await request.get(icon!)).status()).toBe(200);
+  const icons = await page
+    .locator('link[rel="icon"], link[rel="apple-touch-icon"]')
+    .evaluateAll((elements) => elements.map((element) => element.getAttribute("href")));
+  expect(icons).toEqual(["/MESA/favicon.ico", "/MESA/favicon.svg", "/MESA/apple-touch-icon.png"]);
+  for (const icon of icons) expect((await request.get(icon!)).status(), icon!).toBe(200);
+  // The logo at the top of the sidebar loads from under /MESA/ too.
+  const logo = page.locator(".appLogo img");
+  expect(await logo.getAttribute("src")).toMatch(/^\/MESA\/assets\/mesa-logo-.*\.svg$/);
+  expect(await logo.evaluate((image: HTMLImageElement) => image.naturalWidth > 0)).toBe(true);
   expect(failed).toEqual([]);
 });
 
