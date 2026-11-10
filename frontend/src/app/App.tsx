@@ -229,6 +229,7 @@ function SectionContent({ ws, historyPanel }: { ws: MesaWorkspace; historyPanel:
           onApplyPolicyDraft={(draft) => ws.setPolicyText(draft)}
           onRefreshStatus={() => void ws.loadAIStatus()}
           onOpenDoc={ws.openDoc}
+          interpretationMode={ws.interpretationMode}
         />
       );
     case "docs":

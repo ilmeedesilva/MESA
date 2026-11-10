@@ -207,7 +207,7 @@ export function localDemoAIResponse({
         }
       ],
       suggestions: [
-        "Save the current draft into a live project when the backend is available.",
+        "Save the current draft into a project when your MESA server is connected.",
         "Keep policy names simple and specific so your team can read them."
       ],
       follow_up_questions: ["Explain governance simply.", "What should I fix first?"],

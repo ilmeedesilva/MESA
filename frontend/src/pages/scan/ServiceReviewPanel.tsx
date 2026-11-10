@@ -99,7 +99,7 @@ export function ServiceReviewPanel({ ws }: { ws: MesaWorkspace }) {
       <label htmlFor="paths">Service paths</label>
       <textarea id="paths" value={paths} onChange={(event) => setPaths(event.target.value)} />
       <p className="hint">
-        Manual fallback: use one service directory per line. Repository discovery can fill this automatically.
+        Manual paths: use one service directory per line. Repository discovery can fill this automatically.
       </p>
       <div className="panelButtonRow">
         <button type="button" onClick={() => focusWorkflowStep("source")}>

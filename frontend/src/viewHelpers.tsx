@@ -756,34 +756,97 @@ export function comparisonBaseScan(history: ScanRecord[], activeScanId: string) 
   return history[index + 1] ?? history[index - 1] ?? null;
 }
 
-export function aiStatusLabel(state: AIExplainerStatus["state"]) {
-  return {
-    GROUNDED_ONLY: "Grounded-only mode",
-    MISSING_API_KEY: "Missing API key",
-    PLACEHOLDER_API_KEY: "Placeholder API key",
-    INVALID_API_KEY: "Invalid API key",
-    MODEL_UNAVAILABLE: "Model unavailable",
-    ACCESS_DENIED: "Access denied",
-    CONNECTION_ERROR: "Connection problem",
-    READY: "Live AI ready"
-  }[state];
+/** The AI provider MESA is configured to use, read from the provider's API address. */
+export function aiProviderName(baseUrl?: string | null): string {
+  if (!baseUrl) return "AI provider";
+  let host = baseUrl;
+  try {
+    host = new URL(baseUrl).hostname;
+  } catch {
+    // Not a full URL: use it as it is.
+  }
+  if (/(^|\.)anthropic\.com$/i.test(host)) return "Anthropic";
+  if (/(^|\.)openai\.com$/i.test(host)) return "OpenAI";
+  return host;
 }
 
-export function aiStatusTone(state: AIExplainerStatus["state"]) {
-  if (state === "READY") return "good";
-  if (state === "GROUNDED_ONLY") return "neutral";
-  if (state === "CONNECTION_ERROR" || state === "MODEL_UNAVAILABLE") return "medium";
-  return "high";
+export type AIStatusSummary = {
+  /** "off": no AI configured; "on": AI working; "unavailable": configured but not working; "unknown": status not loaded. */
+  kind: "off" | "on" | "unavailable" | "unknown";
+  tone: "neutral" | "good" | "medium";
+  text: string;
+  /** Extra detail for the Technical explanation level (model, reason). */
+  detail: string | null;
+};
+
+/** The one status line on the AI Explainer page, in plain words. */
+export function aiStatusSummary(status: AIExplainerStatus | null): AIStatusSummary {
+  if (!status) {
+    return {
+      kind: "unknown",
+      tone: "neutral",
+      text: "AI status could not be checked. MESA's built-in explanations are used.",
+      detail: null
+    };
+  }
+  const provider = aiProviderName(status.base_url);
+  const model = status.model ? `Model: ${status.model}.` : null;
+  switch (status.state) {
+    case "GROUNDED_ONLY":
+      return { kind: "off", tone: "neutral", text: "AI: off. Using MESA's built-in explanations.", detail: null };
+    case "MISSING_API_KEY":
+      return {
+        kind: "off",
+        tone: "neutral",
+        text: "AI: off. Using MESA's built-in explanations.",
+        detail: `AI is turned on in the settings, but no ${provider} API key is set.`
+      };
+    case "READY":
+      return { kind: "on", tone: "good", text: `AI: on (${provider}).`, detail: model };
+    default: {
+      const reasons: Record<string, string> = {
+        PLACEHOLDER_API_KEY: `The ${provider} API key still looks like a placeholder.`,
+        INVALID_API_KEY: `${provider} rejected the API key.`,
+        MODEL_UNAVAILABLE: `The model ${status.model} is not available from ${provider}.`,
+        ACCESS_DENIED: `${provider} denied access to this model or account.`,
+        CONNECTION_ERROR: `MESA could not reach ${provider}.`
+      };
+      return {
+        kind: "unavailable",
+        tone: "medium",
+        text: "AI unavailable right now. Showing MESA's built-in explanation.",
+        detail: [reasons[status.state] ?? null, model].filter(Boolean).join(" ") || null
+      };
+    }
+  }
 }
 
-export function aiAnswerProvider(source?: string) {
-  if (source?.startsWith("openai-hybrid")) {
-    return { label: "Answered by OpenAI", tone: "good" };
+/** The provider and model behind an answer's source, such as "anthropic-hybrid:claude-opus-5-5". */
+function aiSourceParts(source?: string) {
+  const match = source?.match(/^([a-z]+)-hybrid(?::(.+))?$/i);
+  if (!match) return null;
+  const provider =
+    match[1].toLowerCase() === "anthropic" ? "Anthropic" : match[1].toLowerCase() === "openai" ? "OpenAI" : match[1];
+  return { provider, model: match[2] ?? null };
+}
+
+/**
+ * The small label on an answer: "AI" when an AI provider wrote it, otherwise "MESA".
+ * The detail (provider and model, or why MESA answered) is for the Technical level.
+ */
+export function aiAnswerLabel(source?: string): { label: "AI" | "MESA"; tone: "good" | "neutral"; detail: string } {
+  const ai = aiSourceParts(source);
+  if (ai) {
+    return {
+      label: "AI",
+      tone: "good",
+      detail: ai.model ? `Answered by ${ai.provider} (${ai.model})` : `Answered by ${ai.provider}`
+    };
   }
   if (source?.includes("fallback")) {
-    return { label: "Answered by MESA fallback", tone: "high" };
+    return { label: "MESA", tone: "neutral", detail: "Built-in explanation (AI was unavailable for this answer)" };
   }
-  return { label: "Answered by MESA", tone: "neutral" };
+  return { label: "MESA", tone: "neutral", detail: "Built-in explanation" };
 }
 
 export function servicePathsFromText(value: string) {

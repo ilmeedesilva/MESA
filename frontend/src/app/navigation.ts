@@ -11,7 +11,7 @@ export const appNavigation = [
       { id: "scan", label: "Scan", description: "Configure sources and run scans" },
       { id: "findings", label: "Findings", description: "Inspect findings and filters" },
       { id: "graph", label: "Graph", description: "Explore architecture and health" },
-      { id: "ai", label: "AI Explainer", description: "Ask grounded questions about the scan" }
+      { id: "ai", label: "AI Explainer", description: "Ask questions about the scan" }
     ]
   },
   {

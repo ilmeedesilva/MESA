@@ -65,7 +65,7 @@ export function Sidebar({
             <>
               <div className="eyebrow">Architecture Analyzer</div>
               <h1>MESA</h1>
-              <p>Structured project selection, scanning, findings analysis, and research evidence in one workspace.</p>
+              <p>Find architecture problems in your microservices before they reach main.</p>
             </>
           )}
         </div>

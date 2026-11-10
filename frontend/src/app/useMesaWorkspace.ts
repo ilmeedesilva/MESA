@@ -518,7 +518,7 @@ export function useMesaWorkspace() {
 
   async function runScan() {
     if (isPublicDemoMode && apiAvailability !== "online") {
-      setError("You are viewing demo data. Start the full backend stack to run live scans.");
+      setError("You are viewing demo data. Start your MESA server to run scans.");
       return;
     }
     if (!selectedProject) {
@@ -577,7 +577,7 @@ export function useMesaWorkspace() {
 
   async function previewRepositorySource() {
     if (isPublicDemoMode && apiAvailability !== "online") {
-      setError("Repository preview needs the live backend. The demo data only includes example scans.");
+      setError("Repository preview needs your MESA server. The demo data only includes example scans.");
       return;
     }
     if (!sourceLocation.trim()) {
@@ -627,7 +627,7 @@ export function useMesaWorkspace() {
 
   async function savePolicies() {
     if (isPublicDemoMode && apiAvailability !== "online") {
-      setError("Policy saving is disabled in public demo mode because the backend is not connected.");
+      setError("Saving policies needs your MESA server. The demo data cannot be changed.");
       return;
     }
     if (!selectedProject) {
@@ -843,9 +843,9 @@ export function useMesaWorkspace() {
         live_enabled: false,
         api_key_configured: false,
         api_key_hint: null,
-        model: "demo-embedded",
-        base_url: "embedded",
-        message: "Showing demo data without a live backend."
+        model: "",
+        base_url: "",
+        message: "Showing demo data."
       });
       setIsCheckingAIStatus(false);
       return;
@@ -1066,6 +1066,15 @@ export function useMesaWorkspace() {
 
   const backendUnavailable = apiAvailability === "offline";
   const usingEmbeddedDemo = isPublicDemoMode && backendUnavailable;
+
+  // The AI status is first checked before MESA knows whether a server is running. When the demo
+  // data takes over, show the demo status (AI off) instead of a failed check. No request is made.
+  const showDemoAIStatus = useEffectEvent(() => {
+    if (usingEmbeddedDemo) void loadAIStatus();
+  });
+  React.useEffect(() => {
+    showDemoAIStatus();
+  }, [usingEmbeddedDemo, showDemoAIStatus]);
   const currentSectionMeta =
     currentSection === "not-found"
       ? notFoundItem

@@ -14,10 +14,8 @@ export function PublicDemoBanner({
   if (apiAvailability === "checking") {
     return (
       <section className="publicDemoBanner neutral">
-        <strong>Checking backend availability</strong>
-        <span>
-          MESA is checking whether the live API is reachable before choosing the best experience for this session.
-        </span>
+        <strong>Connecting to your MESA server</strong>
+        <span>Checking whether your MESA server is running.</span>
       </section>
     );
   }
@@ -26,15 +24,12 @@ export function PublicDemoBanner({
     return (
       <section className="publicDemoBanner demo">
         <div>
-          <strong>Public demo mode is active</strong>
-          <span>
-            The live backend is not connected, so MESA loaded demo data: example scans, roadmap data, docs, and a guided
-            tour.
-          </span>
+          <strong>You're viewing demo data</strong>
+          <span>Your MESA server is not connected, so MESA shows example scans, a roadmap and the docs.</span>
         </div>
         <div className="publicDemoActions">
           <button type="button" className="workflowToggle" onClick={() => onOpenDoc("public-demo-guide")}>
-            Demo guide
+            About demo data
           </button>
           <button type="button" className="workflowToggle" onClick={() => onOpenDoc("quick-start")}>
             Take the tour
@@ -47,7 +42,7 @@ export function PublicDemoBanner({
   return (
     <section className="publicDemoBanner live">
       <div>
-        <strong>Live workspace is available</strong>
+        <strong>Connected to your MESA server</strong>
         <span>
           {isPublicDemoMode
             ? "The demo data is loaded even though your MESA server is available."

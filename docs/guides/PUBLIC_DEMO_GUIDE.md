@@ -44,7 +44,7 @@ It is a guided example workspace, not a full analysis runtime.
 5. Start with these areas:
 
 - summary strip
-- findings dashboard
+- Findings
 - remediation roadmap
 - architecture graph
 - health score panel
@@ -56,7 +56,7 @@ It is a guided example workspace, not a full analysis runtime.
 2. Open the most urgent finding.
 3. Open the remediation roadmap to see grouped actions.
 4. Compare the latest demo scan with the previous one.
-5. Switch to the documentation portal.
+5. Switch to the documentation.
 6. Read:
 
 - `Quick Start`
@@ -79,7 +79,7 @@ In public demo mode, the AI panel answers from the demo data and the built-in do
 
 If the live backend is available, use:
 
-- `Load Demo Workspace`
+- `Load demo data`
 - `Connect to your MESA server`
 
 in the Demo Workspace box at the bottom of the sidebar (in the menu on phones) to switch between the demo data and your MESA server.
