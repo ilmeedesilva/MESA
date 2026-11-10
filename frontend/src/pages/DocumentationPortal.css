@@ -120,15 +120,6 @@
   gap: var(--space-4);
 }
 
-.docsArticleHeader code {
-  display: inline-flex;
-  padding: 5px 9px;
-  border-radius: var(--radius-pill);
-  color: var(--blue-700);
-  background: var(--blue-50);
-  font-size: 11px;
-}
-
 .docsTags {
   display: flex;
   flex-wrap: wrap;

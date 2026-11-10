@@ -16,7 +16,7 @@ export function PoliciesPanel({ ws }: { ws: MesaWorkspace }) {
   return (
     <section className="panelBlock policyEditor">
       <div className="panelHeader compact">
-        <h2>Governance Policies</h2>
+        <h2>Policies</h2>
         <span>{policyCount} active optional rules</span>
       </div>
       <label htmlFor="policyText">Policy YAML</label>
@@ -33,14 +33,14 @@ export function PoliciesPanel({ ws }: { ws: MesaWorkspace }) {
           }
           disabled={isExplaining || !selectedProject || !activeScan}
         >
-          {isExplaining ? "Drafting..." : "Draft Policies With AI"}
+          {isExplaining ? "Drafting..." : "Draft policies with AI"}
         </button>
         <button type="button" onClick={() => focusWorkflowStep("scan")} disabled={!selectedProject}>
-          Go to Run Scan
+          Continue to run scan
         </button>
       </div>
       <button className="fullButton" onClick={savePolicies} disabled={isSavingPolicies || !selectedProject}>
-        {isSavingPolicies ? "Saving..." : "Save Policies"}
+        {isSavingPolicies ? "Saving..." : "Save policies"}
       </button>
     </section>
   );

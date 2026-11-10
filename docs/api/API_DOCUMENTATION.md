@@ -126,7 +126,7 @@ Repository-backed project scan example:
 }
 ```
 
-Phase 3 note:
+Note:
 
 - use the `discovered_services` array from the preview response as the review step before deciding which `service_paths` to send into the persisted repo scan
 
@@ -163,7 +163,7 @@ The roadmap groups multiple findings into:
 - suggested execution order
 - dependencies between actions
 
-## Architecture Fitness Gate
+## Architecture Gate
 
 ```text
 GET /scans/{scan_id}/gate

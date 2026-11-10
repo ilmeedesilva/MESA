@@ -1,9 +1,8 @@
 import React from "react";
 import { DocLinkButton } from "../components/DocLinkButton";
 import {
-  aiAnswerProvider,
-  aiStatusLabel,
-  aiStatusTone,
+  aiAnswerLabel,
+  aiStatusSummary,
   renderHighlightedText,
   shortId,
   summaryFindingTitle,
@@ -15,6 +14,7 @@ import type {
   AIExplainerStatus,
   Finding,
   HealthScore,
+  InterpretationMode,
   ScanRecord
 } from "../types";
 
@@ -34,7 +34,8 @@ export function AIExplainerPanel({
   onAsk,
   onApplyPolicyDraft,
   onRefreshStatus,
-  onOpenDoc
+  onOpenDoc,
+  interpretationMode
 }: {
   activeScan: ScanRecord | null;
   compareBaseScan: ScanRecord | null;
@@ -63,14 +64,17 @@ export function AIExplainerPanel({
   onApplyPolicyDraft: (draft: string) => void;
   onRefreshStatus: () => void;
   onOpenDoc: (slug: string) => void;
+  interpretationMode: InterpretationMode;
 }) {
-  const answerProvider = aiAnswerProvider(response?.source);
+  const technical = interpretationMode === "technical";
+  const answerLabel = aiAnswerLabel(response?.source);
+  const aiStatus = aiStatusSummary(status);
   return (
     <section className="aiExplainerPanel">
       <div className="aiExplainerHeader">
         <div>
           <div className="eyebrow">AI Explainer</div>
-          <h2>Ask MESA for grounded interpretation</h2>
+          <h2>Ask MESA about this scan</h2>
           <p>
             This assistant explains scan results from deterministic findings, scores, scan history, and local
             documentation. It does not replace the detector.
@@ -83,35 +87,29 @@ export function AIExplainerPanel({
         <div className="aiStatusCard">
           <strong>{activeScan ? `Scan ${shortId(activeScan.id)}` : "No active scan"}</strong>
           <span>
-            {response
-              ? response.source.startsWith("openai-hybrid")
-                ? "Live OpenAI hybrid response"
-                : "Grounded MESA fallback response"
-              : isLoading
-                ? "Streaming response in progress"
+            {isLoading
+              ? "Writing the answer..."
+              : response
+                ? answerLabel.label === "AI"
+                  ? "Last answer: AI"
+                  : "Last answer: MESA"
                 : "Waiting for a question"}
           </span>
           <button type="button" className="secondaryButton" onClick={onRefreshStatus} disabled={isCheckingStatus}>
-            {isCheckingStatus ? "Checking..." : "Refresh AI Status"}
+            {isCheckingStatus ? "Checking..." : "Refresh AI status"}
           </button>
         </div>
       </div>
 
       <div className="aiWorkspaceGrid">
         <div className="aiAskPane">
-          <div className={`aiConnectionBanner ${status ? aiStatusTone(status.state) : "neutral"}`}>
-            <strong>{status ? aiStatusLabel(status.state) : "AI status unavailable"}</strong>
-            <span>{status?.message ?? "MESA could not load the AI configuration status right now."}</span>
-            {status ? (
-              <small>
-                Mode: <code>{status.mode}</code> | Model: <code>{status.model}</code>
-                {status.api_key_hint ? (
-                  <>
-                    {" "}
-                    | Key: <code>{status.api_key_hint}</code>
-                  </>
-                ) : null}
-              </small>
+          <div className={`aiConnectionBanner ${aiStatus.tone}`} role="status">
+            <strong>{aiStatus.text}</strong>
+            {technical && aiStatus.detail ? <small>{aiStatus.detail}</small> : null}
+            {aiStatus.kind === "off" ? (
+              <div className="docLinks">
+                <DocLinkButton label="How to turn on AI" onClick={() => onOpenDoc("ai-explainer-guide")} />
+              </div>
             ) : null}
           </div>
 
@@ -239,12 +237,12 @@ export function AIExplainerPanel({
             <div className="aiResponseHeader">
               <div>
                 <div className="findingMeta">
-                  <span>{response?.source ?? "streaming"}</span>
+                  <span className={`aiAnswerBadge ${answerLabel.tone}`}>{response ? answerLabel.label : "..."}</span>
                   <strong className={`severity ${(response?.confidence ?? "MODERATE").toLowerCase()}`}>
                     {response?.confidence ?? "MODERATE"}
                   </strong>
                 </div>
-                <div className={`aiAnswerBadge ${answerProvider.tone}`}>{answerProvider.label}</div>
+                {technical && response ? <small className="aiAnswerSource">{answerLabel.detail}</small> : null}
                 <h3>{response?.title ?? "MESA is preparing the answer..."}</h3>
               </div>
               <span className="modePill">{(response?.intent ?? "AUTO").replace(/_/g, " ")}</span>

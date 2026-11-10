@@ -6,14 +6,12 @@ export const sections = [
   "findings",
   "graph",
   "history",
-  "evolution",
   "roadmap",
   "gate",
   "ai",
-  "evaluation",
-  "benchmarks",
-  "ai-baseline",
-  "docs"
+  "docs",
+  // Not a menu page: any unknown link shows it, so it is checked like the others.
+  "not-found"
 ] as const;
 
 export type Section = (typeof sections)[number];

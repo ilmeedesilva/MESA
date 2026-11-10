@@ -1,26 +1,35 @@
 import type { NavigationItem } from "../app/navigation";
-import type { ProjectListStatus, ProjectRecord } from "../types";
+import { ExplanationSwitch } from "../components/ExplanationSwitch";
+import type { InterpretationMode, ProjectListStatus, ProjectRecord } from "../types";
 
+/**
+ * The page header on tablets and desktops: the page title on the left; the explanation level,
+ * the project dropdown and New project on the right. Every control on the right has a fixed size,
+ * so nothing moves when the level or the project changes; long project names are cut off with an
+ * ellipsis inside the dropdown (the option list shows them in full).
+ */
 export function TopBar({
   section,
   projects,
   selectedProject,
   selectedProjectId,
   projectListStatus,
-  isLoadingProjectState,
   isPublicDemoMode,
   onSelectProject,
-  onCreateProject
+  onCreateProject,
+  interpretationMode,
+  onChangeInterpretationMode
 }: {
   section: NavigationItem;
   projects: ProjectRecord[];
   selectedProject: ProjectRecord | null;
   selectedProjectId: string;
   projectListStatus: ProjectListStatus;
-  isLoadingProjectState: boolean;
   isPublicDemoMode: boolean;
   onSelectProject: (value: string) => void;
   onCreateProject: () => void;
+  interpretationMode: InterpretationMode;
+  onChangeInterpretationMode: (mode: InterpretationMode) => void;
 }) {
   return (
     <header className="appHeader">
@@ -31,42 +40,27 @@ export function TopBar({
       </div>
 
       <div className="appHeaderActions">
-        <div className="toolbarProjectShell headerProjectShell">
-          <div className="toolbarProjectMeta">
-            <strong>
-              {isLoadingProjectState
-                ? "Loading project..."
-                : selectedProject
-                  ? selectedProject.name
-                  : "No project selected"}
-            </strong>
-            <small>
-              {projectListStatus === "loading"
-                ? "Refreshing project list"
-                : `${projects.length} available project${projects.length === 1 ? "" : "s"}`}
-            </small>
-          </div>
-          <label className="toolbarProjectPicker">
-            <span>Project</span>
-            <select
-              value={selectedProjectId}
-              onChange={(event) => onSelectProject(event.target.value)}
-              disabled={projectListStatus === "loading" && !isPublicDemoMode}
-            >
-              <option value="">Select project</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-              {!isPublicDemoMode ? <option value="__create_new__">+ Create New Project</option> : null}
-            </select>
-          </label>
-        </div>
-
+        <ExplanationSwitch mode={interpretationMode} onChangeMode={onChangeInterpretationMode} />
+        <label className="headerProjectPicker">
+          <span>Project</span>
+          <select
+            value={selectedProjectId}
+            title={selectedProject?.name}
+            onChange={(event) => onSelectProject(event.target.value)}
+            disabled={projectListStatus === "loading" && !isPublicDemoMode}
+          >
+            <option value="">{projectListStatus === "loading" ? "Loading projects..." : "Select project"}</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+            {!isPublicDemoMode ? <option value="__create_new__">+ Create new project</option> : null}
+          </select>
+        </label>
         {!isPublicDemoMode ? (
-          <button type="button" className="secondaryButton" onClick={onCreateProject}>
-            New Project
+          <button type="button" className="secondaryButton headerNewProject" onClick={onCreateProject}>
+            New project
           </button>
         ) : null}
       </div>

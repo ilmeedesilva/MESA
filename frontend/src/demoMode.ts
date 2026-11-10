@@ -94,7 +94,7 @@ export function localDemoAIResponse({
       title: "Demo data not loaded",
       answer: "Load the demo data first so MESA can show example results.",
       evidence: [],
-      suggestions: ["Use Load Demo Workspace in the sidebar to load the demo data."],
+      suggestions: ['Use "Load demo data" in the sidebar.'],
       follow_up_questions: ["How do I use this demo?"],
       limitations: ["No active demo scan was loaded."],
       confidence: "LOW",
@@ -207,7 +207,7 @@ export function localDemoAIResponse({
         }
       ],
       suggestions: [
-        "Save the current draft into a live project when the backend is available.",
+        "Save the current draft into a project when your MESA server is connected.",
         "Keep policy names simple and specific so your team can read them."
       ],
       follow_up_questions: ["Explain governance simply.", "What should I fix first?"],

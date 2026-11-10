@@ -316,3 +316,20 @@
     padding: var(--space-3-5);
   }
 }
+
+/* The answer label sits in the meta row next to the confidence. */
+.findingMeta .aiAnswerBadge {
+  margin-top: 0;
+}
+
+.aiAnswerSource {
+  display: block;
+  margin-top: var(--space-1-5);
+  color: var(--slate-500);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.aiConnectionBanner .docLinks {
+  margin-top: var(--space-1);
+}

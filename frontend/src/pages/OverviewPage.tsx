@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { MesaWorkspace } from "../app/useMesaWorkspace";
 import { DocLinkButton } from "../components/DocLinkButton";
+import { StatePanel } from "../components/StatePanel";
 import { ProjectSelectionPanel } from "./scan/ProjectSelectionPanel";
 import { Metric, compactMetricDetail, gradeTone, recommendationPreview, summaryFindingTitle } from "../viewHelpers";
 
@@ -19,7 +20,10 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
     highestSeverity,
     hotspot,
     urgentFinding,
-    openDoc
+    openDoc,
+    isLoadingScan,
+    isLoadingProjectState,
+    history
   } = ws;
 
   if (!selectedProject) {
@@ -27,7 +31,7 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
       <div className="workspaceStack">
         <section className="workspaceIntroCard">
           <div>
-            <div className="eyebrow">Start Here</div>
+            <div className="eyebrow">Start here</div>
             <h2>Create or select a project</h2>
             <p>
               Choose an existing project to restore its saved scan state, or create a new one to start a clean analysis
@@ -35,7 +39,7 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
             </p>
           </div>
           <div className="docLinks">
-            <DocLinkButton label="Quick start" onClick={() => openDoc("evaluator-quick-start")} />
+            <DocLinkButton label="Quick start" onClick={() => openDoc("quick-start")} />
             <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
           </div>
         </section>
@@ -67,7 +71,7 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
           </div>
         </article>
         <article className="workspaceInfoCard emphasis">
-          <div className="eyebrow">Next Action</div>
+          <div className="eyebrow">Next action</div>
           <h2>{nextAction}</h2>
           <p>
             Use the dedicated workspaces to move straight into scan setup, findings review, graph analysis, or AI
@@ -75,13 +79,13 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
           </p>
           <div className="workspaceActionGrid">
             <button type="button" className="secondaryButton" onClick={() => navigateToSection("scan")}>
-              Open Scan
+              Go to Scan
             </button>
             <button type="button" onClick={() => navigateToSection("findings")} disabled={!result}>
-              View Findings
+              View findings
             </button>
             <button type="button" onClick={() => navigateToSection("graph")} disabled={!result}>
-              Open Graph
+              Open graph
             </button>
             <button type="button" onClick={() => navigateToSection("ai")} disabled={!activeScan}>
               Ask AI
@@ -89,6 +93,23 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
           </div>
         </article>
       </section>
+
+      {!result && (isLoadingScan || isLoadingProjectState) ? (
+        <StatePanel kind="loading" title="Loading the latest scan..." />
+      ) : null}
+      {!result && !isLoadingScan && !isLoadingProjectState && history.length === 0 ? (
+        <StatePanel
+          kind="empty"
+          title="No scan yet"
+          actions={
+            <button type="button" onClick={() => navigateToSection("scan")}>
+              Go to Scan
+            </button>
+          }
+        >
+          {`Run a scan of ${selectedProject.name} to see its findings, health score and graph.`}
+        </StatePanel>
+      ) : null}
 
       <section className="summaryStrip">
         <Metric
@@ -104,7 +125,7 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
           kind="number"
         />
         <Metric
-          label="System Health"
+          label="System health"
           value={systemScore ? Math.round(systemScore.score) : "--"}
           tone={systemScore ? gradeTone(systemScore.grade) : ""}
           detail={
@@ -113,14 +134,14 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
           kind="number"
         />
         <Metric
-          label="Highest Risk"
+          label="Highest risk"
           value={highestSeverity}
           tone={highestSeverity.toLowerCase()}
           detail={highestSeverity === "None" ? "No active findings yet" : "Strongest severity currently detected"}
           kind="status"
         />
         <Metric
-          label="Hotspot Service"
+          label="Hotspot service"
           value={hotspot?.service ?? "--"}
           tone={hotspot ? hotspot.tone : ""}
           detail={hotspot?.detail ?? "Most concentrated risk area in the scan"}
@@ -128,7 +149,7 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
           featured
         />
         <Metric
-          label="Focus First"
+          label="Focus first"
           value={urgentFinding ? summaryFindingTitle(urgentFinding) : "No urgent issue"}
           tone={urgentFinding ? urgentFinding.severity.toLowerCase() : ""}
           detail={
