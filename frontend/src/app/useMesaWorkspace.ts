@@ -1,5 +1,6 @@
 import React from "react";
 import { demoWorkspace } from "../demoData";
+import { readStoredInterpretationMode, storeInterpretationMode } from "./interpretationMode";
 import { ApiError, api, messageFor, pollScanJob, streamAIResponse } from "../api";
 import { demoPersistedScan, isDemoScan, isPublicDemoProject, localDemoAIResponse } from "../demoMode";
 import {
@@ -102,7 +103,12 @@ export function useMesaWorkspace() {
   const [selectedFindingId, setSelectedFindingId] = React.useState<string | null>(null);
   const [pendingFindingId, setPendingFindingId] = React.useState<string | null>(initialRoute.findingId ?? null);
   const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
-  const [interpretationMode, setInterpretationMode] = React.useState<InterpretationMode>("beginner");
+  const [interpretationMode, setInterpretationModeState] =
+    React.useState<InterpretationMode>(readStoredInterpretationMode);
+  const setInterpretationMode = React.useCallback((mode: InterpretationMode) => {
+    setInterpretationModeState(mode);
+    storeInterpretationMode(mode);
+  }, []);
   const [showSetupWorkspace, setShowSetupWorkspace] = React.useState(true);
   const [hasAutoCollapsedSetup, setHasAutoCollapsedSetup] = React.useState(false);
   const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");

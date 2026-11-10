@@ -75,8 +75,8 @@ describe("hash routing", () => {
     clickNav("Findings");
 
     fireEvent.click(document.querySelector<HTMLButtonElement>(".findingCardOpen")!);
-    const id = drawer()!.querySelector(".findingMeta span")!.textContent!;
-    expect(hash()).toBe(`#/findings/${id}`);
+    const id = decodeURIComponent(hash().replace("#/findings/", ""));
+    expect(id).toMatch(/^MESA-[A-Z]+-\d+$/);
 
     await goBack();
     await waitFor(() => expect(drawer()).toBeNull());
@@ -106,12 +106,13 @@ describe("hash routing", () => {
     await renderDemoAt("/");
     clickNav("Findings");
     fireEvent.click(document.querySelector<HTMLButtonElement>(".findingCardOpen")!);
-    const id = drawer()!.querySelector(".findingMeta span")!.textContent!;
+    const id = decodeURIComponent(hash().replace("#/findings/", ""));
+    const title = drawer()!.querySelector("h2")!.textContent;
     cleanup();
 
     await renderDemoAt(`/#/findings/${id}`);
     await waitFor(() => expect(drawer()).not.toBeNull());
-    expect(drawer()!.querySelector(".findingMeta span")!.textContent).toBe(id);
+    expect(drawer()!.querySelector("h2")!.textContent).toBe(title);
     expect(hash()).toBe(`#/findings/${id}`);
   });
 

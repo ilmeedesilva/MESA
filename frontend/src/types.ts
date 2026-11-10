@@ -458,7 +458,8 @@ export type WorkflowStep = {
   optional?: boolean;
 };
 
-export type InterpretationMode = "beginner" | "research";
+/** How much detail MESA shows: "simple" (plain language, the default) or "technical" (IDs, rules, raw evidence). */
+export type InterpretationMode = "simple" | "technical";
 export type AppSection =
   | "overview"
   | "scan"

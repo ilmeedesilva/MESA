@@ -71,8 +71,8 @@ test.describe("findings", () => {
 
     await card.click();
     await expect(dialog).toBeVisible();
-    const id = await dialog.locator(".findingMeta span").first().innerText();
-    await expect(page).toHaveURL(new RegExp(`#/findings/${id}$`));
+    // Simple view hides finding IDs; the URL carries it.
+    await expect(page).toHaveURL(/#\/findings\/MESA-[A-Z]+-\d+$/);
 
     await dialog.getByRole("button", { name: "Close" }).click();
     await expect(dialog).toBeHidden();
@@ -101,6 +101,29 @@ test.describe("findings", () => {
   });
 });
 
+test.describe("explanation level", () => {
+  test.use(deviceFor(390));
+
+  test("Simple hides IDs and file:line, Technical shows them, and the choice survives a reload", async ({ page }) => {
+    await openApp(page, "#/findings");
+    const levels = page.getByRole("group", { name: "Explanation level" });
+    const cards = page.locator(".findingCard");
+    await expect(levels.getByRole("button", { name: /Simple/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(cards.first()).toBeVisible();
+    await expect(cards.filter({ hasText: /MESA-[A-Z]+-\d+/ })).toHaveCount(0);
+    await expect(page.locator(".findingLocations")).toHaveCount(0);
+
+    await levels.getByRole("button", { name: /Technical/ }).click();
+    await expect(cards.filter({ hasText: /MESA-[A-Z]+-\d+/ }).first()).toBeVisible();
+    await expect(page.locator(".findingLocations code").filter({ hasText: /:\d+$/ }).first()).toBeVisible();
+
+    await page.reload();
+    await expect(levels.getByRole("button", { name: /Technical/ })).toHaveAttribute("aria-pressed", "true");
+    await cards.first().locator(".findingCardOpen").click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Raw evidence" })).toBeVisible();
+  });
+});
+
 test.describe("links and the back button", () => {
   test.use(deviceFor(1440));
 
@@ -124,12 +147,14 @@ test.describe("links and the back button", () => {
   test("a shared finding link opens that finding, also after a reload", async ({ page }) => {
     await openApp(page, "#/findings");
     await page.locator(".findingCardOpen").first().click();
-    const id = await page.getByRole("dialog").locator(".findingMeta span").first().innerText();
+    await expect(page).toHaveURL(/#\/findings\/MESA-/);
+    const id = decodeURIComponent(new URL(page.url()).hash.replace("#/findings/", ""));
+    const title = await page.getByRole("dialog").getByRole("heading", { level: 2 }).innerText();
 
     await openApp(page, `#/findings/${id}`);
-    await expect(page.getByRole("dialog")).toContainText(id);
+    await expect(page.getByRole("dialog").getByRole("heading", { level: 2 })).toHaveText(title);
     await page.reload();
-    await expect(page.getByRole("dialog")).toContainText(id);
+    await expect(page.getByRole("dialog").getByRole("heading", { level: 2 })).toHaveText(title);
   });
 
   test("old ?section= links and documentation links open the right page", async ({ page }) => {

@@ -1071,6 +1071,26 @@ export function confidenceLabel(confidence: number) {
   return "Low";
 }
 
+/**
+ * The exact places a finding points at, as "file:line" (or just "file" when no line is known):
+ * from the evidence steps, then raw evidence records that carry a file_path, then the finding's
+ * source files. A bare file is skipped when a file:line for it is already listed.
+ */
+export function findingLocations(finding: Finding): string[] {
+  const locations: string[] = [];
+  const add = (file: unknown, line: unknown) => {
+    if (typeof file !== "string" || !file) return;
+    const location = typeof line === "number" && line > 0 ? `${file}:${line}` : file;
+    if (locations.includes(location)) return;
+    if (location === file && locations.some((known) => known.startsWith(`${file}:`))) return;
+    locations.push(location);
+  };
+  for (const item of finding.evidence_chain ?? []) add(item.source?.file_path, item.source?.line_number);
+  for (const record of finding.evidence ?? []) add(record.file_path, record.line_number);
+  for (const file of finding.source_files ?? []) add(file, undefined);
+  return locations;
+}
+
 export function confidenceGuidance(confidence: number) {
   if (confidence >= 0.9) return "The detector found strong signals that consistently support this result.";
   if (confidence >= 0.75)

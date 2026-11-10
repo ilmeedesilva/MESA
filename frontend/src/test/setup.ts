@@ -5,7 +5,40 @@ import { afterEach } from "vitest";
 // Vitest runs without globals, so Testing Library does not unmount rendered trees by itself.
 afterEach(() => {
   cleanup();
+  // Settings remembered per browser (such as the explanation level) must not leak between tests.
+  try {
+    window.localStorage.clear();
+  } catch {
+    // Storage unavailable: nothing to clear.
+  }
 });
+
+// Newer Node versions define their own global localStorage, which can hide jsdom's and is
+// unusable without a storage file. Give the tests a working in-memory Storage either way.
+function storageWorks() {
+  try {
+    window.localStorage.setItem("__probe__", "1");
+    window.localStorage.removeItem("__probe__");
+    return true;
+  } catch {
+    return false;
+  }
+}
+if (!storageWorks()) {
+  const values = new Map<string, string>();
+  const memoryStorage = {
+    get length() {
+      return values.size;
+    },
+    key: (index: number) => [...values.keys()][index] ?? null,
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => void values.set(key, String(value)),
+    removeItem: (key: string) => void values.delete(key),
+    clear: () => values.clear()
+  };
+  Object.setPrototypeOf(memoryStorage, Storage.prototype);
+  Object.defineProperty(window, "localStorage", { configurable: true, value: memoryStorage });
+}
 
 // jsdom has no matchMedia. This version understands min-width and max-width (in px), joined
 // with "and", evaluates them against window.innerWidth, and reports changes on "resize".
