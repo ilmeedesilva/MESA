@@ -4,29 +4,41 @@ import { appSections, buildHash, buildUrl, parseHash, readRoute, writeUrl } from
 describe("parseHash", () => {
   it("reads sections", () => {
     expect(parseHash("#/findings")).toEqual({ section: "findings" });
-    expect(parseHash("#/ai-baseline")).toEqual({ section: "ai-baseline" });
+    expect(parseHash("#/gate")).toEqual({ section: "gate" });
     expect(parseHash("#/graph/")).toEqual({ section: "graph" });
   });
 
   it("reads a finding and a documentation page", () => {
     expect(parseHash("#/findings/MESA-CYCL-003")).toEqual({ section: "findings", findingId: "MESA-CYCL-003" });
-    expect(parseHash("#/docs/quick-start")).toEqual({ section: "docs", docSlug: "quick-start" });
+    expect(parseHash("#/docs/user-guide")).toEqual({ section: "docs", docSlug: "user-guide" });
   });
 
   it("ignores details on sections that have none", () => {
     expect(parseHash("#/graph/something")).toEqual({ section: "graph" });
   });
 
-  it("returns null without a route and falls back to the overview for unknown pages", () => {
+  it("returns null without a route and opens the not-found page for unknown pages", () => {
     expect(parseHash("")).toBeNull();
     expect(parseHash("#")).toBeNull();
     expect(parseHash("#/")).toBeNull();
-    expect(parseHash("#/not-a-page")).toEqual({ section: "overview" });
+    expect(parseHash("#/not-a-page")).toEqual({ section: "not-found" });
+    expect(parseHash("#/not-found")).toEqual({ section: "not-found" });
   });
 
-  it("maps the old services and policies pages to the scan page", () => {
+  it("sends the pages taken out of the app to the not-found page", () => {
+    for (const removed of ["evaluation", "benchmarks", "ai-baseline"]) {
+      expect(parseHash(`#/${removed}`)).toEqual({ section: "not-found" });
+    }
+  });
+
+  it("opens the not-found page for an unknown documentation page", () => {
+    expect(parseHash("#/docs/not-a-doc")).toEqual({ section: "not-found" });
+  });
+
+  it("maps old page names to the pages that replaced them", () => {
     expect(parseHash("#/services")).toEqual({ section: "scan" });
     expect(parseHash("#/policies")).toEqual({ section: "scan" });
+    expect(parseHash("#/evolution")).toEqual({ section: "history" });
   });
 });
 
@@ -39,6 +51,10 @@ describe("buildHash", () => {
 
   it("gives the overview no hash", () => {
     expect(buildHash({ section: "overview" })).toBe("");
+  });
+
+  it("keeps the typed hash on the not-found page", () => {
+    expect(buildHash({ section: "not-found" }, "#/evaluation")).toBe("#/evaluation");
   });
 
   it("encodes and decodes IDs with special characters", () => {
@@ -57,7 +73,8 @@ describe("readRoute", () => {
     expect(readRoute({ hash: "#/graph", search: "?section=findings" })).toEqual({ section: "graph" });
     expect(readRoute({ hash: "", search: "?project=p1&section=findings" })).toEqual({ section: "findings" });
     expect(readRoute({ hash: "", search: "?section=services" })).toEqual({ section: "scan" });
-    expect(readRoute({ hash: "", search: "?section=unknown" })).toEqual({ section: "overview" });
+    expect(readRoute({ hash: "", search: "?section=evolution" })).toEqual({ section: "history" });
+    expect(readRoute({ hash: "", search: "?section=evaluation" })).toEqual({ section: "not-found" });
     expect(readRoute({ hash: "", search: "" })).toEqual({ section: "overview" });
   });
 });

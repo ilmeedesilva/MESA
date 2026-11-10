@@ -1,4 +1,4 @@
-# MESA API Documentation
+# MESA API documentation
 
 FastAPI interactive documentation is available at:
 
@@ -12,7 +12,7 @@ http://localhost:8000/docs
 GET /health
 ```
 
-## One-Off Analysis
+## One-off analysis
 
 ```text
 POST /analyze
@@ -42,10 +42,11 @@ Body:
 | Neither set | The MESA repository root |
 
 Relative paths are resolved against the API server's working directory. Service paths in a
-repository scan (`/repo-scans`) must also stay inside the repository being scanned.
+repository scan (`/repo-scans`) must also stay inside the repository being scanned. While
+scanning, MESA skips any file reached through a symlink that points outside the service folder.
 The CLI is not affected by the allowed roots: it scans paths on your own machine.
 
-## Repository Ingestion Preview
+## Repository ingestion preview
 
 ```text
 POST /repo-scans/preview
@@ -97,7 +98,7 @@ GitHub repository:
 }
 ```
 
-## Projects and Scans
+## Projects and scans
 
 ```text
 GET /projects
@@ -126,7 +127,7 @@ Repository-backed project scan example:
 }
 ```
 
-Phase 3 note:
+Note:
 
 - use the `discovered_services` array from the preview response as the review step before deciding which `service_paths` to send into the persisted repo scan
 
@@ -149,7 +150,7 @@ GET /projects/{project_id}/evolution
 GET /projects/{project_id}/evolution/compare?base_scan_id=<old>&target_scan_id=<new>
 ```
 
-## Remediation Roadmap
+## Remediation roadmap
 
 ```text
 GET /scans/{scan_id}/roadmap
@@ -163,7 +164,7 @@ The roadmap groups multiple findings into:
 - suggested execution order
 - dependencies between actions
 
-## Architecture Fitness Gate
+## Architecture gate
 
 ```text
 GET /scans/{scan_id}/gate

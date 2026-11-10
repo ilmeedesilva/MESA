@@ -1,14 +1,14 @@
-# Health Score Guide
+# Health score guide
 
 ## Purpose
 
 Health scores summarize architecture quality across key dimensions.
 
-## What Health Scores Represent
+## What health scores represent
 
 MESA health scores are intended to give a directional view of architecture quality, not a replacement for detailed finding review.
 
-## Common Dimensions
+## Common dimensions
 
 Depending on the scan, health dimensions may include:
 
@@ -22,12 +22,12 @@ Depending on the scan, health dimensions may include:
 - deployment independence
 - hard-coded dependency risk
 
-## How To Interpret A Score
+## How to interpret a score
 
 - higher scores generally indicate healthier architecture properties
 - lower scores indicate higher structural concern in that dimension
 
-## Recommended Reading Order
+## Recommended reading order
 
 1. system score
 2. explanation text
@@ -35,6 +35,6 @@ Depending on the scan, health dimensions may include:
 4. lowest service scores
 5. related findings
 
-## Important Limitation
+## Important limitation
 
 Health scores compress many signals into a small summary. Use them as prioritization support, not as the only decision input.

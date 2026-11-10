@@ -397,6 +397,17 @@ def test_scan_architecture_gate_supports_custom_thresholds() -> None:
     assert relaxed_gate["status"] == "passed"
     assert relaxed_gate["failed_rules"] == []
 
+    no_baseline = client.post(f"/scans/{scan_id}/gate", json={"thresholds": {"mode": "new-only"}})
+    assert no_baseline.status_code == 400
+
+    same_scan = client.post(
+        f"/scans/{scan_id}/gate",
+        json={"thresholds": {"mode": "new-only"}, "baseline_scan_id": scan_id},
+    )
+    assert same_scan.status_code == 200
+    assert same_scan.json()["status"] == "passed"
+    assert same_scan.json()["new_findings"] == []
+
     del app.state.persistence_repository
 
 

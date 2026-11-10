@@ -1,0 +1,187 @@
+# mesa-action: the MESA Architecture Check for the GitHub Marketplace.
+#
+# The same Action as action.yml in https://github.com/ilmeedesilva/MESA, except that it installs
+# a released, pinned mesa-analyzer from PyPI instead of the code next to it. Inputs, outputs and
+# all other steps must stay identical to the main action.yml; tests/test_mesa_action_wrapper.py
+# checks this.
+name: MESA Architecture Check
+description: >-
+  Checks every pull request for new microservice architecture problems (cycles, shared
+  databases, hard-coded service addresses, god services) and comments with file:line,
+  why it matters and how to fix it. Static analysis only: the code is never run.
+branding:
+  icon: layers
+  color: blue
+
+inputs:
+  path:
+    description: Folder to scan, relative to the repository root (for monorepos).
+    default: "."
+  config:
+    description: Config file. Empty means `.mesa.yml` in `path`, if it exists.
+    default: ""
+  mode:
+    description: "`new-only` blocks only new problems; `absolute` uses fixed thresholds. Empty uses the config file (default new-only)."
+    default: ""
+  fail-on-violation:
+    description: Fail the check when the gate fails. Set to false to only report.
+    default: "true"
+  comment:
+    description: Create or update one comment on the pull request.
+    default: "true"
+  sarif:
+    description: "Upload mesa.sarif to GitHub code scanning (needs `security-events: write`)."
+    default: "false"
+  max-health-drop:
+    description: Largest allowed health score drop (new-only mode). Empty uses the config file (default 5).
+    default: ""
+  fail-on-new-severity:
+    description: "New findings at this severity or above fail the check: LOW, MEDIUM, HIGH or CRITICAL. Empty uses the config file (default HIGH)."
+    default: ""
+  base-ref:
+    description: Commit to compare with. Default is the pull request's base commit; on other events, or with `none`, there is no comparison and fixed thresholds apply (absolute mode).
+    default: ""
+  python-version:
+    description: Python used to run MESA. Your job's own Python is not changed.
+    default: "3.12"
+  artifact-name:
+    description: Name of the workflow artifact with the reports. Empty skips the upload.
+    default: mesa-reports
+  github-token:
+    description: Token used for the pull request comment.
+    default: ${{ github.token }}
+
+outputs:
+  status:
+    description: "`passed` or `failed`."
+    value: ${{ steps.mesa.outputs.status }}
+  health-score:
+    description: System health score of the scanned code.
+    value: ${{ steps.mesa.outputs.health-score }}
+  health-delta:
+    description: Change of the health score against the base commit (empty without one).
+    value: ${{ steps.mesa.outputs.health-delta }}
+  new-findings:
+    description: Number of findings that are new compared with the base commit.
+    value: ${{ steps.mesa.outputs.new-findings }}
+  fixed-findings:
+    description: Number of base-commit findings that are gone.
+    value: ${{ steps.mesa.outputs.fixed-findings }}
+  report-markdown:
+    description: Path of the Markdown report (the pull request comment).
+    value: ${{ steps.mesa.outputs.report-markdown }}
+  report-json:
+    description: Path of the gate result JSON.
+    value: ${{ steps.mesa.outputs.report-json }}
+  report-sarif:
+    description: Path of the SARIF file.
+    value: ${{ steps.mesa.outputs.report-sarif }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python for MESA
+      id: python
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+        update-environment: false
+
+    - name: Install MESA
+      shell: bash
+      env:
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        # The MESA release this version of the Action runs. Set on release day (1.0.0 for v1.0.0).
+        MESA_VERSION: "__MESA_VERSION__"
+      run: |
+        if [ "$MESA_VERSION" = "__MESA_VERSION__" ]; then
+          echo "::error title=MESA::This copy of mesa-action has no MESA version set yet (MESA_VERSION in action.yml)."
+          exit 1
+        fi
+        # A private environment, so the job's own Python packages are untouched.
+        "$PYTHON" -m venv "$RUNNER_TEMP/mesa-venv"
+        "$RUNNER_TEMP/mesa-venv/bin/pip" install --quiet --disable-pip-version-check "mesa-analyzer==$MESA_VERSION"
+        "$RUNNER_TEMP/mesa-venv/bin/mesa-analyzer" --version
+
+    - name: Run MESA
+      id: mesa
+      shell: bash
+      env:
+        MESA_PATH: ${{ inputs.path }}
+        MESA_CONFIG: ${{ inputs.config }}
+        MESA_MODE: ${{ inputs.mode }}
+        MESA_MAX_HEALTH_DROP: ${{ inputs.max-health-drop }}
+        MESA_FAIL_ON_NEW_SEVERITY: ${{ inputs.fail-on-new-severity }}
+        MESA_BASE_REF: ${{ inputs.base-ref || github.event.pull_request.base.sha }}
+      run: |
+        out_dir="$RUNNER_TEMP/mesa-out"
+        args=(ci --path "$MESA_PATH" --out-dir "$out_dir" --no-fail --annotations)
+        if [ "$MESA_BASE_REF" = "none" ]; then
+          MESA_BASE_REF=""
+        fi
+        if [ -n "$MESA_BASE_REF" ]; then
+          # Fetch the base commit when the checkout is shallow (fetch-depth: 1).
+          if ! git -C "$MESA_PATH" cat-file -e "$MESA_BASE_REF^{commit}" 2>/dev/null; then
+            git -C "$MESA_PATH" fetch --no-tags --quiet --depth=1 origin "$MESA_BASE_REF"
+          fi
+          args+=(--base-ref "$MESA_BASE_REF")
+        fi
+        if [ -n "$MESA_CONFIG" ]; then args+=(--config "$MESA_CONFIG"); fi
+        if [ -n "$MESA_MODE" ]; then args+=(--mode "$MESA_MODE"); fi
+        if [ -n "$MESA_MAX_HEALTH_DROP" ]; then args+=(--max-health-drop "$MESA_MAX_HEALTH_DROP"); fi
+        if [ -n "$MESA_FAIL_ON_NEW_SEVERITY" ]; then
+          args+=(--fail-on-new-severity "$MESA_FAIL_ON_NEW_SEVERITY")
+        fi
+        "$RUNNER_TEMP/mesa-venv/bin/mesa-analyzer" "${args[@]}"
+
+    - name: Comment on the pull request
+      if: ${{ always() && inputs.comment == 'true' && github.event.pull_request.number && steps.mesa.outputs.report-markdown }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPORT: ${{ steps.mesa.outputs.report-markdown }}
+      run: |
+        marker='<!-- mesa-report -->'
+        # The newest comment of ours that starts with the marker, if any.
+        if ! existing=$(gh api --paginate "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" 2>&1); then
+          echo "::notice title=MESA::Could not read pull request comments, so no comment was posted. The report is in the job summary. ($existing)"
+          exit 0
+        fi
+        comment_id=$(printf '%s\n' "$existing" | grep -E '^[0-9]+$' | tail -n 1 || true)
+        if [ -n "$comment_id" ]; then
+          result=$(gh api --method PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -F "body=@$REPORT" --jq .html_url 2>&1) && action=Updated
+        else
+          result=$(gh api --method POST "repos/$REPOSITORY/issues/$PR_NUMBER/comments" -F "body=@$REPORT" --jq .html_url 2>&1) && action=Posted
+        fi
+        if [ -n "${action:-}" ]; then
+          echo "$action the MESA comment: $result"
+        else
+          # Pull requests from forks get a read-only token: report in the summary only.
+          echo "::notice title=MESA::No permission to comment on this pull request (for example a pull request from a fork), so the report is only in the job summary. ($result)"
+        fi
+
+    - name: Upload the reports
+      if: ${{ always() && inputs.artifact-name != '' && steps.mesa.outputs.report-json }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ runner.temp }}/mesa-out/
+        retention-days: 14
+        if-no-files-found: ignore
+
+    - name: Upload SARIF to code scanning
+      if: ${{ always() && inputs.sarif == 'true' && steps.mesa.outputs.report-sarif }}
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ steps.mesa.outputs.report-sarif }}
+        category: mesa
+
+    - name: Fail when the gate failed
+      if: ${{ inputs.fail-on-violation == 'true' && steps.mesa.outputs.status == 'failed' }}
+      shell: bash
+      run: |
+        echo "::error title=MESA::The architecture check failed. See the pull request comment or the job summary."
+        exit 1

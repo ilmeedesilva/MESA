@@ -6,7 +6,11 @@ from typing import Any
 import networkx as nx
 
 from mesa.detectors.base import Detector
-from mesa.detectors.evidence import evidence_chain_item, source_files_from_evidence
+from mesa.detectors.evidence import (
+    evidence_chain_item,
+    primary_location_from_evidence,
+    source_files_from_evidence,
+)
 from mesa.models import Finding, FindingType, Severity
 
 CONFIG_FILE_TYPES = {
@@ -186,6 +190,7 @@ def _finding(
         confidence_reason=_explanation(file_type, dependency.get("reason"), duplicate_count),
         limitations=_limitations(port, infra_label),
         source_files=source_files_from_evidence(evidence),
+        primary_location=primary_location_from_evidence(evidence),
         related_services=[service_name],
         why_valid=(
             f"MESA found {value} directly embedded in {location}; this is concrete source/config "

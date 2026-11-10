@@ -5,7 +5,11 @@ from itertools import pairwise
 import networkx as nx
 
 from mesa.detectors.base import Detector
-from mesa.detectors.evidence import evidence_chain_item, source_files_from_evidence
+from mesa.detectors.evidence import (
+    earliest_location_from_evidence,
+    evidence_chain_item,
+    source_files_from_evidence,
+)
 from mesa.models import Finding, FindingType, Severity
 
 
@@ -30,7 +34,7 @@ class CyclicDependencyDetector(Detector):
                             "target_service": target,
                             "method": edge.get("method"),
                             "url": edge.get("url"),
-                            "source": edge.get("source"),
+                            "source": edge.get("source_location"),
                         }
                     )
             findings.append(
@@ -78,6 +82,7 @@ class CyclicDependencyDetector(Detector):
                         "The detector does not yet rank which edge is cheapest to remove.",
                     ],
                     source_files=source_files_from_evidence(evidence),
+                    primary_location=earliest_location_from_evidence(evidence),
                     related_services=cycle,
                     why_valid=(
                         f"MESA found API call dependencies that form the closed path "

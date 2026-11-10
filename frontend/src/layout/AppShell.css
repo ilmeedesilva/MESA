@@ -52,48 +52,6 @@
   min-width: 0;
 }
 
-.workspaceFrameHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4-5);
-  padding: var(--space-4-5) var(--space-5);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-2xl);
-  background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 34%),
-    linear-gradient(135deg, var(--white), var(--surface-tint));
-  box-shadow: 0 18px 36px rgba(148, 163, 184, 0.08);
-}
-
-.workspaceFrameHeader h2 {
-  font-size: 19px;
-}
-
-.workspaceFrameHeader p {
-  margin-top: var(--space-1-5);
-  color: var(--slate-500);
-  font-size: 12px;
-  line-height: 1.55;
-  max-width: 72ch;
-}
-
-.workspaceContextMeta {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 240px;
-  padding: var(--space-3) var(--space-3-5);
-  border: 1px solid var(--blue-100);
-  border-radius: var(--radius-lg);
-  background: rgba(239, 246, 255, 0.72);
-}
-
-.workspaceContextMeta span {
-  color: var(--slate-900);
-  font-size: 12px;
-  font-weight: 800;
-}
-
 .workspaceBody {
   min-width: 0;
 }
@@ -107,10 +65,6 @@
 
 .workspacePrimaryContent {
   min-width: 0;
-}
-
-.globalControlBar {
-  padding: var(--space-4) var(--space-6) 0;
 }
 
 /* Layout widths: phone below 768px, tablet 768-1199px, desktop 1200px and up. */
@@ -140,6 +94,12 @@
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--slate-900), #172554);
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+}
+
+.mobileBarMark {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
 }
 
 .mobileBarTitle {
@@ -184,10 +144,6 @@
     --sidebar-width: 88px;
   }
 
-  .globalControlBar {
-    padding-inline: var(--space-4);
-  }
-
   .workspaceBodyWithRail {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -201,10 +157,6 @@
     align-content: start;
   }
 
-  .globalControlBar {
-    padding: var(--space-3) var(--space-3) 0;
-  }
-
   .workspaceError {
     margin: var(--space-3) var(--space-3) 0;
   }
@@ -212,15 +164,5 @@
   .workspaceFrame {
     gap: var(--space-3-5);
     padding: var(--space-3) var(--space-3) var(--space-5);
-  }
-
-  .workspaceFrameHeader {
-    flex-direction: column;
-    padding: var(--space-3-5);
-  }
-
-  .workspaceContextMeta {
-    width: 100%;
-    min-width: 0;
   }
 }

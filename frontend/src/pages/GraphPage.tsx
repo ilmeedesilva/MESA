@@ -32,10 +32,10 @@ export function GraphPage({ ws }: { ws: MesaWorkspace }) {
       <section className="graphPanel dashboardGraph">
         <div className="graphHeader">
           <div>
-            <h2>Architecture Graph</h2>
+            <h2>Architecture graph</h2>
             <p>
               {activeScan
-                ? `Scan ${shortId(activeScan.id)} - ${displayGraph?.source === "digital-twin" ? "Digital Twin" : "Report Graph"}`
+                ? `Scan ${shortId(activeScan.id)} - ${displayGraph?.source === "digital-twin" ? "Digital twin" : "Report graph"}`
                 : "Run or select a scan to build the graph"}
             </p>
           </div>

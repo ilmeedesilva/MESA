@@ -1,0 +1,81 @@
+name: Demo site
+
+# The public demo site: the web app with its demo data only (no server, no API keys), for
+# https://ilmeedesilva.github.io/MESA/.
+#
+# - Pull requests that touch the frontend or the docs build the site and test it.
+# - It is published only when someone runs this workflow by hand (Actions -> Demo site ->
+#   Run workflow) on main, after GitHub Pages has been set to "GitHub Actions" in the repository
+#   settings. Nothing is published automatically.
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build and test the demo site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install (from lockfile)
+        run: npm ci
+      - name: Install the test browser
+        run: npx playwright install --with-deps chromium
+      # Builds with base path /MESA/ and VITE_MESA_DEMO_SITE=true into dist-demo-site/, serves
+      # it under /MESA/ and checks it: demo data only, no request to a server, no "connect to
+      # your server" wording, hash links, favicon, phone width and accessibility.
+      - name: Build and test
+        run: npm run test:e2e:demo-site
+      - name: Upload the test report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-demo-site
+          path: |
+            frontend/playwright-report-demo-site/
+            frontend/test-results-demo-site/
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Keep the site for publishing
+        if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: frontend/dist-demo-site
+
+  deploy:
+    name: Publish to GitHub Pages
+    # Only a manual run on main publishes. Pull requests never do.
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v5

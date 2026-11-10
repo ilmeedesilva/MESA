@@ -1,59 +1,62 @@
+import { isDemoSite } from "../demoSite";
 import type { ApiAvailability } from "../types";
 
+/**
+ * One slim line, only when there is something to act on: demo data is loaded, or the MESA
+ * server cannot be reached. Nothing is shown while connected (the footer says "Connected").
+ */
 export function PublicDemoBanner({
   apiAvailability,
   isPublicDemoMode,
   usingEmbeddedDemo,
-  onOpenDoc
+  serverRetryStatus,
+  onRetryServer,
+  onConnectToServer
 }: {
   apiAvailability: ApiAvailability;
   isPublicDemoMode: boolean;
   usingEmbeddedDemo: boolean;
-  onOpenDoc: (slug: string) => void;
+  serverRetryStatus: "idle" | "checking" | "failed";
+  onRetryServer: () => void;
+  onConnectToServer: () => void;
 }) {
-  if (apiAvailability === "checking") {
+  // The public demo site never has a server, so it does not offer to connect to one.
+  if (isDemoSite) {
     return (
-      <section className="publicDemoBanner neutral">
-        <strong>Checking backend availability</strong>
-        <span>
-          MESA is checking whether the live API is reachable before choosing the best experience for this session.
-        </span>
-      </section>
+      <div className="statusLine demo" role="status">
+        <span>You're viewing a demo with example data. Install MESA to scan your own code.</span>
+        <a className="statusLineLink" href="#/docs/quick-start">
+          Quick start
+        </a>
+      </div>
     );
   }
 
   if (usingEmbeddedDemo) {
     return (
-      <section className="publicDemoBanner demo">
-        <div>
-          <strong>Public demo mode is active</strong>
-          <span>
-            The live backend is not connected, so MESA loaded demo data: example scans, roadmap data, docs, and a guided
-            tour.
-          </span>
-        </div>
-        <div className="publicDemoActions">
-          <button type="button" className="workflowToggle" onClick={() => onOpenDoc("public-demo-guide")}>
-            Demo guide
-          </button>
-          <button type="button" className="workflowToggle" onClick={() => onOpenDoc("evaluator-quick-start")}>
-            Take the tour
-          </button>
-        </div>
-      </section>
+      <div className="statusLine warn" role="status">
+        <span>
+          {serverRetryStatus === "failed"
+            ? "Still can't reach your MESA server. Showing demo data."
+            : "Can't reach your MESA server. Showing demo data."}
+        </span>
+        <button type="button" onClick={onRetryServer} disabled={serverRetryStatus === "checking"}>
+          {serverRetryStatus === "checking" ? "Checking..." : "Try again"}
+        </button>
+      </div>
     );
   }
 
-  return (
-    <section className="publicDemoBanner live">
-      <div>
-        <strong>Live workspace is available</strong>
-        <span>
-          {isPublicDemoMode
-            ? "The demo data is loaded even though your MESA server is available."
-            : "You can analyze your own repositories normally, or switch to the demo data at any time."}
-        </span>
+  if (apiAvailability === "online" && isPublicDemoMode) {
+    return (
+      <div className="statusLine demo" role="status">
+        <span>Viewing demo data</span>
+        <button type="button" onClick={onConnectToServer}>
+          Connect to your MESA server
+        </button>
       </div>
-    </section>
-  );
+    );
+  }
+
+  return null;
 }

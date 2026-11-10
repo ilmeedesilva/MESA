@@ -1,7 +1,9 @@
 import React from "react";
 import { docBySlug, docNeighbors, docsByQuery, docsCatalog, docsCategories } from "../docsPortal";
 import { DocLinkButton } from "../components/DocLinkButton";
-import { renderMarkdown } from "../viewHelpers";
+
+// The Markdown renderer is loaded only when the Documentation page opens.
+const DocsMarkdown = React.lazy(() => import("../components/DocsMarkdown"));
 
 export function DocumentationPortal({
   selectedDocSlug,
@@ -45,9 +47,8 @@ export function DocumentationPortal({
       <aside className="docsSidebar">
         <div className="docsSidebarHeader">
           <div>
-            <div className="eyebrow">Documentation Portal</div>
-            <h2>Learn MESA from inside the product</h2>
-            <p>{`Search ${docsCatalog.length} pages covering guides, methodology, limitations, API notes, and a guided tour.`}</p>
+            <h2>Documentation</h2>
+            <p>{`${docsCatalog.length} pages: guides and the API reference.`}</p>
           </div>
           <button type="button" className="workflowToggle" onClick={onBackToAnalysis}>
             Back to analysis
@@ -58,7 +59,7 @@ export function DocumentationPortal({
           <label htmlFor="docsQuery">Search docs</label>
           <input
             id="docsQuery"
-            placeholder="Search guides, research, API docs..."
+            placeholder="Search docs"
             value={docsQuery}
             onChange={(event) => onChangeQuery(event.target.value)}
           />
@@ -98,9 +99,9 @@ export function DocumentationPortal({
         <div className="docsQuickLinks">
           <strong>Quick links</strong>
           <div className="docLinks">
-            <DocLinkButton label="Quick start" onClick={() => onSelectDoc("evaluator-quick-start")} />
+            <DocLinkButton label="Quick start" onClick={() => onSelectDoc("quick-start")} />
             <DocLinkButton label="User guide" onClick={() => onSelectDoc("user-guide")} />
-            <DocLinkButton label="Demo guide" onClick={() => onSelectDoc("demo-guide")} />
+            <DocLinkButton label="Demo data" onClick={() => onSelectDoc("public-demo-guide")} />
           </div>
         </div>
 
@@ -135,7 +136,6 @@ export function DocumentationPortal({
             <h1>{selectedDoc.title}</h1>
             <p>{selectedDoc.summary}</p>
           </div>
-          <code>{selectedDoc.path.replace("../../docs/", "docs/")}</code>
         </div>
 
         <div className="docsTags">
@@ -144,7 +144,11 @@ export function DocumentationPortal({
           ))}
         </div>
 
-        <div className="docsMarkdown">{renderMarkdown(selectedDoc.content)}</div>
+        <div className="docsMarkdown">
+          <React.Suspense fallback={<p className="docsLoading">Loading the page...</p>}>
+            <DocsMarkdown content={selectedDoc.content} docPath={selectedDoc.path} />
+          </React.Suspense>
+        </div>
 
         <div className="docsPager">
           <button

@@ -35,4 +35,5 @@ jobs:
             --exclude-path evaluation-results
             --exclude-path benchmarks/results/v0.1.0-research
             --exclude-path frontend/node_modules
+            --exclude-path tests/fixtures
             './**/*.md'

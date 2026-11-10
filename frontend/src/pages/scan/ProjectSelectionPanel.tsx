@@ -20,7 +20,7 @@ export function ProjectSelectionPanel({ ws }: { ws: MesaWorkspace }) {
   return (
     <section className="panelBlock">
       <div className="panelHeader compact">
-        <h2>Project Selection</h2>
+        <h2>Project</h2>
         <span>{projects.length} available</span>
       </div>
       <div className={showCreateProjectForm ? "projectStepLayout withCreatePanel" : "projectStepLayout"}>
@@ -34,7 +34,7 @@ export function ProjectSelectionPanel({ ws }: { ws: MesaWorkspace }) {
               className={showCreateProjectForm ? "secondaryButton activeInlineButton" : "secondaryButton"}
               onClick={() => setShowCreateProjectForm((current) => !current)}
             >
-              {showCreateProjectForm ? "Hide Create Project" : "Create New Project"}
+              {showCreateProjectForm ? "Hide new project form" : "Create new project"}
             </button>
           </div>
           <div className="projectSelectionControls">
@@ -86,7 +86,7 @@ export function ProjectSelectionPanel({ ws }: { ws: MesaWorkspace }) {
         {showCreateProjectForm ? (
           <section className="projectCreatePanel">
             <div className="panelHeader compact">
-              <h3>Create New Project</h3>
+              <h3>Create new project</h3>
               <span>Fresh setup</span>
             </div>
             <label htmlFor="projectName">Project name</label>
@@ -98,7 +98,7 @@ export function ProjectSelectionPanel({ ws }: { ws: MesaWorkspace }) {
               onChange={(event) => setProjectDescription(event.target.value)}
             />
             <button className="fullButton" onClick={createProject} disabled={isCreating || !projectName.trim()}>
-              {isCreating ? "Creating..." : "Create Project"}
+              {isCreating ? "Creating..." : "Create project"}
             </button>
           </section>
         ) : null}

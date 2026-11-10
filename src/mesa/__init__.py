@@ -1,3 +1,4 @@
 """MESA static architecture analyzer."""
 
-__version__ = "0.1.0"
+# The single source of the version: pyproject.toml reads it from here.
+__version__ = "1.0.0.dev0"

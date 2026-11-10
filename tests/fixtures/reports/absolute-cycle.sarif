@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "MESA",
+          "semanticVersion": "TEST",
+          "informationUri": "https://github.com/ilmeedesilva/MESA",
+          "rules": [
+            {
+              "id": "mesa/cyclic-dependency",
+              "name": "Cyclicdependency",
+              "shortDescription": {
+                "text": "Services call each other in a loop."
+              },
+              "fullDescription": {
+                "text": "Services in a cycle can no longer be deployed or scaled independently, and a failure in one can cascade through the others. Move the shared logic into one service, reverse one dependency, or replace one of the calls with an event."
+              },
+              "help": {
+                "text": "Services in a cycle can no longer be deployed or scaled independently, and a failure in one can cascade through the others. Move the shared logic into one service, reverse one dependency, or replace one of the calls with an event.",
+                "markdown": "**Cyclic dependency.** Services in a cycle can no longer be deployed or scaled independently, and a failure in one can cascade through the others. Move the shared logic into one service, reverse one dependency, or replace one of the calls with an event."
+              },
+              "helpUri": "https://github.com/ilmeedesilva/MESA",
+              "properties": {
+                "tags": [
+                  "architecture",
+                  "microservices",
+                  "maintainability"
+                ]
+              }
+            },
+            {
+              "id": "mesa/hard-coded-service-dependency",
+              "name": "Hardcodedservicedependency",
+              "shortDescription": {
+                "text": "A service address is written into code or configuration."
+              },
+              "fullDescription": {
+                "text": "Fixed hosts, ports and URLs break when services move between environments. Read the address from configuration or service discovery instead."
+              },
+              "help": {
+                "text": "Fixed hosts, ports and URLs break when services move between environments. Read the address from configuration or service discovery instead.",
+                "markdown": "**Hard-coded service dependency.** Fixed hosts, ports and URLs break when services move between environments. Read the address from configuration or service discovery instead."
+              },
+              "helpUri": "https://github.com/ilmeedesilva/MESA",
+              "properties": {
+                "tags": [
+                  "architecture",
+                  "microservices",
+                  "maintainability"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {
+        "%SRCROOT%": {
+          "description": {
+            "text": "The repository root."
+          }
+        }
+      },
+      "results": [
+        {
+          "ruleId": "mesa/cyclic-dependency",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Cyclic dependency: order-service -> payment-service -> order-service. Cyclic service dependency detected: payment-service -> order-service -> payment-service. How to fix: Identify the dependency edge in the cycle with the weakest ownership justification. Reverse that dependency, replace it with an event, or introduce an orchestration/application service."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "order-service/app.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "calls http://payment-service/payments"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "mesaFingerprint/v1": "7d99cf325c796642cd4e2e4dc48591e59e6163df"
+          },
+          "properties": {
+            "severity": "CRITICAL",
+            "confidence": 0.9,
+            "services": [
+              "payment-service",
+              "order-service"
+            ],
+            "mesaId": "MESA-CYCL-001"
+          },
+          "relatedLocations": [
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "payment-service/app.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "calls http://order-service/orders/1"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "mesa/hard-coded-service-dependency",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Hard-coded service dependency: order-service uses http://payment-service/payments. order-service directly references http://payment-service/payments in order-service/app.py:5. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration. How to fix: Move the endpoint value into environment-specific configuration or secrets. Centralize client creation behind a typed adapter or service discovery abstraction."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "order-service/app.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "uses http://payment-service/payments"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "mesaFingerprint/v1": "486db2a81ca0485567474cf74b702c58ae3256c3"
+          },
+          "properties": {
+            "severity": "MEDIUM",
+            "confidence": 0.88,
+            "services": [
+              "order-service"
+            ],
+            "mesaId": "MESA-HCDD-001"
+          }
+        },
+        {
+          "ruleId": "mesa/hard-coded-service-dependency",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Hard-coded service dependency: payment-service uses http://order-service/orders/1. payment-service directly references http://order-service/orders/1 in payment-service/app.py:5. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration. How to fix: Move the endpoint value into environment-specific configuration or secrets. Centralize client creation behind a typed adapter or service discovery abstraction."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "payment-service/app.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "uses http://order-service/orders/1"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "mesaFingerprint/v1": "3b4d9b3af14a2ab4a3a511c403716289455ef645"
+          },
+          "properties": {
+            "severity": "MEDIUM",
+            "confidence": 0.88,
+            "services": [
+              "payment-service"
+            ],
+            "mesaId": "MESA-HCDD-002"
+          }
+        }
+      ],
+      "properties": {
+        "findingsWithoutLocation": 0
+      }
+    }
+  ]
+}

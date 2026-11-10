@@ -1,10 +1,10 @@
-# MESA User Guide
+# MESA user guide
 
-## What MESA Does
+## What MESA does
 
 MESA analyzes multiple microservice directories and reports architectural anti-patterns, health scores, recommendations, governance policy violations, and architecture evolution.
 
-## Start the App
+## Start the app
 
 ```bash
 docker compose up --build
@@ -22,7 +22,7 @@ Neo4j development credentials:
 neo4j / mesa-password
 ```
 
-## Run a Scan in the UI
+## Run a scan in the UI
 
 1. Open `http://localhost:5173`.
 2. Follow the guided workflow at the top of the page.
@@ -32,9 +32,9 @@ neo4j / mesa-password
 - Repository-backed workflow:
   - choose source type
   - enter a local path, archive path, or public GitHub URL
-  - click `Preview Discovery`
+  - click `Preview discovery`
   - review the discovered services and keep the ones you want
-  - click `Apply Selected Services`
+  - click `Apply selected services`
 - Manual fallback:
   - leave the repository source empty
   - paste service directories manually
@@ -52,40 +52,40 @@ neo4j / mesa-password
 ```
 
 6. Optional: edit and save governance policies.
-7. Click `Run Scan` or `Run Repo Scan`.
+7. Click `Run scan` or `Run repo scan`.
 8. Review findings, graph, health scores, evolution, and recommendations.
-9. Open the `Remediation Roadmap` panel to see grouped fixes in suggested order.
+9. Open the `Roadmap` page to see grouped fixes in suggested order.
 
-## Read Results More Easily
+## Read results more easily
 
-Phase 5 adds an interpretation layer to make findings easier for non-experts to understand.
+MESA can explain findings at two levels of detail.
 
-After a scan, use the result interpretation switch near the top of the results area:
+Use the `Simple | Technical` switch in the top bar (in the menu on phones). Your browser remembers the choice.
 
-- `Beginner`
+- `Simple` (default)
   - plain-language finding titles
   - clearer "why it matters" guidance
   - first recommended action
   - explanation of what the result does not prove
-- `Research`
-  - everything from beginner mode
-  - detector label visibility
-  - raw evidence payloads
-  - more technical context for deeper evaluation
+- `Technical`
+  - everything from `Simple`
+  - finding IDs, detector and rule names
+  - exact file:line locations
+  - evidence steps, recommendation source and raw evidence
 
-Use beginner mode when:
+Use `Simple` when:
 
-- demonstrating MESA to reviewers or your team
+- sharing results with your team
 - reviewing results with non-technical stakeholders
 - doing a first pass through a new repository
 
-Use research mode when:
+Use `Technical` when:
 
-- validating the detector output
+- checking exactly what the detector saw
 - comparing evidence quality across findings
-- preparing research notes or implementation follow-up
+- fixing the problem in code
 
-## How to Interpret a Finding
+## How to interpret a finding
 
 Each finding now has a clearer structure in the drawer:
 
@@ -106,7 +106,7 @@ Recommended reading order:
 6. Read the first refactoring step before planning changes.
 7. Read `What this does not prove` to avoid over-interpreting the result.
 
-## Understanding Confidence
+## Understanding confidence
 
 Confidence is not the same as severity.
 
@@ -122,7 +122,7 @@ Practical interpretation:
 - `Low` confidence:
   - treat as an early signal that needs manual confirmation
 
-## Summary Cards Meaning
+## Summary cards meaning
 
 The summary strip now helps users understand where to focus first:
 
@@ -133,7 +133,7 @@ The summary strip now helps users understand where to focus first:
 - `Hotspot Service`: service with the densest concentration of linked findings
 - `Focus First`: the first issue MESA suggests reviewing
 
-## Remediation Roadmap
+## Remediation roadmap
 
 The remediation roadmap combines multiple findings into one action plan.
 
@@ -153,7 +153,7 @@ Read it in this order:
 5. high-effort refactors
 6. dependencies
 
-## Guided Workflow Meaning
+## Guided workflow meaning
 
 The current UI now guides users through these steps:
 
@@ -169,11 +169,11 @@ The workflow banner at the top shows:
 - what step is currently active
 - the next recommended action
 
-This is intended to reduce first-run confusion and make the system easier to evaluate.
+This is intended to reduce first-run confusion and make the system easier to follow.
 
-## Repository Ingestion APIs
+## Repository ingestion APIs
 
-Phase 2 introduces repository-ingestion endpoints for source-driven scans.
+MESA provides repository-ingestion endpoints for source-driven scans.
 
 Current supported source types:
 
@@ -193,9 +193,9 @@ Current limitation:
 - automatic service discovery is heuristic and explainable, not guaranteed perfect
 - GitHub URL fetching depends on runtime network access and an accessible public archive
 
-## Phase 3 Service Discovery Review
+## Service discovery review
 
-Phase 3 adds explainable service discovery on top of repository preview.
+MESA adds explainable service discovery on top of repository preview.
 
 Each discovered service candidate now includes:
 
@@ -211,14 +211,14 @@ Recommended interpretation:
 - medium-confidence candidates should be reviewed before selection
 - if a repository contains orchestration files but weak per-service signals, review the candidate list carefully instead of assuming all directories are services
 
-## CLI Usage
+## CLI usage
 
 ```bash
 mesa analyze tests/fixtures/chatty/order-service tests/fixtures/chatty/user-service
 ```
 
-Evaluation:
+Architecture gate (pass or fail, for CI):
 
 ```bash
-PYTHONPATH=src python3 -m mesa.cli evaluate benchmarks/ground_truth.yml --output-dir evaluation-results
+mesa gate tests/fixtures/chatty/order-service tests/fixtures/chatty/user-service --output mesa-gate.json
 ```

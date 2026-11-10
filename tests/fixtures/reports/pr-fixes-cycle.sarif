@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "MESA",
+          "semanticVersion": "TEST",
+          "informationUri": "https://github.com/ilmeedesilva/MESA",
+          "rules": [
+            {
+              "id": "mesa/hard-coded-service-dependency",
+              "name": "Hardcodedservicedependency",
+              "shortDescription": {
+                "text": "A service address is written into code or configuration."
+              },
+              "fullDescription": {
+                "text": "Fixed hosts, ports and URLs break when services move between environments. Read the address from configuration or service discovery instead."
+              },
+              "help": {
+                "text": "Fixed hosts, ports and URLs break when services move between environments. Read the address from configuration or service discovery instead.",
+                "markdown": "**Hard-coded service dependency.** Fixed hosts, ports and URLs break when services move between environments. Read the address from configuration or service discovery instead."
+              },
+              "helpUri": "https://github.com/ilmeedesilva/MESA",
+              "properties": {
+                "tags": [
+                  "architecture",
+                  "microservices",
+                  "maintainability"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {
+        "%SRCROOT%": {
+          "description": {
+            "text": "The repository root."
+          }
+        }
+      },
+      "results": [
+        {
+          "ruleId": "mesa/hard-coded-service-dependency",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Hard-coded service dependency: order-service uses http://user-service:8080/users/1. order-service directly references http://user-service:8080/users/1 in order-service/app.py:30. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration. How to fix: Move the endpoint value into environment-specific configuration or secrets. Centralize client creation behind a typed adapter or service discovery abstraction."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "order-service/app.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 30
+                }
+              },
+              "message": {
+                "text": "uses http://user-service:8080/users/1"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "mesaFingerprint/v1": "5fa32e8af81609579b73f998238ee286582f2be8"
+          },
+          "properties": {
+            "severity": "MEDIUM",
+            "confidence": 0.88,
+            "services": [
+              "order-service"
+            ],
+            "mesaId": "MESA-HCDD-001"
+          },
+          "baselineState": "unchanged"
+        }
+      ],
+      "properties": {
+        "findingsWithoutLocation": 0
+      }
+    }
+  ]
+}

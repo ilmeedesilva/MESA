@@ -7,10 +7,12 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
+from mesa.file_walk import iter_files
 from mesa.models import (
     DatabaseConnection,
     Endpoint,
     EnvironmentVariable,
+    FileSize,
     HardCodedDependency,
     LibraryUsage,
     MessageBrokerConnection,
@@ -256,19 +258,30 @@ def _strip_c_style_comments(content: str) -> str:
 
 
 def extract_service_facts(
-    service_path: str | Path, sibling_service_names: set[str] | None = None
+    service_path: str | Path,
+    sibling_service_names: set[str] | None = None,
+    *,
+    path_base: str | Path | None = None,
 ) -> ServiceFacts:
+    """Collect the facts MESA's detectors use from one service directory.
+
+    With `path_base`, every recorded source file path is written relative to
+    it (for example `order-service/app.py`), so reports do not contain the
+    absolute path of the machine that ran the scan. `root_path` stays absolute:
+    the API uses it to map scans back to the workspace.
+    """
     root = Path(service_path).resolve()
     facts = ServiceFacts(name=root.name, root_path=str(root), language=detect_language(root))
     other_service_names = {
         name.lower() for name in (sibling_service_names or set()) if name != root.name
     }
 
-    for file_path in sorted(root.rglob("*")):
-        if not file_path.is_file() or _is_ignored(file_path):
-            continue
+    file_sizes: list[FileSize] = []
+    for file_path in iter_files(root):
         if _is_analyzed_text_file(file_path):
             facts.file_count += 1
+        if file_path.suffix in _SOURCE_CODE_SUFFIXES:
+            file_sizes.append(FileSize(file_path=str(file_path), line_count=_line_count(file_path)))
         if file_path.suffix == ".py":
             _extract_python_file(file_path, facts)
         if file_path.name == "requirements.txt":
@@ -308,7 +321,49 @@ def extract_service_facts(
     ]
 
     facts.domain_keywords = _domain_keywords_for(root, facts)
+    facts.largest_files = sorted(file_sizes, key=lambda item: (-item.line_count, item.file_path))[
+        :_LARGEST_FILE_COUNT
+    ]
+    if path_base is not None:
+        _relativize_sources(facts, Path(path_base).resolve())
     return facts
+
+
+def _relativize_sources(facts: ServiceFacts, base: Path) -> None:
+    groups: list[list] = [
+        facts.endpoints,
+        facts.calls,
+        facts.databases,
+        facts.libraries,
+        facts.environment_variables,
+        facts.message_brokers,
+        facts.hard_coded_dependencies,
+    ]
+    for group in groups:
+        for item in group:
+            item.source.file_path = relative_source_path(item.source.file_path, base)
+    for file_size in facts.largest_files:
+        file_size.file_path = relative_source_path(file_size.file_path, base)
+
+
+def relative_source_path(file_path: str, base: Path) -> str:
+    """`file_path` relative to `base` with `/` separators, or unchanged if outside it."""
+    try:
+        return Path(file_path).relative_to(base).as_posix()
+    except ValueError:
+        return file_path
+
+
+_SOURCE_CODE_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".go"}
+_LARGEST_FILE_COUNT = 3
+
+
+def _line_count(file_path: Path) -> int:
+    try:
+        with file_path.open("rb") as handle:
+            return sum(1 for _ in handle)
+    except OSError:
+        return 0
 
 
 def _stem_matches_other_service(file_path: Path, other_service_names: set[str]) -> bool:
@@ -331,9 +386,7 @@ def _domain_keywords_for(root: Path, facts: ServiceFacts) -> list[str]:
     keywords: set[str] = set()
     service_tokens = set(_tokens_from(root.name))
 
-    for file_path in sorted(root.rglob("*")):
-        if not file_path.is_file() or _is_ignored(file_path):
-            continue
+    for file_path in iter_files(root):
         relative = file_path.relative_to(root)
         for part in relative.with_suffix("").parts:
             keywords.update(_tokens_from(part))
@@ -370,9 +423,7 @@ def detect_language(root: Path) -> str:
     pom.xml, ...) counts far more than one source file, and the language with
     the most weighted votes across the tree wins."""
     votes: dict[str, int] = {}
-    for file_path in root.rglob("*"):
-        if not file_path.is_file() or _is_ignored(file_path):
-            continue
+    for file_path in iter_files(root, sort=False):
         manifest_language = _LANGUAGE_MANIFEST_FILES.get(file_path.name)
         if manifest_language:
             votes[manifest_language] = votes.get(manifest_language, 0) + 10
@@ -451,11 +502,6 @@ def _extract_pom_xml(file_path: Path, facts: ServiceFacts) -> None:
                 ),
             )
         )
-
-
-def _is_ignored(file_path: Path) -> bool:
-    ignored = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build"}
-    return any(part in ignored for part in file_path.parts)
 
 
 def _is_analyzed_text_file(file_path: Path) -> bool:

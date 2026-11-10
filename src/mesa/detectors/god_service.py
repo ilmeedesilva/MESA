@@ -6,7 +6,11 @@ from typing import Any
 import networkx as nx
 
 from mesa.detectors.base import Detector
-from mesa.detectors.evidence import evidence_chain_item
+from mesa.detectors.evidence import (
+    evidence_chain_item,
+    primary_location_from_evidence,
+    source_files_from_evidence,
+)
 from mesa.models import Finding, FindingType, Severity
 
 HIGH_RISK_THRESHOLD = 70.0
@@ -71,6 +75,7 @@ class GodServiceDetector(Detector):
             strongest_contributions = sorted(
                 score.contributions.items(), key=lambda item: item[1], reverse=True
             )[:3]
+            locations = _service_locations(graph.nodes[score.service])
             findings.append(
                 Finding(
                     id=f"MESA-GODS-{index:03d}",
@@ -91,6 +96,7 @@ class GodServiceDetector(Detector):
                             "metrics": score.metrics,
                             "contributions": score.contributions,
                             "explanation": score.explanation,
+                            "locations": locations,
                         }
                     ],
                     recommendation=score.recommendation,
@@ -100,6 +106,7 @@ class GodServiceDetector(Detector):
                         evidence_chain_item(
                             "measure_service_metrics",
                             "Measured service breadth, dependencies, centrality, files, domains, and linked findings.",
+                            source=locations[0] if locations else None,
                             data=score.metrics,
                         ),
                         evidence_chain_item(
@@ -125,7 +132,8 @@ class GodServiceDetector(Detector):
                         "The score is a static architecture risk signal, not proof that the service is currently failing.",
                         "Large services can be acceptable when they intentionally represent one cohesive bounded context.",
                     ],
-                    source_files=[],
+                    source_files=source_files_from_evidence(locations),
+                    primary_location=primary_location_from_evidence(locations),
                     related_services=[score.service],
                     why_valid=(
                         f"MESA combined multiple static signals for {score.service}; the strongest "
@@ -134,6 +142,41 @@ class GodServiceDetector(Detector):
                 )
             )
         return findings
+
+
+def _service_locations(node: dict[str, Any]) -> list[dict[str, Any]]:
+    """Where to look in a God Service: the file that defines most of its API
+    routes (at the first route), then its largest source files."""
+    locations: list[dict[str, Any]] = []
+    routes_by_file: dict[str, list[int]] = {}
+    for source in node.get("endpoint_sources", []):
+        file_path = source.get("file_path")
+        if file_path:
+            routes_by_file.setdefault(file_path, []).append(source.get("line_number") or 1)
+    if routes_by_file:
+        file_path, lines = sorted(
+            routes_by_file.items(), key=lambda item: (-len(item[1]), item[0])
+        )[0]
+        locations.append(
+            {
+                "role": "api_routes",
+                "file_path": file_path,
+                "line_number": min(lines),
+                "endpoint_count": len(lines),
+            }
+        )
+    for item in node.get("largest_files", []):
+        if any(location["file_path"] == item["file_path"] for location in locations):
+            continue
+        locations.append(
+            {
+                "role": "large_file",
+                "file_path": item["file_path"],
+                "line_number": 1,
+                "line_count": item["line_count"],
+            }
+        )
+    return locations
 
 
 def score_god_services(graph: nx.MultiDiGraph) -> list[GodServiceScore]:

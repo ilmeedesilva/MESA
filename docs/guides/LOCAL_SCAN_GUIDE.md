@@ -1,10 +1,10 @@
-# Local Scan Guide
+# Local scan guide
 
 ## Goal
 
 This guide explains how to run MESA against local repositories or manually supplied service directories.
 
-## Local Repository Workflow
+## Local repository workflow
 
 1. Create or select a project.
 2. Choose `Local path`.
@@ -13,19 +13,19 @@ This guide explains how to run MESA against local repositories or manually suppl
 5. Confirm the service set.
 6. Run the scan.
 
-## Manual Service Path Workflow
+## Manual service path workflow
 
 1. Leave repository source blank if you do not want discovery.
 2. Paste one service directory per line into the `Service paths` area.
 3. Run the scan.
 
-## When Manual Paths Are Useful
+## When manual paths are useful
 
 - you already know the service boundaries
 - repository discovery needs correction
 - you want a tightly controlled evaluation scope
 
-## Good Practice
+## Good practice
 
 - keep each path focused on one service root
 - avoid mixing infrastructure-only folders into the scan set

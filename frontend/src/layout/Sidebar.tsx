@@ -1,6 +1,10 @@
+import mesaIconUrl from "../assets/brand/mesa-icon.svg";
+import mesaLogoUrl from "../assets/brand/mesa-logo.svg";
+import { isDemoSite } from "../demoSite";
 import { appNavigation } from "../app/navigation";
+import { ExplanationSwitch } from "../components/ExplanationSwitch";
 import { Icon } from "../components/icons";
-import type { AppSection, ProjectListStatus, ProjectRecord } from "../types";
+import type { AppSection, InterpretationMode, ProjectListStatus, ProjectRecord } from "../types";
 
 export function Sidebar({
   layoutMode,
@@ -15,7 +19,9 @@ export function Sidebar({
   onNavigate,
   onToggleDemo,
   onSelectProject,
-  onCreateProject
+  onCreateProject,
+  interpretationMode,
+  onChangeInterpretationMode
 }: {
   layoutMode: "phone" | "tablet" | "desktop";
   /** The narrow icon rail (desktop below 1360px wide, or tablet). */
@@ -32,6 +38,8 @@ export function Sidebar({
   onToggleDemo: () => void;
   onSelectProject: (value: string) => void;
   onCreateProject: () => void;
+  interpretationMode: InterpretationMode;
+  onChangeInterpretationMode: (mode: InterpretationMode) => void;
 }) {
   // On a tablet the rail opens as a full sidebar over the page.
   const showRail = collapsed && !navOpen;
@@ -58,14 +66,14 @@ export function Sidebar({
       <div className="appSidebarTop">
         <div className="appIdentity">
           {showRail ? (
-            <div className="appIdentityMark" role="img" aria-label="MESA">
-              M
-            </div>
+            // The app icon: the mark on a dark tile, so it uses the colours for dark backgrounds.
+            <img className="appIdentityMark" src={mesaIconUrl} alt="MESA" width={38} height={38} />
           ) : (
             <>
-              <div className="eyebrow">Architecture Analyzer</div>
-              <h1>MESA</h1>
-              <p>Structured project selection, scanning, findings analysis, and research evidence in one workspace.</p>
+              <h1 className="appLogo">
+                <img src={mesaLogoUrl} alt="MESA" width={132} height={32} />
+              </h1>
+              <p>Find architecture problems in your microservices before they reach main.</p>
             </>
           )}
         </div>
@@ -96,14 +104,15 @@ export function Sidebar({
                   {project.name}
                 </option>
               ))}
-              {!isPublicDemoMode ? <option value="__create_new__">+ Create New Project</option> : null}
+              {!isPublicDemoMode ? <option value="__create_new__">+ Create new project</option> : null}
             </select>
           </label>
           {!isPublicDemoMode ? (
             <button type="button" className="secondaryButton" onClick={onCreateProject}>
-              New Project
+              New project
             </button>
           ) : null}
+          <ExplanationSwitch mode={interpretationMode} onChangeMode={onChangeInterpretationMode} showHelp />
         </div>
       ) : null}
 
@@ -131,36 +140,39 @@ export function Sidebar({
         ))}
       </nav>
 
-      <section className={showRail ? "sidebarFooterAction collapsed" : "sidebarFooterAction"}>
-        {!showRail ? (
-          <>
-            <div>
-              <div className="eyebrow">Demo Workspace</div>
-              <p>
-                {isPublicDemoMode
-                  ? "You are browsing the demo data."
-                  : "Load the demo data when you want a safe example project."}
-              </p>
-            </div>
+      {/* The public demo site only has demo data: there is no server to switch to. */}
+      {!isDemoSite ? (
+        <section className={showRail ? "sidebarFooterAction collapsed" : "sidebarFooterAction"}>
+          {!showRail ? (
+            <>
+              <div>
+                <div className="eyebrow">Try it with demo data</div>
+                <p>
+                  {isPublicDemoMode
+                    ? "You are browsing the demo data."
+                    : "Load the demo data when you want a safe example project."}
+                </p>
+              </div>
+              <button
+                type="button"
+                className={isPublicDemoMode ? "secondaryButton sidebarDemoButton" : "sidebarDemoButton"}
+                onClick={onToggleDemo}
+              >
+                {isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              className={isPublicDemoMode ? "secondaryButton sidebarDemoButton" : "sidebarDemoButton"}
+              className={isPublicDemoMode ? "secondaryButton sidebarDemoButton compact" : "sidebarDemoButton compact"}
               onClick={onToggleDemo}
+              title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
             >
-              {isPublicDemoMode ? "Connect to your MESA server" : "Load Demo Workspace"}
+              Demo
             </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            className={isPublicDemoMode ? "secondaryButton sidebarDemoButton compact" : "sidebarDemoButton compact"}
-            onClick={onToggleDemo}
-            title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo workspace"}
-          >
-            Demo
-          </button>
-        )}
-      </section>
+          )}
+        </section>
+      ) : null}
     </aside>
   );
 }

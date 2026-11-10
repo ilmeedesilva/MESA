@@ -1,6 +1,9 @@
 dist/
+dist-demo-site/
 node_modules/
 src/generated-docs.ts
 package-lock.json
 playwright-report/
 test-results/
+playwright-report-demo-site/
+test-results-demo-site/

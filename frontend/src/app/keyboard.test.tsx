@@ -75,18 +75,18 @@ describe("keyboard use", () => {
     expect(screen.getAllByRole("main")).toHaveLength(1);
   });
 
-  it("marks the current page and the interpretation mode for screen readers", async () => {
+  it("marks the current page and the explanation level for screen readers", async () => {
     await renderDemo("/#/findings");
     const nav = screen.getByRole("navigation", { name: "Workspace sections" });
     expect(within(nav).getByRole("button", { name: /^Findings/ })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("button", { name: /^Overview/ })).not.toHaveAttribute("aria-current");
 
-    const modes = screen.getByRole("group", { name: "Interpretation mode" });
-    const beginner = within(modes).getByRole("button", { name: /Beginner/ });
-    const research = within(modes).getByRole("button", { name: /Research/ });
-    expect(beginner).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(research);
-    expect(research).toHaveAttribute("aria-pressed", "true");
-    expect(beginner).toHaveAttribute("aria-pressed", "false");
+    const modes = screen.getByRole("group", { name: "Explanation level" });
+    const simple = within(modes).getByRole("button", { name: /Simple/ });
+    const technical = within(modes).getByRole("button", { name: /Technical/ });
+    expect(simple).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(technical);
+    expect(technical).toHaveAttribute("aria-pressed", "true");
+    expect(simple).toHaveAttribute("aria-pressed", "false");
   });
 });

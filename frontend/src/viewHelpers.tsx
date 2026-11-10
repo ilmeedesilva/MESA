@@ -500,105 +500,6 @@ export function normalizeRelationshipType(type: string) {
   return type.toLowerCase();
 }
 
-export function renderMarkdown(markdown: string) {
-  const lines = markdown.replace(/\r/g, "").split("\n");
-  const blocks: React.ReactNode[] = [];
-  let index = 0;
-
-  while (index < lines.length) {
-    const line = lines[index];
-
-    if (!line.trim()) {
-      index += 1;
-      continue;
-    }
-
-    if (line.startsWith("```")) {
-      const language = line.slice(3).trim();
-      const codeLines: string[] = [];
-      index += 1;
-      while (index < lines.length && !lines[index].startsWith("```")) {
-        codeLines.push(lines[index]);
-        index += 1;
-      }
-      index += 1;
-      blocks.push(
-        <pre key={`code-${index}`} className="docsCodeBlock">
-          <code data-language={language || undefined}>{codeLines.join("\n")}</code>
-        </pre>
-      );
-      continue;
-    }
-
-    if (/^###\s+/.test(line)) {
-      blocks.push(<h3 key={`h3-${index}`}>{line.replace(/^###\s+/, "")}</h3>);
-      index += 1;
-      continue;
-    }
-
-    if (/^##\s+/.test(line)) {
-      blocks.push(<h2 key={`h2-${index}`}>{line.replace(/^##\s+/, "")}</h2>);
-      index += 1;
-      continue;
-    }
-
-    if (/^#\s+/.test(line)) {
-      blocks.push(<h1 key={`h1-${index}`}>{line.replace(/^#\s+/, "")}</h1>);
-      index += 1;
-      continue;
-    }
-
-    if (/^-\s+/.test(line)) {
-      const items: string[] = [];
-      while (index < lines.length && /^-\s+/.test(lines[index])) {
-        items.push(lines[index].replace(/^-\s+/, ""));
-        index += 1;
-      }
-      blocks.push(
-        <ul key={`ul-${index}`}>
-          {items.map((item, itemIndex) => (
-            <li key={`${item}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
-          ))}
-        </ul>
-      );
-      continue;
-    }
-
-    if (/^\d+\.\s+/.test(line)) {
-      const items: string[] = [];
-      while (index < lines.length && /^\d+\.\s+/.test(lines[index])) {
-        items.push(lines[index].replace(/^\d+\.\s+/, ""));
-        index += 1;
-      }
-      blocks.push(
-        <ol key={`ol-${index}`}>
-          {items.map((item, itemIndex) => (
-            <li key={`${item}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
-          ))}
-        </ol>
-      );
-      continue;
-    }
-
-    const paragraphLines: string[] = [];
-    while (
-      index < lines.length &&
-      lines[index].trim() &&
-      !lines[index].startsWith("```") &&
-      !/^#{1,3}\s+/.test(lines[index]) &&
-      !/^- /.test(lines[index]) &&
-      !/^\d+\.\s+/.test(lines[index])
-    ) {
-      paragraphLines.push(lines[index].trim());
-      index += 1;
-    }
-
-    blocks.push(<p key={`p-${index}`}>{renderInlineMarkdown(paragraphLines.join(" "))}</p>);
-  }
-
-  return blocks;
-}
-
 export function renderInlineMarkdown(text: string) {
   const segments = text.split(/(`[^`]+`)/g);
   return segments.map((segment, index) => {
@@ -756,34 +657,97 @@ export function comparisonBaseScan(history: ScanRecord[], activeScanId: string) 
   return history[index + 1] ?? history[index - 1] ?? null;
 }
 
-export function aiStatusLabel(state: AIExplainerStatus["state"]) {
-  return {
-    GROUNDED_ONLY: "Grounded-only mode",
-    MISSING_API_KEY: "Missing API key",
-    PLACEHOLDER_API_KEY: "Placeholder API key",
-    INVALID_API_KEY: "Invalid API key",
-    MODEL_UNAVAILABLE: "Model unavailable",
-    ACCESS_DENIED: "Access denied",
-    CONNECTION_ERROR: "Connection problem",
-    READY: "Live AI ready"
-  }[state];
+/** The AI provider MESA is configured to use, read from the provider's API address. */
+export function aiProviderName(baseUrl?: string | null): string {
+  if (!baseUrl) return "AI provider";
+  let host = baseUrl;
+  try {
+    host = new URL(baseUrl).hostname;
+  } catch {
+    // Not a full URL: use it as it is.
+  }
+  if (/(^|\.)anthropic\.com$/i.test(host)) return "Anthropic";
+  if (/(^|\.)openai\.com$/i.test(host)) return "OpenAI";
+  return host;
 }
 
-export function aiStatusTone(state: AIExplainerStatus["state"]) {
-  if (state === "READY") return "good";
-  if (state === "GROUNDED_ONLY") return "neutral";
-  if (state === "CONNECTION_ERROR" || state === "MODEL_UNAVAILABLE") return "medium";
-  return "high";
+export type AIStatusSummary = {
+  /** "off": no AI configured; "on": AI working; "unavailable": configured but not working; "unknown": status not loaded. */
+  kind: "off" | "on" | "unavailable" | "unknown";
+  tone: "neutral" | "good" | "medium";
+  text: string;
+  /** Extra detail for the Technical explanation level (model, reason). */
+  detail: string | null;
+};
+
+/** The one status line on the AI Explainer page, in plain words. */
+export function aiStatusSummary(status: AIExplainerStatus | null): AIStatusSummary {
+  if (!status) {
+    return {
+      kind: "unknown",
+      tone: "neutral",
+      text: "AI status could not be checked. MESA's built-in explanations are used.",
+      detail: null
+    };
+  }
+  const provider = aiProviderName(status.base_url);
+  const model = status.model ? `Model: ${status.model}.` : null;
+  switch (status.state) {
+    case "GROUNDED_ONLY":
+      return { kind: "off", tone: "neutral", text: "AI: off. Using MESA's built-in explanations.", detail: null };
+    case "MISSING_API_KEY":
+      return {
+        kind: "off",
+        tone: "neutral",
+        text: "AI: off. Using MESA's built-in explanations.",
+        detail: `AI is turned on in the settings, but no ${provider} API key is set.`
+      };
+    case "READY":
+      return { kind: "on", tone: "good", text: `AI: on (${provider}).`, detail: model };
+    default: {
+      const reasons: Record<string, string> = {
+        PLACEHOLDER_API_KEY: `The ${provider} API key still looks like a placeholder.`,
+        INVALID_API_KEY: `${provider} rejected the API key.`,
+        MODEL_UNAVAILABLE: `The model ${status.model} is not available from ${provider}.`,
+        ACCESS_DENIED: `${provider} denied access to this model or account.`,
+        CONNECTION_ERROR: `MESA could not reach ${provider}.`
+      };
+      return {
+        kind: "unavailable",
+        tone: "medium",
+        text: "AI unavailable right now. Showing MESA's built-in explanation.",
+        detail: [reasons[status.state] ?? null, model].filter(Boolean).join(" ") || null
+      };
+    }
+  }
 }
 
-export function aiAnswerProvider(source?: string) {
-  if (source?.startsWith("openai-hybrid")) {
-    return { label: "Answered by OpenAI", tone: "good" };
+/** The provider and model behind an answer's source, such as "anthropic-hybrid:claude-opus-5-5". */
+function aiSourceParts(source?: string) {
+  const match = source?.match(/^([a-z]+)-hybrid(?::(.+))?$/i);
+  if (!match) return null;
+  const provider =
+    match[1].toLowerCase() === "anthropic" ? "Anthropic" : match[1].toLowerCase() === "openai" ? "OpenAI" : match[1];
+  return { provider, model: match[2] ?? null };
+}
+
+/**
+ * The small label on an answer: "AI" when an AI provider wrote it, otherwise "MESA".
+ * The detail (provider and model, or why MESA answered) is for the Technical level.
+ */
+export function aiAnswerLabel(source?: string): { label: "AI" | "MESA"; tone: "good" | "neutral"; detail: string } {
+  const ai = aiSourceParts(source);
+  if (ai) {
+    return {
+      label: "AI",
+      tone: "good",
+      detail: ai.model ? `Answered by ${ai.provider} (${ai.model})` : `Answered by ${ai.provider}`
+    };
   }
   if (source?.includes("fallback")) {
-    return { label: "Answered by MESA fallback", tone: "high" };
+    return { label: "MESA", tone: "neutral", detail: "Built-in explanation (AI was unavailable for this answer)" };
   }
-  return { label: "Answered by MESA", tone: "neutral" };
+  return { label: "MESA", tone: "neutral", detail: "Built-in explanation" };
 }
 
 export function servicePathsFromText(value: string) {
@@ -1071,6 +1035,26 @@ export function confidenceLabel(confidence: number) {
   return "Low";
 }
 
+/**
+ * The exact places a finding points at, as "file:line" (or just "file" when no line is known):
+ * from the evidence steps, then raw evidence records that carry a file_path, then the finding's
+ * source files. A bare file is skipped when a file:line for it is already listed.
+ */
+export function findingLocations(finding: Finding): string[] {
+  const locations: string[] = [];
+  const add = (file: unknown, line: unknown) => {
+    if (typeof file !== "string" || !file) return;
+    const location = typeof line === "number" && line > 0 ? `${file}:${line}` : file;
+    if (locations.includes(location)) return;
+    if (location === file && locations.some((known) => known.startsWith(`${file}:`))) return;
+    locations.push(location);
+  };
+  for (const item of finding.evidence_chain ?? []) add(item.source?.file_path, item.source?.line_number);
+  for (const record of finding.evidence ?? []) add(record.file_path, record.line_number);
+  for (const file of finding.source_files ?? []) add(file, undefined);
+  return locations;
+}
+
 export function confidenceGuidance(confidence: number) {
   if (confidence >= 0.9) return "The detector found strong signals that consistently support this result.";
   if (confidence >= 0.75)
@@ -1180,7 +1164,14 @@ export function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
 }
 
+/**
+ * A short label for a scan or other record. Real IDs are UUIDs, so their first 8 characters are
+ * enough to tell them apart. The demo data uses readable IDs such as "demo-scan-monolith", which
+ * the first 8 characters would cut to "demo-sca", so those show their name instead.
+ */
 export function shortId(id: string) {
+  const demoScan = /^demo-scan-(.+)$/.exec(id);
+  if (demoScan) return `${demoScan[1].replace(/-/g, " ")} demo`;
   return id.slice(0, 8);
 }
 

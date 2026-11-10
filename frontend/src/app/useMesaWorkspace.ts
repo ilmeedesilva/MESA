@@ -1,11 +1,11 @@
 import React from "react";
 import { demoWorkspace } from "../demoData";
+import { readStoredInterpretationMode, storeInterpretationMode } from "./interpretationMode";
 import { ApiError, api, messageFor, pollScanJob, streamAIResponse } from "../api";
 import { demoPersistedScan, isDemoScan, isPublicDemoProject, localDemoAIResponse } from "../demoMode";
 import {
   buildFilterOptions,
   comparisonBaseScan,
-  downloadTextFile,
   filterFindings,
   flattenScores,
   formatDate,
@@ -16,7 +16,6 @@ import {
   graphFromReport,
   isAbortError,
   isNotFoundError,
-  normalizeResearchRecordPayload,
   policyDocumentFromRecords,
   preferredGraph,
   readProjectIdFromUrl,
@@ -26,7 +25,7 @@ import {
 import { useEffectEvent } from "../hooks/useEffectEvent";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { defaultPaths, defaultPolicyDocument } from "./defaults";
-import { navigationItems, sectionsRequiringProject } from "./navigation";
+import { navigationItems, notFoundItem, sectionsRequiringProject } from "./navigation";
 import { readRoute, writeUrl, type Route } from "./router";
 import type {
   AIExplainerIntent,
@@ -50,11 +49,21 @@ import type {
   ProjectSetup,
   RemediationRoadmap,
   RepoScanPreview,
-  ResearchEvaluationRecord,
   ScanJobRecord,
   ScanRecord,
   WorkflowStep
 } from "../types";
+import { isDemoSite } from "../demoSite";
+
+/** The version in a health response ({ "status": "ok", "version": "..." }), or null. */
+async function readHealthVersion(response: Response): Promise<string | null> {
+  try {
+    const body = (await response.json()) as { version?: unknown };
+    return typeof body.version === "string" && body.version ? body.version : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * All state, data loading and actions for the MESA workspace. The App component
@@ -77,8 +86,6 @@ export function useMesaWorkspace() {
   const [history, setHistory] = React.useState<ScanRecord[]>([]);
   const [evolution, setEvolution] = React.useState<EvolutionReport[]>([]);
   const [roadmap, setRoadmap] = React.useState<RemediationRoadmap | null>(null);
-  const [researchRecords, setResearchRecords] = React.useState<ResearchEvaluationRecord[]>([]);
-  const [selectedResearchRecordId, setSelectedResearchRecordId] = React.useState("");
   const [policyText, setPolicyText] = React.useState(defaultPolicyDocument);
   const [policyCount, setPolicyCount] = React.useState(0);
   const [activeScan, setActiveScan] = React.useState<ScanRecord | null>(null);
@@ -91,10 +98,7 @@ export function useMesaWorkspace() {
   const [isScanning, setIsScanning] = React.useState(false);
   const [isLoadingScan, setIsLoadingScan] = React.useState(false);
   const [isLoadingRoadmap, setIsLoadingRoadmap] = React.useState(false);
-  const [isLoadingResearchRecords, setIsLoadingResearchRecords] = React.useState(false);
   const [isSavingPolicies, setIsSavingPolicies] = React.useState(false);
-  const [isSavingResearchRecord, setIsSavingResearchRecord] = React.useState(false);
-  const [isExportingResearchRecords, setIsExportingResearchRecords] = React.useState(false);
   // The route the page was opened with (hash, or the old ?section= parameter).
   const [initialRoute] = React.useState<Route>(() => readRoute());
   // The open finding is kept by ID and looked up in the current scan. A finding from a link
@@ -102,12 +106,20 @@ export function useMesaWorkspace() {
   const [selectedFindingId, setSelectedFindingId] = React.useState<string | null>(null);
   const [pendingFindingId, setPendingFindingId] = React.useState<string | null>(initialRoute.findingId ?? null);
   const [selectedGraphElement, setSelectedGraphElement] = React.useState<GraphSelection | null>(null);
-  const [interpretationMode, setInterpretationMode] = React.useState<InterpretationMode>("beginner");
+  const [interpretationMode, setInterpretationModeState] =
+    React.useState<InterpretationMode>(readStoredInterpretationMode);
+  const setInterpretationMode = React.useCallback((mode: InterpretationMode) => {
+    setInterpretationModeState(mode);
+    storeInterpretationMode(mode);
+  }, []);
   const [showSetupWorkspace, setShowSetupWorkspace] = React.useState(true);
   const [hasAutoCollapsedSetup, setHasAutoCollapsedSetup] = React.useState(false);
   const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");
   const [currentSection, setCurrentSection] = React.useState<AppSection>(initialRoute.section);
   const [apiAvailability, setApiAvailability] = React.useState<ApiAvailability>("checking");
+  // The MESA version reported by the server (GET /api/health), shown in the footer.
+  const [serverVersion, setServerVersion] = React.useState<string | null>(null);
+  const [serverRetryStatus, setServerRetryStatus] = React.useState<"idle" | "checking" | "failed">("idle");
   const [isPublicDemoMode, setIsPublicDemoMode] = React.useState(false);
   const [isLoadingProjectState, setIsLoadingProjectState] = React.useState(false);
   const [aiQuestion, setAiQuestion] = React.useState("");
@@ -115,8 +127,9 @@ export function useMesaWorkspace() {
   const [isExplaining, setIsExplaining] = React.useState(false);
   const [streamingAnswer, setStreamingAnswer] = React.useState("");
   const [aiStatus, setAiStatus] = React.useState<AIExplainerStatus | null>(null);
+  const aiStatusRequest = React.useRef(0);
   const [isCheckingAIStatus, setIsCheckingAIStatus] = React.useState(false);
-  const [selectedDocSlug, setSelectedDocSlug] = React.useState(initialRoute.docSlug ?? "evaluator-quick-start");
+  const [selectedDocSlug, setSelectedDocSlug] = React.useState(initialRoute.docSlug ?? "quick-start");
   const [docsQuery, setDocsQuery] = React.useState("");
   const [docsCategory, setDocsCategory] = React.useState("ALL");
   const [filters, setFilters] = React.useState<Filters>({
@@ -241,10 +254,9 @@ export function useMesaWorkspace() {
     syncSelectedProjectState();
   }, [apiAvailability, isPublicDemoMode, selectedProjectId, syncSelectedProjectState]);
 
-  // Once on start: AI status and research records, then the API health probe.
+  // Once on start: AI status, then the API health probe.
   const loadInitialData = useEffectEvent(() => {
     void loadAIStatus();
-    void loadResearchRecords();
   });
   React.useEffect(() => {
     loadInitialData();
@@ -265,14 +277,6 @@ export function useMesaWorkspace() {
   React.useEffect(() => {
     loadProjectsForLiveApi();
   }, [apiAvailability, isPublicDemoMode, loadProjectsForLiveApi]);
-
-  // Refresh research records each time the Evaluation section is opened.
-  const refreshResearchRecordsForSection = useEffectEvent(() => {
-    if (currentSection === "evaluation") void loadResearchRecords();
-  });
-  React.useEffect(() => {
-    refreshResearchRecordsForSection();
-  }, [currentSection, refreshResearchRecordsForSection]);
 
   const filteredFindings = React.useMemo(() => filterFindings(result?.findings ?? [], filters), [filters, result]);
 
@@ -521,7 +525,7 @@ export function useMesaWorkspace() {
       resetProjectScanFlowState();
       updateSelectedProject(project.id, "push");
     } catch (caught) {
-      setError(messageFor(caught, "Project creation failed"));
+      setError(messageFor(caught, "Could not create the project"));
     } finally {
       setIsCreating(false);
     }
@@ -529,7 +533,7 @@ export function useMesaWorkspace() {
 
   async function runScan() {
     if (isPublicDemoMode && apiAvailability !== "online") {
-      setError("You are viewing demo data. Start the full backend stack to run live scans.");
+      setError("You are viewing demo data. Start your MESA server to run scans.");
       return;
     }
     if (!selectedProject) {
@@ -579,9 +583,8 @@ export function useMesaWorkspace() {
       await loadDigitalTwinGraph(payload.scan.id, payload.result, nextScores);
       await loadRoadmap(payload.scan.id);
       await refreshCurrentProjectCollections(selectedProjectId);
-      await loadResearchRecords();
     } catch (caught) {
-      setError(messageFor(caught, "Scan failed"));
+      setError(messageFor(caught, "The scan failed"));
     } finally {
       setIsScanning(false);
     }
@@ -589,7 +592,7 @@ export function useMesaWorkspace() {
 
   async function previewRepositorySource() {
     if (isPublicDemoMode && apiAvailability !== "online") {
-      setError("Repository preview needs the live backend. The demo data only includes example scans.");
+      setError("Repository preview needs your MESA server. The demo data only includes example scans.");
       return;
     }
     if (!sourceLocation.trim()) {
@@ -616,7 +619,7 @@ export function useMesaWorkspace() {
     } catch (caught) {
       setRepoPreview(null);
       setSelectedDiscoveryPaths([]);
-      setError(messageFor(caught, "Repository preview failed"));
+      setError(messageFor(caught, "Could not preview the repository"));
     } finally {
       setIsPreviewingRepo(false);
     }
@@ -639,7 +642,7 @@ export function useMesaWorkspace() {
 
   async function savePolicies() {
     if (isPublicDemoMode && apiAvailability !== "online") {
-      setError("Policy saving is disabled in public demo mode because the backend is not connected.");
+      setError("Saving policies needs your MESA server. The demo data cannot be changed.");
       return;
     }
     if (!selectedProject) {
@@ -719,7 +722,7 @@ export function useMesaWorkspace() {
         await recoverFromUnavailableProject(options.projectId);
         return;
       }
-      setError(messageFor(caught, "Could not load scan"));
+      setError(messageFor(caught, "Could not load the scan"));
     } finally {
       if (requestId === scanRequestRef.current) {
         setIsLoadingScan(false);
@@ -769,100 +772,6 @@ export function useMesaWorkspace() {
       if (!requestId || requestId === scanRequestRef.current) {
         setIsLoadingRoadmap(false);
       }
-    }
-  }
-
-  async function loadResearchRecords() {
-    if (usingEmbeddedDemo) {
-      setResearchRecords([]);
-      return;
-    }
-    setIsLoadingResearchRecords(true);
-    try {
-      const records = await api<ResearchEvaluationRecord[]>("/api/research-records");
-      setResearchRecords(records);
-      setSelectedResearchRecordId((current) => current || records[0]?.id || "");
-    } catch (caught) {
-      if (currentSection === "evaluation") setError(messageFor(caught, "Could not load research records"));
-    } finally {
-      setIsLoadingResearchRecords(false);
-    }
-  }
-
-  async function createResearchRecordFromScan(scanId?: string) {
-    const targetScanId = scanId ?? activeScan?.id;
-    if (!targetScanId) {
-      setError("Load or run a scan before creating a research evaluation record.");
-      return;
-    }
-    if (usingEmbeddedDemo) {
-      setError("Research records need the live backend. The demo data only includes example scans.");
-      return;
-    }
-    setIsSavingResearchRecord(true);
-    setError(null);
-    try {
-      const record = await api<ResearchEvaluationRecord>(`/api/research-records/from-scan/${targetScanId}`, {
-        method: "POST"
-      });
-      setResearchRecords((current) => [record, ...current.filter((item) => item.id !== record.id)]);
-      setSelectedResearchRecordId(record.id);
-      setCurrentSection("evaluation");
-    } catch (caught) {
-      setError(messageFor(caught, "Could not create research record from scan"));
-    } finally {
-      setIsSavingResearchRecord(false);
-    }
-  }
-
-  async function updateResearchRecord(record: ResearchEvaluationRecord, patch: Partial<ResearchEvaluationRecord>) {
-    setIsSavingResearchRecord(true);
-    setError(null);
-    try {
-      const updated = await api<ResearchEvaluationRecord>(`/api/research-records/${record.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(normalizeResearchRecordPayload({ ...record, ...patch }))
-      });
-      setResearchRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-    } catch (caught) {
-      setError(messageFor(caught, "Could not update research record"));
-    } finally {
-      setIsSavingResearchRecord(false);
-    }
-  }
-
-  async function deleteResearchRecord(recordId: string) {
-    setIsSavingResearchRecord(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/research-records/${recordId}`, { method: "DELETE" });
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
-      setResearchRecords((current) => current.filter((record) => record.id !== recordId));
-      setSelectedResearchRecordId((current) => (current === recordId ? "" : current));
-    } catch (caught) {
-      setError(messageFor(caught, "Could not delete research record"));
-    } finally {
-      setIsSavingResearchRecord(false);
-    }
-  }
-
-  async function exportResearchRecords(format: "csv" | "markdown" | "json") {
-    setIsExportingResearchRecords(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/research-records/export?format=${format}`);
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
-      const text = format === "json" ? JSON.stringify(await response.json(), null, 2) : await response.text();
-      downloadTextFile(
-        `mesa-research-records.${format === "markdown" ? "md" : format}`,
-        text,
-        format === "json" ? "application/json" : format === "csv" ? "text/csv" : "text/markdown"
-      );
-    } catch (caught) {
-      setError(messageFor(caught, "Could not export research records"));
-    } finally {
-      setIsExportingResearchRecords(false);
     }
   }
 
@@ -935,23 +844,26 @@ export function useMesaWorkspace() {
         );
       }
     } catch (caught) {
-      setError(messageFor(caught, "AI explainer request failed"));
+      setError(messageFor(caught, "Could not get an answer"));
     } finally {
       setIsExplaining(false);
     }
   }
 
   async function loadAIStatus() {
-    if (isPublicDemoMode && apiAvailability !== "online") {
+    // Only the newest check may set the status: a slow answer to an older request (for example
+    // the first check, sent before MESA knew there was no server) must not replace it.
+    const request = ++aiStatusRequest.current;
+    if (isDemoSite || (isPublicDemoMode && apiAvailability !== "online")) {
       setAiStatus({
         mode: "demo",
         state: "GROUNDED_ONLY",
         live_enabled: false,
         api_key_configured: false,
         api_key_hint: null,
-        model: "demo-embedded",
-        base_url: "embedded",
-        message: "Showing demo data without a live backend."
+        model: "",
+        base_url: "",
+        message: "Showing demo data."
       });
       setIsCheckingAIStatus(false);
       return;
@@ -959,11 +871,11 @@ export function useMesaWorkspace() {
     setIsCheckingAIStatus(true);
     try {
       const status = await api<AIExplainerStatus>("/api/ai/explainer/status");
-      setAiStatus(status);
+      if (request === aiStatusRequest.current) setAiStatus(status);
     } catch {
-      setAiStatus(null);
+      if (request === aiStatusRequest.current) setAiStatus(null);
     } finally {
-      setIsCheckingAIStatus(false);
+      if (request === aiStatusRequest.current) setIsCheckingAIStatus(false);
     }
   }
 
@@ -1014,7 +926,7 @@ export function useMesaWorkspace() {
       },
       {
         id: "review",
-        label: "Review Services",
+        label: "Review services",
         description: "Preview discovery and confirm the services to analyze.",
         done: hasServiceSelection,
         active: hasProject && hasSourceConfigured && !hasServiceSelection
@@ -1029,7 +941,7 @@ export function useMesaWorkspace() {
       },
       {
         id: "scan",
-        label: "Run Scan",
+        label: "Run scan",
         description: "Generate findings, graph evidence, scores, and history.",
         done: hasCompletedScan,
         active: hasProject && hasServiceSelection && !hasCompletedScan
@@ -1129,11 +1041,18 @@ export function useMesaWorkspace() {
   }
 
   async function probeApiAvailability() {
+    if (isDemoSite) {
+      // The demo site never has a server: go straight to the demo data, without a request.
+      setApiAvailability("offline");
+      if (!isPublicDemoMode) activatePublicDemo();
+      return;
+    }
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 2500);
     try {
       const response = await fetch("/api/health", { signal: controller.signal });
       if (!response.ok) throw new Error(`Health probe returned ${response.status}`);
+      setServerVersion(await readHealthVersion(response));
       setApiAvailability("online");
     } catch {
       setApiAvailability("offline");
@@ -1142,6 +1061,22 @@ export function useMesaWorkspace() {
       }
     } finally {
       window.clearTimeout(timeout);
+    }
+  }
+
+  /** Demo data because the server could not be reached: check again, and switch to it when it answers. */
+  async function retryServerConnection() {
+    if (isDemoSite) return;
+    setServerRetryStatus("checking");
+    try {
+      const response = await fetch("/api/health");
+      if (!response.ok) throw new Error(`Health check returned ${response.status}`);
+      setServerVersion(await readHealthVersion(response));
+      setServerRetryStatus("idle");
+      setApiAvailability("online");
+      leavePublicDemo();
+    } catch {
+      setServerRetryStatus("failed");
     }
   }
 
@@ -1172,7 +1107,20 @@ export function useMesaWorkspace() {
 
   const backendUnavailable = apiAvailability === "offline";
   const usingEmbeddedDemo = isPublicDemoMode && backendUnavailable;
-  const currentSectionMeta = navigationItems.find((item) => item.id === currentSection) ?? navigationItems[0];
+
+  // The AI status is first checked before MESA knows whether a server is running. When the demo
+  // data takes over, show the demo status (AI off) instead of a failed check; no request is made.
+  // When the server is reached again later, check the real status.
+  const showDemoAIStatus = useEffectEvent(() => {
+    if (usingEmbeddedDemo || apiAvailability === "online") void loadAIStatus();
+  });
+  React.useEffect(() => {
+    showDemoAIStatus();
+  }, [usingEmbeddedDemo, showDemoAIStatus]);
+  const currentSectionMeta =
+    currentSection === "not-found"
+      ? notFoundItem
+      : (navigationItems.find((item) => item.id === currentSection) ?? navigationItems[0]);
   const sectionNeedsProject = sectionsRequiringProject.has(currentSection);
   const sourceLabel = sourceLocation.trim() ? sourceLocation.trim() : "Manual service paths";
   const activeScanDateLabel = activeScan ? formatDate(activeScan.completed_at ?? activeScan.created_at) : "No scan yet";
@@ -1191,6 +1139,7 @@ export function useMesaWorkspace() {
   }
 
   function toggleDemoWorkspace() {
+    if (isDemoSite) return;
     if (isPublicDemoMode) {
       leavePublicDemo();
       return;
@@ -1294,18 +1243,6 @@ export function useMesaWorkspace() {
     requestAIExplanation,
     loadAIStatus,
     askAIAboutFinding,
-    // research records
-    researchRecords,
-    selectedResearchRecordId,
-    setSelectedResearchRecordId,
-    isLoadingResearchRecords,
-    isSavingResearchRecord,
-    isExportingResearchRecords,
-    loadResearchRecords,
-    createResearchRecordFromScan,
-    updateResearchRecord,
-    deleteResearchRecord,
-    exportResearchRecords,
     // documentation
     selectedDocSlug,
     selectDoc,
@@ -1328,6 +1265,9 @@ export function useMesaWorkspace() {
     isPublicDemoMode,
     usingEmbeddedDemo,
     toggleDemoWorkspace,
+    retryServerConnection,
+    serverRetryStatus,
+    serverVersion,
     error
   };
 }

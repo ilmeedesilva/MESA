@@ -27,8 +27,7 @@ const responses: Record<string, unknown> = {
     model: "none",
     base_url: "",
     message: ""
-  },
-  "GET /api/research-records": []
+  }
 };
 
 let calls: string[] = [];
@@ -67,7 +66,6 @@ describe("App data loading", () => {
     expect(counts).toEqual({
       "GET /api/health": 1,
       "GET /api/ai/explainer/status": 1,
-      "GET /api/research-records": 1,
       "GET /api/projects": 1,
       "GET /api/projects/project-1/scans": 1,
       "GET /api/projects/project-1/policies": 1,

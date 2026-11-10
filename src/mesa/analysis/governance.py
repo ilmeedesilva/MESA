@@ -8,6 +8,7 @@ from typing import Any
 import yaml
 
 from mesa.detectors.evidence import evidence_chain_item
+from mesa.fingerprint import assign_fingerprints
 from mesa.models import AnalysisResult, Finding, FindingType, PolicyCreate, PolicyRecord, Severity
 
 _RULE_PATTERN = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)\s*(==|!=|<=|>=|<|>)\s*(.+)$")
@@ -62,6 +63,7 @@ def evaluate_policies(result: AnalysisResult, policies: list[PolicyRecord]) -> l
                 findings.append(_unsupported_policy_finding(policy, metric))
             elif not _OPERATORS[op](actual, expected):
                 findings.append(_policy_finding(policy, metric, op, expected, actual, services=[]))
+    assign_fingerprints(findings)
     return findings
 
 

@@ -25,6 +25,24 @@ afterEach(() => {
 });
 
 describe("sidebar", () => {
+  it("shows exactly the agreed groups and pages", async () => {
+    resizeTo(1440);
+    render(<App />);
+    await screen.findAllByText("MESA Public Demo");
+    const nav = screen.getByRole("navigation", { name: "Workspace sections" });
+    const groups = [...nav.querySelectorAll(".sidebarGroup")].map((group) => ({
+      group: group.querySelector("h2")?.textContent,
+      pages: [...group.querySelectorAll(".sidebarItem strong")].map((item) => item.textContent)
+    }));
+    expect(groups).toEqual([
+      { group: "Project", pages: ["Overview"] },
+      { group: "Analysis", pages: ["Scan", "Findings", "Graph", "AI Explainer"] },
+      { group: "Results", pages: ["History", "Roadmap", "Architecture Gate"] },
+      { group: "Help", pages: ["Documentation"] }
+    ]);
+    expect(screen.getByText("Try it with demo data")).toBeInTheDocument();
+  });
+
   it("collapses by itself below 1360px wide and expands above it", async () => {
     resizeTo(1300);
     render(<App />);

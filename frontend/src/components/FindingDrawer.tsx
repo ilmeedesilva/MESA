@@ -75,7 +75,7 @@ export function RecommendationDetails({
           <li key={step}>{step}</li>
         ))}
       </ol>
-      {interpretationMode === "research" ? <small>Recommendation source: {recommendation.source}</small> : null}
+      {interpretationMode === "technical" ? <small>Recommendation source: {recommendation.source}</small> : null}
     </section>
   );
 }
@@ -118,17 +118,19 @@ export function FindingDrawer({
           Close
         </button>
         <div className="findingMeta">
-          <span>{finding.id}</span>
+          <span>
+            {interpretationMode === "technical" ? finding.id : `${confidenceLabel(finding.confidence)} confidence`}
+          </span>
           <strong className={`severity ${finding.severity.toLowerCase()}`}>{finding.severity}</strong>
         </div>
         <h2 id="finding-drawer-title">{plainLanguageFindingTitle(finding)}</h2>
         <p className="drawerModeNote">
-          {interpretationMode === "beginner"
-            ? "Beginner mode focuses on the meaning of the result and the first actions to take."
-            : "Research mode keeps the same interpretation but also shows raw detector evidence and technical labels."}
+          {interpretationMode === "simple"
+            ? "Plain-language view: what MESA found, why it matters and how to fix it. Switch to Technical for IDs, rules and raw evidence."
+            : "Technical view: the same explanation, plus IDs, rules, exact file locations and raw evidence."}
         </p>
-        {interpretationMode === "research" ? (
-          <div className="technicalLabel">Detector: {formatType(finding.type)}</div>
+        {interpretationMode === "technical" ? (
+          <div className="technicalLabel">Detector: {finding.detector_name || formatType(finding.type)}</div>
         ) : null}
         <div className="serviceChips">
           {finding.services.map((service) => (
@@ -137,7 +139,7 @@ export function FindingDrawer({
         </div>
         <div className="drawerActionRow">
           <button type="button" className="secondaryButton" onClick={onAskAI}>
-            Ask AI About This
+            Ask AI about this
           </button>
         </div>
         <section className="drawerSection">
@@ -151,43 +153,47 @@ export function FindingDrawer({
         <section className="drawerSection">
           <h3>Why MESA believes this</h3>
           <p>{softWrap(finding.why_valid || "MESA attached structured detector evidence to support this finding.")}</p>
-          <div className="ledgerMetaGrid">
-            <div>
-              <span>Detector</span>
-              <strong>{softWrap(finding.detector_name || formatType(finding.type))}</strong>
-            </div>
-            <div>
-              <span>Rule</span>
-              <strong>{finding.rule_id || "Legacy finding"}</strong>
-            </div>
-          </div>
-          {finding.evidence_chain && finding.evidence_chain.length > 0 ? (
-            <ol className="evidenceChainList">
-              {finding.evidence_chain.map((item, index) => (
-                <li key={`${item.step}-${index}`}>
-                  <strong>{formatType(item.step)}</strong>
-                  <span>{softWrap(item.description)}</span>
-                  {item.source ? (
-                    <code>
-                      {item.source.file_path}
-                      {item.source.line_number ? `:${item.source.line_number}` : ""}
-                    </code>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <ul className="evidenceBulletList">
-              {summarizeEvidence(finding.evidence).map((item) => (
-                <li key={item}>{softWrap(item)}</li>
-              ))}
-            </ul>
-          )}
+          {interpretationMode === "technical" ? (
+            <>
+              <div className="ledgerMetaGrid">
+                <div>
+                  <span>Detector</span>
+                  <strong>{softWrap(finding.detector_name || formatType(finding.type))}</strong>
+                </div>
+                <div>
+                  <span>Rule</span>
+                  <strong>{finding.rule_id || "Legacy finding"}</strong>
+                </div>
+              </div>
+              {finding.evidence_chain && finding.evidence_chain.length > 0 ? (
+                <ol className="evidenceChainList">
+                  {finding.evidence_chain.map((item, index) => (
+                    <li key={`${item.step}-${index}`}>
+                      <strong>{formatType(item.step)}</strong>
+                      <span>{softWrap(item.description)}</span>
+                      {item.source ? (
+                        <code>
+                          {item.source.file_path}
+                          {item.source.line_number ? `:${item.source.line_number}` : ""}
+                        </code>
+                      ) : null}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <ul className="evidenceBulletList">
+                  {summarizeEvidence(finding.evidence).map((item) => (
+                    <li key={item}>{softWrap(item)}</li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : null}
           <small className="supportText">
             {confidenceLabel(finding.confidence)} confidence ({Math.round(finding.confidence * 100)}%).{" "}
             {finding.confidence_reason || confidenceGuidance(finding.confidence)}
           </small>
-          {finding.source_files && finding.source_files.length > 0 ? (
+          {interpretationMode === "technical" && finding.source_files && finding.source_files.length > 0 ? (
             <div className="affectedFiles evidenceFiles">
               <strong>Source files</strong>
               {finding.source_files.slice(0, 6).map((file) => (
@@ -213,9 +219,9 @@ export function FindingDrawer({
             <p>{findingLimitation(finding)}</p>
           )}
         </section>
-        {interpretationMode === "research" ? (
+        {interpretationMode === "technical" ? (
           <section className="drawerSection">
-            <h3>Raw evidence ledger</h3>
+            <h3>Raw evidence</h3>
             <pre>
               {JSON.stringify(
                 {

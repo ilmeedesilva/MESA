@@ -9,6 +9,7 @@ import {
   policyDocumentFromRecords,
   resolveProjectSelection,
   servicePathsFromText,
+  shortId,
   softWrap,
   tokenizeHighlightedText,
   withBreakOpportunities
@@ -142,5 +143,16 @@ describe("softWrap", () => {
       "Detector Hard<wbr/>Coded<wbr/>Service<wbr/>Dependency<wbr/>Detector"
     );
     expect(text(softWrap("in /workspace/app.yml:8"))).toBe("in /<wbr/>workspace/<wbr/>app.<wbr/>yml:<wbr/>8");
+  });
+});
+
+describe("shortId", () => {
+  it("keeps the first 8 characters of a real scan ID", () => {
+    expect(shortId("3f2b9c1e-7a4d-4f0e-9b1a-2c3d4e5f6a7b")).toBe("3f2b9c1e");
+  });
+
+  it("shows the name of a demo scan instead of cutting it to demo-sca", () => {
+    expect(shortId("demo-scan-monolith")).toBe("monolith demo");
+    expect(shortId("demo-scan-shared-db")).toBe("shared db demo");
   });
 });

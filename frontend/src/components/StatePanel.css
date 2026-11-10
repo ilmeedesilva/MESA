@@ -1,0 +1,77 @@
+.statePanel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4) var(--space-4-5);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-xl);
+  background: var(--white);
+}
+
+.statePanel.success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.statePanel.error {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.statePanelBody {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.statePanel h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.statePanel p {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--slate-600);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.statePanelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.statePanelActions button {
+  min-height: 44px;
+}
+
+.stateSpinner {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border: 3px solid var(--slate-200);
+  border-top-color: var(--blue-600);
+  border-radius: 50%;
+  animation: stateSpin 0.8s linear infinite;
+}
+
+@keyframes stateSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stateSpinner {
+    animation: none;
+    border-top-color: var(--slate-200);
+    border-right-color: var(--blue-600);
+  }
+}

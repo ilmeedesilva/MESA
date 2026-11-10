@@ -1,11 +1,11 @@
-# AI Explainer Guide
+# AI explainer guide
 
-## Current Status
+## Current status
 
-The AI explainer is now available inside the MESA analysis UI in two modes:
+The AI explainer is available inside the MESA app in two ways:
 
-- grounded local mode
-- optional live hybrid AI mode
+- MESA's built-in explanations (the default; no AI key needed)
+- optional AI explanations from OpenAI or Anthropic
 
 It works on top of:
 
@@ -15,7 +15,7 @@ It works on top of:
 - governance policies
 - local MESA documentation
 
-## Intended Role
+## Intended role
 
 The AI explainer is meant to help users:
 
@@ -26,7 +26,7 @@ The AI explainer is meant to help users:
 - understand health scores
 - navigate MESA documentation
 
-## Important Rule
+## Important rule
 
 AI explanation does not replace deterministic detection.
 
@@ -37,7 +37,7 @@ The design is:
 - AI distinguishes evidence from inference
 - AI responses expose supporting evidence, suggestions, and limitations
 
-## Available Actions
+## Available actions
 
 The current explainer supports:
 
@@ -49,43 +49,74 @@ The current explainer supports:
 - governance policy help
 - documentation question answering
 
-## Grounded Mode vs Hybrid Mode
+## Built-in explanations vs AI
 
-Grounded local mode:
+Built-in explanations:
 
-- uses only MESA's local explainer logic
-- does not call an external model
-- still uses real scan data and documentation
+- use only MESA's own explainer logic
+- do not call an external model
+- still use real scan data and documentation
 
-Live hybrid AI mode:
+AI explanations:
 
-- first builds a grounded MESA response packet
-- then sends only that packet to a live OpenAI model
-- keeps MESA evidence cards as the source of truth
-- falls back to grounded mode if the live request fails
+- first build MESA's own explanation and evidence from the scan
+- then send only that to the AI provider you configured (OpenAI or Anthropic)
+- keep MESA's evidence cards as the source of truth
+- fall back to the built-in explanation if the AI request fails
 
-## How To Enable Live Hybrid AI
+## What is sent
 
-Create a local `.env` file from `.env.example`, then set:
+With AI off (the default), nothing is sent anywhere: explanations are built on your MESA server.
+
+With AI on, each question sends one request to the provider you chose (OpenAI or Anthropic). It
+contains your question and MESA's own explanation and evidence for it: finding descriptions,
+service names, file paths, scores and, for documentation questions, short excerpts of the MESA
+docs. Your source files are not sent.
+
+## How to turn on AI
+
+Create a local `.env` file from `.env.example`, then set one of these.
+
+OpenAI:
 
 ```bash
 MESA_AI_MODE=hybrid
+MESA_AI_PROVIDER=openai
 MESA_OPENAI_API_KEY=your_api_key_here
 MESA_OPENAI_MODEL=gpt-5.4-mini
 ```
 
-Optional settings:
+Optional OpenAI settings:
 
 ```bash
 MESA_OPENAI_BASE_URL=https://api.openai.com/v1
 MESA_OPENAI_TIMEOUT_SECONDS=20
 ```
 
+Anthropic:
+
+```bash
+MESA_AI_MODE=hybrid
+MESA_AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your_api_key_here
+MESA_ANTHROPIC_EXPLAINER_MODEL=claude-opus-5-5
+```
+
 Docker Compose reads those values automatically through the `${...}` mappings in `docker-compose.yml`.
 
-If hybrid mode is not enabled, or if no API key is configured, MESA automatically stays in grounded local mode.
+If AI is not turned on, or no API key is configured, MESA uses its built-in explanations.
 
-## How To Use It
+## What the app shows
+
+The AI Explainer page shows one status line:
+
+- `AI: off. Using MESA's built-in explanations.` - no AI key is configured (the default)
+- `AI: on (OpenAI).` or `AI: on (Anthropic).` - AI is configured and working; the model name is shown in the `Technical` explanation level
+- `AI unavailable right now. Showing MESA's built-in explanation.` - AI is configured but not working (for example a wrong key, an unavailable model or a connection problem); the reason is shown in `Technical`
+
+Each answer has a small `MESA` or `AI` label. The detailed source is shown in `Technical`.
+
+## How to use it
 
 1. Run or load a scan.
 2. Open the `AI Explainer` panel in the analysis workspace.
@@ -95,14 +126,12 @@ If hybrid mode is not enabled, or if no API key is configured, MESA automaticall
    - the evidence cards
    - the suggestions
    - the limitations
-   - the response source label
+   - the `MESA` or `AI` label on the answer
 
-## What This Means When You Assess MESA
+## What the AI does not change
 
-Evaluate the AI layer separately from detector quality.
+Findings always come from MESA's deterministic analysis, with or without AI. The AI only explains those findings in clearer words; it is instructed not to invent claims the evidence does not support.
 
-The detector quality still depends on the deterministic analysis pipeline. The explainer quality depends on whether the grounded response makes the result easier to understand without inventing unsupported claims.
+## Current limitation
 
-## Current Limitation
-
-The live hybrid mode is still evidence-bounded by design. It does not let the model generate detector facts independently, and it does not execute repository code.
+AI explanations are evidence-bounded by design. It does not let the model generate detector facts independently, and it does not execute repository code.

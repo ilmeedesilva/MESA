@@ -76,12 +76,12 @@ export const demoWorkspace = {
             {
               service: "order-service",
               database: "postgres://shared-db/orders",
-              source: "/workspace/tests/fixtures/shared-db/order-service/.env:1"
+              source: "order-service/.env:1"
             },
             {
               service: "payment-service",
               database: "postgres://shared-db/orders",
-              source: "/workspace/tests/fixtures/shared-db/payment-service/.env:1"
+              source: "payment-service/.env:1"
             }
           ],
           recommendation: "Assign one owner for the shared data and move the other service behind APIs or events.",
@@ -90,10 +90,7 @@ export const demoWorkspace = {
               root_cause: "Multiple services statically reference the same database.",
               architectural_consequence: "Schema changes and deployments become coupled across services.",
               affected_services: ["order-service", "payment-service"],
-              affected_files: [
-                "/workspace/tests/fixtures/shared-db/order-service/.env",
-                "/workspace/tests/fixtures/shared-db/payment-service/.env"
-              ],
+              affected_files: ["order-service/.env", "payment-service/.env"],
               refactoring_steps: [
                 "Choose one service as the data owner.",
                 "Move direct database access from the non-owner behind owner APIs or domain events.",
@@ -114,13 +111,13 @@ export const demoWorkspace = {
           confidence: 0.78,
           services: ["payment-service"],
           description:
-            "payment-service directly references shared-db:5432 in /workspace/tests/fixtures/shared-db/payment-service/.env:1. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+            "payment-service directly references shared-db:5432 in payment-service/.env:1. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
           evidence: [
             {
               anti_pattern: "Hard-Coded Service Dependency",
               service: "payment-service",
               value: "shared-db:5432",
-              file_path: "/workspace/tests/fixtures/shared-db/payment-service/.env",
+              file_path: "payment-service/.env",
               line_number: 1,
               reason: "service endpoint",
               duplicate_occurrences: 1
@@ -132,7 +129,7 @@ export const demoWorkspace = {
               root_cause: "A concrete host or port is embedded in configuration.",
               architectural_consequence: "Deployments become more environment-specific and fragile.",
               affected_services: ["payment-service"],
-              affected_files: ["/workspace/tests/fixtures/shared-db/payment-service/.env"],
+              affected_files: ["payment-service/.env"],
               refactoring_steps: [
                 "Move the endpoint value into deployment-managed configuration.",
                 "Centralize database client creation behind one configuration entry."
@@ -284,7 +281,7 @@ export const demoWorkspace = {
               root_cause: "The service has accumulated too many responsibilities and dependencies.",
               architectural_consequence: "It becomes a bottleneck for change and centralizes too much system behavior.",
               affected_services: ["platform-service"],
-              affected_files: ["/workspace/tests/fixtures/god/platform-service/app.py"],
+              affected_files: ["platform-service/app.py"],
               refactoring_steps: [
                 "Group platform-service capabilities by business capability.",
                 "Reduce direct outbound dependencies through events or orchestration.",
@@ -318,10 +315,7 @@ export const demoWorkspace = {
               root_cause: "The affected services depend on each other directly.",
               architectural_consequence: "The cycle blocks independent deployment and increases coordination cost.",
               affected_services: ["platform-service", "order-service"],
-              affected_files: [
-                "/workspace/tests/fixtures/god/platform-service/app.py",
-                "/workspace/tests/fixtures/god/order-service/app.py"
-              ],
+              affected_files: ["platform-service/app.py", "order-service/app.py"],
               refactoring_steps: [
                 "Identify the dependency edge with the weakest ownership justification.",
                 "Replace one synchronous call with an event or orchestration boundary.",
@@ -350,7 +344,7 @@ export const demoWorkspace = {
               root_cause: "Multiple static call sites suggest a fine-grained API boundary.",
               architectural_consequence: "The services become latency-sensitive and harder to scale independently.",
               affected_services: ["platform-service", "order-service"],
-              affected_files: ["/workspace/tests/fixtures/god/platform-service/app.py"],
+              affected_files: ["platform-service/app.py"],
               refactoring_steps: [
                 "Group the repeated calls by use case.",
                 "Replace repeated fine-grained calls with a coarser endpoint or read model.",
@@ -371,11 +365,11 @@ export const demoWorkspace = {
           confidence: 0.88,
           services: ["platform-service"],
           description:
-            "platform-service directly references http://order-service/orders in /workspace/tests/fixtures/god/platform-service/app.py:8. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+            "platform-service directly references http://order-service/orders in platform-service/app.py:8. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
           evidence: [
             {
               value: "http://order-service/orders",
-              file_path: "/workspace/tests/fixtures/god/platform-service/app.py",
+              file_path: "platform-service/app.py",
               line_number: 8,
               reason: "service endpoint",
               duplicate_occurrences: 1
@@ -387,7 +381,7 @@ export const demoWorkspace = {
               root_cause: "A concrete URL is embedded in source code instead of deployment-managed configuration.",
               architectural_consequence: "Endpoint changes require code edits and reduce portability.",
               affected_services: ["platform-service"],
-              affected_files: ["/workspace/tests/fixtures/god/platform-service/app.py"],
+              affected_files: ["platform-service/app.py"],
               refactoring_steps: [
                 "Move the endpoint value into environment-specific configuration.",
                 "Centralize client creation behind a typed adapter."
@@ -407,11 +401,11 @@ export const demoWorkspace = {
           confidence: 0.88,
           services: ["platform-service"],
           description:
-            "platform-service directly references http://payment-service/payments in /workspace/tests/fixtures/god/platform-service/app.py:12. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+            "platform-service directly references http://payment-service/payments in platform-service/app.py:12. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
           evidence: [
             {
               value: "http://payment-service/payments",
-              file_path: "/workspace/tests/fixtures/god/platform-service/app.py",
+              file_path: "platform-service/app.py",
               line_number: 12,
               reason: "service endpoint",
               duplicate_occurrences: 1
@@ -423,7 +417,7 @@ export const demoWorkspace = {
               root_cause: "A concrete URL is embedded in source code instead of deployment-managed configuration.",
               architectural_consequence: "Endpoint changes require code edits and reduce portability.",
               affected_services: ["platform-service"],
-              affected_files: ["/workspace/tests/fixtures/god/platform-service/app.py"],
+              affected_files: ["platform-service/app.py"],
               refactoring_steps: [
                 "Move the endpoint value into environment-specific configuration.",
                 "Centralize client creation behind a typed adapter."
@@ -443,11 +437,11 @@ export const demoWorkspace = {
           confidence: 0.88,
           services: ["platform-service"],
           description:
-            "platform-service directly references http://user-service/users in /workspace/tests/fixtures/god/platform-service/app.py:16. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
+            "platform-service directly references http://user-service/users in platform-service/app.py:16. This creates a hard-coded service dependency that can bypass service discovery or environment-specific configuration.",
           evidence: [
             {
               value: "http://user-service/users",
-              file_path: "/workspace/tests/fixtures/god/platform-service/app.py",
+              file_path: "platform-service/app.py",
               line_number: 16,
               reason: "service endpoint",
               duplicate_occurrences: 1
@@ -459,7 +453,7 @@ export const demoWorkspace = {
               root_cause: "A concrete URL is embedded in source code instead of deployment-managed configuration.",
               architectural_consequence: "Endpoint changes require code edits and reduce portability.",
               affected_services: ["platform-service"],
-              affected_files: ["/workspace/tests/fixtures/god/platform-service/app.py"],
+              affected_files: ["platform-service/app.py"],
               refactoring_steps: [
                 "Move the endpoint value into environment-specific configuration.",
                 "Centralize client creation behind a typed adapter."
@@ -494,7 +488,7 @@ export const demoWorkspace = {
               root_cause: "The current architecture violates a configured governance rule.",
               architectural_consequence: "The system is drifting away from an agreed architecture constraint.",
               affected_services: [],
-              affected_files: ["/workspace/tests/fixtures/god/platform-service/app.py"],
+              affected_files: ["platform-service/app.py"],
               refactoring_steps: [
                 "Remove the direct hard-coded endpoints from source.",
                 "Re-run MESA and verify the governance finding is removed."

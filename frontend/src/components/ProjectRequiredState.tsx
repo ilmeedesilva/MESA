@@ -1,3 +1,5 @@
+import { StatePanel } from "./StatePanel";
+
 export function ProjectRequiredState({
   onOpenScan,
   onCreateProject
@@ -6,21 +8,21 @@ export function ProjectRequiredState({
   onCreateProject: () => void;
 }) {
   return (
-    <section className="workspaceEmptyState">
-      <div className="eyebrow">Project Required</div>
-      <h2>Select a project to continue</h2>
-      <p>
-        This workspace depends on the globally selected project. Choose one from the header or open the scan workspace
-        to create a new project.
-      </p>
-      <div className="workspaceActionGrid">
-        <button type="button" onClick={onOpenScan}>
-          Open Scan Workspace
-        </button>
-        <button type="button" className="secondaryButton" onClick={onCreateProject}>
-          Create Project
-        </button>
-      </div>
-    </section>
+    <StatePanel
+      kind="empty"
+      title="No project selected"
+      actions={
+        <>
+          <button type="button" onClick={onCreateProject}>
+            Create project
+          </button>
+          <button type="button" className="secondaryButton" onClick={onOpenScan}>
+            Go to Scan
+          </button>
+        </>
+      }
+    >
+      Choose a project in the header, or create one to start scanning.
+    </StatePanel>
   );
 }

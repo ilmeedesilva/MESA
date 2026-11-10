@@ -1,4 +1,4 @@
-# Remediation Roadmap Guide
+# Remediation roadmap guide
 
 ## Purpose
 
@@ -11,22 +11,22 @@ Instead of reading each finding alone, you can use the roadmap to answer:
 - which fixes are deeper architecture work
 - which actions depend on earlier actions
 
-## What The Roadmap Shows
+## What the roadmap shows
 
 Each roadmap is built per scan and includes:
 
-- `Quick Wins`
+- `Quick wins`
   - low-effort fixes that reduce noise or operational coupling early
-- `Medium-Term Changes`
+- `Medium-term changes`
   - boundary or interaction improvements that need more design work
-- `High-Effort Refactors`
+- `High-effort refactors`
   - structural changes such as cycle removal, shared database separation, or God Service decomposition
-- `Suggested Order`
+- `Suggested order`
   - the recommended action sequence
 - `Dependencies`
   - actions that should happen only after another action is complete
 
-## How MESA Builds The Roadmap
+## How MESA builds the roadmap
 
 The roadmap is deterministic.
 
@@ -49,9 +49,9 @@ The current implementation groups findings into broader action types such as:
 - God Service decomposition
 - governance compliance actions
 
-## How To Read The Buckets
+## How to read the buckets
 
-### Quick Wins
+### Quick wins
 
 Use these first when you want progress quickly with low implementation friction.
 
@@ -60,7 +60,7 @@ Typical examples:
 - externalizing hard-coded URLs
 - moving endpoint values into configuration
 
-### Medium-Term Changes
+### Medium-term changes
 
 Use these when you need to improve boundaries or coordination but do not yet need a major migration.
 
@@ -69,7 +69,7 @@ Typical examples:
 - reducing chatty service interactions
 - resolving governance rules after underlying fixes are complete
 
-### High-Effort Refactors
+### High-effort refactors
 
 Use these for the architectural changes that reshape service ownership or dependency structure.
 
@@ -79,7 +79,7 @@ Typical examples:
 - removing shared database access
 - decomposing a God Service
 
-## How To Interpret Priority Correctly
+## How to interpret priority correctly
 
 Priority is not based on severity alone.
 
@@ -99,19 +99,19 @@ Practical interpretation:
 - lower score + quick win
   - still valuable if it removes noise and helps later work
 
-## How To Use It In The UI
+## How to use it in the UI
 
 1. Run or load a scan.
-2. Open the `Remediation Roadmap` panel in the analysis view.
+2. Open the `Roadmap` page.
 3. Read the roadmap summary first.
-4. Check the `Suggested Order`.
+4. Check the `Suggested order`.
 5. Review dependencies before planning implementation.
 6. Open the findings drawer if you need deeper per-finding detail.
 7. Use the AI explainer if you want a simpler explanation of why an action matters.
 
-## How To Test It Step By Step
+## How to test it step by step
 
-### UI Test
+### UI test
 
 1. Start the stack:
 
@@ -127,7 +127,7 @@ http://localhost:5173
 
 3. Create a project.
 4. Run a scan.
-5. Confirm that the `Remediation Roadmap` panel appears.
+5. Confirm that the `Roadmap` page shows the roadmap.
 6. Check that these sections render:
 
 - summary
@@ -139,7 +139,7 @@ http://localhost:5173
 
 7. Load an older scan from history and confirm the roadmap updates with that scan.
 
-### API Test
+### API test
 
 Call:
 
@@ -156,7 +156,7 @@ Expected response shape:
 - `suggested_order`
 - `dependencies`
 
-### Automated Test
+### Automated test
 
 Run:
 
@@ -171,7 +171,7 @@ The roadmap test checks that:
 - suggested order is returned
 - dependency links are returned
 
-## Current Scope
+## Current scope
 
 The current roadmap is intentionally rule-based and explainable.
 
@@ -182,4 +182,4 @@ It does not yet:
 - assign owners automatically
 - generate implementation tickets automatically
 
-Those can be added later, but the current version keeps the roadmap auditable and easy to validate for research.
+Those can be added later, but the current version keeps the roadmap auditable and easy to check.

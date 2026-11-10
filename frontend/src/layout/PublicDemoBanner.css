@@ -1,63 +1,48 @@
-.publicDemoBanner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3-5);
-  margin: var(--space-3-5) var(--space-6) 0;
-  padding: var(--space-3-5) var(--space-4);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  background: var(--white);
-  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
-}
-
-.publicDemoBanner.demo {
-  border-color: var(--blue-200);
-  background: linear-gradient(135deg, var(--blue-50), var(--white));
-}
-
-.publicDemoBanner.live {
-  border-color: #bbf7d0;
-  background: linear-gradient(135deg, #f0fdf4, var(--white));
-}
-
-.publicDemoBanner.neutral {
-  border-color: var(--border-soft);
-  background: var(--slate-50);
-}
-
-.publicDemoBanner strong,
-.publicDemoBanner span {
-  display: block;
-}
-
-.publicDemoBanner strong {
-  font-size: 13px;
-}
-
-.publicDemoBanner span {
-  margin-top: 5px;
-  color: var(--slate-500);
-  font-size: 11px;
-  line-height: 1.55;
-  max-width: 72ch;
-}
-
-.publicDemoActions {
+/* A slim status line above the page, only when there is something to act on. */
+.statusLine {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-3) var(--space-6) 0;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3-5);
+  border: 1px solid var(--blue-200);
+  border-radius: var(--radius-lg);
+  background: var(--blue-50);
+  color: var(--slate-700);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.statusLine.warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.statusLine span {
+  min-width: 0;
+}
+
+.statusLine button,
+.statusLine .statusLineLink {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 0;
+  color: var(--blue-700);
+  background: transparent;
+  box-shadow: none;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.statusLine .statusLineLink {
+  display: inline-flex;
+  align-items: center;
 }
 
 @media (max-width: 1180px) {
-  .publicDemoBanner {
+  .statusLine {
     margin-inline: var(--space-4);
-  }
-}
-
-@media (max-width: 980px) {
-  .publicDemoBanner {
-    align-items: stretch;
-    flex-direction: column;
   }
 }

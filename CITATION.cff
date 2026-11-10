@@ -1,0 +1,22 @@
+# Citation metadata for MESA (https://citation-file-format.github.io/).
+# Before the 1.0 release: replace the placeholder author with the real author, and add
+# version and date-released. A DOI is added later, once one exists.
+cff-version: 1.2.0
+message: "If you use MESA in your work, please cite it using these metadata."
+title: "MESA: static analysis of microservice architecture"
+type: software
+authors:
+  - name: "The MESA authors"
+repository-code: "https://github.com/ilmeedesilva/MESA"
+abstract: >-
+  MESA reads the source code and configuration of a microservice system and finds
+  architecture problems between services: cyclic dependencies, shared databases,
+  hard-coded service addresses, chatty services and god services. It reports each
+  finding with its file and line, why it matters and how to fix it, and can check
+  pull requests in CI for new problems.
+keywords:
+  - microservices
+  - software architecture
+  - static analysis
+  - anti-patterns
+  - architecture fitness

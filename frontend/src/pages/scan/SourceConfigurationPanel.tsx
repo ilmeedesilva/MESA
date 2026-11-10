@@ -19,7 +19,7 @@ export function SourceConfigurationPanel({ ws }: { ws: MesaWorkspace }) {
   return (
     <section className="panelBlock">
       <div className="panelHeader compact">
-        <h2>Source Configuration</h2>
+        <h2>Source</h2>
         <span>{sourceLocation.trim() ? sourceType : "Manual mode"}</span>
       </div>
       <label htmlFor="sourceType">Repository source type</label>
@@ -68,14 +68,14 @@ export function SourceConfigurationPanel({ ws }: { ws: MesaWorkspace }) {
       ) : null}
       <div className="panelButtonRow sourceActionRow">
         <button className="secondaryButton" onClick={previewRepositorySource} disabled={isPreviewingRepo}>
-          {isPreviewingRepo ? "Previewing..." : "Preview Discovery"}
+          {isPreviewingRepo ? "Previewing..." : "Preview discovery"}
         </button>
         <button
           type="button"
           onClick={() => focusWorkflowStep("review")}
           disabled={!repoPreview && manualServicePaths.length === 0}
         >
-          Review Services
+          Review services
         </button>
       </div>
       <p className="hint">
