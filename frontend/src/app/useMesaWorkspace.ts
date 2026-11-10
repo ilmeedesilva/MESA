@@ -6,7 +6,6 @@ import { demoPersistedScan, isDemoScan, isPublicDemoProject, localDemoAIResponse
 import {
   buildFilterOptions,
   comparisonBaseScan,
-  downloadTextFile,
   filterFindings,
   flattenScores,
   formatDate,
@@ -17,7 +16,6 @@ import {
   graphFromReport,
   isAbortError,
   isNotFoundError,
-  normalizeResearchRecordPayload,
   policyDocumentFromRecords,
   preferredGraph,
   readProjectIdFromUrl,
@@ -27,7 +25,7 @@ import {
 import { useEffectEvent } from "../hooks/useEffectEvent";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { defaultPaths, defaultPolicyDocument } from "./defaults";
-import { navigationItems, sectionsRequiringProject } from "./navigation";
+import { navigationItems, notFoundItem, sectionsRequiringProject } from "./navigation";
 import { readRoute, writeUrl, type Route } from "./router";
 import type {
   AIExplainerIntent,
@@ -51,7 +49,6 @@ import type {
   ProjectSetup,
   RemediationRoadmap,
   RepoScanPreview,
-  ResearchEvaluationRecord,
   ScanJobRecord,
   ScanRecord,
   WorkflowStep
@@ -78,8 +75,6 @@ export function useMesaWorkspace() {
   const [history, setHistory] = React.useState<ScanRecord[]>([]);
   const [evolution, setEvolution] = React.useState<EvolutionReport[]>([]);
   const [roadmap, setRoadmap] = React.useState<RemediationRoadmap | null>(null);
-  const [researchRecords, setResearchRecords] = React.useState<ResearchEvaluationRecord[]>([]);
-  const [selectedResearchRecordId, setSelectedResearchRecordId] = React.useState("");
   const [policyText, setPolicyText] = React.useState(defaultPolicyDocument);
   const [policyCount, setPolicyCount] = React.useState(0);
   const [activeScan, setActiveScan] = React.useState<ScanRecord | null>(null);
@@ -92,10 +87,7 @@ export function useMesaWorkspace() {
   const [isScanning, setIsScanning] = React.useState(false);
   const [isLoadingScan, setIsLoadingScan] = React.useState(false);
   const [isLoadingRoadmap, setIsLoadingRoadmap] = React.useState(false);
-  const [isLoadingResearchRecords, setIsLoadingResearchRecords] = React.useState(false);
   const [isSavingPolicies, setIsSavingPolicies] = React.useState(false);
-  const [isSavingResearchRecord, setIsSavingResearchRecord] = React.useState(false);
-  const [isExportingResearchRecords, setIsExportingResearchRecords] = React.useState(false);
   // The route the page was opened with (hash, or the old ?section= parameter).
   const [initialRoute] = React.useState<Route>(() => readRoute());
   // The open finding is kept by ID and looked up in the current scan. A finding from a link
@@ -247,10 +239,9 @@ export function useMesaWorkspace() {
     syncSelectedProjectState();
   }, [apiAvailability, isPublicDemoMode, selectedProjectId, syncSelectedProjectState]);
 
-  // Once on start: AI status and research records, then the API health probe.
+  // Once on start: AI status, then the API health probe.
   const loadInitialData = useEffectEvent(() => {
     void loadAIStatus();
-    void loadResearchRecords();
   });
   React.useEffect(() => {
     loadInitialData();
@@ -271,14 +262,6 @@ export function useMesaWorkspace() {
   React.useEffect(() => {
     loadProjectsForLiveApi();
   }, [apiAvailability, isPublicDemoMode, loadProjectsForLiveApi]);
-
-  // Refresh research records each time the Evaluation section is opened.
-  const refreshResearchRecordsForSection = useEffectEvent(() => {
-    if (currentSection === "evaluation") void loadResearchRecords();
-  });
-  React.useEffect(() => {
-    refreshResearchRecordsForSection();
-  }, [currentSection, refreshResearchRecordsForSection]);
 
   const filteredFindings = React.useMemo(() => filterFindings(result?.findings ?? [], filters), [filters, result]);
 
@@ -585,7 +568,6 @@ export function useMesaWorkspace() {
       await loadDigitalTwinGraph(payload.scan.id, payload.result, nextScores);
       await loadRoadmap(payload.scan.id);
       await refreshCurrentProjectCollections(selectedProjectId);
-      await loadResearchRecords();
     } catch (caught) {
       setError(messageFor(caught, "Scan failed"));
     } finally {
@@ -775,100 +757,6 @@ export function useMesaWorkspace() {
       if (!requestId || requestId === scanRequestRef.current) {
         setIsLoadingRoadmap(false);
       }
-    }
-  }
-
-  async function loadResearchRecords() {
-    if (usingEmbeddedDemo) {
-      setResearchRecords([]);
-      return;
-    }
-    setIsLoadingResearchRecords(true);
-    try {
-      const records = await api<ResearchEvaluationRecord[]>("/api/research-records");
-      setResearchRecords(records);
-      setSelectedResearchRecordId((current) => current || records[0]?.id || "");
-    } catch (caught) {
-      if (currentSection === "evaluation") setError(messageFor(caught, "Could not load research records"));
-    } finally {
-      setIsLoadingResearchRecords(false);
-    }
-  }
-
-  async function createResearchRecordFromScan(scanId?: string) {
-    const targetScanId = scanId ?? activeScan?.id;
-    if (!targetScanId) {
-      setError("Load or run a scan before creating a research evaluation record.");
-      return;
-    }
-    if (usingEmbeddedDemo) {
-      setError("Research records need the live backend. The demo data only includes example scans.");
-      return;
-    }
-    setIsSavingResearchRecord(true);
-    setError(null);
-    try {
-      const record = await api<ResearchEvaluationRecord>(`/api/research-records/from-scan/${targetScanId}`, {
-        method: "POST"
-      });
-      setResearchRecords((current) => [record, ...current.filter((item) => item.id !== record.id)]);
-      setSelectedResearchRecordId(record.id);
-      setCurrentSection("evaluation");
-    } catch (caught) {
-      setError(messageFor(caught, "Could not create research record from scan"));
-    } finally {
-      setIsSavingResearchRecord(false);
-    }
-  }
-
-  async function updateResearchRecord(record: ResearchEvaluationRecord, patch: Partial<ResearchEvaluationRecord>) {
-    setIsSavingResearchRecord(true);
-    setError(null);
-    try {
-      const updated = await api<ResearchEvaluationRecord>(`/api/research-records/${record.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(normalizeResearchRecordPayload({ ...record, ...patch }))
-      });
-      setResearchRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-    } catch (caught) {
-      setError(messageFor(caught, "Could not update research record"));
-    } finally {
-      setIsSavingResearchRecord(false);
-    }
-  }
-
-  async function deleteResearchRecord(recordId: string) {
-    setIsSavingResearchRecord(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/research-records/${recordId}`, { method: "DELETE" });
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
-      setResearchRecords((current) => current.filter((record) => record.id !== recordId));
-      setSelectedResearchRecordId((current) => (current === recordId ? "" : current));
-    } catch (caught) {
-      setError(messageFor(caught, "Could not delete research record"));
-    } finally {
-      setIsSavingResearchRecord(false);
-    }
-  }
-
-  async function exportResearchRecords(format: "csv" | "markdown" | "json") {
-    setIsExportingResearchRecords(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/research-records/export?format=${format}`);
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
-      const text = format === "json" ? JSON.stringify(await response.json(), null, 2) : await response.text();
-      downloadTextFile(
-        `mesa-research-records.${format === "markdown" ? "md" : format}`,
-        text,
-        format === "json" ? "application/json" : format === "csv" ? "text/csv" : "text/markdown"
-      );
-    } catch (caught) {
-      setError(messageFor(caught, "Could not export research records"));
-    } finally {
-      setIsExportingResearchRecords(false);
     }
   }
 
@@ -1178,7 +1066,10 @@ export function useMesaWorkspace() {
 
   const backendUnavailable = apiAvailability === "offline";
   const usingEmbeddedDemo = isPublicDemoMode && backendUnavailable;
-  const currentSectionMeta = navigationItems.find((item) => item.id === currentSection) ?? navigationItems[0];
+  const currentSectionMeta =
+    currentSection === "not-found"
+      ? notFoundItem
+      : (navigationItems.find((item) => item.id === currentSection) ?? navigationItems[0]);
   const sectionNeedsProject = sectionsRequiringProject.has(currentSection);
   const sourceLabel = sourceLocation.trim() ? sourceLocation.trim() : "Manual service paths";
   const activeScanDateLabel = activeScan ? formatDate(activeScan.completed_at ?? activeScan.created_at) : "No scan yet";
@@ -1300,18 +1191,6 @@ export function useMesaWorkspace() {
     requestAIExplanation,
     loadAIStatus,
     askAIAboutFinding,
-    // research records
-    researchRecords,
-    selectedResearchRecordId,
-    setSelectedResearchRecordId,
-    isLoadingResearchRecords,
-    isSavingResearchRecord,
-    isExportingResearchRecords,
-    loadResearchRecords,
-    createResearchRecordFromScan,
-    updateResearchRecord,
-    deleteResearchRecord,
-    exportResearchRecords,
     // documentation
     selectedDocSlug,
     selectDoc,

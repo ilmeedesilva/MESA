@@ -5,33 +5,19 @@ export function ScanHistoryPanel({
   history,
   activeScan,
   isLoadingScan,
-  isSavingResearchRecord,
-  usingEmbeddedDemo,
-  onSelectScan,
-  onCreateResearchRecord
+  onSelectScan
 }: {
   history: ScanRecord[];
   activeScan: ScanRecord | null;
   isLoadingScan: boolean;
-  isSavingResearchRecord: boolean;
-  usingEmbeddedDemo: boolean;
   onSelectScan: (scanId: string) => void;
-  onCreateResearchRecord: (scanId?: string) => void;
 }) {
   return (
     <section className="historyPanel">
       <div className="panelHeader compact">
-        <h2>Scan History</h2>
+        <h2>Scans</h2>
         <span>{history.length} scans</span>
       </div>
-      <button
-        type="button"
-        className="fullButton secondaryButton"
-        onClick={() => onCreateResearchRecord(activeScan?.id)}
-        disabled={!activeScan || isSavingResearchRecord || usingEmbeddedDemo}
-      >
-        {isSavingResearchRecord ? "Saving Record..." : "Create Research Record"}
-      </button>
       <div className="scanList">
         {history.length === 0 ? <div className="emptyInline">No persistent scans yet.</div> : null}
         {history.map((scan) => (

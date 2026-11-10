@@ -3,6 +3,9 @@
  * imported here, in one place, because the order matters: rules that override each other must
  * keep the order they had in the original single stylesheet. styles/shared.css holds rules used
  * by several components. Add new component files where their rules do not depend on order.
+ *
+ * Not imported on purpose: ResearchEvaluationPanel.css, BenchmarksPanel.css and AiBaselinePanel.css.
+ * Those pages are kept in the repo but are no longer part of the app.
  */
 
 @import "./tokens.css";
@@ -27,10 +30,9 @@
 @import "../components/InterpretationModeCard.css";
 @import "../components/ScanHistoryPanel.css";
 @import "../pages/EvolutionPanel.css";
-@import "../pages/BenchmarksPanel.css";
 @import "../pages/RemediationRoadmapPanel.css";
 @import "./shared.css";
-@import "../pages/ResearchEvaluationPanel.css";
-@import "../pages/AiBaselinePanel.css";
 @import "../components/GraphInspector.css";
 @import "../pages/FitnessGatePanel.css";
+@import "../pages/HistoryPage.css";
+@import "../pages/NotFoundPage.css";

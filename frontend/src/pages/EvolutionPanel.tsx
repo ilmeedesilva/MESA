@@ -8,12 +8,12 @@ export function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
     <section className="evolutionPanel">
       <div className="panelHeader compact">
         <div>
-          <h2>Architecture Evolution</h2>
-          <p>Snapshot-to-snapshot architecture change tracking</p>
+          <h2>What changed since the previous scan</h2>
+          <p>Each scan compared with the one before it</p>
         </div>
         <span>{reports.length} comparisons</span>
       </div>
-      {!latest ? <div className="emptyInline">Run at least two scans to see architecture evolution.</div> : null}
+      {!latest ? <div className="emptyInline">Run at least two scans to see what changed.</div> : null}
       {latest ? (
         <div className="evolutionGrid">
           <div className="evolutionPrimary">
@@ -48,7 +48,7 @@ export function EvolutionPanel({ reports }: { reports: EvolutionReport[] }) {
 
           <div className="evolutionSecondary">
             <div className="evolutionSecondaryHeader">
-              <strong>Comparison History</strong>
+              <strong>All comparisons</strong>
               <span>{reports.length} snapshots</span>
             </div>
             <div className="evolutionTimeline">

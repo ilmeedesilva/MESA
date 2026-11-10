@@ -13,16 +13,14 @@ import { ProjectRequiredState } from "../components/ProjectRequiredState";
 import { ScanHistoryPanel } from "../components/ScanHistoryPanel";
 import { ScanHistoryRail } from "../components/ScanHistoryRail";
 import { AIExplainerPanel } from "../pages/AIExplainerPanel";
-import { AiBaselinePanel } from "../pages/AiBaselinePanel";
-import { BenchmarksPanel } from "../pages/BenchmarksPanel";
 import { DocumentationPortal } from "../pages/DocumentationPortal";
-import { EvolutionPanel } from "../pages/EvolutionPanel";
 import { FindingsPage } from "../pages/FindingsPage";
 import { FitnessGatePanel } from "../pages/FitnessGatePanel";
 import { GraphPage } from "../pages/GraphPage";
+import { HistoryPage } from "../pages/HistoryPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
 import { OverviewPage } from "../pages/OverviewPage";
 import { RemediationRoadmapPanel } from "../pages/RemediationRoadmapPanel";
-import { ResearchEvaluationPanel } from "../pages/ResearchEvaluationPanel";
 import { ScanPage } from "../pages/ScanPage";
 
 export function App() {
@@ -45,10 +43,7 @@ export function App() {
       history={history}
       activeScan={activeScan}
       isLoadingScan={isLoadingScan}
-      isSavingResearchRecord={ws.isSavingResearchRecord}
-      usingEmbeddedDemo={ws.usingEmbeddedDemo}
       onSelectScan={(scanId) => void ws.loadScan(scanId)}
-      onCreateResearchRecord={(scanId) => void ws.createResearchRecordFromScan(scanId)}
     />
   );
 
@@ -57,7 +52,7 @@ export function App() {
     history.length > 0 &&
     currentSection !== "history" &&
     currentSection !== "docs" &&
-    currentSection !== "ai-baseline";
+    currentSection !== "not-found";
   const scanRail = showScanRail ? (
     <ScanHistoryRail
       history={history}
@@ -68,9 +63,8 @@ export function App() {
     />
   ) : null;
 
-  // The AI Baseline page is shown on its own, so the workspace banners and
-  // interpretation controls are hidden there.
-  const isStandaloneSection = currentSection === "ai-baseline";
+  // The not-found page is shown on its own, without the workspace banners and controls.
+  const isStandaloneSection = currentSection === "not-found";
 
   return (
     <AppShell
@@ -209,9 +203,7 @@ function SectionContent({ ws, historyPanel }: { ws: MesaWorkspace; historyPanel:
     case "graph":
       return selectedProject ? <GraphPage ws={ws} /> : projectRequired;
     case "history":
-      return historyPanel;
-    case "evolution":
-      return <EvolutionPanel reports={ws.evolution} />;
+      return <HistoryPage scanList={historyPanel} evolution={ws.evolution} />;
     case "roadmap":
       return <RemediationRoadmapPanel roadmap={ws.roadmap} isLoading={ws.isLoadingRoadmap} onOpenDoc={ws.openDoc} />;
     case "gate":
@@ -239,32 +231,6 @@ function SectionContent({ ws, historyPanel }: { ws: MesaWorkspace; historyPanel:
           onOpenDoc={ws.openDoc}
         />
       );
-    case "evaluation":
-      return (
-        <ResearchEvaluationPanel
-          records={ws.researchRecords}
-          selectedRecordId={ws.selectedResearchRecordId}
-          projects={ws.projects}
-          selectedProjectId={ws.selectedProjectId}
-          history={ws.history}
-          activeScan={activeScan}
-          isLoading={ws.isLoadingResearchRecords}
-          isSaving={ws.isSavingResearchRecord}
-          isExporting={ws.isExportingResearchRecords}
-          onSelectRecord={ws.setSelectedResearchRecordId}
-          onSelectProject={(projectId) => ws.updateSelectedProject(projectId, "push")}
-          onSelectScan={(scanId) => void ws.loadScan(scanId, { projectId: ws.selectedProjectId })}
-          onCreateFromScan={(scanId) => void ws.createResearchRecordFromScan(scanId)}
-          onRefresh={() => void ws.loadResearchRecords()}
-          onUpdate={(record, patch) => void ws.updateResearchRecord(record, patch)}
-          onDelete={(recordId) => void ws.deleteResearchRecord(recordId)}
-          onExport={(format) => void ws.exportResearchRecords(format)}
-        />
-      );
-    case "benchmarks":
-      return <BenchmarksPanel />;
-    case "ai-baseline":
-      return <AiBaselinePanel />;
     case "docs":
       return (
         <DocumentationPortal
@@ -278,6 +244,8 @@ function SectionContent({ ws, historyPanel }: { ws: MesaWorkspace; historyPanel:
           onBackToAnalysis={() => ws.navigateToSection("overview")}
         />
       );
+    case "not-found":
+      return <NotFoundPage onGoHome={() => ws.navigateToSection("overview")} />;
     default:
       return <OverviewPage ws={ws} historyPanel={historyPanel} />;
   }

@@ -168,6 +168,24 @@ test.describe("links and the back button", () => {
   });
 });
 
+test.describe("pages taken out of the app", () => {
+  test.use(deviceFor(390));
+
+  test("old links show the not-found page with a way home, and Evolution opens History", async ({ page }) => {
+    for (const removed of ["evaluation", "benchmarks", "ai-baseline"]) {
+      await openApp(page, `#/${removed}`);
+      await expect(page.getByRole("heading", { name: "This page does not exist" })).toBeVisible();
+      await expect(page).toHaveURL(new RegExp(`#/${removed}$`));
+    }
+    await page.getByRole("button", { name: "Go to Overview" }).click();
+    await expect(page).toHaveURL(/\/(\?[^#]*)?$/);
+
+    await openApp(page, "#/evolution");
+    await expect(page).toHaveURL(/#\/history$/);
+    await expect(page.getByRole("heading", { name: "What changed since the previous scan" })).toBeVisible();
+  });
+});
+
 test.describe("graph", () => {
   test.use(deviceFor(1440));
 

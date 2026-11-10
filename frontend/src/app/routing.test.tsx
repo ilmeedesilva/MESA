@@ -55,8 +55,8 @@ describe("hash routing", () => {
 
     clickNav("Findings");
     expect(hash()).toBe("#/findings");
-    clickNav("Evolution");
-    expect(hash()).toBe("#/evolution");
+    clickNav("History");
+    expect(hash()).toBe("#/history");
 
     await goBack();
     await waitFor(() => expect(hash()).toBe("#/findings"));
@@ -133,9 +133,30 @@ describe("hash routing", () => {
   });
 
   it("rewrites old ?section= links to the hash form", async () => {
-    await renderDemoAt("/?section=evolution");
-    await waitFor(() => expect(hash()).toBe("#/evolution"));
+    await renderDemoAt("/?section=roadmap");
+    await waitFor(() => expect(hash()).toBe("#/roadmap"));
     expect(window.location.search).not.toContain("section=");
+  });
+
+  it("opens History for the old Evolution link", async () => {
+    await renderDemoAt("/#/evolution");
+    expect(pageTitle()).toBe("History");
+    await waitFor(() => expect(hash()).toBe("#/history"));
+    expect(screen.getByRole("heading", { name: "What changed since the previous scan" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Scans" })).toBeInTheDocument();
+  });
+
+  it("shows the not-found page for removed and unknown pages, keeps the link, and goes home", async () => {
+    for (const link of ["/#/evaluation", "/#/benchmarks", "/#/ai-baseline", "/#/nope", "/#/docs/not-a-doc"]) {
+      await renderDemoAt(link);
+      expect(pageTitle()).toBe("Page not found");
+      expect(window.location.pathname + window.location.hash).toBe(link);
+      cleanup();
+    }
+    await renderDemoAt("/#/evaluation");
+    fireEvent.click(screen.getByRole("button", { name: "Go to Overview" }));
+    expect(hash()).toBe("");
+    expect(pageTitle()).toBe("Overview");
   });
 
   it("links documentation pages", async () => {

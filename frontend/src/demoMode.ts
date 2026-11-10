@@ -94,7 +94,7 @@ export function localDemoAIResponse({
       title: "Demo data not loaded",
       answer: "Load the demo data first so MESA can show example results.",
       evidence: [],
-      suggestions: ["Use Load Demo Workspace in the sidebar to load the demo data."],
+      suggestions: ['Use "Load demo data" in the sidebar.'],
       follow_up_questions: ["How do I use this demo?"],
       limitations: ["No active demo scan was loaded."],
       confidence: "LOW",

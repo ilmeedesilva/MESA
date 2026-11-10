@@ -17,36 +17,27 @@ export const appNavigation = [
   {
     group: "Results",
     items: [
-      { id: "history", label: "Scan History", description: "Review previous scans" },
-      { id: "evolution", label: "Evolution", description: "Compare architecture changes" },
+      { id: "history", label: "History", description: "Past scans and what changed" },
       { id: "roadmap", label: "Roadmap", description: "Recommended remediation order" },
-      { id: "gate", label: "Fitness Gate", description: "Pass or fail against architecture rules" }
+      { id: "gate", label: "Architecture Gate", description: "Pass or fail against architecture rules" }
     ]
   },
   {
-    group: "Benchmarks",
-    items: [
-      { id: "evaluation", label: "Evaluation", description: "Research evidence and validation" },
-      {
-        id: "benchmarks",
-        label: "Benchmarks",
-        description: "Ground-truth precision/recall/F1 against seeded and real repositories"
-      },
-      {
-        id: "ai-baseline",
-        label: "AI Baseline",
-        description: "MESA vs a general-purpose AI, run repeatedly on the same code"
-      }
-    ]
-  },
-  {
-    group: "Reference",
+    group: "Help",
     items: [{ id: "docs", label: "Documentation", description: "Guides and methodology" }]
   }
 ] as const satisfies ReadonlyArray<{
   group: string;
   items: ReadonlyArray<{ id: AppSection; label: string; description: string }>;
 }>;
+
+/** Header details for the not-found page, which has no menu entry. */
+export const notFoundItem: NavigationItem = {
+  id: "not-found",
+  label: "Page not found",
+  description: "This link does not match a page in MESA",
+  group: "MESA"
+};
 
 export type NavigationItem = {
   id: AppSection;
@@ -65,9 +56,7 @@ export const sectionsRequiringProject = new Set<AppSection>([
   "findings",
   "graph",
   "history",
-  "evolution",
   "roadmap",
   "gate",
-  "ai",
-  "evaluation"
+  "ai"
 ]);

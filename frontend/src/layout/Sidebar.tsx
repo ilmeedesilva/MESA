@@ -135,7 +135,7 @@ export function Sidebar({
         {!showRail ? (
           <>
             <div>
-              <div className="eyebrow">Demo Workspace</div>
+              <div className="eyebrow">Try it with demo data</div>
               <p>
                 {isPublicDemoMode
                   ? "You are browsing the demo data."
@@ -147,7 +147,7 @@ export function Sidebar({
               className={isPublicDemoMode ? "secondaryButton sidebarDemoButton" : "sidebarDemoButton"}
               onClick={onToggleDemo}
             >
-              {isPublicDemoMode ? "Connect to your MESA server" : "Load Demo Workspace"}
+              {isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
             </button>
           </>
         ) : (
@@ -155,7 +155,7 @@ export function Sidebar({
             type="button"
             className={isPublicDemoMode ? "secondaryButton sidebarDemoButton compact" : "sidebarDemoButton compact"}
             onClick={onToggleDemo}
-            title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo workspace"}
+            title={isPublicDemoMode ? "Connect to your MESA server" : "Load demo data"}
           >
             Demo
           </button>
