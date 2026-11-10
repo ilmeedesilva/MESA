@@ -126,6 +126,7 @@ export function useMesaWorkspace() {
   const [isExplaining, setIsExplaining] = React.useState(false);
   const [streamingAnswer, setStreamingAnswer] = React.useState("");
   const [aiStatus, setAiStatus] = React.useState<AIExplainerStatus | null>(null);
+  const aiStatusRequest = React.useRef(0);
   const [isCheckingAIStatus, setIsCheckingAIStatus] = React.useState(false);
   const [selectedDocSlug, setSelectedDocSlug] = React.useState(initialRoute.docSlug ?? "quick-start");
   const [docsQuery, setDocsQuery] = React.useState("");
@@ -849,6 +850,9 @@ export function useMesaWorkspace() {
   }
 
   async function loadAIStatus() {
+    // Only the newest check may set the status: a slow answer to an older request (for example
+    // the first check, sent before MESA knew there was no server) must not replace it.
+    const request = ++aiStatusRequest.current;
     if (isPublicDemoMode && apiAvailability !== "online") {
       setAiStatus({
         mode: "demo",
@@ -866,11 +870,11 @@ export function useMesaWorkspace() {
     setIsCheckingAIStatus(true);
     try {
       const status = await api<AIExplainerStatus>("/api/ai/explainer/status");
-      setAiStatus(status);
+      if (request === aiStatusRequest.current) setAiStatus(status);
     } catch {
-      setAiStatus(null);
+      if (request === aiStatusRequest.current) setAiStatus(null);
     } finally {
-      setIsCheckingAIStatus(false);
+      if (request === aiStatusRequest.current) setIsCheckingAIStatus(false);
     }
   }
 

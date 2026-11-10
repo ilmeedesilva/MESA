@@ -140,3 +140,30 @@ describe("header", () => {
     expect(tooltip).not.toHaveClass("visible");
   });
 });
+
+describe("AI status", () => {
+  it("stays 'AI: off' with demo data when the first status check fails late", async () => {
+    // No server, and the first AI status request only fails after the demo data has taken over.
+    let failFirstCheck: () => void = () => {};
+    const firstCheck = new Promise<never>((_, reject) => {
+      failFirstCheck = () => reject(new TypeError("Failed to fetch"));
+    });
+    let statusRequests = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === "/api/ai/explainer/status" && statusRequests++ === 0) return firstCheck;
+        throw new TypeError("Failed to fetch");
+      })
+    );
+    window.history.replaceState(null, "", "/#/ai");
+    render(<App />);
+    await screen.findByText("Can't reach your MESA server. Showing demo data.");
+    expect(await screen.findByText("AI: off. Using MESA's built-in explanations.")).toBeInTheDocument();
+
+    failFirstCheck();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText("AI: off. Using MESA's built-in explanations.")).toBeInTheDocument();
+    expect(screen.queryByText(/AI status could not be checked/)).toBeNull();
+  });
+});
