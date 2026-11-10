@@ -34,6 +34,9 @@ export const appSections: readonly AppSection[] = [
 /** Old page names that still open the page that replaced them. */
 const legacySectionAliases: Record<string, AppSection> = { services: "scan", policies: "scan", evolution: "history" };
 
+/** Old documentation links that still open the page that replaced them. */
+const legacyDocSlugs: Record<string, string> = { "evaluator-quick-start": "quick-start" };
+
 function isKnownDocSlug(slug: string) {
   return docsCatalog.some((doc) => doc.slug === slug);
 }
@@ -62,8 +65,10 @@ export function parseHash(hash: string): Route | null {
   if (!section) return { section: "not-found" };
   const detail = decodeSegment(second);
   if (section === "findings" && detail) return { section, findingId: detail };
-  if (section === "docs" && detail)
-    return isKnownDocSlug(detail) ? { section, docSlug: detail } : { section: "not-found" };
+  if (section === "docs" && detail) {
+    const slug = legacyDocSlugs[detail] ?? detail;
+    return isKnownDocSlug(slug) ? { section, docSlug: slug } : { section: "not-found" };
+  }
   return { section };
 }
 

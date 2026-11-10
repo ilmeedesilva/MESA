@@ -24,7 +24,7 @@ export const appNavigation = [
   },
   {
     group: "Help",
-    items: [{ id: "docs", label: "Documentation", description: "Guides and methodology" }]
+    items: [{ id: "docs", label: "Documentation", description: "Guides and API reference" }]
   }
 ] as const satisfies ReadonlyArray<{
   group: string;

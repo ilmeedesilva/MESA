@@ -182,4 +182,4 @@ It does not yet:
 - assign owners automatically
 - generate implementation tickets automatically
 
-Those can be added later, but the current version keeps the roadmap auditable and easy to validate for research.
+Those can be added later, but the current version keeps the roadmap auditable and easy to check.

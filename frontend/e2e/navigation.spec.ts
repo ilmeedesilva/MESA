@@ -186,6 +186,26 @@ test.describe("pages taken out of the app", () => {
   });
 });
 
+test.describe("documentation", () => {
+  test.use(deviceFor(1440));
+
+  test("lists developer docs in four groups; old and removed doc links behave", async ({ page }) => {
+    await openApp(page, "#/docs");
+    const docsNav = page.getByRole("navigation", { name: "Documentation navigation" });
+    for (const group of ["Get started", "Scanning", "Understand results", "Automate"]) {
+      await expect(docsNav.getByText(group, { exact: true })).toBeVisible();
+    }
+    await expect(docsNav).not.toContainText(/Methodology|Threats|Research|Demo Guide|How MESA Works/);
+
+    await openApp(page, "#/docs/evaluator-quick-start");
+    await expect(page).toHaveURL(/#\/docs\/quick-start$/);
+    await expect(page.locator(".docsArticleHeader h1")).toHaveText("Quick start");
+
+    await openApp(page, "#/docs/methodology");
+    await expect(page.getByRole("heading", { name: "This page does not exist" })).toBeVisible();
+  });
+});
+
 test.describe("graph", () => {
   test.use(deviceFor(1440));
 

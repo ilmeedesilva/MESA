@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This page is the fastest way to understand what MESA is, how to try it, and how to judge its outputs.
+This page is the fastest way to understand what MESA is, how to try it, and how to read its results.
 
 ## What MESA Is
 
@@ -15,24 +15,24 @@ MESA is an explainable microservice architecture analysis platform. It performs 
 - recommendations
 - scan history and evolution
 
-## Recommended Evaluation Path
+## First Steps
 
 1. Open the application UI.
 2. Review the guided workflow.
 3. Run a scan on a demo fixture or supported repository source.
-4. Review findings in `Beginner` mode first.
-5. Switch to `Research` mode to inspect evidence and detector framing.
-6. Open the documentation portal for methodology, limitations, and demo guidance.
+4. Review findings with the `Simple` explanation level first.
+5. Switch to `Technical` to see finding IDs, rules, exact file locations and raw evidence.
+6. Open the documentation for scanning guides, how to read results, and the API reference.
 
 ## What To Inspect First
 
-- `Findings Dashboard`
+- `Findings`
   - confirms whether MESA detected meaningful architecture risks
 - `Architecture Graph`
   - shows service relationships and hotspots visually
 - `Health Scores`
   - summarizes architecture quality dimensions
-- `Architecture Evolution`
+- `History`
   - shows how architecture changed across scans
 
 ## What Makes MESA Credible
@@ -48,8 +48,8 @@ MESA performs static analysis only. It does not execute repository code and does
 
 ## Suggested Reading
 
-- `Getting Started`
-- `How To Read Findings`
-- `Health Score Guide`
-- `Evaluation And Limitations`
-- `Demo Guide`
+- `Getting started`
+- `Findings`
+- `Health score`
+- `Supported inputs` (includes known limitations)
+- `Demo data`

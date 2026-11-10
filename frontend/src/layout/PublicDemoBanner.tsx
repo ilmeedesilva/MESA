@@ -36,7 +36,7 @@ export function PublicDemoBanner({
           <button type="button" className="workflowToggle" onClick={() => onOpenDoc("public-demo-guide")}>
             Demo guide
           </button>
-          <button type="button" className="workflowToggle" onClick={() => onOpenDoc("evaluator-quick-start")}>
+          <button type="button" className="workflowToggle" onClick={() => onOpenDoc("quick-start")}>
             Take the tour
           </button>
         </div>

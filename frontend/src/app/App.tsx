@@ -170,7 +170,7 @@ export function App() {
               </div>
               <div className="workspaceContextMeta">
                 <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
-                <code>{sectionNeedsProject ? ws.sourceLabel : "Reference workspace"}</code>
+                <code>{sectionNeedsProject ? ws.sourceLabel : "Documentation"}</code>
               </div>
             </div>
           ) : null

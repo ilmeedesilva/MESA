@@ -58,32 +58,32 @@ neo4j / mesa-password
 
 ## Read Results More Easily
 
-Phase 5 adds an interpretation layer to make findings easier for non-experts to understand.
+MESA can explain findings at two levels of detail.
 
-After a scan, use the result interpretation switch near the top of the results area:
+Use the `Explanation level` switch at the top of every page. Your browser remembers the choice.
 
-- `Beginner`
+- `Simple` (default)
   - plain-language finding titles
   - clearer "why it matters" guidance
   - first recommended action
   - explanation of what the result does not prove
-- `Research`
-  - everything from beginner mode
-  - detector label visibility
-  - raw evidence payloads
-  - more technical context for deeper evaluation
+- `Technical`
+  - everything from `Simple`
+  - finding IDs, detector and rule names
+  - exact file:line locations
+  - evidence steps, recommendation source and raw evidence
 
-Use beginner mode when:
+Use `Simple` when:
 
-- demonstrating MESA to reviewers or your team
+- sharing results with your team
 - reviewing results with non-technical stakeholders
 - doing a first pass through a new repository
 
-Use research mode when:
+Use `Technical` when:
 
-- validating the detector output
+- checking exactly what the detector saw
 - comparing evidence quality across findings
-- preparing research notes or implementation follow-up
+- fixing the problem in code
 
 ## How to Interpret a Finding
 
@@ -169,11 +169,11 @@ The workflow banner at the top shows:
 - what step is currently active
 - the next recommended action
 
-This is intended to reduce first-run confusion and make the system easier to evaluate.
+This is intended to reduce first-run confusion and make the system easier to follow.
 
 ## Repository Ingestion APIs
 
-Phase 2 introduces repository-ingestion endpoints for source-driven scans.
+MESA provides repository-ingestion endpoints for source-driven scans.
 
 Current supported source types:
 
@@ -193,9 +193,9 @@ Current limitation:
 - automatic service discovery is heuristic and explainable, not guaranteed perfect
 - GitHub URL fetching depends on runtime network access and an accessible public archive
 
-## Phase 3 Service Discovery Review
+## Service Discovery Review
 
-Phase 3 adds explainable service discovery on top of repository preview.
+MESA adds explainable service discovery on top of repository preview.
 
 Each discovered service candidate now includes:
 
@@ -217,8 +217,8 @@ Recommended interpretation:
 mesa analyze tests/fixtures/chatty/order-service tests/fixtures/chatty/user-service
 ```
 
-Evaluation:
+Architecture gate (pass or fail, for CI):
 
 ```bash
-PYTHONPATH=src python3 -m mesa.cli evaluate benchmarks/ground_truth.yml --output-dir evaluation-results
+mesa gate tests/fixtures/chatty/order-service tests/fixtures/chatty/user-service --output mesa-gate.json
 ```

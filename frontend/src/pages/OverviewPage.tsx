@@ -35,7 +35,7 @@ export function OverviewPage({ ws, historyPanel }: { ws: MesaWorkspace; historyP
             </p>
           </div>
           <div className="docLinks">
-            <DocLinkButton label="Quick start" onClick={() => openDoc("evaluator-quick-start")} />
+            <DocLinkButton label="Quick start" onClick={() => openDoc("quick-start")} />
             <DocLinkButton label="Public repo guide" onClick={() => openDoc("public-repo-scan-guide")} />
           </div>
         </section>

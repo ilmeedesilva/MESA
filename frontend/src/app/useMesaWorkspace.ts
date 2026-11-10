@@ -114,7 +114,7 @@ export function useMesaWorkspace() {
   const [streamingAnswer, setStreamingAnswer] = React.useState("");
   const [aiStatus, setAiStatus] = React.useState<AIExplainerStatus | null>(null);
   const [isCheckingAIStatus, setIsCheckingAIStatus] = React.useState(false);
-  const [selectedDocSlug, setSelectedDocSlug] = React.useState(initialRoute.docSlug ?? "evaluator-quick-start");
+  const [selectedDocSlug, setSelectedDocSlug] = React.useState(initialRoute.docSlug ?? "quick-start");
   const [docsQuery, setDocsQuery] = React.useState("");
   const [docsCategory, setDocsCategory] = React.useState("ALL");
   const [filters, setFilters] = React.useState<Filters>({

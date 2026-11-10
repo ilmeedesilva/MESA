@@ -29,21 +29,25 @@ MESA separates:
 - `inference`
   - what that observation likely means architecturally
 
-## Beginner Mode
+## Explanation Levels
 
-Use beginner mode when you want:
+Switch with the `Explanation level` control at the top of every page. Your browser remembers the choice.
+
+### Simple (default)
+
+Use `Simple` when you want:
 
 - simpler language
 - less raw detail
-- clearer action guidance
+- clearer action guidance: what MESA found, why it matters, and what to do first
 
-## Research Mode
+### Technical
 
-Use research mode when you want:
+Use `Technical` when you want everything in `Simple`, plus:
 
-- raw detector evidence
-- technical labels
-- deeper interpretation support
+- the finding ID, detector and rule
+- the exact file:line locations
+- the evidence steps, recommendation source and raw evidence
 
 ## What A Finding Does Not Prove
 
