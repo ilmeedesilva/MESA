@@ -2,7 +2,6 @@
   min-width: 360px;
 }
 
-.workspaceContextMeta code,
 .infoList code {
   display: inline-flex;
   width: fit-content;
@@ -304,13 +303,11 @@
     grid-template-columns: 1fr;
   }
 
-  .appHeader,
-  .workspaceFrameHeader {
+  .appHeader {
     flex-direction: column;
   }
 
   .headerProjectShell,
-  .workspaceContextMeta,
   .stepWorkspaceMeta {
     width: 100%;
     min-width: 0;

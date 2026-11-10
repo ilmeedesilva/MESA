@@ -1,6 +1,7 @@
 import { appNavigation } from "../app/navigation";
+import { ExplanationSwitch } from "../components/ExplanationSwitch";
 import { Icon } from "../components/icons";
-import type { AppSection, ProjectListStatus, ProjectRecord } from "../types";
+import type { AppSection, InterpretationMode, ProjectListStatus, ProjectRecord } from "../types";
 
 export function Sidebar({
   layoutMode,
@@ -15,7 +16,9 @@ export function Sidebar({
   onNavigate,
   onToggleDemo,
   onSelectProject,
-  onCreateProject
+  onCreateProject,
+  interpretationMode,
+  onChangeInterpretationMode
 }: {
   layoutMode: "phone" | "tablet" | "desktop";
   /** The narrow icon rail (desktop below 1360px wide, or tablet). */
@@ -32,6 +35,8 @@ export function Sidebar({
   onToggleDemo: () => void;
   onSelectProject: (value: string) => void;
   onCreateProject: () => void;
+  interpretationMode: InterpretationMode;
+  onChangeInterpretationMode: (mode: InterpretationMode) => void;
 }) {
   // On a tablet the rail opens as a full sidebar over the page.
   const showRail = collapsed && !navOpen;
@@ -104,6 +109,7 @@ export function Sidebar({
               New project
             </button>
           ) : null}
+          <ExplanationSwitch mode={interpretationMode} onChangeMode={onChangeInterpretationMode} showHelp />
         </div>
       ) : null}
 

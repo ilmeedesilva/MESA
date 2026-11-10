@@ -1,18 +1,32 @@
 export const repositoryUrl = "https://github.com/ilmeedesilva/MESA";
 
+export type ConnectionState = "checking" | "connected" | "demo" | "offline";
+
+const connectionLabels: Record<ConnectionState, string> = {
+  checking: "Connecting...",
+  connected: "Connected",
+  demo: "Demo data",
+  offline: "Not connected"
+};
+
 export function AppFooter({
+  connection,
   serverVersion,
-  usingDemoData,
   onOpenDocs
 }: {
+  connection: ConnectionState;
   serverVersion: string | null;
-  usingDemoData: boolean;
   onOpenDocs: () => void;
 }) {
-  const version = usingDemoData ? "demo data" : serverVersion ? `version ${serverVersion}` : null;
   return (
     <footer className="appFooter">
-      <span>{version ? `MESA ${version}` : "MESA"}</span>
+      <span className="footerStatus">
+        <span className={`connectionStatus ${connection}`}>
+          <i className="statusDot" aria-hidden="true" />
+          {connectionLabels[connection]}
+        </span>
+        <span>{serverVersion && connection === "connected" ? `MESA version ${serverVersion}` : "MESA"}</span>
+      </span>
       <nav aria-label="About MESA">
         <button type="button" className="footerLink" onClick={onOpenDocs}>
           Documentation

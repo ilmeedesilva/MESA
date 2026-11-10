@@ -10,7 +10,6 @@ import { MobileBar } from "../layout/MobileBar";
 import { Sidebar } from "../layout/Sidebar";
 import { TopBar } from "../layout/TopBar";
 import { FindingDrawer } from "../components/FindingDrawer";
-import { InterpretationModeCard } from "../components/InterpretationModeCard";
 import { ProjectRequiredState } from "../components/ProjectRequiredState";
 import { StatePanel } from "../components/StatePanel";
 import { ScanHistoryPanel } from "../components/ScanHistoryPanel";
@@ -32,7 +31,6 @@ export function App() {
     selectedProject,
     currentSection,
     currentSectionMeta,
-    sectionNeedsProject,
     history,
     activeScan,
     isLoadingScan,
@@ -117,6 +115,8 @@ export function App() {
             ws.openCreateProjectFlow();
             ws.closeNav();
           }}
+          interpretationMode={interpretationMode}
+          onChangeInterpretationMode={ws.setInterpretationMode}
         />
       }
       topBar={
@@ -130,12 +130,23 @@ export function App() {
           isPublicDemoMode={ws.isPublicDemoMode}
           onSelectProject={ws.handleTopProjectSelection}
           onCreateProject={ws.openCreateProjectFlow}
+          interpretationMode={interpretationMode}
+          onChangeInterpretationMode={ws.setInterpretationMode}
+          projectSource={ws.sourceLabel}
         />
       }
       footer={
         <AppFooter
+          connection={
+            ws.isPublicDemoMode
+              ? "demo"
+              : ws.apiAvailability === "online"
+                ? "connected"
+                : ws.apiAvailability === "offline"
+                  ? "offline"
+                  : "checking"
+          }
           serverVersion={ws.serverVersion}
-          usingDemoData={ws.isPublicDemoMode}
           onOpenDocs={() => ws.navigateToSection("docs")}
         />
       }
@@ -156,24 +167,14 @@ export function App() {
       }
     >
       {!isStandaloneSection ? (
-        <>
-          <PublicDemoBanner
-            apiAvailability={ws.apiAvailability}
-            isPublicDemoMode={ws.isPublicDemoMode}
-            usingEmbeddedDemo={ws.usingEmbeddedDemo}
-            serverRetryStatus={ws.serverRetryStatus}
-            onRetryServer={() => void ws.retryServerConnection()}
-            onOpenDoc={ws.openDoc}
-          />
-
-          <section className="globalControlBar">
-            <InterpretationModeCard
-              mode={interpretationMode}
-              onChangeMode={ws.setInterpretationMode}
-              onOpenDoc={ws.openDoc}
-            />
-          </section>
-        </>
+        <PublicDemoBanner
+          apiAvailability={ws.apiAvailability}
+          isPublicDemoMode={ws.isPublicDemoMode}
+          usingEmbeddedDemo={ws.usingEmbeddedDemo}
+          serverRetryStatus={ws.serverRetryStatus}
+          onRetryServer={() => void ws.retryServerConnection()}
+          onConnectToServer={ws.toggleDemoWorkspace}
+        />
       ) : null}
 
       {ws.error ? (
@@ -182,28 +183,7 @@ export function App() {
         </div>
       ) : null}
 
-      <WorkspaceFrame
-        header={
-          !isStandaloneSection ? (
-            <div className="workspaceFrameHeader">
-              <div>
-                <div className="eyebrow">Current page</div>
-                <h2>{currentSectionMeta.label}</h2>
-                <p>
-                  {selectedProject
-                    ? `${selectedProject.name} is currently active. Switch projects from the header without leaving this workspace.`
-                    : "Choose a project from the header or create a new one to start a saved scan workflow."}
-                </p>
-              </div>
-              <div className="workspaceContextMeta">
-                <span>{selectedProject ? selectedProject.name : "No project selected"}</span>
-                <code>{sectionNeedsProject ? ws.sourceLabel : "Documentation"}</code>
-              </div>
-            </div>
-          ) : null
-        }
-        rail={scanRail}
-      >
+      <WorkspaceFrame rail={scanRail}>
         <SectionContent ws={ws} historyPanel={historyPanel} />
       </WorkspaceFrame>
     </AppShell>

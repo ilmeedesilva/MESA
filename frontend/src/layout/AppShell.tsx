@@ -65,19 +65,10 @@ export function AppShell({
   );
 }
 
-/** The framed workspace below the global banners: a header for the current section, the page, and an optional rail. */
-export function WorkspaceFrame({
-  header,
-  rail,
-  children
-}: {
-  header: ReactNode;
-  rail: ReactNode;
-  children: ReactNode;
-}) {
+/** The framed workspace below the status line: the page and an optional rail. */
+export function WorkspaceFrame({ rail, children }: { rail: ReactNode; children: ReactNode }) {
   return (
     <section className="workspaceFrame">
-      {header}
       <div className={rail ? "workspaceBody workspaceBodyWithRail" : "workspaceBody"}>
         <div className="workspacePrimaryContent">{children}</div>
         {rail}

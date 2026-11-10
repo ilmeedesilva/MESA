@@ -27,7 +27,6 @@
 @import "../pages/scan/PoliciesPanel.css";
 @import "../pages/scan/ServiceReviewPanel.css";
 @import "../pages/scan/ProjectSelectionPanel.css";
-@import "../components/InterpretationModeCard.css";
 @import "../components/ScanHistoryPanel.css";
 @import "../pages/EvolutionPanel.css";
 @import "../pages/RemediationRoadmapPanel.css";
@@ -37,3 +36,4 @@
 @import "../pages/HistoryPage.css";
 @import "../components/StatePanel.css";
 @import "../layout/AppFooter.css";
+@import "../components/ExplanationSwitch.css";

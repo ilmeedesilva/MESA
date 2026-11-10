@@ -106,21 +106,48 @@ test.describe("explanation level", () => {
 
   test("Simple hides IDs and file:line, Technical shows them, and the choice survives a reload", async ({ page }) => {
     await openApp(page, "#/findings");
-    const levels = page.getByRole("group", { name: "Explanation level" });
+    // On a phone the switch is in the menu, next to the project picker.
+    const menuButton = page.getByRole("button", { name: "Open menu" });
+    const levels = menu(page).getByRole("group", { name: "Explanation level" });
     const cards = page.locator(".findingCard");
+    await menuButton.click();
     await expect(levels.getByRole("button", { name: /Simple/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(menu(page).getByText("Plain-language view. Remembered in this browser.")).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(cards.first()).toBeVisible();
     await expect(cards.filter({ hasText: /MESA-[A-Z]+-\d+/ })).toHaveCount(0);
     await expect(page.locator(".findingLocations")).toHaveCount(0);
 
+    await menuButton.click();
     await levels.getByRole("button", { name: /Technical/ }).click();
+    await page.keyboard.press("Escape");
     await expect(cards.filter({ hasText: /MESA-[A-Z]+-\d+/ }).first()).toBeVisible();
     await expect(page.locator(".findingLocations code").filter({ hasText: /:\d+$/ }).first()).toBeVisible();
 
     await page.reload();
+    await menuButton.click();
     await expect(levels.getByRole("button", { name: /Technical/ })).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Escape");
     await cards.first().locator(".findingCardOpen").click();
     await expect(page.getByRole("dialog").getByRole("heading", { name: "Raw evidence" })).toBeVisible();
+  });
+});
+
+test.describe("top bar", () => {
+  test.use(deviceFor(1440));
+
+  test("pages start with their content; the level switch has a tooltip", async ({ page }) => {
+    await openApp(page, "#/findings");
+    await expect(page.getByText("Current page")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Explanation level" })).toHaveCount(0);
+    const technical = page.locator(".appHeader").getByRole("button", { name: "Technical" });
+    await technical.hover();
+    await expect(
+      page.getByRole("tooltip").filter({ hasText: "Technical view: IDs, rules and raw evidence" })
+    ).toBeVisible();
+    await technical.focus();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("tooltip").filter({ hasText: "Technical view" })).toBeHidden();
   });
 });
 
@@ -209,14 +236,17 @@ test.describe("documentation", () => {
 test.describe("polish", () => {
   test.use(deviceFor(390));
 
-  test("server down: plain banner with Try again; tab title, footer and favicon", async ({ page }) => {
+  test("server down: one slim line with Try again; tab title, footer and favicon", async ({ page }) => {
     await openApp(page, "#/findings");
-    await expect(page.getByText(/MESA can't reach your MESA server/)).toBeVisible();
-    await page.getByRole("button", { name: "Try again" }).click();
-    await expect(page.getByRole("alert").filter({ hasText: "Still can't reach" })).toBeVisible();
+    const line = page.locator(".statusLine");
+    await expect(line).toHaveText(/Can't reach your MESA server\. Showing demo data\./);
+    await line.getByRole("button", { name: "Try again" }).click();
+    await expect(line).toContainText("Still can't reach your MESA server");
+    // One line, not a box: at most two rows of text on a phone.
+    expect((await line.boundingBox())!.height).toBeLessThan(100);
 
     await expect(page).toHaveTitle("Findings - MESA");
-    await expect(page.locator(".appFooter")).toContainText("MESA demo data");
+    await expect(page.locator(".appFooter")).toContainText("Demo data");
     await expect(page.locator(".appFooter").getByRole("link", { name: "GitHub" })).toHaveAttribute(
       "href",
       "https://github.com/ilmeedesilva/MESA"

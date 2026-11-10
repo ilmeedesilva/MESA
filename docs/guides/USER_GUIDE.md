@@ -60,7 +60,7 @@ neo4j / mesa-password
 
 MESA can explain findings at two levels of detail.
 
-Use the `Explanation level` switch at the top of every page. Your browser remembers the choice.
+Use the `Simple | Technical` switch in the top bar (in the menu on phones). Your browser remembers the choice.
 
 - `Simple` (default)
   - plain-language finding titles

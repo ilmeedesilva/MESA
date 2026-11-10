@@ -31,7 +31,7 @@ MESA separates:
 
 ## Explanation Levels
 
-Switch with the `Explanation level` control at the top of every page. Your browser remembers the choice.
+Switch with the `Simple | Technical` control in the top bar (in the menu on phones). Your browser remembers the choice.
 
 ### Simple (default)
 

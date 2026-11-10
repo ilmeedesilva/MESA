@@ -32,3 +32,37 @@
   cursor: pointer;
   box-shadow: none;
 }
+
+.footerStatus {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.connectionStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-weight: 700;
+  color: var(--slate-700);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--slate-500);
+}
+
+.connectionStatus.connected .statusDot {
+  background: #16a34a;
+}
+
+.connectionStatus.demo .statusDot {
+  background: var(--blue-600);
+}
+
+.connectionStatus.offline .statusDot {
+  background: #d97706;
+}

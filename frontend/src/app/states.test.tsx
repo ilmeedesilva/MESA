@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
@@ -78,21 +78,63 @@ describe("empty states", () => {
   });
 });
 
-describe("server not reachable", () => {
-  it("says so in plain words, and Try again connects once the server is back", async () => {
+describe("connection status", () => {
+  it("shows no status line when connected, only Connected in the footer", async () => {
+    await openLive("/?project=project-1");
+    expect(await screen.findByText("Connected")).toBeInTheDocument();
+    expect(screen.getByText("MESA version 1.2.3")).toBeInTheDocument();
+    expect(document.querySelector(".statusLine")).toBeNull();
+  });
+
+  it("shows one line for demo data, and Connect returns to the server", async () => {
+    await openLive("/?project=project-1");
+    fireEvent.click(document.querySelector<HTMLButtonElement>(".sidebarDemoButton")!);
+    await waitFor(() => expect(document.querySelector(".statusLine")).toHaveTextContent("Viewing demo data"));
+    fireEvent.click(within(document.querySelector<HTMLElement>(".statusLine")!).getByRole("button"));
+    await waitFor(() => expect(document.querySelector(".statusLine")).toBeNull());
+    expect(await screen.findByText("Connected")).toBeInTheDocument();
+  });
+
+  it("says when the server can't be reached, and Try again connects once it is back", async () => {
     serverUp = false;
     window.history.replaceState(null, "", "/");
     render(<App />);
-    expect(await screen.findByText(/MESA can't reach your MESA server/)).toBeInTheDocument();
-    expect(screen.getByText("MESA demo data")).toBeInTheDocument();
+    const line = await screen.findByText("Can't reach your MESA server. Showing demo data.");
+    expect(screen.getByText("Demo data")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Still can't reach your MESA server");
+    expect(await screen.findByText("Still can't reach your MESA server. Showing demo data.")).toBeInTheDocument();
+    expect(line).toBeTruthy();
 
     serverUp = true;
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findAllByText("Shop")).not.toHaveLength(0);
-    await waitFor(() => expect(screen.queryByText(/MESA can't reach your MESA server/)).toBeNull());
+    await waitFor(() => expect(document.querySelector(".statusLine")).toBeNull());
     expect(await screen.findByText("MESA version 1.2.3")).toBeInTheDocument();
+  });
+});
+
+describe("header", () => {
+  it("has no Current page card, and shows the project source only in Technical", async () => {
+    await openLive("/?project=project-1#/scan");
+    expect(screen.queryByText("Current page")).toBeNull();
+    const header = document.querySelector<HTMLElement>(".appHeader")!;
+    expect(header.querySelector(".toolbarProjectPath")).toBeNull();
+    fireEvent.click(within(header).getByRole("button", { name: "Technical" }));
+    expect(header.querySelector(".toolbarProjectPath")).toHaveTextContent("Manual service paths");
+  });
+
+  it("describes each level for screen readers and shows it as a tooltip; Esc hides it", async () => {
+    await openLive("/?project=project-1");
+    const header = document.querySelector<HTMLElement>(".appHeader")!;
+    const technical = within(header).getByRole("button", { name: "Technical" });
+    expect(technical).toHaveAccessibleDescription("Technical view: IDs, rules and raw evidence");
+    const tooltip = document.getElementById(technical.getAttribute("aria-describedby")!)!;
+    expect(tooltip).toHaveAttribute("role", "tooltip");
+    expect(tooltip).not.toHaveClass("visible");
+    fireEvent.focus(technical);
+    expect(tooltip).toHaveClass("visible");
+    fireEvent.keyDown(technical, { key: "Escape" });
+    expect(tooltip).not.toHaveClass("visible");
   });
 });

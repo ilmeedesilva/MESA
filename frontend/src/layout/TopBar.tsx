@@ -1,5 +1,6 @@
 import type { NavigationItem } from "../app/navigation";
-import type { ProjectListStatus, ProjectRecord } from "../types";
+import { ExplanationSwitch } from "../components/ExplanationSwitch";
+import type { InterpretationMode, ProjectListStatus, ProjectRecord } from "../types";
 
 export function TopBar({
   section,
@@ -10,7 +11,10 @@ export function TopBar({
   isLoadingProjectState,
   isPublicDemoMode,
   onSelectProject,
-  onCreateProject
+  onCreateProject,
+  interpretationMode,
+  onChangeInterpretationMode,
+  projectSource
 }: {
   section: NavigationItem;
   projects: ProjectRecord[];
@@ -21,6 +25,10 @@ export function TopBar({
   isPublicDemoMode: boolean;
   onSelectProject: (value: string) => void;
   onCreateProject: () => void;
+  interpretationMode: InterpretationMode;
+  onChangeInterpretationMode: (mode: InterpretationMode) => void;
+  /** Where the project's code comes from; shown in the Technical view only. */
+  projectSource: string;
 }) {
   return (
     <header className="appHeader">
@@ -31,6 +39,7 @@ export function TopBar({
       </div>
 
       <div className="appHeaderActions">
+        <ExplanationSwitch mode={interpretationMode} onChangeMode={onChangeInterpretationMode} />
         <div className="toolbarProjectShell headerProjectShell">
           <div className="toolbarProjectMeta">
             <strong>
@@ -45,6 +54,9 @@ export function TopBar({
                 ? "Refreshing project list"
                 : `${projects.length} available project${projects.length === 1 ? "" : "s"}`}
             </small>
+            {interpretationMode === "technical" && selectedProject ? (
+              <code className="toolbarProjectPath">{projectSource}</code>
+            ) : null}
           </div>
           <label className="toolbarProjectPicker">
             <span>Project</span>

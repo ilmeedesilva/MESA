@@ -1,0 +1,98 @@
+.explanationSwitch {
+  display: inline-grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.explanationSwitchLabel {
+  color: var(--slate-500);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.levelSwitch {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: var(--slate-50);
+}
+
+.levelSwitchItem {
+  position: relative;
+  display: inline-flex;
+}
+
+.levelSwitch button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--space-3-5);
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--slate-600);
+  background: transparent;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.levelSwitch button:hover {
+  color: var(--slate-900);
+}
+
+.levelSwitch button.active {
+  color: var(--white);
+  background: var(--blue-600);
+}
+
+.levelSwitch button:focus-visible {
+  outline: 2px solid var(--blue-700);
+  outline-offset: 2px;
+}
+
+/* Kept in the page for screen readers (aria-describedby); shown on hover and focus. */
+.levelTooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: max-content;
+  max-width: 240px;
+  padding: var(--space-1-5) var(--space-2-5);
+  border-radius: var(--radius-md);
+  color: var(--white);
+  background: var(--slate-900);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.levelTooltip.visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Phone menu: the help is shown as text, so the tooltip itself stays hidden. */
+.explanationSwitch.withHelp {
+  display: grid;
+}
+
+.explanationSwitch.withHelp .levelSwitch {
+  display: flex;
+}
+
+.explanationSwitch.withHelp .levelSwitchItem,
+.explanationSwitch.withHelp .levelSwitch button {
+  flex: 1;
+}
+
+.explanationSwitchHelp {
+  color: var(--slate-500);
+  font-size: 11px;
+  line-height: 1.4;
+}
