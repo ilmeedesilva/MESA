@@ -59,4 +59,4 @@ MESA reads source code without running it, so some service calls are not visible
   (Kafka, RabbitMQ) and gRPC are not yet followed.
 
 These limits are kept as they are for now, because changing the extractor would change the
-published research results.
+published benchmark results.
