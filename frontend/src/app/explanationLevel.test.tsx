@@ -86,11 +86,21 @@ describe("explanation level", () => {
   it("falls back to Simple when storage is blocked or holds an unknown value", () => {
     window.localStorage.setItem(interpretationModeStorageKey, "research");
     expect(readStoredInterpretationMode()).toBe("simple");
-    vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
-      throw new Error("blocked");
-    });
     window.localStorage.setItem(interpretationModeStorageKey, "technical");
-    expect(readStoredInterpretationMode()).toBe("simple");
+    const own = Object.getOwnPropertyDescriptor(window, "localStorage");
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new Error("blocked");
+      }
+    });
+    try {
+      expect(readStoredInterpretationMode()).toBe("simple");
+    } finally {
+      if (own) Object.defineProperty(window, "localStorage", own);
+      else delete (window as { localStorage?: Storage }).localStorage;
+    }
+    expect(readStoredInterpretationMode()).toBe("technical");
   });
 });
 
