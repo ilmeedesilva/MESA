@@ -1263,7 +1263,14 @@ export function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
 }
 
+/**
+ * A short label for a scan or other record. Real IDs are UUIDs, so their first 8 characters are
+ * enough to tell them apart. The demo data uses readable IDs such as "demo-scan-monolith", which
+ * the first 8 characters would cut to "demo-sca", so those show their name instead.
+ */
 export function shortId(id: string) {
+  const demoScan = /^demo-scan-(.+)$/.exec(id);
+  if (demoScan) return `${demoScan[1].replace(/-/g, " ")} demo`;
   return id.slice(0, 8);
 }
 
