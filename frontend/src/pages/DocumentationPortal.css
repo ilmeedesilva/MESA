@@ -183,6 +183,80 @@
   font-size: 12px;
 }
 
+/* Tables: wide ones scroll inside this box (phones), never the page. */
+.docsTableScroll {
+  max-width: 100%;
+  margin: var(--space-3) 0;
+  overflow-x: auto;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+}
+
+.docsTableScroll:focus-visible,
+.docsMarkdown pre:focus-visible {
+  outline: 2px solid var(--blue-700);
+  outline-offset: 2px;
+}
+
+.docsMarkdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.docsMarkdown th,
+.docsMarkdown td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--slate-200);
+  color: var(--slate-700);
+  text-align: left;
+  vertical-align: top;
+}
+
+/* On narrow screens a column is not squeezed into a tall strip of words; the box scrolls. */
+.docsMarkdown td {
+  min-width: 9rem;
+}
+
+.docsMarkdown th {
+  color: var(--slate-900);
+  background: var(--slate-50);
+  white-space: nowrap;
+}
+
+.docsMarkdown tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Table cells keep short code on one line, so a column is never squeezed to one character. */
+.docsMarkdown td code {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+.docsMarkdown a {
+  color: var(--blue-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.docsMarkdown strong {
+  color: var(--slate-900);
+}
+
+.docsMarkdown li > p {
+  margin: 0;
+}
+
+.docsMarkdown :is(h1, h2, h3, h4)[id] {
+  scroll-margin-top: 96px;
+}
+
+.docsLoading {
+  color: var(--slate-500);
+}
+
 /* Code blocks: the block has the dark background; the code inside it is not styled as inline
    code, and long lines scroll inside the block instead of wrapping or widening the page. */
 .docsMarkdown pre code {

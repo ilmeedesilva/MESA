@@ -1,7 +1,9 @@
 import React from "react";
 import { docBySlug, docNeighbors, docsByQuery, docsCatalog, docsCategories } from "../docsPortal";
 import { DocLinkButton } from "../components/DocLinkButton";
-import { renderMarkdown } from "../viewHelpers";
+
+// The Markdown renderer is loaded only when the Documentation page opens.
+const DocsMarkdown = React.lazy(() => import("../components/DocsMarkdown"));
 
 export function DocumentationPortal({
   selectedDocSlug,
@@ -142,7 +144,11 @@ export function DocumentationPortal({
           ))}
         </div>
 
-        <div className="docsMarkdown">{renderMarkdown(selectedDoc.content)}</div>
+        <div className="docsMarkdown">
+          <React.Suspense fallback={<p className="docsLoading">Loading the page...</p>}>
+            <DocsMarkdown content={selectedDoc.content} docPath={selectedDoc.path} />
+          </React.Suspense>
+        </div>
 
         <div className="docsPager">
           <button
