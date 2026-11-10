@@ -34,14 +34,11 @@ installing MESA from PyPI. The inputs and outputs below stay the same.
 On every pull request the Action:
 
 1. installs MESA into its own environment (your job's Python is not changed),
-2. scans the pull request and its base commit (it fetches the base commit itself, so
-   `fetch-depth: 0` is not needed),
+2. scans the pull request and its base commit (it fetches the base commit itself, so `fetch-depth: 0` is not needed),
 3. creates one comment on the pull request and updates it on later pushes,
 4. writes the full report to the job summary and adds annotations for new findings,
-5. uploads `report.md`, `gate.json`, `mesa.sarif` and both scans as the `mesa-reports`
-   artifact,
-6. fails the check when the change adds a problem (new-only mode, see
-   [What Fails The Check](#what-fails-the-check)).
+5. uploads `report.md`, `gate.json`, `mesa.sarif` and both scans as the `mesa-reports` artifact,
+6. fails the check when the change adds a problem (new-only mode, below).
 
 MESA only reads files. It never installs or runs the repository's code, so it is safe for
 pull requests from forks. Their token cannot write comments; the Action then reports in the job
