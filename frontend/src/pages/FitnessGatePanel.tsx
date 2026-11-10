@@ -1,5 +1,5 @@
 import React from "react";
-import { api } from "../api";
+import { api, messageFor } from "../api";
 import { useEffectEvent } from "../hooks/useEffectEvent";
 import type { ArchitectureFitnessGateResult, ArchitectureGateRuleResult } from "../types";
 
@@ -59,7 +59,7 @@ export function FitnessGatePanel({ scanId, isDemo }: { scanId: string | null; is
         setResult(gate);
       } catch (gateError) {
         setResult(null);
-        setError(gateError instanceof Error ? gateError.message : "Could not evaluate the gate.");
+        setError(messageFor(gateError, "Could not check the gate"));
       } finally {
         setIsRunning(false);
       }
@@ -126,7 +126,7 @@ export function FitnessGatePanel({ scanId, isDemo }: { scanId: string | null; is
             />
           </label>
           <button type="submit" disabled={isRunning}>
-            {isRunning ? "Evaluating..." : "Run Gate"}
+            {isRunning ? "Evaluating..." : "Run gate"}
           </button>
         </form>
       ) : null}

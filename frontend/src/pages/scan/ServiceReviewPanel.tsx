@@ -14,7 +14,7 @@ export function ServiceReviewPanel({ ws }: { ws: MesaWorkspace }) {
   return (
     <section className="panelBlock">
       <div className="panelHeader compact">
-        <h2>Service Review</h2>
+        <h2>Review services</h2>
         <span>
           {repoPreview ? `${selectedDiscoveryPaths.length} selected` : `${manualServicePaths.length} manual paths`}
         </span>
@@ -22,7 +22,7 @@ export function ServiceReviewPanel({ ws }: { ws: MesaWorkspace }) {
       {repoPreview ? (
         <div className="discoveryPanel discoveryPanelStandalone">
           <div className="panelHeader compact">
-            <h3>Discovered Services</h3>
+            <h3>Discovered services</h3>
             <span>{repoPreview.discovered_services.length} candidates</span>
           </div>
           <div className="discoveryMeta">
@@ -80,7 +80,7 @@ export function ServiceReviewPanel({ ws }: { ws: MesaWorkspace }) {
             onClick={applyDiscoveredServices}
             disabled={selectedDiscoveryPaths.length === 0}
           >
-            Apply Selected Services
+            Apply selected services
           </button>
           <button
             type="button"
@@ -88,7 +88,7 @@ export function ServiceReviewPanel({ ws }: { ws: MesaWorkspace }) {
             onClick={() => focusWorkflowStep("policies")}
             disabled={selectedDiscoveryPaths.length === 0}
           >
-            Continue to Policies
+            Continue to policies
           </button>
         </div>
       ) : (
@@ -103,7 +103,7 @@ export function ServiceReviewPanel({ ws }: { ws: MesaWorkspace }) {
       </p>
       <div className="panelButtonRow">
         <button type="button" onClick={() => focusWorkflowStep("source")}>
-          Back to Source
+          Back to source
         </button>
         <button
           type="button"

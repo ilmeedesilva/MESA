@@ -1,5 +1,6 @@
 import React from "react";
 import { DocLinkButton } from "./DocLinkButton";
+import { StatePanel } from "./StatePanel";
 import {
   confidenceLabel,
   findingLocations,
@@ -36,7 +37,7 @@ export function FindingsDashboard({
     <aside className="findings dashboardFindings">
       <div className="findingsHeader">
         <div className="findingsHeaderText">
-          <h2>Findings Dashboard</h2>
+          <h2>Findings</h2>
           <p>
             {filteredFindings.length} of {findings.length} findings
           </p>
@@ -97,7 +98,11 @@ export function FindingsDashboard({
         </label>
       </div>
 
-      {findings.length === 0 ? <div className="emptyList">No findings for this scan.</div> : null}
+      {findings.length === 0 ? (
+        <StatePanel kind="success" title="No problems found">
+          MESA checked this scan and found no architecture problems. Good news: there is nothing to fix right now.
+        </StatePanel>
+      ) : null}
       {findings.length > 0 && filteredFindings.length === 0 ? (
         <div className="emptyList">No findings match these filters.</div>
       ) : null}

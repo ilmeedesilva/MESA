@@ -139,7 +139,7 @@ export function FindingDrawer({
         </div>
         <div className="drawerActionRow">
           <button type="button" className="secondaryButton" onClick={onAskAI}>
-            Ask AI About This
+            Ask AI about this
           </button>
         </div>
         <section className="drawerSection">

@@ -37,8 +37,7 @@
 }
 
 .workspaceIntroCard,
-.workspaceInfoCard,
-.workspaceEmptyState {
+.workspaceInfoCard {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4-5);
@@ -49,14 +48,12 @@
 }
 
 .workspaceInfoCard h2,
-.workspaceIntroCard h2,
-.workspaceEmptyState h2 {
+.workspaceIntroCard h2 {
   font-size: 18px;
 }
 
 .workspaceInfoCard p,
-.workspaceIntroCard p,
-.workspaceEmptyState p {
+.workspaceIntroCard p {
   color: var(--slate-500);
   font-size: 12px;
   line-height: 1.6;

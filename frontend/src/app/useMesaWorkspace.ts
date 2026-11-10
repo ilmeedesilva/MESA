@@ -54,6 +54,16 @@ import type {
   WorkflowStep
 } from "../types";
 
+/** The version in a health response ({ "status": "ok", "version": "..." }), or null. */
+async function readHealthVersion(response: Response): Promise<string | null> {
+  try {
+    const body = (await response.json()) as { version?: unknown };
+    return typeof body.version === "string" && body.version ? body.version : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * All state, data loading and actions for the MESA workspace. The App component
  * renders the layout and pages from what this hook returns.
@@ -106,6 +116,9 @@ export function useMesaWorkspace() {
   const [activeSetupStepId, setActiveSetupStepId] = React.useState<WorkflowStep["id"]>("project");
   const [currentSection, setCurrentSection] = React.useState<AppSection>(initialRoute.section);
   const [apiAvailability, setApiAvailability] = React.useState<ApiAvailability>("checking");
+  // The MESA version reported by the server (GET /api/health), shown in the footer.
+  const [serverVersion, setServerVersion] = React.useState<string | null>(null);
+  const [serverRetryStatus, setServerRetryStatus] = React.useState<"idle" | "checking" | "failed">("idle");
   const [isPublicDemoMode, setIsPublicDemoMode] = React.useState(false);
   const [isLoadingProjectState, setIsLoadingProjectState] = React.useState(false);
   const [aiQuestion, setAiQuestion] = React.useState("");
@@ -510,7 +523,7 @@ export function useMesaWorkspace() {
       resetProjectScanFlowState();
       updateSelectedProject(project.id, "push");
     } catch (caught) {
-      setError(messageFor(caught, "Project creation failed"));
+      setError(messageFor(caught, "Could not create the project"));
     } finally {
       setIsCreating(false);
     }
@@ -569,7 +582,7 @@ export function useMesaWorkspace() {
       await loadRoadmap(payload.scan.id);
       await refreshCurrentProjectCollections(selectedProjectId);
     } catch (caught) {
-      setError(messageFor(caught, "Scan failed"));
+      setError(messageFor(caught, "The scan failed"));
     } finally {
       setIsScanning(false);
     }
@@ -604,7 +617,7 @@ export function useMesaWorkspace() {
     } catch (caught) {
       setRepoPreview(null);
       setSelectedDiscoveryPaths([]);
-      setError(messageFor(caught, "Repository preview failed"));
+      setError(messageFor(caught, "Could not preview the repository"));
     } finally {
       setIsPreviewingRepo(false);
     }
@@ -707,7 +720,7 @@ export function useMesaWorkspace() {
         await recoverFromUnavailableProject(options.projectId);
         return;
       }
-      setError(messageFor(caught, "Could not load scan"));
+      setError(messageFor(caught, "Could not load the scan"));
     } finally {
       if (requestId === scanRequestRef.current) {
         setIsLoadingScan(false);
@@ -829,7 +842,7 @@ export function useMesaWorkspace() {
         );
       }
     } catch (caught) {
-      setError(messageFor(caught, "AI explainer request failed"));
+      setError(messageFor(caught, "Could not get an answer"));
     } finally {
       setIsExplaining(false);
     }
@@ -908,7 +921,7 @@ export function useMesaWorkspace() {
       },
       {
         id: "review",
-        label: "Review Services",
+        label: "Review services",
         description: "Preview discovery and confirm the services to analyze.",
         done: hasServiceSelection,
         active: hasProject && hasSourceConfigured && !hasServiceSelection
@@ -923,7 +936,7 @@ export function useMesaWorkspace() {
       },
       {
         id: "scan",
-        label: "Run Scan",
+        label: "Run scan",
         description: "Generate findings, graph evidence, scores, and history.",
         done: hasCompletedScan,
         active: hasProject && hasServiceSelection && !hasCompletedScan
@@ -1028,6 +1041,7 @@ export function useMesaWorkspace() {
     try {
       const response = await fetch("/api/health", { signal: controller.signal });
       if (!response.ok) throw new Error(`Health probe returned ${response.status}`);
+      setServerVersion(await readHealthVersion(response));
       setApiAvailability("online");
     } catch {
       setApiAvailability("offline");
@@ -1036,6 +1050,21 @@ export function useMesaWorkspace() {
       }
     } finally {
       window.clearTimeout(timeout);
+    }
+  }
+
+  /** Demo data because the server could not be reached: check again, and switch to it when it answers. */
+  async function retryServerConnection() {
+    setServerRetryStatus("checking");
+    try {
+      const response = await fetch("/api/health");
+      if (!response.ok) throw new Error(`Health check returned ${response.status}`);
+      setServerVersion(await readHealthVersion(response));
+      setServerRetryStatus("idle");
+      setApiAvailability("online");
+      leavePublicDemo();
+    } catch {
+      setServerRetryStatus("failed");
     }
   }
 
@@ -1068,9 +1097,10 @@ export function useMesaWorkspace() {
   const usingEmbeddedDemo = isPublicDemoMode && backendUnavailable;
 
   // The AI status is first checked before MESA knows whether a server is running. When the demo
-  // data takes over, show the demo status (AI off) instead of a failed check. No request is made.
+  // data takes over, show the demo status (AI off) instead of a failed check; no request is made.
+  // When the server is reached again later, check the real status.
   const showDemoAIStatus = useEffectEvent(() => {
-    if (usingEmbeddedDemo) void loadAIStatus();
+    if (usingEmbeddedDemo || apiAvailability === "online") void loadAIStatus();
   });
   React.useEffect(() => {
     showDemoAIStatus();
@@ -1222,6 +1252,9 @@ export function useMesaWorkspace() {
     isPublicDemoMode,
     usingEmbeddedDemo,
     toggleDemoWorkspace,
+    retryServerConnection,
+    serverRetryStatus,
+    serverVersion,
     error
   };
 }

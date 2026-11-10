@@ -35,4 +35,5 @@
 @import "../components/GraphInspector.css";
 @import "../pages/FitnessGatePanel.css";
 @import "../pages/HistoryPage.css";
-@import "../pages/NotFoundPage.css";
+@import "../components/StatePanel.css";
+@import "../layout/AppFooter.css";

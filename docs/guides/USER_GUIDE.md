@@ -32,9 +32,9 @@ neo4j / mesa-password
 - Repository-backed workflow:
   - choose source type
   - enter a local path, archive path, or public GitHub URL
-  - click `Preview Discovery`
+  - click `Preview discovery`
   - review the discovered services and keep the ones you want
-  - click `Apply Selected Services`
+  - click `Apply selected services`
 - Manual fallback:
   - leave the repository source empty
   - paste service directories manually
@@ -52,9 +52,9 @@ neo4j / mesa-password
 ```
 
 6. Optional: edit and save governance policies.
-7. Click `Run Scan` or `Run Repo Scan`.
+7. Click `Run scan` or `Run repo scan`.
 8. Review findings, graph, health scores, evolution, and recommendations.
-9. Open the `Remediation Roadmap` panel to see grouped fixes in suggested order.
+9. Open the `Roadmap` page to see grouped fixes in suggested order.
 
 ## Read Results More Easily
 

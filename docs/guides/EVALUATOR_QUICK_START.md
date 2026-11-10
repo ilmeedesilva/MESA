@@ -28,9 +28,9 @@ MESA is an explainable microservice architecture analysis platform. It performs 
 
 - `Findings`
   - confirms whether MESA detected meaningful architecture risks
-- `Architecture Graph`
+- `Graph`
   - shows service relationships and hotspots visually
-- `Health Scores`
+- `Health scores`
   - summarizes architecture quality dimensions
 - `History`
   - shows how architecture changed across scans

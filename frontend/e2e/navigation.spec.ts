@@ -206,6 +206,26 @@ test.describe("documentation", () => {
   });
 });
 
+test.describe("polish", () => {
+  test.use(deviceFor(390));
+
+  test("server down: plain banner with Try again; tab title, footer and favicon", async ({ page }) => {
+    await openApp(page, "#/findings");
+    await expect(page.getByText(/MESA can't reach your MESA server/)).toBeVisible();
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Still can't reach" })).toBeVisible();
+
+    await expect(page).toHaveTitle("Findings - MESA");
+    await expect(page.locator(".appFooter")).toContainText("MESA demo data");
+    await expect(page.locator(".appFooter").getByRole("link", { name: "GitHub" })).toHaveAttribute(
+      "href",
+      "https://github.com/ilmeedesilva/MESA"
+    );
+    const favicon = await page.request.get("/favicon.svg");
+    expect(favicon.status()).toBe(200);
+  });
+});
+
 test.describe("graph", () => {
   test.use(deviceFor(1440));
 

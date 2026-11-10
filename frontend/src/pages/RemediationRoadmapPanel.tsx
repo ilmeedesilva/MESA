@@ -27,7 +27,7 @@ export function RemediationRoadmapPanel({
     <section className="roadmapPanel">
       <div className="panelHeader compact">
         <div>
-          <h2>Remediation Roadmap</h2>
+          <h2>Remediation roadmap</h2>
           <p>One grouped plan that turns separate findings into a practical order of work.</p>
           <div className="docLinks">
             <DocLinkButton label="Roadmap guide" onClick={() => onOpenDoc("remediation-roadmap-guide")} />
@@ -74,19 +74,19 @@ export function RemediationRoadmapPanel({
 
           <div className="roadmapGrid">
             <RoadmapBucketColumn
-              title="Quick Wins"
+              title="Quick wins"
               subtitle="Low-friction fixes that reduce noise and operational coupling first."
               actions={roadmap.quick_wins}
               tone="quick"
             />
             <RoadmapBucketColumn
-              title="Medium-Term Changes"
+              title="Medium-term changes"
               subtitle="Boundary improvements that make the architecture easier to work with."
               actions={roadmap.medium_term_changes}
               tone="medium"
             />
             <RoadmapBucketColumn
-              title="High-Effort Refactors"
+              title="High-effort refactors"
               subtitle="Deeper structural changes that reshape ownership or service boundaries."
               actions={roadmap.high_effort_refactors}
               tone="high"
@@ -280,7 +280,7 @@ export function HealthScoreView({
     <section className="healthPanel">
       <div className="panelHeader compact">
         <div>
-          <h2>Health Scores</h2>
+          <h2>Health scores</h2>
           <p>Service, domain, and system-level architecture quality</p>
           <div className="docLinks">
             <DocLinkButton label="Health score guide" onClick={() => onOpenDoc("health-score-guide")} />
@@ -298,7 +298,7 @@ export function HealthScoreView({
       {systemScore ? <DimensionBars breakdown={systemScore.breakdown} /> : null}
       {sortedServices.length > 0 ? (
         <div className="serviceScores">
-          <h3>Lowest Service Scores</h3>
+          <h3>Lowest service scores</h3>
           {sortedServices.map((score) => (
             <div key={score.target} className="scoreRow">
               <span>{score.target}</span>

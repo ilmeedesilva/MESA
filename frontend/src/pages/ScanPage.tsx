@@ -32,7 +32,7 @@ export function ScanPage({ ws }: { ws: MesaWorkspace }) {
       <section className="workflowTrackPanel workspaceIntroCard">
         <div className="workflowSummary">
           <div>
-            <div className="eyebrow">Guided Scan Flow</div>
+            <div className="eyebrow">Guided scan</div>
             <h2>{nextAction}</h2>
             <p>
               Keep project selection, source configuration, and scan execution in one focused workspace instead of a
@@ -67,7 +67,7 @@ export function ScanPage({ ws }: { ws: MesaWorkspace }) {
             <section className="stepWorkspaceCard">
               <div className="stepWorkspaceHeader">
                 <div>
-                  <div className="eyebrow">Step Workspace</div>
+                  <div className="eyebrow">Current step</div>
                   <h2>{activeSetupStep.label}</h2>
                   <p>{activeSetupStep.description}</p>
                 </div>
@@ -81,7 +81,7 @@ export function ScanPage({ ws }: { ws: MesaWorkspace }) {
           </div>
           <div className="workspaceStack">
             <section className="workspaceInfoCard scanChecklistCard">
-              <div className="eyebrow">Workflow Snapshot</div>
+              <div className="eyebrow">Progress</div>
               <h2>Keep everything in one scan workspace</h2>
               <p>
                 This flow now stays inside the scan tab. Move step by step here without being redirected into extra

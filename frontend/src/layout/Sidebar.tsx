@@ -63,7 +63,7 @@ export function Sidebar({
             </div>
           ) : (
             <>
-              <div className="eyebrow">Architecture Analyzer</div>
+              <div className="eyebrow">Architecture analyzer</div>
               <h1>MESA</h1>
               <p>Find architecture problems in your microservices before they reach main.</p>
             </>
@@ -96,12 +96,12 @@ export function Sidebar({
                   {project.name}
                 </option>
               ))}
-              {!isPublicDemoMode ? <option value="__create_new__">+ Create New Project</option> : null}
+              {!isPublicDemoMode ? <option value="__create_new__">+ Create new project</option> : null}
             </select>
           </label>
           {!isPublicDemoMode ? (
             <button type="button" className="secondaryButton" onClick={onCreateProject}>
-              New Project
+              New project
             </button>
           ) : null}
         </div>

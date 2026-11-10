@@ -4,11 +4,15 @@ export function PublicDemoBanner({
   apiAvailability,
   isPublicDemoMode,
   usingEmbeddedDemo,
+  serverRetryStatus,
+  onRetryServer,
   onOpenDoc
 }: {
   apiAvailability: ApiAvailability;
   isPublicDemoMode: boolean;
   usingEmbeddedDemo: boolean;
+  serverRetryStatus: "idle" | "checking" | "failed";
+  onRetryServer: () => void;
   onOpenDoc: (slug: string) => void;
 }) {
   if (apiAvailability === "checking") {
@@ -25,9 +29,23 @@ export function PublicDemoBanner({
       <section className="publicDemoBanner demo">
         <div>
           <strong>You're viewing demo data</strong>
-          <span>Your MESA server is not connected, so MESA shows example scans, a roadmap and the docs.</span>
+          <span>
+            MESA can't reach your MESA server, so it shows example scans, a roadmap and the docs. To scan your own code,
+            start the server (docker compose up) and choose Try again.
+          </span>
+          {serverRetryStatus === "failed" ? (
+            <span role="alert">Still can't reach your MESA server. Check that it is running, then try again.</span>
+          ) : null}
         </div>
         <div className="publicDemoActions">
+          <button
+            type="button"
+            className="workflowToggle"
+            onClick={onRetryServer}
+            disabled={serverRetryStatus === "checking"}
+          >
+            {serverRetryStatus === "checking" ? "Checking..." : "Try again"}
+          </button>
           <button type="button" className="workflowToggle" onClick={() => onOpenDoc("public-demo-guide")}>
             About demo data
           </button>

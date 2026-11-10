@@ -1,15 +1,18 @@
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
+import { docBySlug } from "../docsPortal";
 import { useMesaWorkspace, type MesaWorkspace } from "./useMesaWorkspace";
 import { isDemoScan } from "../demoMode";
 import { plainLanguageFindingTitle } from "../viewHelpers";
 import { AppShell, WorkspaceFrame } from "../layout/AppShell";
 import { PublicDemoBanner } from "../layout/PublicDemoBanner";
+import { AppFooter } from "../layout/AppFooter";
 import { MobileBar } from "../layout/MobileBar";
 import { Sidebar } from "../layout/Sidebar";
 import { TopBar } from "../layout/TopBar";
 import { FindingDrawer } from "../components/FindingDrawer";
 import { InterpretationModeCard } from "../components/InterpretationModeCard";
 import { ProjectRequiredState } from "../components/ProjectRequiredState";
+import { StatePanel } from "../components/StatePanel";
 import { ScanHistoryPanel } from "../components/ScanHistoryPanel";
 import { ScanHistoryRail } from "../components/ScanHistoryRail";
 import { AIExplainerPanel } from "../pages/AIExplainerPanel";
@@ -37,6 +40,17 @@ export function App() {
     selectedFinding,
     interpretationMode
   } = ws;
+
+  // The browser tab names the page, such as "Findings - MESA".
+  const docTitle = currentSection === "docs" ? docBySlug(ws.selectedDocSlug).title : null;
+  React.useEffect(() => {
+    document.title =
+      currentSection === "overview"
+        ? "MESA"
+        : docTitle
+          ? `${docTitle} - Documentation - MESA`
+          : `${currentSectionMeta.label} - MESA`;
+  }, [currentSection, currentSectionMeta.label, docTitle]);
 
   const historyPanel = (
     <ScanHistoryPanel
@@ -118,6 +132,13 @@ export function App() {
           onCreateProject={ws.openCreateProjectFlow}
         />
       }
+      footer={
+        <AppFooter
+          serverVersion={ws.serverVersion}
+          usingDemoData={ws.isPublicDemoMode}
+          onOpenDocs={() => ws.navigateToSection("docs")}
+        />
+      }
       overlay={
         selectedFinding ? (
           <FindingDrawer
@@ -140,6 +161,8 @@ export function App() {
             apiAvailability={ws.apiAvailability}
             isPublicDemoMode={ws.isPublicDemoMode}
             usingEmbeddedDemo={ws.usingEmbeddedDemo}
+            serverRetryStatus={ws.serverRetryStatus}
+            onRetryServer={() => void ws.retryServerConnection()}
             onOpenDoc={ws.openDoc}
           />
 
@@ -153,14 +176,18 @@ export function App() {
         </>
       ) : null}
 
-      {ws.error ? <div className="error workspaceError">{ws.error}</div> : null}
+      {ws.error ? (
+        <div className="error workspaceError" role="alert">
+          {ws.error}
+        </div>
+      ) : null}
 
       <WorkspaceFrame
         header={
           !isStandaloneSection ? (
             <div className="workspaceFrameHeader">
               <div>
-                <div className="eyebrow">Current Workspace</div>
+                <div className="eyebrow">Current page</div>
                 <h2>{currentSectionMeta.label}</h2>
                 <p>
                   {selectedProject
@@ -193,6 +220,29 @@ function SectionContent({ ws, historyPanel }: { ws: MesaWorkspace; historyPanel:
     return projectRequired;
   }
 
+  const isLoadingData = ws.isLoadingScan || ws.isLoadingProjectState;
+  const goToScan = (
+    <button type="button" onClick={() => ws.navigateToSection("scan")}>
+      Go to Scan
+    </button>
+  );
+  // Pages that show one scan's results: loading while it arrives, a clear next step without one.
+  const needsScan: Partial<Record<typeof currentSection, string>> = {
+    findings: "the findings",
+    graph: "the architecture graph",
+    roadmap: "a roadmap of what to fix first",
+    gate: "whether the architecture passes the gate"
+  };
+  const scanPurpose = needsScan[currentSection];
+  if (scanPurpose && !ws.result) {
+    if (isLoadingData) return <StatePanel kind="loading" title="Loading the latest scan..." />;
+    return (
+      <StatePanel kind="empty" title="No scan yet" actions={goToScan}>
+        {`Run a scan of ${selectedProject?.name ?? "this project"} to see ${scanPurpose}.`}
+      </StatePanel>
+    );
+  }
+
   switch (currentSection) {
     case "overview":
       return <OverviewPage ws={ws} historyPanel={historyPanel} />;
@@ -203,6 +253,14 @@ function SectionContent({ ws, historyPanel }: { ws: MesaWorkspace; historyPanel:
     case "graph":
       return selectedProject ? <GraphPage ws={ws} /> : projectRequired;
     case "history":
+      if (ws.history.length === 0) {
+        if (isLoadingData) return <StatePanel kind="loading" title="Loading scans..." />;
+        return (
+          <StatePanel kind="empty" title="No scans yet" actions={goToScan}>
+            {`Scans of ${selectedProject?.name ?? "this project"} appear here, with what changed between them.`}
+          </StatePanel>
+        );
+      }
       return <HistoryPage scanList={historyPanel} evolution={ws.evolution} />;
     case "roadmap":
       return <RemediationRoadmapPanel roadmap={ws.roadmap} isLoading={ws.isLoadingRoadmap} onOpenDoc={ws.openDoc} />;

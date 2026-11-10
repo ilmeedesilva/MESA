@@ -59,14 +59,14 @@ export function TopBar({
                   {project.name}
                 </option>
               ))}
-              {!isPublicDemoMode ? <option value="__create_new__">+ Create New Project</option> : null}
+              {!isPublicDemoMode ? <option value="__create_new__">+ Create new project</option> : null}
             </select>
           </label>
         </div>
 
         {!isPublicDemoMode ? (
           <button type="button" className="secondaryButton" onClick={onCreateProject}>
-            New Project
+            New project
           </button>
         ) : null}
       </div>

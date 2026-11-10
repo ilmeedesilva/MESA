@@ -10,7 +10,7 @@ This guide explains how to scan a public repository using MESA without manually 
 2. Choose `GitHub URL` as the repository source type.
 3. Enter the public repository URL.
 4. Optionally enter a branch, tag, or ref.
-5. Click `Preview Discovery`.
+5. Click `Preview discovery`.
 6. Review the discovered service candidates.
 7. Keep the services you want to analyze.
 8. Run the repository-backed scan.
