@@ -139,8 +139,9 @@ problems, and 3 public open-source microservice projects pinned to fixed commits
 | Spring Boot sample | 24 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 | Sock Shop | 4 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 
-The benchmarks are small (76 seeded problems, and 30 across the three public projects), and
-the public projects were labelled by the author. See
+The benchmarks are small (76 seeded problems, and 30 across the three public projects), the
+public projects were labelled by the author, and some detector fixes were made while
+evaluating them, for example on Sock Shop ([history](docs/HISTORY.md)). See
 [threats to validity](docs/research/THREATS_TO_VALIDITY.md).
 
 These are the frozen results of the tagged research version `v0.1.0-research`. Benchmarks
